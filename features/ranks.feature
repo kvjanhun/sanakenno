@@ -15,24 +15,24 @@ Feature: Rank progression
       | score | rank            |
       |     0 | Etsi sanoja!    |
       |     1 | Etsi sanoja!    |
-      |     2 | Hyva alku       |
-      |     9 | Hyva alku       |
-      |    10 | Nyt mennaan!    |
-      |    19 | Nyt mennaan!    |
+      |     2 | Hyvä alku       |
+      |     9 | Hyvä alku       |
+      |    10 | Nyt mennään!    |
+      |    19 | Nyt mennään!    |
       |    20 | Onnistuja       |
       |    39 | Onnistuja       |
       |    40 | Sanavalmis      |
       |    69 | Sanavalmis      |
-      |    70 | Allistyttava    |
-      |    99 | Allistyttava    |
-      |   100 | Taysi kenno     |
+      |    70 | Ällistyttävä    |
+      |    99 | Ällistyttävä    |
+      |   100 | Täysi kenno     |
 
   # --- Progress bar ---
 
   Scenario: Progress shows percentage toward next rank
     When the player's score is 5
-    Then the rank should be "Hyva alku"
-    And the progress toward "Nyt mennaan!" should be 37%
+    Then the rank should be "Hyvä alku"
+    And the progress toward "Nyt mennään!" should be 37%
 
   Scenario: Progress is 100% at max rank
     When the player's score is 100
@@ -40,22 +40,22 @@ Feature: Rank progression
 
   # --- Rank threshold visibility ---
 
-  Scenario: Taysi kenno rank is hidden until achieved
-    When the player's rank is "Allistyttava"
-    Then the rank list should not show "Taysi kenno"
+  Scenario: Täysi kenno rank is hidden until achieved
+    When the player's rank is "Ällistyttävä"
+    Then the rank list should not show "Täysi kenno"
 
-  Scenario: Taysi kenno is visible once achieved
-    When the player's rank is "Taysi kenno"
-    Then the rank list should show "Taysi kenno"
+  Scenario: Täysi kenno is visible once achieved
+    When the player's rank is "Täysi kenno"
+    Then the rank list should show "Täysi kenno"
 
   # --- Celebrations ---
 
-  Scenario: Reaching Allistyttava triggers a glow celebration
-    When the player reaches "Allistyttava" rank
+  Scenario: Reaching Ällistyttävä triggers a glow celebration
+    When the player reaches "Ällistyttävä" rank
     Then a celebration banner should appear for 5 seconds
 
-  Scenario: Reaching Taysi kenno triggers a golden celebration
-    When the player reaches "Taysi kenno" rank
+  Scenario: Reaching Täysi kenno triggers a golden celebration
+    When the player reaches "Täysi kenno" rank
     Then a golden celebration should appear for 8 seconds
 
   Scenario: Other rank transitions show a brief message

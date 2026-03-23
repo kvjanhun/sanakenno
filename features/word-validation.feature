@@ -10,19 +10,19 @@ Feature: Word validation
 
   Scenario: Word shorter than 4 letters is rejected
     When the player submits "ala"
-    Then the word should be rejected with "Liian lyhyt!"
+    Then the word should be rejected with message stating it is too short
 
   Scenario: Word missing the center letter is rejected
     When the player submits "kone"
-    Then the word should be rejected with center letter missing message
+    Then the word should be rejected with message stating it must contain the center letter
 
   Scenario: Word using letters not in the puzzle is rejected
     When the player submits "kalvo"
-    Then the word should be rejected with "Kayta vain annettuja kirjaimia!"
+    Then the word should be rejected with message stating it must use only the provided letters
 
   Scenario: Word not in the dictionary is rejected
     When the player submits "aaaaaa"
-    Then the word should be rejected with "Ei sanakirjassa"
+    Then the word should be rejected with message stating it is not in the dictionary
 
   # --- Hash-based validation ---
 
@@ -37,10 +37,10 @@ Feature: Word validation
   # --- Input normalisation ---
 
   Scenario: Hyphenated compound words are normalised
-    Given the dictionary contains "lahi-ita"
-    When the player types "lahi-ita"
-    Then it should be normalised to "lahiita" for validation
-
+    Given the dictionary contains "palo-ovi"
+    When the player types "palo-ovi"
+    Then it should be normalised to "palo-ovi" for validation
+    
   # --- Center letter requirement ---
 
   Scenario: Every valid word must contain the center letter

@@ -20,9 +20,19 @@ Feature: Game interaction
     When the player presses Backspace
     Then the current word should be "ka"
 
+  Scenario: "Poista" button removes the last letter
+    Given the current word is "kal"
+    When the player taps the "Poista" button
+    Then the current word should be "ka"
+
   Scenario: Enter submits the current word
     Given the current word is "kala" and it is valid
     When the player presses Enter
+    Then the word should be submitted for validation
+
+  Scenario: "OK" button submits the current word
+    Given the current word is "kala" and it is valid
+    When the player taps the "OK" button
     Then the word should be submitted for validation
 
   Scenario: Keyboard is ignored when rules modal is open
@@ -55,6 +65,8 @@ Feature: Game interaction
     Given the player has found 10 words
     When the player expands the found words list
     Then all words should be shown sorted alphabetically
+    And the words should be grouped by length
+    And the shortest words of each first letter should be first
 
   Scenario: Re-submitted word flashes in the found list
     Given the player already found "kala"
@@ -74,5 +86,5 @@ Feature: Game interaction
   Scenario: Share copies result to clipboard
     Given the player has score 42 on puzzle 5 with rank "Sanavalmis"
     When the player taps the share button
-    Then the clipboard should contain the puzzle number, rank, and score
+    Then the clipboard should contain the puzzle number, rank, score, and hints activated
     And a "Kopioitu!" confirmation should appear for 3 seconds

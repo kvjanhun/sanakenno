@@ -6,8 +6,8 @@ Feature: Achievement tracking
   # --- Recording ---
 
   Scenario: Achievement is posted on rank transition
-    Given the player is at rank "Hyva alku"
-    When the player's score crosses into "Nyt mennaan!" territory
+    Given the player is at rank "Hyvä alku"
+    When the player's score crosses into "Nyt mennään!" territory
     Then a POST to /api/achievement should fire
     And it should include puzzle_number, rank, score, max_score, words_found, elapsed_ms
 

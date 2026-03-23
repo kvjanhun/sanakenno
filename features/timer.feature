@@ -26,7 +26,7 @@ Feature: Game timer
     Then the timer should resume
     And the hidden duration should not count toward elapsed time
 
-  Scenario: Timer pauses on window blur
+  Scenario: Timer pauses when window loses focus
     Given the timer is running
     When the browser window loses focus
     And the document is hidden

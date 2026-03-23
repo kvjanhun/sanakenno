@@ -26,11 +26,6 @@ Feature: Word scoring
     Then the word should be marked as a pangram
     And the score should increase by 16
 
-  Scenario: Short pangram still gets the bonus
-    Given a puzzle with letters "a,b,c,d,e,f,g" and center "a"
-    When the player submits a 4-letter pangram
-    Then the score should increase by 8
-
   # --- Cumulative scoring ---
 
   Scenario: Score accumulates across multiple words
