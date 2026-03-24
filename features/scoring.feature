@@ -22,7 +22,7 @@ Feature: Word scoring
   # --- Pangram bonus ---
 
   Scenario: Pangram scores length plus 7 bonus points
-    When the player submits "alkusanat"
+    When the player submits "sankaleet"
     Then the word should be marked as a pangram
     And the score should increase by 16
 
