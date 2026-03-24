@@ -40,6 +40,19 @@ Feature: Game interaction
     When the player presses any letter key
     Then the current word should not change
 
+  # --- Feedback and Validation ---
+
+  Scenario: Rejected word is cleared automatically after a delay
+    Given the player submits an invalid word
+    Then the word should shake and show an error message
+    And the word should remain visible for 2 seconds before clearing
+
+  Scenario: Next input clears a rejected word immediately
+    Given a rejected word is currently visible
+    When the player presses a letter or Backspace
+    Then the rejected word should be cleared
+    And the new input should be processed normally
+
   # --- Honeycomb ---
 
   Scenario: Honeycomb displays 7 hexagons in a flower pattern

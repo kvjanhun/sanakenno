@@ -39,7 +39,7 @@ Feature: Word validation
   Scenario: Hyphenated compound words are normalised
     Given the dictionary contains "palo-ovi"
     When the player types "palo-ovi"
-    Then it should be normalised to "palo-ovi" for validation
+    Then it should be normalised to "paloovi" for validation
     
   # --- Center letter requirement ---
 

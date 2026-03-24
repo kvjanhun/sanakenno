@@ -37,4 +37,4 @@ Feature: Word scoring
     When the player submits "kala"
     And the player submits "kala" again
     Then the total score should be 1
-    And the message "Loysit jo taman!" should appear
+    And the message "Löysit jo tämän!" should appear

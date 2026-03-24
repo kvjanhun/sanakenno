@@ -35,14 +35,14 @@ Feature: Daily puzzle
     Then the puzzle numbers should be different
 
   Scenario: Puzzles cycle through the entire pool
-    Given there are 41 puzzles in rotation
-    Then after 41 days the rotation should return to the first puzzle
+    Given there are N puzzles in rotation
+    Then after N days the rotation should return to the first puzzle
 
   # --- Puzzle number display ---
 
   Scenario: Puzzle number is 1-indexed for display
     Given the API returns puzzle_number 0
-    Then the UI should display "Peli 1/41"
+    Then the UI should display "Sanakenno — #1"
 
   # --- Midnight rollover ---
 
