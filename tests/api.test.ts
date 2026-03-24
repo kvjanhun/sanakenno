@@ -15,6 +15,42 @@ import {
 import { setWordlist, invalidateAll } from '../server/puzzle-engine.js';
 import Database from 'better-sqlite3';
 
+interface PuzzleResponse {
+  center: string;
+  letters: string[];
+  word_hashes: string[];
+  hint_data: {
+    word_count: number;
+    pangram_count: number;
+    by_letter: Record<string, number>;
+    by_length: Record<string, number>;
+    by_pair: Record<string, number>;
+  };
+  max_score: number;
+  puzzle_number: number;
+  total_puzzles: number;
+}
+
+interface AchievementRow {
+  id: number;
+  puzzle_number: number;
+  rank: string;
+  score: number;
+  max_score: number;
+  words_found: number;
+  elapsed_ms: number | null;
+  session_id: string | null;
+  achieved_at: string;
+}
+
+interface ErrorResponse {
+  error: string;
+}
+
+interface StatusResponse {
+  status: string;
+}
+
 function request(path: string, options: RequestInit = {}) {
   return app.request(path, options);
 }
@@ -46,7 +82,7 @@ describe('GET /api/health', () => {
     const res = await request('/api/health');
     expect(res.status).toBe(200);
 
-    const json = await res.json();
+    const json = await res.json() as StatusResponse;
     expect(json.status).toBe('ok');
   });
 });
@@ -80,7 +116,7 @@ describe('GET /api/puzzle', () => {
     const res = await request('/api/puzzle');
     expect(res.status).toBe(200);
 
-    const json: any = await res.json();
+    const json = await res.json() as PuzzleResponse;
     expect(json).toHaveProperty('center');
     expect(json).toHaveProperty('letters');
     expect(json).toHaveProperty('word_hashes');
@@ -115,7 +151,7 @@ describe('GET /api/puzzle', () => {
 
   it('does not include plaintext words', async () => {
     const res = await request('/api/puzzle');
-    const json = await res.json();
+    const json = await res.json() as PuzzleResponse;
     expect(json).not.toHaveProperty('words');
   });
 });
@@ -128,13 +164,13 @@ describe('GET /api/puzzle/:number', () => {
     const res = await request('/api/puzzle/0');
     expect(res.status).toBe(200);
 
-    const json: any = await res.json();
+    const json = await res.json() as PuzzleResponse;
     expect(json.puzzle_number).toBe(0);
   });
 
   it('returns puzzle number 1 when requesting slot 1', async () => {
     const res = await request('/api/puzzle/1');
-    const json: any = await res.json();
+    const json = await res.json() as PuzzleResponse;
     expect(json.puzzle_number).toBe(1);
   });
 
@@ -142,7 +178,7 @@ describe('GET /api/puzzle/:number', () => {
     const res = await request('/api/puzzle/42');
     expect(res.status).toBe(200);
 
-    const json: any = await res.json();
+    const json = await res.json() as PuzzleResponse;
     expect(json.puzzle_number).toBe(42 % json.total_puzzles);
   });
 
@@ -183,7 +219,7 @@ describe('POST /api/achievement', () => {
     const res = await postJson('/api/achievement', validPayload);
     expect(res.status).toBe(201);
 
-    const json = await res.json();
+    const json = await res.json() as StatusResponse;
     expect(json.status).toBe('recorded');
   });
 
@@ -191,14 +227,14 @@ describe('POST /api/achievement', () => {
     await postJson('/api/achievement', validPayload);
 
     const db = getDb();
-    const row: any = db.prepare('SELECT * FROM achievements').get();
+    const row = db.prepare('SELECT * FROM achievements').get() as AchievementRow | undefined;
     expect(row).toBeTruthy();
-    expect(row.puzzle_number).toBe(5);
-    expect(row.rank).toBe('Onnistuja');
-    expect(row.score).toBe(25);
-    expect(row.max_score).toBe(42);
-    expect(row.words_found).toBe(8);
-    expect(row.elapsed_ms).toBe(120000);
+    expect(row!.puzzle_number).toBe(5);
+    expect(row!.rank).toBe('Onnistuja');
+    expect(row!.score).toBe(25);
+    expect(row!.max_score).toBe(42);
+    expect(row!.words_found).toBe(8);
+    expect(row!.elapsed_ms).toBe(120000);
   });
 
   it('accepts payload without optional elapsed_ms', async () => {
@@ -214,7 +250,7 @@ describe('POST /api/achievement', () => {
     });
     expect(res.status).toBe(400);
 
-    const json: any = await res.json();
+    const json = await res.json() as ErrorResponse;
     expect(json.error).toContain('Invalid rank');
   });
 
@@ -280,7 +316,7 @@ describe('POST /api/achievement', () => {
       const res = await postJson('/api/achievement', validPayload);
       expect(res.status).toBe(429);
 
-      const json: any = await res.json();
+      const json = await res.json() as ErrorResponse;
       expect(json.error).toContain('Rate limit');
     });
   });

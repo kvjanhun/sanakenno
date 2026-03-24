@@ -7,6 +7,7 @@ import { describe, it, expect } from 'vitest'
 import {
   RANKS, scoreWord, recalcScore, rankForScore,
   rankThresholds, progressToNextRank, colorizeWord, toColumns,
+  type RankThreshold, type ColorizedChar,
 } from '../src/utils/scoring.js'
 
 describe('scoreWord', () => {
@@ -106,23 +107,23 @@ describe('rankForScore', () => {
 describe('rankThresholds', () => {
   it('hides "Täysi kenno" when not at that rank', () => {
     const thresholds = rankThresholds('Hyvä alku', 100)
-    expect(thresholds.find((t: any) => t.name === 'Täysi kenno')).toBeUndefined()
+    expect(thresholds.find((t: RankThreshold) => t.name === 'Täysi kenno')).toBeUndefined()
   })
 
   it('shows "Täysi kenno" when at that rank', () => {
     const thresholds = rankThresholds('Täysi kenno', 100)
-    expect(thresholds.find((t: any) => t.name === 'Täysi kenno')).toBeDefined()
+    expect(thresholds.find((t: RankThreshold) => t.name === 'Täysi kenno')).toBeDefined()
   })
 
   it('marks current rank correctly', () => {
     const thresholds = rankThresholds('Onnistuja', 100)
-    const current = thresholds.find((t: any) => t.isCurrent)
+    const current = thresholds.find((t: RankThreshold) => t.isCurrent)
     expect(current!.name).toBe('Onnistuja')
   })
 
   it('calculates correct point thresholds', () => {
     const thresholds = rankThresholds('Etsi sanoja!', 200)
-    const allistyttava = thresholds.find((t: any) => t.name === 'Ällistyttävä')
+    const allistyttava = thresholds.find((t: RankThreshold) => t.name === 'Ällistyttävä')
     expect(allistyttava!.points).toBe(140)
   })
 
@@ -184,7 +185,7 @@ describe('colorizeWord', () => {
 
   it('handles mixed word correctly', () => {
     const result = colorizeWord('abz-', center, allLetters)
-    expect(result.map((r: any) => r.color)).toEqual(['accent', 'primary', 'tertiary', 'tertiary'])
+    expect(result.map((r: ColorizedChar) => r.color)).toEqual(['accent', 'primary', 'tertiary', 'tertiary'])
   })
 })
 

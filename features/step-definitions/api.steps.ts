@@ -14,8 +14,16 @@ import {
   stopRateLimitInterval,
 } from '../../server/routes/achievement.js';
 import { setWordlist, invalidateAll } from '../../server/puzzle-engine.js';
+import type { SanakennoWorld } from './types.js';
 
-Before(function (this: any) {
+interface AchievementRow {
+  id: number;
+  puzzle_number: number;
+  rank: string;
+  score: number;
+}
+
+Before(function (this: SanakennoWorld) {
   closeDb();
   setDb(null);
   const db = getDb({ inMemory: true });
@@ -36,20 +44,20 @@ Before(function (this: any) {
   ]));
 });
 
-After(function (this: any) {
+After(function (this: SanakennoWorld) {
   invalidateAll();
   closeDb();
   setDb(null);
 });
 
-When(/^a GET request is made to \/api\/puzzle$/, async function (this: any) {
+When(/^a GET request is made to \/api\/puzzle$/, async function (this: SanakennoWorld) {
   this.response = await app.request('/api/puzzle');
   this.responseJson = await this.response.json();
 });
 
 Then(
   'the response should include center, letters, word_hashes, hint_data, max_score',
-  function (this: any) {
+  function (this: SanakennoWorld) {
     assert.ok(this.responseJson.center, 'Missing center');
     assert.ok(this.responseJson.letters, 'Missing letters');
     assert.ok(this.responseJson.word_hashes, 'Missing word_hashes');
@@ -63,7 +71,7 @@ Then(
 
 Then(
   'the response should include puzzle_number and total_puzzles',
-  function (this: any) {
+  function (this: SanakennoWorld) {
     assert.ok(
       this.responseJson.puzzle_number !== undefined,
       'Missing puzzle_number',
@@ -75,18 +83,18 @@ Then(
   },
 );
 
-Then('the response should not include plaintext words', function (this: any) {
+Then('the response should not include plaintext words', function (this: SanakennoWorld) {
   assert.equal(this.responseJson.words, undefined);
 });
 
-When('the API serves a puzzle', async function (this: any) {
+When('the API serves a puzzle', async function (this: SanakennoWorld) {
   this.response = await app.request('/api/puzzle');
   this.responseJson = await this.response.json();
 });
 
 Then(
   'word_hashes should be an array of SHA-256 hex strings',
-  function (this: any) {
+  function (this: SanakennoWorld) {
     assert.ok(Array.isArray(this.responseJson.word_hashes));
     for (const hash of this.responseJson.word_hashes) {
       assert.match(hash, /^[0-9a-f]{64}$/);
@@ -96,7 +104,7 @@ Then(
 
 Then(
   'hint_data should contain word_count, pangram_count, by_letter, by_length, by_pair',
-  function (this: any) {
+  function (this: SanakennoWorld) {
     const hd = this.responseJson.hint_data;
     assert.ok(hd.word_count !== undefined, 'Missing word_count');
     assert.ok(hd.pangram_count !== undefined, 'Missing pangram_count');
@@ -106,14 +114,14 @@ Then(
   },
 );
 
-When(/^a GET request is made to \/api\/puzzle\/(\d+)$/, async function (this: any, number: string) {
+When(/^a GET request is made to \/api\/puzzle\/(\d+)$/, async function (this: SanakennoWorld, number: string) {
   this.response = await app.request(`/api/puzzle/${number}`);
   this.responseJson = await this.response.json();
 });
 
 Then(
   /^the response should be puzzle number (\d+)$/,
-  function (this: any, expectedNumber: string) {
+  function (this: SanakennoWorld, expectedNumber: string) {
     const requested = parseInt(expectedNumber, 10);
     const totalPuzzles = this.responseJson.total_puzzles;
 
@@ -129,13 +137,13 @@ Then(
   },
 );
 
-Given(/^there are (\d+) puzzles$/, function (this: any, count: string) {
+Given(/^there are (\d+) puzzles$/, function (this: SanakennoWorld, count: string) {
   this.expectedTotalPuzzles = parseInt(count, 10);
 });
 
 When(
   'a POST is made with puzzle_number, rank, score, max_score, words_found',
-  async function (this: any) {
+  async function (this: SanakennoWorld) {
     this.response = await app.request('/api/achievement', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -151,20 +159,20 @@ When(
   },
 );
 
-Then(/^the server should respond with (\d+)$/, function (this: any, statusCode: string) {
+Then(/^the server should respond with (\d+)$/, function (this: SanakennoWorld, statusCode: string) {
   assert.equal(this.response.status, parseInt(statusCode, 10));
 });
 
-Then('the achievement should be appended to storage', function (this: any) {
+Then('the achievement should be appended to storage', function (this: SanakennoWorld) {
   const db = getDb();
-  const row: any = db.prepare('SELECT * FROM achievements').get();
+  const row = db.prepare('SELECT * FROM achievements').get() as AchievementRow | undefined;
   assert.ok(row, 'Achievement should be stored in database');
-  assert.equal(row.puzzle_number, 5);
+  assert.equal(row!.puzzle_number, 5);
 });
 
 When(
   /^a POST is made with rank "([^"]*)"$/,
-  async function (this: any, rank: string) {
+  async function (this: SanakennoWorld, rank: string) {
     this.response = await app.request('/api/achievement', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -180,7 +188,7 @@ When(
   },
 );
 
-When('a POST is made without score', async function (this: any) {
+When('a POST is made without score', async function (this: SanakennoWorld) {
   this.response = await app.request('/api/achievement', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -196,7 +204,7 @@ When('a POST is made without score', async function (this: any) {
 
 When(
   /^(\d+) POST requests are made to \/api\/achievement within one minute$/,
-  async function (this: any, count: string) {
+  async function (this: SanakennoWorld, count: string) {
     resetRateLimit();
     for (let i = 0; i < parseInt(count, 10); i++) {
       const res = await app.request('/api/achievement', {
@@ -215,6 +223,6 @@ When(
   },
 );
 
-Then('the 11th should receive a 429 response', function (this: any) {
+Then('the 11th should receive a 429 response', function (this: SanakennoWorld) {
   assert.equal(this.responses[10].status, 429);
 });

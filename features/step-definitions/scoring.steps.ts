@@ -12,8 +12,9 @@ import {
   recalcScore,
 } from '../../src/utils/scoring.js';
 import { validateWord } from '../support/validation.js';
+import type { SanakennoWorld } from './types.js';
 
-Before(function (this: any) {
+Before(function (this: SanakennoWorld) {
   this.allLetters = new Set();
   this.center = '';
   this.foundWords = [];
@@ -27,13 +28,13 @@ Before(function (this: any) {
   this.validationMode = false;
 });
 
-Given('a puzzle with letters {string} and center {string}', function (this: any, lettersStr: string, center: string) {
+Given('a puzzle with letters {string} and center {string}', function (this: SanakennoWorld, lettersStr: string, center: string) {
   const letters = lettersStr.split(',').map((l) => l.trim());
   this.allLetters = new Set(letters);
   this.center = center;
 });
 
-When('the player submits {string}', function (this: any, word: string) {
+When('the player submits {string}', function (this: SanakennoWorld, word: string) {
   if (this.validationMode) {
     const result = validateWord(word, this.center, this.allLetters, this.wordHashes);
     this.wordAccepted = result.accepted;
@@ -57,7 +58,7 @@ When('the player submits {string}', function (this: any, word: string) {
   this.message = null;
 });
 
-When('the player submits {string} again', function (this: any, word: string) {
+When('the player submits {string} again', function (this: SanakennoWorld, word: string) {
   if (this.foundWords.includes(word)) {
     this.message = 'Löysit jo tämän!';
     this.lastScoreIncrease = 0;
@@ -71,18 +72,18 @@ When('the player submits {string} again', function (this: any, word: string) {
   this.message = null;
 });
 
-Then('the score should increase by {int}', function (this: any, expectedIncrease: number) {
+Then('the score should increase by {int}', function (this: SanakennoWorld, expectedIncrease: number) {
   assert.equal(this.lastScoreIncrease, expectedIncrease);
 });
 
-Then('the word should be marked as a pangram', function (this: any) {
+Then('the word should be marked as a pangram', function (this: SanakennoWorld) {
   assert.equal(this.lastWordWasPangram, true);
 });
 
-Then('the total score should be {int}', function (this: any, expectedTotal: number) {
+Then('the total score should be {int}', function (this: SanakennoWorld, expectedTotal: number) {
   assert.equal(this.totalScore, expectedTotal);
 });
 
-Then('the message {string} should appear', function (this: any, expectedMessage: string) {
+Then('the message {string} should appear', function (this: SanakennoWorld, expectedMessage: string) {
   assert.equal(this.message, expectedMessage);
 });
