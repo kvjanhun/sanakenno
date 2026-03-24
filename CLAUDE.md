@@ -5,7 +5,7 @@ This file provides foundational mandates for the Sanakenno standalone project. A
 ## Technical Stack
 - **Frontend**: React 19, Vite, Zustand (State), Tailwind 4 + CSS Modules (Styling).
 - **Backend**: Hono (Node.js runtime).
-- **Storage**: SQLite (Achievements), JSON (Puzzles).
+- **Storage**: SQLite (all application data). Wordlist as flat file.
 - **Testing**: Vitest (Unit/Logic), Cucumber.js (BDD/Integration), Playwright (E2E).
 - **PWA**: `vite-plugin-pwa`.
 
