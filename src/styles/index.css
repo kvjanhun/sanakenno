@@ -1,0 +1,44 @@
+@import 'tailwindcss';
+
+/* Light theme (default) */
+:root {
+  --color-accent: #ff643e;
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #4a4a4a;
+  --color-text-tertiary: #8a8a8a;
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f5f5f5;
+  --color-border: #e0e0e0;
+  --font-mono: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', monospace;
+  --font-sans: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Dark theme via system preference */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-text-primary: #f0f0f0;
+    --color-text-secondary: #b0b0b0;
+    --color-text-tertiary: #707070;
+    --color-bg-primary: #1a1a1a;
+    --color-bg-secondary: #252525;
+    --color-border: #3a3a3a;
+  }
+}
+
+/* Dark theme via explicit attribute */
+[data-theme='dark'] {
+  --color-text-primary: #f0f0f0;
+  --color-text-secondary: #b0b0b0;
+  --color-text-tertiary: #707070;
+  --color-bg-primary: #1a1a1a;
+  --color-bg-secondary: #252525;
+  --color-border: #3a3a3a;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-primary);
+  margin: 0;
+  padding: 0;
+}
