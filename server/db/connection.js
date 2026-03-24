@@ -4,14 +4,14 @@
  * Uses better-sqlite3 for synchronous SQLite access.
  * Reads DATA_DIR env var (default: ./server/data) for DB path.
  * Initializes schema from schema.sql if tables don't exist.
+ * Supports in-memory databases for testing.
  *
  * @module server/db/connection
  */
 
 import Database from 'better-sqlite3';
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
-import { mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -34,40 +34,57 @@ function resolveDataDir() {
 }
 
 /**
+ * Apply schema and pragmas to a database instance.
+ *
+ * @param {Database.Database} db - The database to initialize.
+ */
+function applySchema(db) {
+  db.pragma('journal_mode = WAL');
+  db.pragma('foreign_keys = ON');
+
+  const schemaPath = join(__dirname, 'schema.sql');
+  const schema = readFileSync(schemaPath, 'utf-8');
+  db.exec(schema);
+}
+
+/**
  * Initialize the database: create the data directory if needed,
  * open the SQLite file, enable WAL mode, and run the schema.
  *
+ * @param {object} [options]
+ * @param {boolean} [options.inMemory=false] - Use an in-memory database (for tests).
+ * @param {string}  [options.dbPath]         - Custom path to the SQLite database file.
  * @returns {Database.Database} The initialized database instance.
  */
-export function initDb() {
+export function initDb(options = {}) {
   if (_db) return _db;
 
-  const dataDir = resolveDataDir();
-  mkdirSync(dataDir, { recursive: true });
+  const { inMemory = false, dbPath } = options;
 
-  const dbPath = join(dataDir, 'sanakenno.db');
-  _db = new Database(dbPath);
+  if (inMemory) {
+    _db = new Database(':memory:');
+  } else {
+    const dataDir = resolveDataDir();
+    mkdirSync(dataDir, { recursive: true });
+    const resolvedPath = dbPath || join(dataDir, 'sanakenno.db');
+    _db = new Database(resolvedPath);
+  }
 
-  // Enable WAL mode for better concurrent read performance
-  _db.pragma('journal_mode = WAL');
-  _db.pragma('foreign_keys = ON');
-
-  // Run schema — all statements use IF NOT EXISTS, safe to re-run
-  const schemaPath = join(__dirname, 'schema.sql');
-  const schema = readFileSync(schemaPath, 'utf-8');
-  _db.exec(schema);
-
+  applySchema(_db);
   return _db;
 }
 
 /**
  * Get the database instance, initializing if needed.
  *
+ * @param {object} [options] - Passed to initDb if the database is not yet initialized.
+ * @param {boolean} [options.inMemory=false] - Use an in-memory database (for tests).
+ * @param {string}  [options.dbPath]         - Custom path to the SQLite database file.
  * @returns {Database.Database} The database instance.
  */
-export function getDb() {
+export function getDb(options = {}) {
   if (!_db) {
-    return initDb();
+    return initDb(options);
   }
   return _db;
 }
@@ -82,4 +99,14 @@ export function closeDb() {
   }
 }
 
-export default { initDb, getDb, closeDb };
+/**
+ * Replace the singleton with a custom database instance.
+ * Primarily used in tests for dependency injection.
+ *
+ * @param {Database.Database | null} newDb
+ */
+export function setDb(newDb) {
+  _db = newDb;
+}
+
+export default { initDb, getDb, closeDb, setDb };
