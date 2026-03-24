@@ -4,6 +4,7 @@ dist/
 .env
 *.log
 *.db
+server/data/kotus_words.txt
 .DS_Store
 .vite/
 coverage/
