@@ -144,6 +144,37 @@ function migrate() {
   });
   insertCombinations();
 
+  // --- Migrate achievements ---
+  let achievementCount = 0;
+  const achievements = sourceDb
+    .prepare(
+      `SELECT puzzle_number, rank, score, max_score, words_found, elapsed_ms, achieved_at
+       FROM bee_achievements`,
+    )
+    .all();
+
+  const insertAchievement = destDb.prepare(`
+    INSERT OR REPLACE INTO achievements
+      (puzzle_number, rank, score, max_score, words_found, elapsed_ms, achieved_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const insertAchievements = destDb.transaction(() => {
+    for (const ach of achievements) {
+      insertAchievement.run(
+        ach.puzzle_number,
+        ach.rank,
+        ach.score,
+        ach.max_score,
+        ach.words_found,
+        ach.elapsed_ms,
+        ach.achieved_at,
+      );
+      achievementCount++;
+    }
+  });
+  insertAchievements();
+
   // --- Insert config ---
   destDb
     .prepare(
@@ -162,6 +193,7 @@ function migrate() {
   console.log(`Puzzles migrated:      ${puzzleCount}`);
   console.log(`Blocked words:         ${blockedCount}`);
   console.log(`Combinations:          ${combinationCount}`);
+  console.log(`Achievements:          ${achievementCount}`);
   console.log(`Config:                rotation_epoch = 2026-02-24`);
   console.log(`Wordlist copied:       ${wordlistCopied ? 'yes' : 'NO (missing)'}`);
   console.log('');
