@@ -1,7 +1,7 @@
 /**
  * API integration tests for the Hono server.
  *
- * Uses Hono's app.request() method — no HTTP server needed.
+ * Uses Hono's app.request() method -- no HTTP server needed.
  * Each test gets a fresh in-memory SQLite database.
  */
 
@@ -15,26 +15,11 @@ import {
 import { setWordlist, invalidateAll } from '../server/puzzle-engine.js';
 import Database from 'better-sqlite3';
 
-/**
- * Helper: make a request via Hono's app.request().
- *
- * @param {string} path - Request path (e.g., '/api/health')
- * @param {object} [options] - Fetch-compatible request options
- * @returns {Promise<Response>}
- */
-function request(path, options = {}) {
+function request(path: string, options: RequestInit = {}) {
   return app.request(path, options);
 }
 
-/**
- * Helper: make a JSON POST request.
- *
- * @param {string} path
- * @param {object} body
- * @param {object} [headers] - Additional headers
- * @returns {Promise<Response>}
- */
-function postJson(path, body, headers = {}) {
+function postJson(path: string, body: Record<string, unknown>, headers: Record<string, string> = {}) {
   return request(path, {
     method: 'POST',
     headers: {
@@ -49,7 +34,6 @@ describe('GET /api/health', () => {
   beforeEach(() => {
     closeDb();
     setDb(null);
-    // Initialize with in-memory DB
     getDb({ inMemory: true });
   });
 
@@ -67,15 +51,11 @@ describe('GET /api/health', () => {
   });
 });
 
-/**
- * Seed the in-memory DB with test puzzle data and inject a small wordlist.
- */
-function seedPuzzleData() {
+function seedPuzzleData(): void {
   closeDb();
   setDb(null);
   const db = getDb({ inMemory: true });
 
-  // Insert two test puzzles
   db.prepare('INSERT OR REPLACE INTO puzzles (slot, letters, center) VALUES (?, ?, ?)').run(
     0, 'a,e,k,l,n,s,t', 'a'
   );
@@ -84,7 +64,6 @@ function seedPuzzleData() {
   );
   db.prepare("INSERT OR REPLACE INTO config (key, value) VALUES ('rotation_epoch', '2026-02-24')").run();
 
-  // Inject a small wordlist that produces valid words for both puzzles
   setWordlist(new Set([
     'kala', 'sanka', 'taka', 'kana', 'lakana', 'kanat', 'kaste',
     'helas', 'lehde', 'lehdes', 'rades',
@@ -101,7 +80,7 @@ describe('GET /api/puzzle', () => {
     const res = await request('/api/puzzle');
     expect(res.status).toBe(200);
 
-    const json = await res.json();
+    const json: any = await res.json();
     expect(json).toHaveProperty('center');
     expect(json).toHaveProperty('letters');
     expect(json).toHaveProperty('word_hashes');
@@ -110,34 +89,27 @@ describe('GET /api/puzzle', () => {
     expect(json).toHaveProperty('puzzle_number');
     expect(json).toHaveProperty('total_puzzles');
 
-    // Center is a single character
     expect(json.center).toHaveLength(1);
 
-    // Letters is an array of 6 outer letters
     expect(Array.isArray(json.letters)).toBe(true);
     expect(json.letters).toHaveLength(6);
 
-    // word_hashes is an array of hex strings
     expect(Array.isArray(json.word_hashes)).toBe(true);
-    json.word_hashes.forEach((hash) => {
+    json.word_hashes.forEach((hash: string) => {
       expect(hash).toMatch(/^[0-9a-f]{64}$/);
     });
 
-    // hint_data has expected structure
     expect(json.hint_data).toHaveProperty('word_count');
     expect(json.hint_data).toHaveProperty('pangram_count');
     expect(json.hint_data).toHaveProperty('by_letter');
     expect(json.hint_data).toHaveProperty('by_length');
     expect(json.hint_data).toHaveProperty('by_pair');
 
-    // max_score is positive
     expect(json.max_score).toBeGreaterThan(0);
 
-    // puzzle_number is a non-negative integer
     expect(Number.isInteger(json.puzzle_number)).toBe(true);
     expect(json.puzzle_number).toBeGreaterThanOrEqual(0);
 
-    // total_puzzles is a positive integer
     expect(json.total_puzzles).toBeGreaterThan(0);
   });
 
@@ -156,22 +128,21 @@ describe('GET /api/puzzle/:number', () => {
     const res = await request('/api/puzzle/0');
     expect(res.status).toBe(200);
 
-    const json = await res.json();
+    const json: any = await res.json();
     expect(json.puzzle_number).toBe(0);
   });
 
   it('returns puzzle number 1 when requesting slot 1', async () => {
     const res = await request('/api/puzzle/1');
-    const json = await res.json();
+    const json: any = await res.json();
     expect(json.puzzle_number).toBe(1);
   });
 
   it('wraps around for out-of-range puzzle number', async () => {
-    // With 2 test puzzles, requesting 42 should wrap to 42 % 2 = 0
     const res = await request('/api/puzzle/42');
     expect(res.status).toBe(200);
 
-    const json = await res.json();
+    const json: any = await res.json();
     expect(json.puzzle_number).toBe(42 % json.total_puzzles);
   });
 
@@ -199,7 +170,7 @@ describe('POST /api/achievement', () => {
     setDb(null);
   });
 
-  const validPayload = {
+  const validPayload: Record<string, unknown> = {
     puzzle_number: 5,
     rank: 'Onnistuja',
     score: 25,
@@ -220,7 +191,7 @@ describe('POST /api/achievement', () => {
     await postJson('/api/achievement', validPayload);
 
     const db = getDb();
-    const row = db.prepare('SELECT * FROM achievements').get();
+    const row: any = db.prepare('SELECT * FROM achievements').get();
     expect(row).toBeTruthy();
     expect(row.puzzle_number).toBe(5);
     expect(row.rank).toBe('Onnistuja');
@@ -243,12 +214,11 @@ describe('POST /api/achievement', () => {
     });
     expect(res.status).toBe(400);
 
-    const json = await res.json();
+    const json: any = await res.json();
     expect(json.error).toContain('Invalid rank');
   });
 
   it('returns 400 for missing required fields', async () => {
-    // Missing score
     const { score, ...payloadWithout } = validPayload;
     const res = await postJson('/api/achievement', payloadWithout);
     expect(res.status).toBe(400);
@@ -302,17 +272,15 @@ describe('POST /api/achievement', () => {
 
   describe('rate limiting', () => {
     it('returns 429 after 10 requests per minute', async () => {
-      // Send 10 valid requests (should all succeed)
       for (let i = 0; i < 10; i++) {
         const res = await postJson('/api/achievement', validPayload);
         expect(res.status).toBe(201);
       }
 
-      // The 11th should be rate-limited
       const res = await postJson('/api/achievement', validPayload);
       expect(res.status).toBe(429);
 
-      const json = await res.json();
+      const json: any = await res.json();
       expect(json.error).toContain('Rate limit');
     });
   });

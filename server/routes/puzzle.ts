@@ -14,19 +14,27 @@ import {
   totalPuzzles as getTotalPuzzles,
   getPuzzleForDate,
 } from '../puzzle-engine.js';
+import type { FullPuzzleData } from '../puzzle-engine.js';
+
+interface PuzzleResponse {
+  center: string;
+  letters: string[];
+  word_hashes: string[];
+  hint_data: FullPuzzleData['hint_data'];
+  max_score: number;
+  puzzle_number: number;
+  total_puzzles: number;
+}
 
 const puzzle = new Hono();
 
 /**
  * Build the standard puzzle response shape.
- *
- * @param {number} slot - The 0-indexed puzzle slot
- * @returns {object} The puzzle response payload
  */
-function buildPuzzleResponse(slot) {
+function buildPuzzleResponse(slot: number): PuzzleResponse {
   const totalPuzzles = getTotalPuzzles();
   const wrappedSlot = ((slot % totalPuzzles) + totalPuzzles) % totalPuzzles;
-  const data = getPuzzleBySlot(wrappedSlot);
+  const data = getPuzzleBySlot(wrappedSlot)!;
 
   return {
     center: data.center,
@@ -41,9 +49,7 @@ function buildPuzzleResponse(slot) {
 
 /**
  * GET /api/puzzle
- *
  * Returns today's puzzle based on Helsinki timezone date rotation.
- * The rotation formula: (days since epoch in Helsinki TZ) % totalPuzzles.
  */
 puzzle.get('/', (c) => {
   const slot = getPuzzleForDate(new Date());
@@ -52,9 +58,7 @@ puzzle.get('/', (c) => {
 
 /**
  * GET /api/puzzle/:number
- *
- * Returns a specific puzzle by slot number.
- * The number wraps around if it exceeds the total puzzle count.
+ * Returns a specific puzzle by slot number (wraps around).
  */
 puzzle.get('/:number', (c) => {
   const number = parseInt(c.req.param('number'), 10);

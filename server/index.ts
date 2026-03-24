@@ -23,10 +23,9 @@ const app = new Hono();
 
 // --- Middleware ---
 
-// CORS: allow all origins (game is public)
 app.use('*', cors());
 
-// Structured logging middleware: logs method, path, status, and response time
+// Structured logging middleware
 app.use('*', async (c, next) => {
   const start = Date.now();
   await next();
@@ -47,9 +46,7 @@ app.use('*', async (c, next) => {
 
 /**
  * GET /api/health
- *
- * Returns 200 { status: "ok" } if the database is reachable.
- * Returns 503 { status: "error", message } if it is not.
+ * Returns 200 if the database is reachable, 503 otherwise.
  */
 app.get('/api/health', (c) => {
   try {
@@ -57,10 +54,8 @@ app.get('/api/health', (c) => {
     db.prepare('SELECT 1').get();
     return c.json({ status: 'ok' });
   } catch (err) {
-    return c.json(
-      { status: 'error', message: err.message || 'Database unreachable' },
-      503,
-    );
+    const message = err instanceof Error ? err.message : 'Database unreachable';
+    return c.json({ status: 'error', message }, 503);
   }
 });
 
@@ -71,20 +66,16 @@ app.route('/api/achievement', achievementRoutes);
 
 // --- Server startup ---
 
-/**
- * Start the HTTP server when this module is run directly.
- * Uses a self-invoking async function to avoid top-level await,
- * which would prevent CommonJS-style require() of this module.
- */
 const isDirectRun =
   process.argv[1] &&
-  (process.argv[1].endsWith('server/index.js') ||
+  (process.argv[1].endsWith('server/index.ts') ||
+    process.argv[1].endsWith('server/index.js') ||
     process.argv[1].endsWith('server/index'));
 
 if (isDirectRun) {
   (async () => {
     const { serve } = await import('@hono/node-server');
-    const port = parseInt(process.env.PORT, 10) || 3001;
+    const port = parseInt(process.env.PORT || '3001', 10);
 
     serve({ fetch: app.fetch, port }, () => {
       console.log(

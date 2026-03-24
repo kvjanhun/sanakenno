@@ -13,10 +13,11 @@ the behaviour, implementation satisfies the specs.
 
 | Layer | Choice | Rationale |
 |---|---|---|
+| Language | TypeScript (strict) | Type safety across server/client boundary, safer refactoring. |
 | Frontend | React 19 + Vite | Modern, fast development with ESM HMR. |
 | Styling | Tailwind CSS 4 + CSS Modules | Tailwind for layouts/UI; CSS Modules for complex game animations. |
 | State | Zustand | Lightweight, high-performance central state. |
-| Backend | Hono | Modern, lightweight, and fast framework with native async support. |
+| Backend | Hono (tsx) | Modern, lightweight, and fast framework with native async support. |
 | Storage | SQLite | Single database for all application data. Wordlist as flat file. |
 | Testing | Vitest, RTL, Cucumber.js, Playwright | Comprehensive testing from unit to BDD/E2E. |
 | PWA | `vite-plugin-pwa` | Automated manifest/SW generation and update handling. |
@@ -28,75 +29,77 @@ the behaviour, implementation satisfies the specs.
 sanakenno/
 ├── features/                  # Gherkin specs
 │   ├── step-definitions/      # Cucumber.js step definitions (wired per phase)
-│   │   ├── scoring.steps.js
-│   │   ├── api.steps.js
-│   │   ├── interaction.steps.js
+│   │   ├── scoring.steps.ts
+│   │   ├── api.steps.ts
+│   │   ├── interaction.steps.ts
 │   │   └── ...
 │   └── support/               # Cucumber world, hooks, helpers
 ├── scripts/
-│   ├── migrate-from-kontissa.js  # One-time: reads web_kontissa site.db → sanakenno.db
-│   └── create-admin.js        # CLI: create admin account (argon2id hash)
+│   ├── migrate-from-kontissa.ts  # One-time: reads web_kontissa site.db → sanakenno.db
+│   └── create-admin.ts        # CLI: create admin account (argon2id hash)
 ├── server/
-│   ├── index.js               # Hono entry point
+│   ├── index.ts               # Hono entry point
 │   ├── db/
 │   │   ├── schema.sql         # Full SQLite schema (incl. admins, sessions)
-│   │   └── connection.js      # DB connection + helpers
+│   │   └── connection.ts      # DB connection + helpers
 │   ├── auth/
-│   │   ├── middleware.js       # Session validation, CSRF check, security headers
-│   │   ├── routes.js          # POST /api/auth/login, /logout, /change-password
-│   │   └── session.js         # Session create/validate/expire, CSRF token generation
-│   ├── puzzle-engine.js       # Word filtering, hashing, hint computation (with cache)
+│   │   ├── middleware.ts       # Session validation, CSRF check, security headers
+│   │   ├── routes.ts          # POST /api/auth/login, /logout, /change-password
+│   │   └── session.ts         # Session create/validate/expire, CSRF token generation
+│   ├── puzzle-engine.ts       # Word filtering, hashing, hint computation (with cache)
 │   ├── routes/
-│   │   ├── puzzle.js          # GET /api/puzzle, GET /api/puzzle/:n
-│   │   ├── achievement.js     # POST /api/achievement
-│   │   └── admin.js           # Admin CRUD (Phase 6)
+│   │   ├── puzzle.ts          # GET /api/puzzle, GET /api/puzzle/:n
+│   │   ├── achievement.ts     # POST /api/achievement
+│   │   └── admin.ts           # Admin CRUD (Phase 6)
 │   └── data/
 │       ├── sanakenno.db       # SQLite database (all app data)
 │       └── kotus_words.txt    # Finnish wordlist (1.2MB, static file)
 ├── src/
-│   ├── main.jsx               # React entry
-│   ├── App.jsx                # Root component, layout shell
+│   ├── main.tsx               # React entry
+│   ├── App.tsx                # Root component, layout shell
 │   ├── store/
-│   │   └── useGameStore.js    # Zustand store (state, words, score, timer)
+│   │   └── useGameStore.ts    # Zustand store (state, words, score, timer)
 │   ├── hooks/
-│   │   ├── useGameTimer.js    # Logic for active play-time tracking
-│   │   ├── useHintData.js     # Derived hint computations
-│   │   └── useMidnightRollover.js  # Midnight detection and reload
+│   │   ├── useGameTimer.ts    # Logic for active play-time tracking
+│   │   ├── useHintData.ts     # Derived hint computations
+│   │   └── useMidnightRollover.ts  # Midnight detection and reload
 │   ├── components/
 │   │   ├── Honeycomb/         # Hex grid + CSS Module animations
-│   │   │   ├── Honeycomb.jsx
+│   │   │   ├── Honeycomb.tsx
 │   │   │   └── Honeycomb.module.css
-│   │   ├── WordInput.jsx      # Current word display
-│   │   ├── FoundWords.jsx     # Word lists
-│   │   ├── HintPanels.jsx     # Unlock-able hint cards
-│   │   ├── RankProgress.jsx   # Score bar
-│   │   ├── ShareButton.jsx    # Result sharing
-│   │   ├── Celebration.jsx    # Overlays
-│   │   ├── RulesModal.jsx     # Instructions
-│   │   ├── ErrorState.jsx     # Network/load error display with retry
+│   │   ├── WordInput.tsx      # Current word display
+│   │   ├── FoundWords.tsx     # Word lists
+│   │   ├── HintPanels.tsx     # Unlock-able hint cards
+│   │   ├── RankProgress.tsx   # Score bar
+│   │   ├── ShareButton.tsx    # Result sharing
+│   │   ├── Celebration.tsx    # Overlays
+│   │   ├── RulesModal.tsx     # Instructions
+│   │   ├── ErrorState.tsx     # Network/load error display with retry
 │   │   └── admin/             # Admin UI (Phase 6)
-│   │       ├── LoginPage.jsx
-│   │       ├── AdminLayout.jsx
-│   │       ├── PuzzleEditor.jsx
-│   │       ├── BlockedWords.jsx
-│   │       ├── CombinationsBrowser.jsx
-│   │       ├── VariationsGrid.jsx
-│   │       ├── WordList.jsx
-│   │       ├── Schedule.jsx
-│   │       └── Stats.jsx
+│   │       ├── LoginPage.tsx
+│   │       ├── AdminLayout.tsx
+│   │       ├── PuzzleEditor.tsx
+│   │       ├── BlockedWords.tsx
+│   │       ├── CombinationsBrowser.tsx
+│   │       ├── VariationsGrid.tsx
+│   │       ├── WordList.tsx
+│   │       ├── Schedule.tsx
+│   │       └── Stats.tsx
 │   ├── utils/
-│   │   ├── scoring.js         # scoreWord, recalcScore, rankForScore (pure functions)
-│   │   ├── hash.js            # SHA-256 via crypto.subtle
-│   │   └── storage.js         # localStorage helpers with error handling
+│   │   ├── scoring.ts         # scoreWord, recalcScore, rankForScore (pure functions)
+│   │   ├── hash.ts            # SHA-256 via crypto.subtle
+│   │   └── storage.ts         # localStorage helpers with error handling
 │   └── styles/
 │       └── index.css          # Tailwind base + custom properties
 ├── public/
 │   └── icons/                 # PWA icons (192, 512, apple-touch)
 ├── tests/
-│   ├── scoring.test.js        # Pure function tests
-│   ├── useGameTimer.test.js   # Hook tests with fake timers
-│   ├── useHintData.test.js    # Derived computation tests
+│   ├── scoring.test.ts        # Pure function tests
+│   ├── useGameTimer.test.ts   # Hook tests with fake timers
+│   ├── useHintData.test.ts    # Derived computation tests
 │   └── components/            # React Testing Library tests
+├── tsconfig.json
+├── tsconfig.server.json
 ├── Dockerfile
 ├── docker-compose.yml
 ├── nginx.conf                 # Static + /api proxy
@@ -141,14 +144,14 @@ What to copy, port, or rewrite from `../web_kontissa`:
 
 | Source file | Action | Rationale |
 |---|---|---|
-| `composables/useSanakennoLogic.js` | **Copy verbatim** → `src/utils/scoring.js` | 78 lines, pure functions, zero framework deps |
-| `composables/useGameTimer.js` | **Light port** → `src/hooks/useGameTimer.js` | Replace Vue `ref()` with Zustand/React state |
-| `composables/useHintData.js` | **Light port** → `src/hooks/useHintData.js` | Replace Vue `computed()` with `useMemo` |
+| `composables/useSanakennoLogic.js` | **Copy + type** → `src/utils/scoring.ts` | Pure functions with TypeScript interfaces |
+| `composables/useGameTimer.js` | **Light port** → `src/hooks/useGameTimer.ts` | Replace Vue `ref()` with Zustand/React state |
+| `composables/useHintData.js` | **Light port** → `src/hooks/useHintData.ts` | Replace Vue `computed()` with `useMemo` |
 | `app/wordlists/kotus_words.txt` | **Copy** → `server/data/kotus_words.txt` | Static asset, 1.2MB |
 | `sanakenno.vue` scoped CSS | **Extract & copy** → CSS Modules | Hex geometry, animations, color vars |
 | `sanakenno.webmanifest` | **Reference** for vite-plugin-pwa config | Values only, not the file itself |
-| `tests/unit/useSanakennoLogic.test.js` | **Port** → `tests/scoring.test.js` | 37 test cases, adapt to Vitest |
-| `api/kenno.py` | **Port** → `server/puzzle-engine.js` | Word filtering, hashing, hint computation |
+| `tests/unit/useSanakennoLogic.test.js` | **Port** → `tests/scoring.test.ts` | 37 test cases, adapt to Vitest |
+| `api/kenno.py` | **Port** → `server/puzzle-engine.ts` | Word filtering, hashing, hint computation |
 | `sanakenno-sw.js` | **Skip** | `vite-plugin-pwa` generates service worker |
 | `app/data/site.db` | **One-time migration** → `sanakenno.db` | Puzzles, blocked words, combinations |
 

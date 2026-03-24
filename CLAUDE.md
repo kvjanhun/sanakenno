@@ -3,8 +3,9 @@
 This file provides foundational mandates for the Sanakenno standalone project. Adhere to these strictly.
 
 ## Technical Stack
+- **Language**: TypeScript (strict mode). All source, tests, and scripts in `.ts`/`.tsx`.
 - **Frontend**: React 19, Vite, Zustand (State), Tailwind 4 + CSS Modules (Styling).
-- **Backend**: Hono (Node.js runtime).
+- **Backend**: Hono (Node.js runtime, executed via tsx).
 - **Storage**: SQLite (all application data). Wordlist as flat file.
 - **Testing**: Vitest (Unit/Logic), Cucumber.js (BDD/Integration), Playwright (E2E).
 - **PWA**: `vite-plugin-pwa`.
@@ -33,6 +34,7 @@ This file provides foundational mandates for the Sanakenno standalone project. A
 ## Commands
 - **Install**: `npm install`
 - **Dev**: `npm run dev`
+- **Type Check**: `npm run typecheck`
 - **Test (Unit)**: `npm run test:unit`
 - **Test (BDD)**: `npm run test:bdd`
 - **Build**: `npm run build`

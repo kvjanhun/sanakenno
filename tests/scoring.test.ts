@@ -10,7 +10,7 @@ import {
 } from '../src/utils/scoring.js'
 
 describe('scoreWord', () => {
-  const letters = new Set(['a', 'e', 'i', 'k', 'l', 't', 'v'])
+  const letters: Set<string> = new Set(['a', 'e', 'i', 'k', 'l', 't', 'v'])
 
   it('scores 4-letter word as 1 point', () => {
     expect(scoreWord('kale', letters)).toBe(1)
@@ -25,30 +25,26 @@ describe('scoreWord', () => {
   })
 
   it('adds 7-point pangram bonus when all letters used', () => {
-    // "aktiveli" uses a, k, t, i, v, e, l — all 7 letters
-    expect(scoreWord('aktiveli', letters)).toBe(8 + 7) // 8 (length) + 7 (pangram)
+    expect(scoreWord('aktiveli', letters)).toBe(8 + 7)
   })
 
   it('no pangram bonus when missing a letter', () => {
-    // "aktive" uses a, k, t, i, v, e — missing "l"
     expect(scoreWord('aktive', letters)).toBe(6)
   })
 })
 
 describe('recalcScore', () => {
-  const letters = new Set(['a', 'b', 'c', 'd', 'e', 'f', 'g'])
+  const letters: Set<string> = new Set(['a', 'b', 'c', 'd', 'e', 'f', 'g'])
 
   it('returns 0 for empty word list', () => {
     expect(recalcScore([], letters)).toBe(0)
   })
 
   it('sums scores for multiple words', () => {
-    // 4-letter = 1, 5-letter = 5 → total 6
     expect(recalcScore(['abcd', 'abcde'], letters)).toBe(6)
   })
 
   it('includes pangram bonuses', () => {
-    // 7-letter pangram using all letters = 7 + 7 = 14
     expect(recalcScore(['abcdefg'], letters)).toBe(14)
   })
 })
@@ -103,7 +99,6 @@ describe('rankForScore', () => {
   })
 
   it('works with non-round maxScore', () => {
-    // 150 max, score 30 → 20% → Onnistuja
     expect(rankForScore(30, 150)).toBe('Onnistuja')
   })
 })
@@ -111,24 +106,24 @@ describe('rankForScore', () => {
 describe('rankThresholds', () => {
   it('hides "Täysi kenno" when not at that rank', () => {
     const thresholds = rankThresholds('Hyvä alku', 100)
-    expect(thresholds.find(t => t.name === 'Täysi kenno')).toBeUndefined()
+    expect(thresholds.find((t: any) => t.name === 'Täysi kenno')).toBeUndefined()
   })
 
   it('shows "Täysi kenno" when at that rank', () => {
     const thresholds = rankThresholds('Täysi kenno', 100)
-    expect(thresholds.find(t => t.name === 'Täysi kenno')).toBeDefined()
+    expect(thresholds.find((t: any) => t.name === 'Täysi kenno')).toBeDefined()
   })
 
   it('marks current rank correctly', () => {
     const thresholds = rankThresholds('Onnistuja', 100)
-    const current = thresholds.find(t => t.isCurrent)
-    expect(current.name).toBe('Onnistuja')
+    const current = thresholds.find((t: any) => t.isCurrent)
+    expect(current!.name).toBe('Onnistuja')
   })
 
   it('calculates correct point thresholds', () => {
     const thresholds = rankThresholds('Etsi sanoja!', 200)
-    const allistyttava = thresholds.find(t => t.name === 'Ällistyttävä')
-    expect(allistyttava.points).toBe(140) // 70% of 200
+    const allistyttava = thresholds.find((t: any) => t.name === 'Ällistyttävä')
+    expect(allistyttava!.points).toBe(140)
   })
 
   it('returns thresholds in ascending order', () => {
@@ -149,12 +144,10 @@ describe('progressToNextRank', () => {
   })
 
   it('returns 0 at the start of a rank', () => {
-    // At exactly 2% (Hyvä alku threshold), progress to next (Nyt mennään at 10%) is 0
     expect(progressToNextRank(2, 100)).toBe(0)
   })
 
   it('returns ~50% halfway between ranks', () => {
-    // Hyvä alku: 2pts, Nyt mennään: 10pts. Halfway = 6pts
     const progress = progressToNextRank(6, 100)
     expect(progress).toBeCloseTo(50, 0)
   })
@@ -167,7 +160,7 @@ describe('progressToNextRank', () => {
 
 describe('colorizeWord', () => {
   const center = 'a'
-  const allLetters = new Set(['a', 'b', 'c', 'd', 'e', 'f', 'g'])
+  const allLetters: Set<string> = new Set(['a', 'b', 'c', 'd', 'e', 'f', 'g'])
 
   it('marks center letter as accent', () => {
     const result = colorizeWord('a', center, allLetters)
@@ -191,7 +184,7 @@ describe('colorizeWord', () => {
 
   it('handles mixed word correctly', () => {
     const result = colorizeWord('abz-', center, allLetters)
-    expect(result.map(r => r.color)).toEqual(['accent', 'primary', 'tertiary', 'tertiary'])
+    expect(result.map((r: any) => r.color)).toEqual(['accent', 'primary', 'tertiary', 'tertiary'])
   })
 })
 

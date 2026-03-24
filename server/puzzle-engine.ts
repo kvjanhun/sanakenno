@@ -18,19 +18,61 @@ import { getDb } from './db/connection.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+// --- Interfaces ---
+
+export interface HintData {
+  word_count: number;
+  pangram_count: number;
+  by_letter: Record<string, number>;
+  by_length: Record<string, number>;
+  by_pair: Record<string, number>;
+}
+
+export interface PuzzleData {
+  words: string[];
+  word_hashes: string[];
+  max_score: number;
+  hint_data: HintData;
+}
+
+export interface FullPuzzleData extends PuzzleData {
+  center: string;
+  letters: string[];
+  all_letters: string;
+  slot: number;
+  total_puzzles: number;
+}
+
+interface PuzzleRow {
+  slot: number;
+  letters: string;
+  center: string;
+}
+
+interface MaxSlotRow {
+  max_slot: number | null;
+}
+
+interface BlockedWordRow {
+  word: string;
+}
+
+interface ConfigRow {
+  value: string;
+}
+
 // --- Wordlist loading ---
 
 const WORDLIST_PATH = join(__dirname, 'data', 'kotus_words.txt');
 
-/** @type {Set<string>} All normalized words from the Finnish wordlist. */
-let _allWords = new Set();
+let _allWords: Set<string> = new Set();
 
 /**
  * Load the Finnish wordlist from disk. Normalizes words by lowercasing
- * and stripping hyphens (e.g. "lähi-itä" becomes "lähiitä").
+ * and stripping hyphens (e.g. "lahi-ita" becomes "lahiita").
  * Called once at startup.
  */
-export function loadWordlist() {
+export function loadWordlist(): void {
   if (!existsSync(WORDLIST_PATH)) {
     console.warn('WARNING: Wordlist not found at', WORDLIST_PATH);
     console.warn('  Run: node scripts/migrate-from-kontissa.js');
@@ -38,7 +80,7 @@ export function loadWordlist() {
     return;
   }
   const content = readFileSync(WORDLIST_PATH, 'utf-8');
-  const words = new Set();
+  const words = new Set<string>();
   for (const line of content.split('\n')) {
     const trimmed = line.trim();
     if (trimmed) {
@@ -50,19 +92,15 @@ export function loadWordlist() {
 
 /**
  * Get the loaded wordlist (for testing).
- *
- * @returns {Set<string>} The loaded word set.
  */
-export function getWordlist() {
+export function getWordlist(): Set<string> {
   return _allWords;
 }
 
 /**
  * Replace the wordlist with a custom set (for testing).
- *
- * @param {Set<string>} words - Custom word set.
  */
-export function setWordlist(words) {
+export function setWordlist(words: Set<string>): void {
   _allWords = words;
 }
 
@@ -71,35 +109,24 @@ export function setWordlist(words) {
 /**
  * Score a single word. 4-letter words score 1, longer words score their length.
  * Pangrams (using all 7 letters) get a +7 bonus.
- *
- * @param {string} word - The word to score.
- * @param {Set<string>} allLetterSet - The 7 puzzle letters as a Set.
- * @returns {number} The word's score.
  */
-export function scoreWord(word, allLetterSet) {
+export function scoreWord(word: string, allLetterSet: Set<string>): number {
   const pts = word.length === 4 ? 1 : word.length;
-  const isPangram = [...allLetterSet].every((c) => word.includes(c));
-  return pts + (isPangram ? 7 : 0);
+  const isPg = [...allLetterSet].every((c) => word.includes(c));
+  return pts + (isPg ? 7 : 0);
 }
 
 /**
  * Check if a word is a pangram (uses all 7 puzzle letters).
- *
- * @param {string} word - The word to check.
- * @param {Set<string>} allLetterSet - The 7 puzzle letters as a Set.
- * @returns {boolean} True if the word is a pangram.
  */
-export function isPangram(word, allLetterSet) {
+export function isPangram(word: string, allLetterSet: Set<string>): boolean {
   return [...allLetterSet].every((c) => word.includes(c));
 }
 
 /**
  * Compute the SHA-256 hash of a word.
- *
- * @param {string} word - The word to hash.
- * @returns {string} Lowercase hex SHA-256 hash.
  */
-export function hashWord(word) {
+export function hashWord(word: string): string {
   return createHash('sha256').update(word).digest('hex');
 }
 
@@ -110,23 +137,18 @@ export function hashWord(word) {
  *
  * Filters the wordlist for valid words (>= 4 chars, contains center, all chars
  * in letter set, not blocked), then computes hashes, scores, and hint data.
- *
- * @param {string} letters - Comma-separated 7 letters (e.g. "a,e,k,l,n,s,t").
- * @param {string} center - The center letter.
- * @param {string[]} blockedWords - Array of blocked words to exclude.
- * @returns {{ words: string[], word_hashes: string[], max_score: number, hint_data: object }}
  */
-export function computePuzzle(letters, center, blockedWords = []) {
+export function computePuzzle(letters: string | string[], center: string, blockedWords: string[] = []): PuzzleData {
   const letterList = typeof letters === 'string' ? letters.split(',').map((l) => l.trim()) : letters;
   const allLetterSet = new Set(letterList);
   const blockedSet = new Set(blockedWords);
 
-  const words = [];
+  const words: string[] = [];
   let maxScore = 0;
   let pangramCount = 0;
-  const byLetter = {};
-  const byLength = {};
-  const byPair = {};
+  const byLetter: Record<string, number> = {};
+  const byLength: Record<string, number> = {};
+  const byPair: Record<string, number> = {};
 
   for (const word of _allWords) {
     if (blockedSet.has(word)) continue;
@@ -151,24 +173,20 @@ export function computePuzzle(letters, center, blockedWords = []) {
       pangramCount++;
     }
 
-    // Hint data: frequency by first letter
     const firstLetter = word[0];
     byLetter[firstLetter] = (byLetter[firstLetter] || 0) + 1;
 
-    // Hint data: frequency by word length
     const len = word.length;
     byLength[String(len)] = (byLength[String(len)] || 0) + 1;
 
-    // Hint data: frequency by first two characters
     const pair = word.slice(0, 2);
     byPair[pair] = (byPair[pair] || 0) + 1;
   }
 
-  // Sort words alphabetically
   words.sort();
   const wordHashes = words.map((w) => hashWord(w));
 
-  const hintData = {
+  const hintData: HintData = {
     word_count: words.length,
     pangram_count: pangramCount,
     by_letter: byLetter,
@@ -181,22 +199,19 @@ export function computePuzzle(letters, center, blockedWords = []) {
 
 // --- In-memory cache ---
 
-/** @type {Map<string, object>} Cache keyed by "slot" string. */
-const _cache = new Map();
+const _cache = new Map<string, FullPuzzleData>();
 
 /**
  * Invalidate cached puzzle data for a specific slot.
- *
- * @param {number} slot - The puzzle slot to invalidate.
  */
-export function invalidate(slot) {
+export function invalidate(slot: number): void {
   _cache.delete(String(slot));
 }
 
 /**
  * Invalidate all cached puzzle data.
  */
-export function invalidateAll() {
+export function invalidateAll(): void {
   _cache.clear();
 }
 
@@ -204,38 +219,31 @@ export function invalidateAll() {
 
 /**
  * Get the total number of puzzle slots in the DB.
- *
- * @returns {number} Total puzzle count.
  */
-export function totalPuzzles() {
+export function totalPuzzles(): number {
   const db = getDb();
-  const row = db.prepare('SELECT MAX(slot) AS max_slot FROM puzzles').get();
+  const row = db.prepare('SELECT MAX(slot) AS max_slot FROM puzzles').get() as MaxSlotRow | undefined;
   return row && row.max_slot !== null ? row.max_slot + 1 : 0;
 }
 
 /**
  * Get all blocked words from the database.
- *
- * @returns {string[]} Array of blocked words.
  */
-export function getBlockedWords() {
+export function getBlockedWords(): string[] {
   const db = getDb();
-  const rows = db.prepare('SELECT word FROM blocked_words').all();
+  const rows = db.prepare('SELECT word FROM blocked_words').all() as BlockedWordRow[];
   return rows.map((r) => r.word);
 }
 
 /**
  * Get the rotation epoch from the config table.
- *
- * @returns {Date} The rotation epoch date.
  */
-export function getRotationEpoch() {
+export function getRotationEpoch(): Date {
   const db = getDb();
-  const row = db.prepare("SELECT value FROM config WHERE key = 'rotation_epoch'").get();
+  const row = db.prepare("SELECT value FROM config WHERE key = 'rotation_epoch'").get() as ConfigRow | undefined;
   if (row) {
     return new Date(row.value + 'T00:00:00');
   }
-  // Fallback
   return new Date('2026-02-24T00:00:00');
 }
 
@@ -243,46 +251,38 @@ export function getRotationEpoch() {
  * Compute the puzzle slot for a given date based on the rotation epoch.
  * Puzzles rotate sequentially: epoch date maps to slot determined by START_INDEX,
  * cycling through all puzzles.
- *
- * @param {Date} date - The date to compute the slot for.
- * @returns {number} The puzzle slot index.
  */
-export function getPuzzleForDate(date) {
+export function getPuzzleForDate(date: Date): number {
   const epoch = getRotationEpoch();
   const START_INDEX = 1;
   const total = totalPuzzles();
   if (total === 0) return 0;
 
-  // Calculate days difference (date-only, ignore time)
   const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   const epochOnly = new Date(epoch.getFullYear(), epoch.getMonth(), epoch.getDate());
-  const daysDiff = Math.round((dateOnly - epochOnly) / (1000 * 60 * 60 * 24));
+  const daysDiff = Math.round((dateOnly.getTime() - epochOnly.getTime()) / (1000 * 60 * 60 * 24));
 
   return ((START_INDEX + daysDiff) % total + total) % total;
 }
 
 /**
  * Get a puzzle by its slot number. Reads from cache or computes and caches.
- *
- * @param {number} slot - The puzzle slot index.
- * @returns {object | null} Puzzle data (without plaintext words for public API),
- *   or null if the slot doesn't exist.
+ * Returns null if the slot doesn't exist in the DB.
  */
-export function getPuzzleBySlot(slot) {
+export function getPuzzleBySlot(slot: number): FullPuzzleData | null {
   const cacheKey = String(slot);
   if (_cache.has(cacheKey)) {
-    return _cache.get(cacheKey);
+    return _cache.get(cacheKey)!;
   }
 
   const db = getDb();
-  const puzzle = db.prepare('SELECT slot, letters, center FROM puzzles WHERE slot = ?').get(slot);
+  const puzzle = db.prepare('SELECT slot, letters, center FROM puzzles WHERE slot = ?').get(slot) as PuzzleRow | undefined;
   if (!puzzle) return null;
 
   const blockedWords = getBlockedWords();
   const result = computePuzzle(puzzle.letters, puzzle.center, blockedWords);
 
-  // Store full result in cache (including words for admin use)
-  const fullResult = {
+  const fullResult: FullPuzzleData = {
     center: puzzle.center,
     letters: puzzle.letters.split(',').map((l) => l.trim()).filter((l) => l !== puzzle.center),
     all_letters: puzzle.letters,
@@ -298,11 +298,8 @@ export function getPuzzleBySlot(slot) {
 /**
  * Get the puzzle for a specific date. Computes the slot from the rotation
  * and delegates to getPuzzleBySlot.
- *
- * @param {Date} date - The date.
- * @returns {object | null} Puzzle data, or null if not found.
  */
-export function getPuzzleForDateFull(date) {
+export function getPuzzleForDateFull(date: Date): FullPuzzleData | null {
   const slot = getPuzzleForDate(date);
   return getPuzzleBySlot(slot);
 }

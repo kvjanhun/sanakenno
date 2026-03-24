@@ -13,40 +13,27 @@ import {
 } from '../../src/utils/scoring.js';
 import { validateWord } from '../support/validation.js';
 
-Before(function () {
-  /** @type {Set<string>} */
+Before(function (this: any) {
   this.allLetters = new Set();
-  /** @type {string} */
   this.center = '';
-  /** @type {string[]} */
   this.foundWords = [];
-  /** @type {number} */
   this.totalScore = 0;
-  /** @type {string|null} */
   this.message = null;
-  /** @type {boolean} */
   this.lastWordWasPangram = false;
-  /** @type {number} */
   this.lastScoreIncrease = 0;
-  /** @type {Set<string>} Word hashes for validation (used by word-validation.feature). */
   this.wordHashes = new Set();
-  /** @type {string|null} */
   this.rejectionReason = null;
-  /** @type {boolean} */
   this.wordAccepted = false;
-  /** @type {boolean} Whether validation mode is active (set by word-validation steps). */
   this.validationMode = false;
 });
 
-Given('a puzzle with letters {string} and center {string}', function (lettersStr, center) {
+Given('a puzzle with letters {string} and center {string}', function (this: any, lettersStr: string, center: string) {
   const letters = lettersStr.split(',').map((l) => l.trim());
   this.allLetters = new Set(letters);
   this.center = center;
 });
 
-When('the player submits {string}', function (word) {
-  // Run validation chain only in validation mode (word-validation.feature).
-  // Scoring-only scenarios skip validation entirely.
+When('the player submits {string}', function (this: any, word: string) {
   if (this.validationMode) {
     const result = validateWord(word, this.center, this.allLetters, this.wordHashes);
     this.wordAccepted = result.accepted;
@@ -54,8 +41,6 @@ When('the player submits {string}', function (word) {
     if (!result.accepted) return;
   }
 
-  // Scoring logic (scoring.feature)
-  // Check for duplicates
   if (this.foundWords.includes(word)) {
     this.message = 'Löysit jo tämän!';
     this.lastScoreIncrease = 0;
@@ -63,7 +48,7 @@ When('the player submits {string}', function (word) {
   }
 
   const score = scoreWord(word, this.allLetters);
-  const isPangram = [...this.allLetters].every((c) => word.includes(c));
+  const isPangram = [...this.allLetters].every((c: string) => word.includes(c));
 
   this.foundWords.push(word);
   this.lastScoreIncrease = score;
@@ -72,8 +57,7 @@ When('the player submits {string}', function (word) {
   this.message = null;
 });
 
-When('the player submits {string} again', function (word) {
-  // Same as "the player submits" — the duplicate check handles it
+When('the player submits {string} again', function (this: any, word: string) {
   if (this.foundWords.includes(word)) {
     this.message = 'Löysit jo tämän!';
     this.lastScoreIncrease = 0;
@@ -87,18 +71,18 @@ When('the player submits {string} again', function (word) {
   this.message = null;
 });
 
-Then('the score should increase by {int}', function (expectedIncrease) {
+Then('the score should increase by {int}', function (this: any, expectedIncrease: number) {
   assert.equal(this.lastScoreIncrease, expectedIncrease);
 });
 
-Then('the word should be marked as a pangram', function () {
+Then('the word should be marked as a pangram', function (this: any) {
   assert.equal(this.lastWordWasPangram, true);
 });
 
-Then('the total score should be {int}', function (expectedTotal) {
+Then('the total score should be {int}', function (this: any, expectedTotal: number) {
   assert.equal(this.totalScore, expectedTotal);
 });
 
-Then('the message {string} should appear', function (expectedMessage) {
+Then('the message {string} should appear', function (this: any, expectedMessage: string) {
   assert.equal(this.message, expectedMessage);
 });

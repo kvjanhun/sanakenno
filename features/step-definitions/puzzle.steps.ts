@@ -11,13 +11,12 @@ import app from '../../server/index.js';
 import { getDb, closeDb, setDb } from '../../server/db/connection.js';
 import { getPuzzleForDate, totalPuzzles as getTotalPuzzles, setWordlist, invalidateAll } from '../../server/puzzle-engine.js';
 
-Before(function () {
+Before(function (this: any) {
   closeDb();
   setDb(null);
   const db = getDb({ inMemory: true });
   invalidateAll();
 
-  // Seed puzzle data for puzzle feature tests
   for (let i = 0; i < 41; i++) {
     db.prepare('INSERT OR REPLACE INTO puzzles (slot, letters, center) VALUES (?, ?, ?)').run(
       i, 'a,e,k,l,n,s,t', 'a'
@@ -31,28 +30,26 @@ Before(function () {
   ]));
 });
 
-After(function () {
+After(function (this: any) {
   invalidateAll();
   closeDb();
   setDb(null);
 });
 
-// --- Puzzle structure ---
-
-When("the player loads today's puzzle", async function () {
+When("the player loads today's puzzle", async function (this: any) {
   this.response = await app.request('/api/puzzle');
   this.responseJson = await this.response.json();
 });
 
 Then(
   'it should have 1 center letter and 6 outer letters',
-  function () {
+  function (this: any) {
     assert.equal(this.responseJson.center.length, 1);
     assert.equal(this.responseJson.letters.length, 6);
   },
 );
 
-Then('all 7 letters should be distinct', function () {
+Then('all 7 letters should be distinct', function (this: any) {
   const allLetters = [this.responseJson.center, ...this.responseJson.letters];
   const unique = new Set(allLetters);
   assert.equal(unique.size, 7);
@@ -60,7 +57,7 @@ Then('all 7 letters should be distinct', function () {
 
 Then(
   /^all letters should be from the Finnish alphabet \(a-z, a, o\)$/,
-  function () {
+  function (this: any) {
     const validLetters = /^[a-zäö]$/;
     const allLetters = [this.responseJson.center, ...this.responseJson.letters];
     for (const letter of allLetters) {
@@ -69,11 +66,9 @@ Then(
   },
 );
 
-// --- Hint data structure ---
-
 Then(
   'the response should include word_count, pangram_count',
-  function () {
+  function (this: any) {
     assert.ok(this.responseJson.hint_data.word_count !== undefined);
     assert.ok(this.responseJson.hint_data.pangram_count !== undefined);
   },
@@ -81,70 +76,62 @@ Then(
 
 Then(
   'the response should include by_letter, by_length, and by_pair distributions',
-  function () {
+  function (this: any) {
     assert.ok(this.responseJson.hint_data.by_letter);
     assert.ok(this.responseJson.hint_data.by_length);
     assert.ok(this.responseJson.hint_data.by_pair);
   },
 );
 
-// --- Max score ---
-
 Then(
   'the response should include max_score > 0',
-  function () {
+  function (this: any) {
     assert.ok(this.responseJson.max_score > 0, 'max_score should be positive');
   },
 );
 
-// --- Daily rotation ---
-
 Given(
   /^it is (\S+) in Helsinki timezone$/,
-  function (dateStr) {
-    // Store the simulated date for rotation tests
+  function (this: any, dateStr: string) {
     this.simulatedDate = new Date(dateStr + 'T12:00:00+02:00');
   },
 );
 
-When('player A fetches the puzzle', function () {
+When('player A fetches the puzzle', function (this: any) {
   this.puzzleSlotA = getPuzzleForDate(this.simulatedDate);
 });
 
-When('player B fetches the puzzle', function () {
+When('player B fetches the puzzle', function (this: any) {
   this.puzzleSlotB = getPuzzleForDate(this.simulatedDate);
 });
 
-Then('both should receive the same puzzle number', function () {
+Then('both should receive the same puzzle number', function (this: any) {
   assert.equal(this.puzzleSlotA, this.puzzleSlotB);
 });
 
-When('the player fetches the puzzle', function () {
+When('the player fetches the puzzle', function (this: any) {
   this.puzzleSlot1 = getPuzzleForDate(this.simulatedDate);
 });
 
-When('the next day the player fetches the puzzle again', function () {
+When('the next day the player fetches the puzzle again', function (this: any) {
   const nextDay = new Date(this.simulatedDate.getTime() + 24 * 60 * 60 * 1000);
   this.puzzleSlot2 = getPuzzleForDate(nextDay);
 });
 
-Then('the puzzle numbers should be different', function () {
+Then('the puzzle numbers should be different', function (this: any) {
   assert.notEqual(this.puzzleSlot1, this.puzzleSlot2);
 });
 
-// --- Cycling ---
-
-Given('there are N puzzles in rotation', function () {
+Given('there are N puzzles in rotation', function (this: any) {
   this.totalPuzzles = getTotalPuzzles();
 });
 
 Then(
   'after N days the rotation should return to the first puzzle',
-  function () {
+  function (this: any) {
     const baseDate = new Date('2026-02-24T12:00:00+02:00');
     const firstSlot = getPuzzleForDate(baseDate);
 
-    // After N days, should cycle back
     const afterNDays = new Date(
       baseDate.getTime() + this.totalPuzzles * 24 * 60 * 60 * 1000,
     );
@@ -154,21 +141,15 @@ Then(
   },
 );
 
-// --- Puzzle number display ---
-
-Given(/^the API returns puzzle_number (\d+)$/, function (number) {
+Given(/^the API returns puzzle_number (\d+)$/, function (this: any, number: string) {
   this.puzzleNumber = parseInt(number, 10);
 });
 
-Then(/^the UI should display "([^"]*)"$/, function (expected) {
-  // UI displays 1-indexed: puzzle_number 0 => "#1"
+Then(/^the UI should display "([^"]*)"$/, function (this: any, expected: string) {
   const displayNumber = this.puzzleNumber + 1;
   const displayText = `Sanakenno — #${displayNumber}`;
   assert.equal(displayText, expected);
 });
-
-// --- Midnight rollover scenarios are UI concerns (Phase 3) ---
-// Marked as pending so they don't fail the BDD run
 
 Given('it is 23:59 on 2026-03-01 in Helsinki', function () {
   return 'pending';

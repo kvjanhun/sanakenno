@@ -17,15 +17,12 @@ import {
   invalidateAll,
 } from '../server/puzzle-engine.js'
 
-/**
- * Helper: create a small test wordlist and inject it into the engine.
- */
-function setupTestWordlist(words) {
+function setupTestWordlist(words: string[]): void {
   setWordlist(new Set(words))
 }
 
 describe('scoreWord (server)', () => {
-  const letters = new Set(['a', 'e', 'k', 'l', 'n', 's', 't'])
+  const letters: Set<string> = new Set(['a', 'e', 'k', 'l', 'n', 's', 't'])
 
   it('scores 4-letter word as 1 point', () => {
     expect(scoreWord('kala', letters)).toBe(1)
@@ -36,18 +33,16 @@ describe('scoreWord (server)', () => {
   })
 
   it('scores pangram with +7 bonus', () => {
-    // 9 letters using all 7: a, l, k, u, s, a, n, a, t → has all 7
     expect(scoreWord('alkusanet', letters)).toBe(9 + 7)
   })
 
   it('does not give pangram bonus when missing a letter', () => {
-    // uses a, k, e, l but not n, s, t
     expect(scoreWord('akela', letters)).toBe(5)
   })
 })
 
 describe('isPangram', () => {
-  const letters = new Set(['a', 'b', 'c', 'd', 'e', 'f', 'g'])
+  const letters: Set<string> = new Set(['a', 'b', 'c', 'd', 'e', 'f', 'g'])
 
   it('returns true when word contains all letters', () => {
     expect(isPangram('abcdefg', letters)).toBe(true)
@@ -64,7 +59,6 @@ describe('isPangram', () => {
 
 describe('hashWord', () => {
   it('produces correct SHA-256 hex for known input', () => {
-    // "kala" SHA-256
     const expected = createHash('sha256').update('kala').digest('hex')
     expect(hashWord('kala')).toBe(expected)
   })
@@ -82,18 +76,17 @@ describe('hashWord', () => {
 
 describe('computePuzzle', () => {
   beforeEach(() => {
-    // Set up a controlled wordlist for testing
     setupTestWordlist([
-      'kala',         // 4 letters, valid (center a, letters a,e,k,l,n,s,t)
-      'kalat',        // 5 letters, valid
-      'sanka',        // 5 letters, valid
-      'tela',         // 4 letters, valid
-      'alkusanet',    // 9 letters, pangram (all 7 + repeats)
-      'kone',         // 4 letters, missing center 'a' → invalid
-      'ala',          // 3 letters, too short → invalid
-      'kalvo',        // contains 'v' and 'o' not in letters → invalid
-      'ankka',        // valid, only uses a, n, k
-      'estetty',      // will be blocked
+      'kala',
+      'kalat',
+      'sanka',
+      'tela',
+      'alkusanet',
+      'kone',
+      'ala',
+      'kalvo',
+      'ankka',
+      'estetty',
     ])
   })
 
@@ -157,7 +150,6 @@ describe('computePuzzle', () => {
 
   it('computes correct max_score', () => {
     const result = computePuzzle(letters, center)
-    // Manually compute expected score
     let expectedScore = 0
     const letterSet = new Set(letters.split(','))
     for (const word of result.words) {
@@ -174,28 +166,25 @@ describe('computePuzzle', () => {
   it('computes correct hint_data.pangram_count', () => {
     const result = computePuzzle(letters, center)
     const letterSet = new Set(letters.split(','))
-    const expectedPangrams = result.words.filter(w => isPangram(w, letterSet)).length
+    const expectedPangrams = result.words.filter((w: string) => isPangram(w, letterSet)).length
     expect(result.hint_data.pangram_count).toBe(expectedPangrams)
   })
 
   it('computes hint_data.by_letter correctly', () => {
     const result = computePuzzle(letters, center)
-    // Verify that by_letter sums to total word count
-    const totalByLetter = Object.values(result.hint_data.by_letter).reduce((a, b) => a + b, 0)
+    const totalByLetter = Object.values(result.hint_data.by_letter).reduce((a: number, b: number) => a + b, 0)
     expect(totalByLetter).toBe(result.words.length)
   })
 
   it('computes hint_data.by_length correctly', () => {
     const result = computePuzzle(letters, center)
-    // Verify that by_length sums to total word count
-    const totalByLength = Object.values(result.hint_data.by_length).reduce((a, b) => a + b, 0)
+    const totalByLength = Object.values(result.hint_data.by_length).reduce((a: number, b: number) => a + b, 0)
     expect(totalByLength).toBe(result.words.length)
   })
 
   it('computes hint_data.by_pair correctly', () => {
     const result = computePuzzle(letters, center)
-    // Verify that by_pair sums to total word count
-    const totalByPair = Object.values(result.hint_data.by_pair).reduce((a, b) => a + b, 0)
+    const totalByPair = Object.values(result.hint_data.by_pair).reduce((a: number, b: number) => a + b, 0)
     expect(totalByPair).toBe(result.words.length)
   })
 
@@ -224,25 +213,20 @@ describe('computePuzzle with empty wordlist', () => {
 })
 
 describe('date-to-slot rotation', () => {
-  // We test the rotation math directly without DB dependency
   it('computes correct slot from date offset and total puzzles', () => {
     const START_INDEX = 1
     const totalPuzzles = 42
 
-    // Epoch date: 2026-02-24, slot should be START_INDEX = 1
     const epochDaysDiff = 0
     const slot0 = ((START_INDEX + epochDaysDiff) % totalPuzzles + totalPuzzles) % totalPuzzles
     expect(slot0).toBe(1)
 
-    // Day +1: slot 2
     const slot1 = ((START_INDEX + 1) % totalPuzzles + totalPuzzles) % totalPuzzles
     expect(slot1).toBe(2)
 
-    // Day +41: slot 0 (wraps around: (1+41) % 42 = 0)
     const slot41 = ((START_INDEX + 41) % totalPuzzles + totalPuzzles) % totalPuzzles
     expect(slot41).toBe(0)
 
-    // Day +42: back to slot 1 (full cycle)
     const slot42 = ((START_INDEX + 42) % totalPuzzles + totalPuzzles) % totalPuzzles
     expect(slot42).toBe(1)
   })
@@ -251,11 +235,9 @@ describe('date-to-slot rotation', () => {
     const START_INDEX = 1
     const totalPuzzles = 42
 
-    // Day -1: (1 + (-1)) % 42 = 0
     const slotNeg1 = ((START_INDEX + -1) % totalPuzzles + totalPuzzles) % totalPuzzles
     expect(slotNeg1).toBe(0)
 
-    // Day -2: (1 + (-2)) % 42 = -1 % 42 → with correction: 41
     const slotNeg2 = ((START_INDEX + -2) % totalPuzzles + totalPuzzles) % totalPuzzles
     expect(slotNeg2).toBe(41)
   })

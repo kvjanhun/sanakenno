@@ -1,7 +1,3 @@
-/**
- * Root application component.
- * Renders the main game shell — expanded in Phase 3.
- */
 function App() {
   return (
     <main>
@@ -9,5 +5,4 @@ function App() {
     </main>
   );
 }
-
 export default App;

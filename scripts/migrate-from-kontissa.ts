@@ -1,11 +1,11 @@
-#!/usr/bin/env node
+#!/usr/bin/env -S npx tsx
 
 /**
  * One-time migration script: reads web_kontissa's SQLite DB and populates
  * the standalone sanakenno database with puzzles, blocked words, combinations,
  * and config.
  *
- * Usage: node scripts/migrate-from-kontissa.js
+ * Usage: npx tsx scripts/migrate-from-kontissa.ts
  *
  * The script is idempotent — uses INSERT OR REPLACE so it can be re-run safely.
  *
@@ -21,15 +21,51 @@ import { initDb, closeDb } from '../server/db/connection.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = join(__dirname, '..');
 
-// Source paths in web_kontissa
 const SOURCE_DB_PATH = join(PROJECT_ROOT, '..', 'web_kontissa', 'app', 'data', 'site.db');
 const SOURCE_WORDLIST = join(PROJECT_ROOT, '..', 'web_kontissa', 'app', 'wordlists', 'kotus_words.txt');
 const DEST_WORDLIST = join(PROJECT_ROOT, 'server', 'data', 'kotus_words.txt');
 
+interface PuzzleRow {
+  slot: number;
+  letters: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface CenterRow {
+  value: string;
+}
+
+interface BlockedWordRow {
+  word: string;
+  blocked_at: string;
+}
+
+interface CombinationRow {
+  letters: string;
+  total_pangrams: number;
+  min_word_count: number;
+  max_word_count: number;
+  min_max_score: number;
+  max_max_score: number;
+  variations: number;
+  in_rotation: number | boolean;
+}
+
+interface AchievementRow {
+  puzzle_number: number;
+  rank: string;
+  score: number;
+  max_score: number;
+  words_found: number;
+  elapsed_ms: number;
+  achieved_at: string;
+}
+
 /**
  * Copy the Finnish wordlist from web_kontissa to server/data/.
  */
-function copyWordlist() {
+function copyWordlist(): boolean {
   if (!existsSync(SOURCE_WORDLIST)) {
     console.warn('WARNING: Wordlist not found at', SOURCE_WORDLIST);
     console.warn('  The puzzle engine requires kotus_words.txt in server/data/');
@@ -45,29 +81,24 @@ function copyWordlist() {
 /**
  * Run the full migration from web_kontissa's site.db to sanakenno.db.
  */
-function migrate() {
+function migrate(): void {
   console.log('Sanakenno migration: web_kontissa → sanakenno\n');
 
-  // Verify source DB exists
   if (!existsSync(SOURCE_DB_PATH)) {
     console.error('ERROR: Source database not found at', SOURCE_DB_PATH);
     console.error('  Ensure web_kontissa is checked out at ../web_kontissa');
     process.exit(1);
   }
 
-  // Open source DB read-only
-  const sourceDb = new Database(SOURCE_DB_PATH, { readonly: true });
-
-  // Initialize destination DB
+  const sourceDb: Database.Database = new Database(SOURCE_DB_PATH, { readonly: true });
   const destDb = initDb();
 
-  let puzzleCount = 0;
-  let blockedCount = 0;
-  let combinationCount = 0;
+  let puzzleCount: number = 0;
+  let blockedCount: number = 0;
+  let combinationCount: number = 0;
 
   // --- Migrate puzzles ---
-  // Read bee_puzzles (slot, letters) + bee_config (center_N) → puzzles table
-  const puzzles = sourceDb.prepare('SELECT slot, letters, created_at, updated_at FROM bee_puzzles').all();
+  const puzzles = sourceDb.prepare('SELECT slot, letters, created_at, updated_at FROM bee_puzzles').all() as PuzzleRow[];
 
   const insertPuzzle = destDb.prepare(`
     INSERT OR REPLACE INTO puzzles (slot, letters, center, created_at, updated_at)
@@ -78,14 +109,12 @@ function migrate() {
 
   const insertPuzzles = destDb.transaction(() => {
     for (const puzzle of puzzles) {
-      // Look up center letter from bee_config
-      const centerRow = getCenterStmt.get(`center_${puzzle.slot}`);
-      let center;
+      const centerRow = getCenterStmt.get(`center_${puzzle.slot}`) as CenterRow | undefined;
+      let center: string;
       if (centerRow) {
         center = centerRow.value;
       } else {
-        // Fallback: first letter alphabetically
-        const letters = puzzle.letters.split(',').map((l) => l.trim());
+        const letters = puzzle.letters.split(',').map((l: string) => l.trim());
         center = letters.sort()[0];
       }
 
@@ -96,7 +125,7 @@ function migrate() {
   insertPuzzles();
 
   // --- Migrate blocked words ---
-  const blockedWords = sourceDb.prepare('SELECT word, blocked_at FROM blocked_words').all();
+  const blockedWords = sourceDb.prepare('SELECT word, blocked_at FROM blocked_words').all() as BlockedWordRow[];
 
   const insertBlocked = destDb.prepare(`
     INSERT OR REPLACE INTO blocked_words (word, blocked_at)
@@ -118,7 +147,7 @@ function migrate() {
               min_max_score, max_max_score, variations, in_rotation
        FROM bee_combinations`,
     )
-    .all();
+    .all() as CombinationRow[];
 
   const insertCombination = destDb.prepare(`
     INSERT OR REPLACE INTO combinations
@@ -145,13 +174,13 @@ function migrate() {
   insertCombinations();
 
   // --- Migrate achievements ---
-  let achievementCount = 0;
+  let achievementCount: number = 0;
   const achievements = sourceDb
     .prepare(
       `SELECT puzzle_number, rank, score, max_score, words_found, elapsed_ms, achieved_at
        FROM bee_achievements`,
     )
-    .all();
+    .all() as AchievementRow[];
 
   const insertAchievement = destDb.prepare(`
     INSERT OR REPLACE INTO achievements
@@ -182,13 +211,10 @@ function migrate() {
     )
     .run();
 
-  // Close source DB
   sourceDb.close();
 
-  // Copy wordlist
-  const wordlistCopied = copyWordlist();
+  const wordlistCopied: boolean = copyWordlist();
 
-  // Print summary
   console.log('\n--- Migration Summary ---');
   console.log(`Puzzles migrated:      ${puzzleCount}`);
   console.log(`Blocked words:         ${blockedCount}`);
@@ -198,7 +224,6 @@ function migrate() {
   console.log(`Wordlist copied:       ${wordlistCopied ? 'yes' : 'NO (missing)'}`);
   console.log('');
 
-  // Close destination DB
   closeDb();
 
   console.log('Migration complete.');

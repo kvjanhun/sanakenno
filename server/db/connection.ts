@@ -10,35 +10,29 @@
  */
 
 import Database from 'better-sqlite3';
+import type BetterSqlite3 from 'better-sqlite3';
 import { readFileSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-/** @type {Database.Database | null} */
-let _db = null;
+export interface DbOptions {
+  inMemory?: boolean;
+  dbPath?: string;
+}
 
-/**
- * Resolve the data directory from the DATA_DIR environment variable.
- * Falls back to ./server/data relative to project root.
- *
- * @returns {string} Absolute path to the data directory.
- */
-function resolveDataDir() {
+let _db: BetterSqlite3.Database | null = null;
+
+function resolveDataDir(): string {
   if (process.env.DATA_DIR) {
     return process.env.DATA_DIR;
   }
-  // Default: two levels up from server/db/ → project root, then server/data
+  // Default: two levels up from server/db/ -> project root, then server/data
   return join(__dirname, '..', 'data');
 }
 
-/**
- * Apply schema and pragmas to a database instance.
- *
- * @param {Database.Database} db - The database to initialize.
- */
-function applySchema(db) {
+function applySchema(db: BetterSqlite3.Database): void {
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
 
@@ -50,13 +44,8 @@ function applySchema(db) {
 /**
  * Initialize the database: create the data directory if needed,
  * open the SQLite file, enable WAL mode, and run the schema.
- *
- * @param {object} [options]
- * @param {boolean} [options.inMemory=false] - Use an in-memory database (for tests).
- * @param {string}  [options.dbPath]         - Custom path to the SQLite database file.
- * @returns {Database.Database} The initialized database instance.
  */
-export function initDb(options = {}) {
+export function initDb(options: DbOptions = {}): BetterSqlite3.Database {
   if (_db) return _db;
 
   const { inMemory = false, dbPath } = options;
@@ -76,13 +65,8 @@ export function initDb(options = {}) {
 
 /**
  * Get the database instance, initializing if needed.
- *
- * @param {object} [options] - Passed to initDb if the database is not yet initialized.
- * @param {boolean} [options.inMemory=false] - Use an in-memory database (for tests).
- * @param {string}  [options.dbPath]         - Custom path to the SQLite database file.
- * @returns {Database.Database} The database instance.
  */
-export function getDb(options = {}) {
+export function getDb(options: DbOptions = {}): BetterSqlite3.Database {
   if (!_db) {
     return initDb(options);
   }
@@ -92,7 +76,7 @@ export function getDb(options = {}) {
 /**
  * Close the database connection. Useful for tests and graceful shutdown.
  */
-export function closeDb() {
+export function closeDb(): void {
   if (_db) {
     _db.close();
     _db = null;
@@ -102,10 +86,8 @@ export function closeDb() {
 /**
  * Replace the singleton with a custom database instance.
  * Primarily used in tests for dependency injection.
- *
- * @param {Database.Database | null} newDb
  */
-export function setDb(newDb) {
+export function setDb(newDb: BetterSqlite3.Database | null): void {
   _db = newDb;
 }
 
