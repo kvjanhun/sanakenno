@@ -5,13 +5,14 @@
  * Each test gets a fresh in-memory SQLite database.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, beforeAll } from 'vitest';
 import app from '../server/index.js';
 import { getDb, closeDb, setDb } from '../server/db/connection.js';
 import {
   resetRateLimit,
   stopRateLimitInterval,
 } from '../server/routes/achievement.js';
+import { setWordlist, invalidateAll } from '../server/puzzle-engine.js';
 import Database from 'better-sqlite3';
 
 /**
@@ -66,7 +67,36 @@ describe('GET /api/health', () => {
   });
 });
 
+/**
+ * Seed the in-memory DB with test puzzle data and inject a small wordlist.
+ */
+function seedPuzzleData() {
+  closeDb();
+  setDb(null);
+  const db = getDb({ inMemory: true });
+
+  // Insert two test puzzles
+  db.prepare('INSERT OR REPLACE INTO puzzles (slot, letters, center) VALUES (?, ?, ?)').run(
+    0, 'a,e,k,l,n,s,t', 'a'
+  );
+  db.prepare('INSERT OR REPLACE INTO puzzles (slot, letters, center) VALUES (?, ?, ?)').run(
+    1, 'a,d,e,h,l,r,s', 'e'
+  );
+  db.prepare("INSERT OR REPLACE INTO config (key, value) VALUES ('rotation_epoch', '2026-02-24')").run();
+
+  // Inject a small wordlist that produces valid words for both puzzles
+  setWordlist(new Set([
+    'kala', 'sanka', 'taka', 'kana', 'lakana', 'kanat', 'kaste',
+    'helas', 'lehde', 'lehdes', 'rades',
+  ]));
+
+  invalidateAll();
+}
+
 describe('GET /api/puzzle', () => {
+  beforeEach(() => seedPuzzleData());
+  afterEach(() => { closeDb(); setDb(null); invalidateAll(); });
+
   it('returns correct response shape', async () => {
     const res = await request('/api/puzzle');
     expect(res.status).toBe(200);
@@ -119,6 +149,9 @@ describe('GET /api/puzzle', () => {
 });
 
 describe('GET /api/puzzle/:number', () => {
+  beforeEach(() => seedPuzzleData());
+  afterEach(() => { closeDb(); setDb(null); invalidateAll(); });
+
   it('returns a specific puzzle by number', async () => {
     const res = await request('/api/puzzle/0');
     expect(res.status).toBe(200);
@@ -134,7 +167,7 @@ describe('GET /api/puzzle/:number', () => {
   });
 
   it('wraps around for out-of-range puzzle number', async () => {
-    // The stub has 2 puzzles, so requesting 42 should wrap to 42 % 2 = 0
+    // With 2 test puzzles, requesting 42 should wrap to 42 % 2 = 0
     const res = await request('/api/puzzle/42');
     expect(res.status).toBe(200);
 

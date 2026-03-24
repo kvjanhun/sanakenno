@@ -13,16 +13,33 @@ import {
   resetRateLimit,
   stopRateLimitInterval,
 } from '../../server/routes/achievement.js';
+import { setWordlist, invalidateAll } from '../../server/puzzle-engine.js';
 
 Before(function () {
   closeDb();
   setDb(null);
-  getDb({ inMemory: true });
+  const db = getDb({ inMemory: true });
   resetRateLimit();
+  invalidateAll();
   this.responses = [];
+
+  // Seed puzzle data for API tests
+  for (let i = 0; i < 41; i++) {
+    db.prepare('INSERT OR REPLACE INTO puzzles (slot, letters, center) VALUES (?, ?, ?)').run(
+      i, 'a,e,k,l,n,s,t', 'a'
+    );
+  }
+  db.prepare("INSERT OR REPLACE INTO config (key, value) VALUES ('rotation_epoch', '2026-02-24')").run();
+
+  // Inject a small wordlist
+  setWordlist(new Set([
+    'kala', 'sanka', 'taka', 'kana', 'lakana', 'kanat', 'kaste',
+    'alat', 'alka', 'saat', 'alas', 'akat',
+  ]));
 });
 
 After(function () {
+  invalidateAll();
   closeDb();
   setDb(null);
 });

@@ -11,9 +11,9 @@
 import { Hono } from 'hono';
 import {
   getPuzzleBySlot,
-  getTotalPuzzles,
+  totalPuzzles as getTotalPuzzles,
   getPuzzleForDate,
-} from '../puzzle-engine-stub.js';
+} from '../puzzle-engine.js';
 
 const puzzle = new Hono();
 

@@ -9,15 +9,30 @@ import { Given, When, Then, Before, After } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
 import app from '../../server/index.js';
 import { getDb, closeDb, setDb } from '../../server/db/connection.js';
-import { getPuzzleForDate, getTotalPuzzles } from '../../server/puzzle-engine-stub.js';
+import { getPuzzleForDate, totalPuzzles as getTotalPuzzles, setWordlist, invalidateAll } from '../../server/puzzle-engine.js';
 
 Before(function () {
   closeDb();
   setDb(null);
-  getDb({ inMemory: true });
+  const db = getDb({ inMemory: true });
+  invalidateAll();
+
+  // Seed puzzle data for puzzle feature tests
+  for (let i = 0; i < 41; i++) {
+    db.prepare('INSERT OR REPLACE INTO puzzles (slot, letters, center) VALUES (?, ?, ?)').run(
+      i, 'a,e,k,l,n,s,t', 'a'
+    );
+  }
+  db.prepare("INSERT OR REPLACE INTO config (key, value) VALUES ('rotation_epoch', '2026-02-24')").run();
+
+  setWordlist(new Set([
+    'kala', 'sanka', 'taka', 'kana', 'lakana', 'kanat', 'kaste',
+    'alat', 'alka', 'saat', 'alas', 'akat',
+  ]));
 });
 
 After(function () {
+  invalidateAll();
   closeDb();
   setDb(null);
 });
