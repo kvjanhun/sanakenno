@@ -84,6 +84,24 @@ Set up the environment and automated pipelines before implementation.
 2. `scripts/setup-dev.sh`: Helper to install deps and pre-commit hooks.
 3. `.dockerignore` and `.gitignore` boilerplate.
 
+### Phase 0.5 — On-server Infrastructure
+Integrate the standalone project with the existing NUC server infrastructure.
+
+1. **Nginx Configuration**:
+   - Update `erez.ac.conf` to proxy `/sanakenno` to the new container (port 8081).
+   - Ensure `trailing-slash` and `asset-path` normalization for the standalone app.
+2. **Deployment Pipeline**:
+   - `scripts/deploy-sanakenno.sh`: Pulls latest, builds, and restarts the container.
+   - Configure a new webhook in the server's webhook listener to trigger this script.
+3. **Container Orchestration**:
+   - `docker-compose.yml`: Define the Hono backend + React frontend container.
+   - Health check: `curl -f http://localhost:8081/api/health`.
+   - Logging: Use the existing Loki driver to push logs to the local Loki instance.
+4. **Achievement Persistence**:
+   - `litestream`: Add a new replication job for `achievements.db` to Backblaze B2 (reuse existing server credentials).
+5. **Systemd Service**:
+   - `sanakenno.service`: Systemd unit to manage the Docker Compose project life-cycle.
+
 ### Phase 1 — Data pipeline
 Build the puzzle pre-computation script. This is the foundation — everything
 else reads from `puzzles.json`.
@@ -128,7 +146,7 @@ The game UI without hints, celebrations, or PWA.
 
 **Test:** Unit tests for hooks, React Testing Library for components.
 Validates `scoring.feature`, `word-validation.feature`, `ranks.feature`,
-`persistence.feature`, `timer.feature`, `interaction.feature`.
+`persistence.feature`, `timer.feature`, `interaction.feature`, `theme.feature`.
 
 ### Phase 4 — Hints, celebrations, share
 The polish layer.
@@ -147,12 +165,12 @@ Make it installable and deploy alongside erez.ac.
 
 1. `vite-plugin-pwa` configuration
 2. iOS double-tap zoom prevention
-3. Dockerfile (Node alpine, build React → serve static + Hono API)
+3. Dockerfile (Multi-stage build, Node alpine, non-root user)
 4. docker-compose.yml on the NUC
 5. nginx config: route sanakenno subdomain or path to the container
 6. Icons (reuse existing SVG source, generate sizes)
 
-**Test:** Validates `pwa.feature`. Manual testing on iOS Safari.
+**Test:** Validates `pwa.feature`, `infrastructure.feature`. Manual testing on iOS Safari.
 
 ### Phase 6 — BDD wiring
 Wire the Gherkin specs (`features/*.feature`) to actual test runners.
