@@ -5,15 +5,11 @@
  * Each test gets a fresh in-memory SQLite database.
  */
 
-import { describe, it, expect, beforeEach, afterEach, beforeAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import app from '../server/index.js';
 import { getDb, closeDb, setDb } from '../server/db/connection.js';
-import {
-  resetRateLimit,
-  stopRateLimitInterval,
-} from '../server/routes/achievement.js';
+import { resetRateLimit } from '../server/routes/achievement.js';
 import { setWordlist, invalidateAll } from '../server/puzzle-engine.js';
-import Database from 'better-sqlite3';
 
 interface PuzzleResponse {
   center: string;
@@ -55,7 +51,11 @@ function request(path: string, options: RequestInit = {}) {
   return app.request(path, options);
 }
 
-function postJson(path: string, body: Record<string, unknown>, headers: Record<string, string> = {}) {
+function postJson(
+  path: string,
+  body: Record<string, unknown>,
+  headers: Record<string, string> = {},
+) {
   return request(path, {
     method: 'POST',
     headers: {
@@ -82,7 +82,7 @@ describe('GET /api/health', () => {
     const res = await request('/api/health');
     expect(res.status).toBe(200);
 
-    const json = await res.json() as StatusResponse;
+    const json = (await res.json()) as StatusResponse;
     expect(json.status).toBe('ok');
   });
 });
@@ -92,31 +92,48 @@ function seedPuzzleData(): void {
   setDb(null);
   const db = getDb({ inMemory: true });
 
-  db.prepare('INSERT OR REPLACE INTO puzzles (slot, letters, center) VALUES (?, ?, ?)').run(
-    0, 'a,e,k,l,n,s,t', 'a'
-  );
-  db.prepare('INSERT OR REPLACE INTO puzzles (slot, letters, center) VALUES (?, ?, ?)').run(
-    1, 'a,d,e,h,l,r,s', 'e'
-  );
-  db.prepare("INSERT OR REPLACE INTO config (key, value) VALUES ('rotation_epoch', '2026-02-24')").run();
+  db.prepare(
+    'INSERT OR REPLACE INTO puzzles (slot, letters, center) VALUES (?, ?, ?)',
+  ).run(0, 'a,e,k,l,n,s,t', 'a');
+  db.prepare(
+    'INSERT OR REPLACE INTO puzzles (slot, letters, center) VALUES (?, ?, ?)',
+  ).run(1, 'a,d,e,h,l,r,s', 'e');
+  db.prepare(
+    "INSERT OR REPLACE INTO config (key, value) VALUES ('rotation_epoch', '2026-02-24')",
+  ).run();
 
-  setWordlist(new Set([
-    'kala', 'sanka', 'taka', 'kana', 'lakana', 'kanat', 'kaste',
-    'helas', 'lehde', 'lehdes', 'rades',
-  ]));
+  setWordlist(
+    new Set([
+      'kala',
+      'sanka',
+      'taka',
+      'kana',
+      'lakana',
+      'kanat',
+      'kaste',
+      'helas',
+      'lehde',
+      'lehdes',
+      'rades',
+    ]),
+  );
 
   invalidateAll();
 }
 
 describe('GET /api/puzzle', () => {
   beforeEach(() => seedPuzzleData());
-  afterEach(() => { closeDb(); setDb(null); invalidateAll(); });
+  afterEach(() => {
+    closeDb();
+    setDb(null);
+    invalidateAll();
+  });
 
   it('returns correct response shape', async () => {
     const res = await request('/api/puzzle');
     expect(res.status).toBe(200);
 
-    const json = await res.json() as PuzzleResponse;
+    const json = (await res.json()) as PuzzleResponse;
     expect(json).toHaveProperty('center');
     expect(json).toHaveProperty('letters');
     expect(json).toHaveProperty('word_hashes');
@@ -151,26 +168,30 @@ describe('GET /api/puzzle', () => {
 
   it('does not include plaintext words', async () => {
     const res = await request('/api/puzzle');
-    const json = await res.json() as PuzzleResponse;
+    const json = (await res.json()) as PuzzleResponse;
     expect(json).not.toHaveProperty('words');
   });
 });
 
 describe('GET /api/puzzle/:number', () => {
   beforeEach(() => seedPuzzleData());
-  afterEach(() => { closeDb(); setDb(null); invalidateAll(); });
+  afterEach(() => {
+    closeDb();
+    setDb(null);
+    invalidateAll();
+  });
 
   it('returns a specific puzzle by number', async () => {
     const res = await request('/api/puzzle/0');
     expect(res.status).toBe(200);
 
-    const json = await res.json() as PuzzleResponse;
+    const json = (await res.json()) as PuzzleResponse;
     expect(json.puzzle_number).toBe(0);
   });
 
   it('returns puzzle number 1 when requesting slot 1', async () => {
     const res = await request('/api/puzzle/1');
-    const json = await res.json() as PuzzleResponse;
+    const json = (await res.json()) as PuzzleResponse;
     expect(json.puzzle_number).toBe(1);
   });
 
@@ -178,7 +199,7 @@ describe('GET /api/puzzle/:number', () => {
     const res = await request('/api/puzzle/42');
     expect(res.status).toBe(200);
 
-    const json = await res.json() as PuzzleResponse;
+    const json = (await res.json()) as PuzzleResponse;
     expect(json.puzzle_number).toBe(42 % json.total_puzzles);
   });
 
@@ -219,7 +240,7 @@ describe('POST /api/achievement', () => {
     const res = await postJson('/api/achievement', validPayload);
     expect(res.status).toBe(201);
 
-    const json = await res.json() as StatusResponse;
+    const json = (await res.json()) as StatusResponse;
     expect(json.status).toBe('recorded');
   });
 
@@ -227,7 +248,9 @@ describe('POST /api/achievement', () => {
     await postJson('/api/achievement', validPayload);
 
     const db = getDb();
-    const row = db.prepare('SELECT * FROM achievements').get() as AchievementRow | undefined;
+    const row = db.prepare('SELECT * FROM achievements').get() as
+      | AchievementRow
+      | undefined;
     expect(row).toBeTruthy();
     expect(row!.puzzle_number).toBe(5);
     expect(row!.rank).toBe('Onnistuja');
@@ -238,7 +261,7 @@ describe('POST /api/achievement', () => {
   });
 
   it('accepts payload without optional elapsed_ms', async () => {
-    const { elapsed_ms, ...payloadWithout } = validPayload;
+    const { elapsed_ms: _elapsed, ...payloadWithout } = validPayload;
     const res = await postJson('/api/achievement', payloadWithout);
     expect(res.status).toBe(201);
   });
@@ -250,12 +273,12 @@ describe('POST /api/achievement', () => {
     });
     expect(res.status).toBe(400);
 
-    const json = await res.json() as ErrorResponse;
+    const json = (await res.json()) as ErrorResponse;
     expect(json.error).toContain('Invalid rank');
   });
 
   it('returns 400 for missing required fields', async () => {
-    const { score, ...payloadWithout } = validPayload;
+    const { score: _score, ...payloadWithout } = validPayload;
     const res = await postJson('/api/achievement', payloadWithout);
     expect(res.status).toBe(400);
   });
@@ -316,7 +339,7 @@ describe('POST /api/achievement', () => {
       const res = await postJson('/api/achievement', validPayload);
       expect(res.status).toBe(429);
 
-      const json = await res.json() as ErrorResponse;
+      const json = (await res.json()) as ErrorResponse;
       expect(json.error).toContain('Rate limit');
     });
   });

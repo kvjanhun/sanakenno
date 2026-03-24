@@ -9,7 +9,12 @@ import { Given, When, Then, Before, After } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
 import app from '../../server/index.js';
 import { getDb, closeDb, setDb } from '../../server/db/connection.js';
-import { getPuzzleForDate, totalPuzzles as getTotalPuzzles, setWordlist, invalidateAll } from '../../server/puzzle-engine.js';
+import {
+  getPuzzleForDate,
+  totalPuzzles as getTotalPuzzles,
+  setWordlist,
+  invalidateAll,
+} from '../../server/puzzle-engine.js';
 import type { SanakennoWorld } from './types.js';
 
 Before(function (this: SanakennoWorld) {
@@ -19,16 +24,30 @@ Before(function (this: SanakennoWorld) {
   invalidateAll();
 
   for (let i = 0; i < 41; i++) {
-    db.prepare('INSERT OR REPLACE INTO puzzles (slot, letters, center) VALUES (?, ?, ?)').run(
-      i, 'a,e,k,l,n,s,t', 'a'
-    );
+    db.prepare(
+      'INSERT OR REPLACE INTO puzzles (slot, letters, center) VALUES (?, ?, ?)',
+    ).run(i, 'a,e,k,l,n,s,t', 'a');
   }
-  db.prepare("INSERT OR REPLACE INTO config (key, value) VALUES ('rotation_epoch', '2026-02-24')").run();
+  db.prepare(
+    "INSERT OR REPLACE INTO config (key, value) VALUES ('rotation_epoch', '2026-02-24')",
+  ).run();
 
-  setWordlist(new Set([
-    'kala', 'sanka', 'taka', 'kana', 'lakana', 'kanat', 'kaste',
-    'alat', 'alka', 'saat', 'alas', 'akat',
-  ]));
+  setWordlist(
+    new Set([
+      'kala',
+      'sanka',
+      'taka',
+      'kana',
+      'lakana',
+      'kanat',
+      'kaste',
+      'alat',
+      'alka',
+      'saat',
+      'alas',
+      'akat',
+    ]),
+  );
 });
 
 After(function (this: SanakennoWorld) {
@@ -106,18 +125,26 @@ When('player B fetches the puzzle', function (this: SanakennoWorld) {
   this.puzzleSlotB = getPuzzleForDate(this.simulatedDate);
 });
 
-Then('both should receive the same puzzle number', function (this: SanakennoWorld) {
-  assert.equal(this.puzzleSlotA, this.puzzleSlotB);
-});
+Then(
+  'both should receive the same puzzle number',
+  function (this: SanakennoWorld) {
+    assert.equal(this.puzzleSlotA, this.puzzleSlotB);
+  },
+);
 
 When('the player fetches the puzzle', function (this: SanakennoWorld) {
   this.puzzleSlot1 = getPuzzleForDate(this.simulatedDate);
 });
 
-When('the next day the player fetches the puzzle again', function (this: SanakennoWorld) {
-  const nextDay = new Date(this.simulatedDate.getTime() + 24 * 60 * 60 * 1000);
-  this.puzzleSlot2 = getPuzzleForDate(nextDay);
-});
+When(
+  'the next day the player fetches the puzzle again',
+  function (this: SanakennoWorld) {
+    const nextDay = new Date(
+      this.simulatedDate.getTime() + 24 * 60 * 60 * 1000,
+    );
+    this.puzzleSlot2 = getPuzzleForDate(nextDay);
+  },
+);
 
 Then('the puzzle numbers should be different', function (this: SanakennoWorld) {
   assert.notEqual(this.puzzleSlot1, this.puzzleSlot2);
@@ -142,15 +169,21 @@ Then(
   },
 );
 
-Given(/^the API returns puzzle_number (\d+)$/, function (this: SanakennoWorld, number: string) {
-  this.puzzleNumber = parseInt(number, 10);
-});
+Given(
+  /^the API returns puzzle_number (\d+)$/,
+  function (this: SanakennoWorld, number: string) {
+    this.puzzleNumber = parseInt(number, 10);
+  },
+);
 
-Then(/^the UI should display "([^"]*)"$/, function (this: SanakennoWorld, expected: string) {
-  const displayNumber = this.puzzleNumber + 1;
-  const displayText = `Sanakenno — #${displayNumber}`;
-  assert.equal(displayText, expected);
-});
+Then(
+  /^the UI should display "([^"]*)"$/,
+  function (this: SanakennoWorld, expected: string) {
+    const displayNumber = this.puzzleNumber + 1;
+    const displayText = `Sanakenno — #${displayNumber}`;
+    assert.equal(displayText, expected);
+  },
+);
 
 Given('it is 23:59 on 2026-03-01 in Helsinki', function () {
   return 'pending';

@@ -21,8 +21,22 @@ import { initDb, closeDb } from '../server/db/connection.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = join(__dirname, '..');
 
-const SOURCE_DB_PATH = join(PROJECT_ROOT, '..', 'web_kontissa', 'app', 'data', 'site.db');
-const SOURCE_WORDLIST = join(PROJECT_ROOT, '..', 'web_kontissa', 'app', 'wordlists', 'kotus_words.txt');
+const SOURCE_DB_PATH = join(
+  PROJECT_ROOT,
+  '..',
+  'web_kontissa',
+  'app',
+  'data',
+  'site.db',
+);
+const SOURCE_WORDLIST = join(
+  PROJECT_ROOT,
+  '..',
+  'web_kontissa',
+  'app',
+  'wordlists',
+  'kotus_words.txt',
+);
 const DEST_WORDLIST = join(PROJECT_ROOT, 'server', 'data', 'kotus_words.txt');
 
 interface PuzzleRow {
@@ -68,7 +82,9 @@ interface AchievementRow {
 function copyWordlist(): boolean {
   if (!existsSync(SOURCE_WORDLIST)) {
     console.warn('WARNING: Wordlist not found at', SOURCE_WORDLIST);
-    console.warn('  The puzzle engine requires kotus_words.txt in server/data/');
+    console.warn(
+      '  The puzzle engine requires kotus_words.txt in server/data/',
+    );
     return false;
   }
 
@@ -90,7 +106,9 @@ function migrate(): void {
     process.exit(1);
   }
 
-  const sourceDb: Database.Database = new Database(SOURCE_DB_PATH, { readonly: true });
+  const sourceDb: Database.Database = new Database(SOURCE_DB_PATH, {
+    readonly: true,
+  });
   const destDb = initDb();
 
   let puzzleCount: number = 0;
@@ -98,18 +116,24 @@ function migrate(): void {
   let combinationCount: number = 0;
 
   // --- Migrate puzzles ---
-  const puzzles = sourceDb.prepare('SELECT slot, letters, created_at, updated_at FROM bee_puzzles').all() as PuzzleRow[];
+  const puzzles = sourceDb
+    .prepare('SELECT slot, letters, created_at, updated_at FROM bee_puzzles')
+    .all() as PuzzleRow[];
 
   const insertPuzzle = destDb.prepare(`
     INSERT OR REPLACE INTO puzzles (slot, letters, center, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?)
   `);
 
-  const getCenterStmt = sourceDb.prepare('SELECT value FROM bee_config WHERE key = ?');
+  const getCenterStmt = sourceDb.prepare(
+    'SELECT value FROM bee_config WHERE key = ?',
+  );
 
   const insertPuzzles = destDb.transaction(() => {
     for (const puzzle of puzzles) {
-      const centerRow = getCenterStmt.get(`center_${puzzle.slot}`) as CenterRow | undefined;
+      const centerRow = getCenterStmt.get(`center_${puzzle.slot}`) as
+        | CenterRow
+        | undefined;
       let center: string;
       if (centerRow) {
         center = centerRow.value;
@@ -118,14 +142,22 @@ function migrate(): void {
         center = letters.sort()[0];
       }
 
-      insertPuzzle.run(puzzle.slot, puzzle.letters, center, puzzle.created_at, puzzle.updated_at);
+      insertPuzzle.run(
+        puzzle.slot,
+        puzzle.letters,
+        center,
+        puzzle.created_at,
+        puzzle.updated_at,
+      );
       puzzleCount++;
     }
   });
   insertPuzzles();
 
   // --- Migrate blocked words ---
-  const blockedWords = sourceDb.prepare('SELECT word, blocked_at FROM blocked_words').all() as BlockedWordRow[];
+  const blockedWords = sourceDb
+    .prepare('SELECT word, blocked_at FROM blocked_words')
+    .all() as BlockedWordRow[];
 
   const insertBlocked = destDb.prepare(`
     INSERT OR REPLACE INTO blocked_words (word, blocked_at)
@@ -221,7 +253,9 @@ function migrate(): void {
   console.log(`Combinations:          ${combinationCount}`);
   console.log(`Achievements:          ${achievementCount}`);
   console.log(`Config:                rotation_epoch = 2026-02-24`);
-  console.log(`Wordlist copied:       ${wordlistCopied ? 'yes' : 'NO (missing)'}`);
+  console.log(
+    `Wordlist copied:       ${wordlistCopied ? 'yes' : 'NO (missing)'}`,
+  );
   console.log('');
 
   closeDb();

@@ -138,8 +138,15 @@ export function hashWord(word: string): string {
  * Filters the wordlist for valid words (>= 4 chars, contains center, all chars
  * in letter set, not blocked), then computes hashes, scores, and hint data.
  */
-export function computePuzzle(letters: string | string[], center: string, blockedWords: string[] = []): PuzzleData {
-  const letterList = typeof letters === 'string' ? letters.split(',').map((l) => l.trim()) : letters;
+export function computePuzzle(
+  letters: string | string[],
+  center: string,
+  blockedWords: string[] = [],
+): PuzzleData {
+  const letterList =
+    typeof letters === 'string'
+      ? letters.split(',').map((l) => l.trim())
+      : letters;
   const allLetterSet = new Set(letterList);
   const blockedSet = new Set(blockedWords);
 
@@ -194,7 +201,12 @@ export function computePuzzle(letters: string | string[], center: string, blocke
     by_pair: byPair,
   };
 
-  return { words, word_hashes: wordHashes, max_score: maxScore, hint_data: hintData };
+  return {
+    words,
+    word_hashes: wordHashes,
+    max_score: maxScore,
+    hint_data: hintData,
+  };
 }
 
 // --- In-memory cache ---
@@ -222,7 +234,9 @@ export function invalidateAll(): void {
  */
 export function totalPuzzles(): number {
   const db = getDb();
-  const row = db.prepare('SELECT MAX(slot) AS max_slot FROM puzzles').get() as MaxSlotRow | undefined;
+  const row = db.prepare('SELECT MAX(slot) AS max_slot FROM puzzles').get() as
+    | MaxSlotRow
+    | undefined;
   return row && row.max_slot !== null ? row.max_slot + 1 : 0;
 }
 
@@ -231,7 +245,9 @@ export function totalPuzzles(): number {
  */
 export function getBlockedWords(): string[] {
   const db = getDb();
-  const rows = db.prepare('SELECT word FROM blocked_words').all() as BlockedWordRow[];
+  const rows = db
+    .prepare('SELECT word FROM blocked_words')
+    .all() as BlockedWordRow[];
   return rows.map((r) => r.word);
 }
 
@@ -240,7 +256,9 @@ export function getBlockedWords(): string[] {
  */
 export function getRotationEpoch(): Date {
   const db = getDb();
-  const row = db.prepare("SELECT value FROM config WHERE key = 'rotation_epoch'").get() as ConfigRow | undefined;
+  const row = db
+    .prepare("SELECT value FROM config WHERE key = 'rotation_epoch'")
+    .get() as ConfigRow | undefined;
   if (row) {
     return new Date(row.value + 'T00:00:00');
   }
@@ -258,11 +276,21 @@ export function getPuzzleForDate(date: Date): number {
   const total = totalPuzzles();
   if (total === 0) return 0;
 
-  const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const epochOnly = new Date(epoch.getFullYear(), epoch.getMonth(), epoch.getDate());
-  const daysDiff = Math.round((dateOnly.getTime() - epochOnly.getTime()) / (1000 * 60 * 60 * 24));
+  const dateOnly = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+  );
+  const epochOnly = new Date(
+    epoch.getFullYear(),
+    epoch.getMonth(),
+    epoch.getDate(),
+  );
+  const daysDiff = Math.round(
+    (dateOnly.getTime() - epochOnly.getTime()) / (1000 * 60 * 60 * 24),
+  );
 
-  return ((START_INDEX + daysDiff) % total + total) % total;
+  return (((START_INDEX + daysDiff) % total) + total) % total;
 }
 
 /**
@@ -276,7 +304,9 @@ export function getPuzzleBySlot(slot: number): FullPuzzleData | null {
   }
 
   const db = getDb();
-  const puzzle = db.prepare('SELECT slot, letters, center FROM puzzles WHERE slot = ?').get(slot) as PuzzleRow | undefined;
+  const puzzle = db
+    .prepare('SELECT slot, letters, center FROM puzzles WHERE slot = ?')
+    .get(slot) as PuzzleRow | undefined;
   if (!puzzle) return null;
 
   const blockedWords = getBlockedWords();
@@ -284,7 +314,10 @@ export function getPuzzleBySlot(slot: number): FullPuzzleData | null {
 
   const fullResult: FullPuzzleData = {
     center: puzzle.center,
-    letters: puzzle.letters.split(',').map((l) => l.trim()).filter((l) => l !== puzzle.center),
+    letters: puzzle.letters
+      .split(',')
+      .map((l) => l.trim())
+      .filter((l) => l !== puzzle.center),
     all_letters: puzzle.letters,
     slot: puzzle.slot,
     total_puzzles: totalPuzzles(),

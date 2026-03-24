@@ -38,13 +38,14 @@ const rateLimitMap = new Map<string, number>();
 
 const RATE_LIMIT = 10;
 
-let rateLimitInterval = setInterval(() => {
+const rateLimitInterval = setInterval(() => {
   rateLimitMap.clear();
 }, 60_000);
 
 // Allow cleanup in tests
 if (typeof globalThis !== 'undefined') {
-  (globalThis as Record<string, unknown>).__achievementRateLimitInterval = rateLimitInterval;
+  (globalThis as Record<string, unknown>).__achievementRateLimitInterval =
+    rateLimitInterval;
 }
 
 /**
@@ -121,7 +122,10 @@ achievement.post('/', rateLimitMiddleware, async (c) => {
     !isNonNegativeInteger(max_score) ||
     !isNonNegativeInteger(words_found)
   ) {
-    return c.json({ error: 'Numeric fields must be non-negative integers' }, 400);
+    return c.json(
+      { error: 'Numeric fields must be non-negative integers' },
+      400,
+    );
   }
 
   if (elapsed_ms !== undefined && !isNonNegativeInteger(elapsed_ms)) {
@@ -134,7 +138,14 @@ achievement.post('/', rateLimitMiddleware, async (c) => {
     VALUES (?, ?, ?, ?, ?, ?)
   `);
 
-  stmt.run(puzzle_number, rank, score, max_score, words_found, elapsed_ms ?? null);
+  stmt.run(
+    puzzle_number,
+    rank,
+    score,
+    max_score,
+    words_found,
+    elapsed_ms ?? null,
+  );
 
   return c.json({ status: 'recorded' }, 201);
 });

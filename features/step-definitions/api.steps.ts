@@ -9,10 +9,7 @@ import { Given, When, Then, Before, After } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
 import app from '../../server/index.js';
 import { getDb, closeDb, setDb } from '../../server/db/connection.js';
-import {
-  resetRateLimit,
-  stopRateLimitInterval,
-} from '../../server/routes/achievement.js';
+import { resetRateLimit } from '../../server/routes/achievement.js';
 import { setWordlist, invalidateAll } from '../../server/puzzle-engine.js';
 import type { SanakennoWorld } from './types.js';
 
@@ -32,16 +29,30 @@ Before(function (this: SanakennoWorld) {
   this.responses = [];
 
   for (let i = 0; i < 41; i++) {
-    db.prepare('INSERT OR REPLACE INTO puzzles (slot, letters, center) VALUES (?, ?, ?)').run(
-      i, 'a,e,k,l,n,s,t', 'a'
-    );
+    db.prepare(
+      'INSERT OR REPLACE INTO puzzles (slot, letters, center) VALUES (?, ?, ?)',
+    ).run(i, 'a,e,k,l,n,s,t', 'a');
   }
-  db.prepare("INSERT OR REPLACE INTO config (key, value) VALUES ('rotation_epoch', '2026-02-24')").run();
+  db.prepare(
+    "INSERT OR REPLACE INTO config (key, value) VALUES ('rotation_epoch', '2026-02-24')",
+  ).run();
 
-  setWordlist(new Set([
-    'kala', 'sanka', 'taka', 'kana', 'lakana', 'kanat', 'kaste',
-    'alat', 'alka', 'saat', 'alas', 'akat',
-  ]));
+  setWordlist(
+    new Set([
+      'kala',
+      'sanka',
+      'taka',
+      'kana',
+      'lakana',
+      'kanat',
+      'kaste',
+      'alat',
+      'alka',
+      'saat',
+      'alas',
+      'akat',
+    ]),
+  );
 });
 
 After(function (this: SanakennoWorld) {
@@ -50,10 +61,13 @@ After(function (this: SanakennoWorld) {
   setDb(null);
 });
 
-When(/^a GET request is made to \/api\/puzzle$/, async function (this: SanakennoWorld) {
-  this.response = await app.request('/api/puzzle');
-  this.responseJson = await this.response.json();
-});
+When(
+  /^a GET request is made to \/api\/puzzle$/,
+  async function (this: SanakennoWorld) {
+    this.response = await app.request('/api/puzzle');
+    this.responseJson = await this.response.json();
+  },
+);
 
 Then(
   'the response should include center, letters, word_hashes, hint_data, max_score',
@@ -62,10 +76,7 @@ Then(
     assert.ok(this.responseJson.letters, 'Missing letters');
     assert.ok(this.responseJson.word_hashes, 'Missing word_hashes');
     assert.ok(this.responseJson.hint_data, 'Missing hint_data');
-    assert.ok(
-      this.responseJson.max_score !== undefined,
-      'Missing max_score',
-    );
+    assert.ok(this.responseJson.max_score !== undefined, 'Missing max_score');
   },
 );
 
@@ -83,9 +94,12 @@ Then(
   },
 );
 
-Then('the response should not include plaintext words', function (this: SanakennoWorld) {
-  assert.equal(this.responseJson.words, undefined);
-});
+Then(
+  'the response should not include plaintext words',
+  function (this: SanakennoWorld) {
+    assert.equal(this.responseJson.words, undefined);
+  },
+);
 
 When('the API serves a puzzle', async function (this: SanakennoWorld) {
   this.response = await app.request('/api/puzzle');
@@ -114,10 +128,13 @@ Then(
   },
 );
 
-When(/^a GET request is made to \/api\/puzzle\/(\d+)$/, async function (this: SanakennoWorld, number: string) {
-  this.response = await app.request(`/api/puzzle/${number}`);
-  this.responseJson = await this.response.json();
-});
+When(
+  /^a GET request is made to \/api\/puzzle\/(\d+)$/,
+  async function (this: SanakennoWorld, number: string) {
+    this.response = await app.request(`/api/puzzle/${number}`);
+    this.responseJson = await this.response.json();
+  },
+);
 
 Then(
   /^the response should be puzzle number (\d+)$/,
@@ -125,7 +142,10 @@ Then(
     const requested = parseInt(expectedNumber, 10);
     const totalPuzzles = this.responseJson.total_puzzles;
 
-    if (this.expectedTotalPuzzles && this.expectedTotalPuzzles !== totalPuzzles) {
+    if (
+      this.expectedTotalPuzzles &&
+      this.expectedTotalPuzzles !== totalPuzzles
+    ) {
       assert.ok(
         this.responseJson.puzzle_number < totalPuzzles,
         `Puzzle number ${this.responseJson.puzzle_number} should be < ${totalPuzzles}`,
@@ -137,9 +157,12 @@ Then(
   },
 );
 
-Given(/^there are (\d+) puzzles$/, function (this: SanakennoWorld, count: string) {
-  this.expectedTotalPuzzles = parseInt(count, 10);
-});
+Given(
+  /^there are (\d+) puzzles$/,
+  function (this: SanakennoWorld, count: string) {
+    this.expectedTotalPuzzles = parseInt(count, 10);
+  },
+);
 
 When(
   'a POST is made with puzzle_number, rank, score, max_score, words_found',
@@ -159,16 +182,24 @@ When(
   },
 );
 
-Then(/^the server should respond with (\d+)$/, function (this: SanakennoWorld, statusCode: string) {
-  assert.equal(this.response.status, parseInt(statusCode, 10));
-});
+Then(
+  /^the server should respond with (\d+)$/,
+  function (this: SanakennoWorld, statusCode: string) {
+    assert.equal(this.response.status, parseInt(statusCode, 10));
+  },
+);
 
-Then('the achievement should be appended to storage', function (this: SanakennoWorld) {
-  const db = getDb();
-  const row = db.prepare('SELECT * FROM achievements').get() as AchievementRow | undefined;
-  assert.ok(row, 'Achievement should be stored in database');
-  assert.equal(row!.puzzle_number, 5);
-});
+Then(
+  'the achievement should be appended to storage',
+  function (this: SanakennoWorld) {
+    const db = getDb();
+    const row = db.prepare('SELECT * FROM achievements').get() as
+      | AchievementRow
+      | undefined;
+    assert.ok(row, 'Achievement should be stored in database');
+    assert.equal(row!.puzzle_number, 5);
+  },
+);
 
 When(
   /^a POST is made with rank "([^"]*)"$/,
