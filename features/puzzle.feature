@@ -50,3 +50,22 @@ Feature: Daily puzzle
     Given it is 23:59 on 2026-03-01 in Helsinki
     When the clock crosses midnight
     Then the puzzle should change to the next day's puzzle
+
+  Scenario: Midnight rollover via scheduled timer
+    Given the app loaded at 22:00 Helsinki time
+    Then a timer should be set to fire at midnight
+    When the timer fires
+    Then the app should reload and fetch the next day's puzzle
+
+  Scenario: Midnight rollover after suspended tab
+    Given the app loaded before midnight
+    And the player switches away and the tab is suspended
+    When the player returns after midnight
+    Then the app should detect that the date has changed
+    And reload to fetch the next day's puzzle
+
+  Scenario: Midnight rollover does not lose unsaved state
+    Given the player has found words on today's puzzle
+    When midnight rollover occurs
+    Then today's state should already be saved in localStorage
+    And the new puzzle should start with a clean state

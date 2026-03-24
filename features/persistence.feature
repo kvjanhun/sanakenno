@@ -36,9 +36,18 @@ Feature: Game state persistence
     And the score should be recalculated
 
   # --- Legacy migration ---
+  # Note: This applies only if the standalone app is served on the same origin
+  # as the original erez.ac/sanakenno, allowing access to old localStorage keys.
+  # If deployed on a different origin, these scenarios are not applicable.
 
   Scenario: Single-key legacy format is migrated
     Given localStorage has a "sanakenno_state" key with puzzle number 5
     When the player loads puzzle 5
     Then the legacy data should be migrated to "sanakenno_state_5"
     And the legacy key should be removed
+
+  Scenario: Legacy migration is skipped when no legacy key exists
+    Given localStorage does not have a "sanakenno_state" key
+    When the player loads a puzzle
+    Then migration should not run
+    And the game should load normally

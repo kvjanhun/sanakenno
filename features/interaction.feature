@@ -101,3 +101,23 @@ Feature: Game interaction
     When the player taps the share button
     Then the clipboard should contain the puzzle number, rank, score, and hints activated
     And a "Kopioitu!" confirmation should appear for 3 seconds
+
+  Scenario: Share text format
+    Given the player has score 42 of max 120 on puzzle 5
+    And the rank is "Sanavalmis" with 28 words found
+    And hints "summary" and "pairs" are unlocked
+    When the player taps the share button
+    Then the clipboard text should match this format:
+      """
+      Sanakenno — Peli #5
+      Sanavalmis · 28 sanaa
+      42/120 pistettä
+      Avut: 📊🔠
+      erez.ac/sanakenno
+      """
+    And each unlocked hint should map to its icon: summary=📊, letters=🔤, distribution=📏, pairs=🔠
+
+  Scenario: Share text with no hints unlocked omits the hint line
+    Given no hints are unlocked
+    When the player shares their result
+    Then the share text should not include a hint icon line

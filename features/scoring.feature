@@ -12,11 +12,11 @@ Feature: Word scoring
     Then the score should increase by 1
 
   Scenario: Five-letter word scores its length
-    When the player submits "lasku"
+    When the player submits "sanka"
     Then the score should increase by 5
 
   Scenario: Six-letter word scores its length
-    When the player submits "kansat"
+    When the player submits "kelkka"
     Then the score should increase by 6
 
   # --- Pangram bonus ---
@@ -30,7 +30,7 @@ Feature: Word scoring
 
   Scenario: Score accumulates across multiple words
     When the player submits "kala"
-    And the player submits "lasku"
+    And the player submits "sanka"
     Then the total score should be 6
 
   Scenario: Duplicate word does not change the score

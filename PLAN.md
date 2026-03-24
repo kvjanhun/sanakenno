@@ -4,6 +4,11 @@ Porting the Sanakenno game from web_kontissa website repository to a standalone
 React + Hono project. Spec-first approach: Gherkin features define
 the behaviour, implementation satisfies the specs.
 
+### Core Directive: Parity & Reuse
+- **Visual Identity**: The standalone game MUST be visually and behaviorally identical to the original Nuxt version (styles, colors, animations, SVG honeycomb).
+- **Code Reuse**: Maximum reuse of the original logic (`useSanakennoLogic.js`, `useGameTimer.js`, `useHintData.js`) by porting from Vue composables to React hooks/Zustand.
+- **Asset Reuse**: Reuse existing SVG icons, manifest properties, and the 101k wordlist source.
+
 ## Stack
 
 | Layer | Choice | Rationale |
@@ -12,7 +17,7 @@ the behaviour, implementation satisfies the specs.
 | Styling | Tailwind CSS 4 + CSS Modules | Tailwind for layouts/UI; CSS Modules for complex game animations. |
 | State | Zustand | Lightweight, high-performance central state. |
 | Backend | Hono | Modern, lightweight, and fast framework with native async support. |
-| Storage | SQLite + JSON | JSON for static puzzles; SQLite for safe, atomic achievement writes. |
+| Storage | SQLite | Single database for puzzles, blocked words, achievements, combinations. |
 | Testing | Vitest, RTL, Cucumber.js, Playwright | Comprehensive testing from unit to BDD/E2E. |
 | PWA | `vite-plugin-pwa` | Automated manifest/SW generation and update handling. |
 | Deployment | Docker, nginx | Containerized deployment on existing infrastructure. |
@@ -21,27 +26,42 @@ the behaviour, implementation satisfies the specs.
 
 ```
 sanakenno/
-├── features/                  # Gherkin specs (done)
+├── features/                  # Gherkin specs
+│   ├── step-definitions/      # Cucumber.js step definitions (wired per phase)
+│   │   ├── scoring.steps.js
+│   │   ├── api.steps.js
+│   │   ├── interaction.steps.js
+│   │   └── ...
+│   └── support/               # Cucumber world, hooks, helpers
 ├── scripts/
-│   ├── build-puzzles.js       # Processes kotus_words.txt → puzzles.json
-│   └── export-from-kontissa.js  # Pulls puzzle config from erez.ac API
+│   ├── migrate-from-kontissa.js  # One-time: reads web_kontissa site.db → sanakenno.db
+│   └── create-admin.js        # CLI: create admin account (argon2id hash)
 ├── server/
 │   ├── index.js               # Hono entry point
 │   ├── db/
-│   │   └── schema.sql         # SQLite schema for achievements
+│   │   ├── schema.sql         # Full SQLite schema (incl. admins, sessions)
+│   │   └── connection.js      # DB connection + helpers
+│   ├── auth/
+│   │   ├── middleware.js       # Session validation, CSRF check, security headers
+│   │   ├── routes.js          # POST /api/auth/login, /logout, /change-password
+│   │   └── session.js         # Session create/validate/expire, CSRF token generation
+│   ├── puzzle-engine.js       # Word filtering, hashing, hint computation (with cache)
 │   ├── routes/
 │   │   ├── puzzle.js          # GET /api/puzzle, GET /api/puzzle/:n
-│   │   └── achievement.js     # POST /api/achievement
+│   │   ├── achievement.js     # POST /api/achievement
+│   │   └── admin.js           # Admin CRUD (Phase 6)
 │   └── data/
-│       ├── puzzles.json       # Pre-computed: letters, center, hashes, hints, max_score
-│       └── achievements.db    # SQLite database
+│       ├── sanakenno.db       # SQLite database (all app data)
+│       └── kotus_words.txt    # Finnish wordlist (1.2MB, static file)
 ├── src/
 │   ├── main.jsx               # React entry
+│   ├── App.jsx                # Root component, layout shell
 │   ├── store/
 │   │   └── useGameStore.js    # Zustand store (state, words, score, timer)
 │   ├── hooks/
 │   │   ├── useGameTimer.js    # Logic for active play-time tracking
-│   │   └── useHintData.js     # Derived hint computations
+│   │   ├── useHintData.js     # Derived hint computations
+│   │   └── useMidnightRollover.js  # Midnight detection and reload
 │   ├── components/
 │   │   ├── Honeycomb/         # Hex grid + CSS Module animations
 │   │   │   ├── Honeycomb.jsx
@@ -52,10 +72,22 @@ sanakenno/
 │   │   ├── RankProgress.jsx   # Score bar
 │   │   ├── ShareButton.jsx    # Result sharing
 │   │   ├── Celebration.jsx    # Overlays
-│   │   └── RulesModal.jsx     # Instructions
+│   │   ├── RulesModal.jsx     # Instructions
+│   │   ├── ErrorState.jsx     # Network/load error display with retry
+│   │   └── admin/             # Admin UI (Phase 6)
+│   │       ├── LoginPage.jsx
+│   │       ├── AdminLayout.jsx
+│   │       ├── PuzzleEditor.jsx
+│   │       ├── BlockedWords.jsx
+│   │       ├── CombinationsBrowser.jsx
+│   │       ├── VariationsGrid.jsx
+│   │       ├── WordList.jsx
+│   │       ├── Schedule.jsx
+│   │       └── Stats.jsx
 │   ├── utils/
 │   │   ├── scoring.js         # scoreWord, recalcScore, rankForScore (pure functions)
-│   │   └── hash.js            # SHA-256 via crypto.subtle
+│   │   ├── hash.js            # SHA-256 via crypto.subtle
+│   │   └── storage.js         # localStorage helpers with error handling
 │   └── styles/
 │       └── index.css          # Tailwind base + custom properties
 ├── public/
@@ -71,154 +103,432 @@ sanakenno/
 └── package.json
 ```
 
+## Database Schema
+
+Single SQLite database (`sanakenno.db`) with all application data:
+
+```sql
+-- Puzzle definitions (letters + center per slot)
+CREATE TABLE puzzles (
+    slot        INTEGER PRIMARY KEY,
+    letters     TEXT NOT NULL,          -- comma-separated: "e,n,p,r,s,y,ä"
+    center      TEXT NOT NULL,          -- single letter: "ä"
+    created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Admin-curated word exclusions
+CREATE TABLE blocked_words (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    word        TEXT NOT NULL UNIQUE,
+    blocked_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Player achievement records (anonymous)
+CREATE TABLE achievements (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    puzzle_number   INTEGER NOT NULL,
+    rank            TEXT NOT NULL,
+    score           INTEGER NOT NULL,
+    max_score       INTEGER NOT NULL,
+    words_found     INTEGER NOT NULL,
+    elapsed_ms      INTEGER,
+    achieved_at     TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Pre-computed 7-letter combinations for admin puzzle browser
+CREATE TABLE combinations (
+    letters         TEXT PRIMARY KEY,   -- sorted 7-char: "aeklnös"
+    total_pangrams  INTEGER NOT NULL,
+    min_word_count  INTEGER NOT NULL,
+    max_word_count  INTEGER NOT NULL,
+    min_max_score   INTEGER NOT NULL,
+    max_max_score   INTEGER NOT NULL,
+    variations      TEXT NOT NULL,      -- JSON array of per-center stats
+    in_rotation     INTEGER NOT NULL DEFAULT 0
+);
+
+-- Admin accounts (created via CLI, no self-registration)
+CREATE TABLE admins (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    username        TEXT NOT NULL UNIQUE,
+    password_hash   TEXT NOT NULL,          -- argon2id hash
+    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Server-side sessions for admin auth
+CREATE TABLE sessions (
+    id              TEXT PRIMARY KEY,       -- cryptographically random token
+    admin_id        INTEGER NOT NULL REFERENCES admins(id),
+    csrf_token      TEXT NOT NULL,          -- per-session CSRF token
+    expires_at      TEXT NOT NULL,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX idx_sessions_expires ON sessions(expires_at);
+
+-- App-level config (rotation epoch, etc.)
+CREATE TABLE config (
+    key     TEXT PRIMARY KEY,
+    value   TEXT NOT NULL
+);
+-- Initial config: INSERT INTO config VALUES ('rotation_epoch', '2026-02-24');
+```
+
+## Puzzle Engine (Runtime Computation)
+
+Instead of pre-computed JSON, puzzles are computed at request time with
+in-memory caching — same approach as the Flask backend:
+
+1. Read puzzle definition from `puzzles` table (letters + center)
+2. Read blocked words from `blocked_words` table
+3. Filter `kotus_words.txt`: length ≥ 4, contains center, all chars in letter set, not blocked
+4. For each valid word: compute SHA-256 hash, score, hint frequencies
+5. Cache result in memory per puzzle slot; invalidate on admin edit or block change
+
+This keeps the public API fast (cache hit = instant) while allowing admin
+edits to take effect immediately (cache invalidation on write).
+
+## Code Reuse Strategy
+
+What to copy, port, or rewrite from `../web_kontissa`:
+
+| Source file | Action | Rationale |
+|---|---|---|
+| `composables/useSanakennoLogic.js` | **Copy verbatim** → `src/utils/scoring.js` | 78 lines, pure functions, zero framework deps |
+| `composables/useGameTimer.js` | **Light port** → `src/hooks/useGameTimer.js` | Replace Vue `ref()` with Zustand/React state |
+| `composables/useHintData.js` | **Light port** → `src/hooks/useHintData.js` | Replace Vue `computed()` with `useMemo` |
+| `app/wordlists/kotus_words.txt` | **Copy** → `server/data/kotus_words.txt` | Static asset, 1.2MB |
+| `sanakenno.vue` scoped CSS | **Extract & copy** → CSS Modules | Hex geometry, animations, color vars |
+| `sanakenno.webmanifest` | **Reference** for vite-plugin-pwa config | Values only, not the file itself |
+| `tests/unit/useSanakennoLogic.test.js` | **Port** → `tests/scoring.test.js` | 37 test cases, adapt to Vitest |
+| `api/kenno.py` | **Port** → `server/puzzle-engine.js` | Word filtering, hashing, hint computation |
+| `sanakenno-sw.js` | **Skip** | `vite-plugin-pwa` generates service worker |
+| `app/data/site.db` | **One-time migration** → `sanakenno.db` | Puzzles, blocked words, combinations |
+
+## Data Migration
+
+One-time migration via `scripts/migrate-from-kontissa.js`:
+
+1. Open `../web_kontissa/app/data/site.db` (read-only)
+2. Read `bee_puzzles` (slot, letters) + `bee_config` (center per slot) → write to `puzzles` table
+3. Read `blocked_words` → write to `blocked_words` table
+4. Read `bee_combinations` → write to `combinations` table
+5. Copy rotation epoch to `config` table
+6. Validate: computed puzzle output matches Flask API response for a sample of puzzles
+
+After migration, the standalone DB is the source of truth. web_kontissa's
+puzzle data is no longer authoritative for this app.
+
 ## Implementation Phases
 
-### Phase 0 — Infrastructure & CI
-Set up the environment and automated pipelines before implementation.
+BDD step definitions are wired in the same phase as the code they test,
+not deferred to the end. Each phase proves itself against its specs.
 
-1. `.github/workflows/test.yml`:
-   - **Lint**: ESLint + Prettier check.
-   - **Vitest**: Run unit tests for hooks and utils.
-   - **Cucumber**: Run BDD specs against the Hono API.
-   - **Playwright**: Run E2E tests against the built React app.
-2. `scripts/setup-dev.sh`: Helper to install deps and pre-commit hooks.
-3. `.dockerignore` and `.gitignore` boilerplate.
+### Phase 0 — Project Scaffold & CI
 
-### Phase 0.5 — On-server Infrastructure
-Integrate the standalone project with the existing NUC server infrastructure.
+Set up the monorepo structure, tooling, and CI pipeline.
 
-1. **Nginx Configuration**:
-   - Update `erez.ac.conf` to proxy `/sanakenno` to the new container (port 8081).
-   - Ensure `trailing-slash` and `asset-path` normalization for the standalone app.
-2. **Deployment Pipeline**:
-   - `scripts/deploy-sanakenno.sh`: Pulls latest, builds, and restarts the container.
-   - Configure a new webhook in the server's webhook listener to trigger this script.
-3. **Container Orchestration**:
-   - `docker-compose.yml`: Define the Hono backend + React frontend container.
-   - Health check: `curl -f http://localhost:8081/api/health`.
-   - Logging: Use the existing Loki driver to push logs to the local Loki instance.
-4. **Achievement Persistence**:
-   - `litestream`: Add a new replication job for `achievements.db` to Backblaze B2 (reuse existing server credentials).
-5. **Systemd Service**:
-   - `sanakenno.service`: Systemd unit to manage the Docker Compose project life-cycle.
+1. Initialize project: `package.json`, Vite config, Tailwind, ESLint, Prettier
+2. Scaffold empty directory structure (see Architecture above)
+3. Configure Vitest (unit), Cucumber.js (BDD), Playwright (E2E placeholder)
+4. `.github/workflows/test.yml`:
+   - **Lint**: ESLint + Prettier check
+   - **Vitest**: Unit tests
+   - **Cucumber**: BDD specs
+   - **Playwright**: E2E tests (initially skipped)
+5. `.dockerignore`, `.gitignore`, `scripts/setup-dev.sh`
 
-### Phase 1 — Data pipeline
-Build the puzzle pre-computation script. This is the foundation — everything
-else reads from `puzzles.json`.
+**Validates:** Project builds and CI runs green (no tests yet).
 
-1. Copy `kotus_words.txt` to the repo
-2. Write `scripts/build-puzzles.js`:
-   - Read the wordlist (filter ≥4 chars, lowercase, Finnish alphabet, strip hyphens)
-   - For each puzzle (exported from web_kontissa): filter valid words, compute
-     hashes, hint_data, max_score, scoring
-   - Output `server/data/puzzles.json`
-3. Write `scripts/export-from-kontissa.js`:
-   - Fetch puzzle slots + centers from erez.ac admin API
-   - Write raw puzzle config (letters + center per slot) for build-puzzles to consume
-4. Validate: puzzles.json should produce identical word lists and hashes as the
-   current Flask backend
+### Phase 1 — Data Migration + Puzzle Engine + Scoring Logic
 
-**Test:** Unit tests for scoring functions, word filtering, hash generation.
+Set up the database, migrate data from web_kontissa, build the puzzle engine,
+and port the pure game logic.
+
+1. Create `server/db/schema.sql` and `server/db/connection.js`
+2. Write `scripts/migrate-from-kontissa.js`:
+   - Read web_kontissa's `site.db` directly (no API auth needed)
+   - Populate `puzzles`, `blocked_words`, `combinations`, `config` tables
+3. Copy `kotus_words.txt` from web_kontissa
+4. Write `server/puzzle-engine.js`:
+   - Load wordlist once at startup
+   - `computePuzzle(letters, center, blockedWords)` → words, hashes, hints, max_score
+   - In-memory cache per puzzle slot, with invalidation
+   - Port the filtering/scoring logic from `kenno.py`
+5. Copy `useSanakennoLogic.js` → `src/utils/scoring.js` (verbatim — pure functions)
+6. Port `useSanakennoLogic.test.js` → `tests/scoring.test.js` (37 test cases)
+7. Write `src/utils/hash.js`: SHA-256 via `crypto.subtle`
+8. Validate: puzzle engine output matches Flask API for sample puzzles
+
+**BDD wiring:**
+- `features/step-definitions/scoring.steps.js` — wire to `scoring.js`
+- `features/step-definitions/word-validation.steps.js` — wire to `scoring.js` + `hash.js`
+
+**Validates:** `scoring.feature`, `word-validation.feature`
 
 ### Phase 2 — Hono API
+
 Minimal backend serving puzzles and recording achievements.
 
-1. `GET /api/puzzle` — read puzzles.json, compute today's index by date rotation
-2. `GET /api/puzzle/:number` — serve a specific puzzle (wrap around)
-3. `POST /api/achievement` — validate and store in `achievements.db` (SQLite)
-4. CORS + JSON body parsing
+1. `server/index.js`: Hono app with JSON body parsing, structured logging
+2. `GET /api/health` — DB reachability check
+3. `GET /api/puzzle` — call puzzle engine, compute today's slot by Helsinki-date rotation
+4. `GET /api/puzzle/:number` — serve specific puzzle (wrap around total)
+5. `POST /api/achievement` — validate rank, store in SQLite, rate limit (10/min)
+6. CORS configuration
 
-**Test:** API tests with Vitest + Hono's `app.request()`. Validates `api.feature` scenarios.
+**BDD wiring:**
+- `features/step-definitions/api.steps.js` — wire with Hono's `app.request()`
+- `features/step-definitions/puzzle.steps.js` — daily rotation, structure validation
 
-### Phase 3 — React game (core)
-The game UI without hints, celebrations, or PWA.
+**Validates:** `api.feature`, `puzzle.feature` (structure + rotation scenarios)
 
-1. Vite + React + Tailwind + Zustand project scaffold
-2. `useGameStore`: centralized state (fetch puzzle, found words, score, rank, validation)
-3. `useGameTimer` hook: logic for tracking play-time
-4. `Honeycomb` component: SVG hex grid + CSS Module animations
-5. Keyboard input handler (letters, Backspace, Enter)
-6. `WordInput` display with coloured characters
-7. `FoundWords` list (recent 6 + expandable)
-8. `RankProgress` bar with thresholds
-9. localStorage persistence (per-puzzle)
-10. Submit validation chain: length → center letter → puzzle letters → hash check
+### Phase 3 — React Game (Core)
 
-**Test:** Unit tests for hooks, React Testing Library for components.
-Validates `scoring.feature`, `word-validation.feature`, `ranks.feature`,
-`persistence.feature`, `timer.feature`, `interaction.feature`, `theme.feature`.
+The playable game without hints, celebrations, or PWA.
 
-### Phase 4 — Hints, celebrations, share
+1. React + Tailwind + Zustand scaffold (`src/main.jsx`, `src/App.jsx`)
+2. `useGameStore.js`: Zustand store
+   - Puzzle fetch, found words (Set), score, rank, currentWord, message
+   - Validation chain: length → center → puzzle letters → hash → duplicate
+   - localStorage persistence per puzzle (`sanakenno_state_{n}`)
+   - Legacy key migration (conditional on same-origin deployment)
+3. `useGameTimer.js`: port from Vue, track active play time
+4. `useMidnightRollover.js`: setTimeout to midnight + visibilitychange detection
+5. `Honeycomb/`: SVG hex grid, CSS Module animations, press feedback
+6. `WordInput.jsx`: colored character display (center letter = accent)
+7. Keyboard handler: letters (a-z, ä, ö, hyphen), Backspace, Enter; ignore modifiers
+8. `FoundWords.jsx`: recent 6 visible, expandable alphabetical list
+9. `RankProgress.jsx`: bar with thresholds, Täysi kenno hidden until achieved
+10. `RulesModal.jsx`: Finnish instructions
+11. Theme toggle (light/dark, system default, localStorage persistence)
+12. `ErrorState.jsx`: network error display with retry button
+13. `src/utils/storage.js`: localStorage wrapper with quota-exceeded handling
+
+**BDD wiring:**
+- `features/step-definitions/ranks.steps.js` — pure logic tests
+- `features/step-definitions/timer.steps.js` — hook tests with fake timers
+- `features/step-definitions/persistence.steps.js` — localStorage scenarios
+- `features/step-definitions/interaction.steps.js` — Playwright E2E
+- `features/step-definitions/theme.steps.js` — localStorage + class toggle
+- `features/step-definitions/error-handling.steps.js` — error scenarios
+- `features/step-definitions/accessibility.steps.js` — keyboard/touch
+
+**Validates:** `scoring.feature`, `word-validation.feature`, `ranks.feature`,
+`persistence.feature`, `timer.feature`, `interaction.feature`, `theme.feature`,
+`error-handling.feature`, `accessibility.feature`
+
+### Phase 4 — Hints, Celebrations, Share
+
 The polish layer.
 
-1. `useHintData` hook: letterMap, unfoundLengths, pangramStats, lengthDistribution, pairMap
-2. `HintPanels` with unlock/collapse mechanics
-3. Celebration overlays (Ällistyttävä glow, Täysi kenno golden)
-4. `ShareButton` — clipboard copy with formatted result text
-5. Achievement fire-and-forget POST on rank transition
-6. Midnight rollover detection
+1. `useHintData.js`: port from Vue, derive letter/length/pair/pangram stats
+2. `HintPanels.jsx`: 4 panels with unlock/collapse, persisted unlock state
+3. `Celebration.jsx`: Ällistyttävä glow (5s), Täysi kenno gold (8s), rank toasts (3s)
+4. `ShareButton.jsx`: clipboard copy with formatted text:
+   ```
+   Sanakenno — Peli #N
+   RankName · N sanaa
+   score/max pistettä
+   Avut: 📊🔤📏🔠  (only if hints unlocked)
+   erez.ac/sanakenno
+   ```
+5. Achievement fire-and-forget POST on rank transition (session-deduplicated)
 
-**Test:** Validates `hints.feature`, `achievements.feature`.
+**BDD wiring:**
+- `features/step-definitions/hints.steps.js`
+- `features/step-definitions/achievements.steps.js`
 
-### Phase 5 — PWA + deployment
-Make it installable and deploy alongside erez.ac.
+**Validates:** `hints.feature`, `achievements.feature`
 
-1. `vite-plugin-pwa` configuration
-2. iOS double-tap zoom prevention
-3. Dockerfile (Multi-stage build, Node alpine, non-root user)
-4. docker-compose.yml on the NUC
-5. nginx config: route sanakenno subdomain or path to the container
-6. Icons (reuse existing SVG source, generate sizes)
+### Phase 5 — PWA + Docker + Deployment
 
-**Test:** Validates `pwa.feature`, `infrastructure.feature`. Manual testing on iOS Safari.
+Make it installable and deploy.
 
-### Phase 6 — BDD wiring
-Wire the Gherkin specs (`features/*.feature`) to actual test runners.
+1. `vite-plugin-pwa` configuration:
+   - Network-first for navigation, stale-while-revalidate for assets, network-only for API
+   - Manifest: standalone display, icons at 192/512, theme color
+2. iOS standalone quirks: `touch-action: manipulation`, double-tap prevention
+3. Safe area support: `viewport-fit=cover`, `env(safe-area-inset-*)`
+4. `Dockerfile`: multi-stage build, Node alpine, non-root user
+5. `docker-compose.yml`: Hono container, health check, Loki logging driver
+6. `nginx.conf`: static files + `/api` proxy
+7. Icons: generate 192×192, 512×512, apple-touch from existing SVG source
 
-1. **API Acceptance (Cucumber.js + Hono test helper)**:
-   - Implement step definitions for `api.feature` and `puzzle.feature`.
-   - Validates the Hono backend matches the spec.
-2. **Logic Acceptance (Cucumber.js + Pure Functions)**:
-   - Implement step definitions for `scoring.feature`, `word-validation.feature`, and `ranks.feature`.
-   - Uses the actual `scoring.js` logic to satisfy Gherkin scenarios.
-3. **E2E Acceptance (Cucumber.js + Playwright)**:
-   - Implement step definitions for `interaction.feature` and `hints.feature`.
-   - Drives a real browser to verify the React UI satisfies the spec.
-4. **CI Integration**:
-   - Ensure `npm test` runs all three levels (Unit, BDD, E2E).
+**BDD wiring:**
+- `features/step-definitions/pwa.steps.js`
+- `features/step-definitions/infrastructure.steps.js`
 
-## What stays in web_kontissa
+**Validates:** `pwa.feature`, `infrastructure.feature`
 
-- The puzzle editor (AdminKennoPuzzleTool) — used to browse combinations and
-  manage rotation. Sanakenno standalone imports the result via export script.
-- Blocked words management — admin blocks words in web_kontissa, export script
-  pulls the blocked list.
-- The 101k wordlist source — kotus_words.txt is copied to this repo but the
-  authoritative source remains web_kontissa.
+### Phase 5.5 — On-server Infrastructure
 
-## Key design decisions
+Integrate with the existing NUC server stack. This phase is done manually
+on the server, not by agents.
 
-1. **Pre-compute everything at build time.** The current Flask backend filters
-   101k words on every cache miss. The standalone version pre-computes once
-   into puzzles.json. The Hono API just reads JSON and picks today's entry.
+1. **Nginx**: proxy `/sanakenno` to container (port 8081), trailing-slash normalization
+2. **Deploy script**: `scripts/deploy-sanakenno.sh` (pull, build, restart)
+3. **Webhook**: trigger deploy on push to main
+4. **Litestream**: replicate `sanakenno.db` to Backblaze B2
+5. **Systemd**: `sanakenno.service` to manage docker-compose lifecycle
 
-2. **No authentication.** The game is public. Achievements are anonymous.
-   Admin functions stay in web_kontissa.
+### Phase 6 — Authentication + Admin Tool
 
-3. **Centralized Zustand state.** Prevents prop drilling and simplifies
+Build the auth system and port the puzzle management UI from web_kontissa.
+After this phase, web_kontissa's kenno admin is no longer needed.
+
+#### 6a — Authentication Infrastructure
+
+1. **`scripts/create-admin.js`** — CLI script to create admin account:
+   - Prompts for username and password
+   - Enforces minimum 12-char password
+   - Stores argon2id hash in `admins` table
+   - Never logs or stores plaintext password
+2. **`server/auth/session.js`** — server-side session management:
+   - Create session: generate cryptographically random session ID + CSRF token
+   - Store in `sessions` table with expiry (configurable, e.g. 7 days)
+   - Validate: check session exists, not expired, matches admin_id
+   - Expire: delete session row, periodic cleanup of stale sessions
+3. **`server/auth/routes.js`** — auth endpoints:
+   - `POST /api/auth/login` — verify argon2id hash, create session, set cookie
+     - Constant-time comparison to prevent timing attacks
+     - Rate limit: 5 attempts/minute per IP, 60s lockout
+     - Generic error message (no username/password distinction)
+   - `POST /api/auth/logout` — delete session, clear cookie
+   - `POST /api/auth/change-password` — require current password, update hash,
+     invalidate all other sessions
+4. **`server/auth/middleware.js`** — applied to all `/api/admin/*` routes:
+   - Validate session cookie (HttpOnly, Secure, SameSite=Strict)
+   - Verify CSRF token on state-changing requests (POST, PUT, DELETE)
+   - Set security headers: `X-Content-Type-Options: nosniff`,
+     `X-Frame-Options: DENY`, `Cache-Control: no-store`
+   - Reject with 401 if session invalid, 403 if CSRF mismatch
+
+#### 6b — Admin API
+
+1. **Admin API routes** (`server/routes/admin.js`):
+   - `POST /api/admin/puzzle` — create/update puzzle slot (letters + center)
+   - `DELETE /api/admin/puzzle/:slot` — delete puzzle
+   - `POST /api/admin/puzzle/swap` — swap two slots
+   - `POST /api/admin/center` — change center letter for a slot
+   - `POST /api/admin/preview` — preview center variations without saving (rate limit: 20/min)
+   - `GET /api/admin/variations/:slot` — get all 7 center variations for a slot
+   - `GET /api/admin/schedule` — upcoming puzzle rotation
+   - `POST /api/admin/block` — block a word
+   - `DELETE /api/admin/block/:id` — unblock
+   - `GET /api/admin/blocked` — list blocked words
+   - `GET /api/admin/combinations` — browse pre-computed combinations (filterable, paginated)
+   - `GET /api/admin/stats` — achievement stats dashboard
+   - All admin writes invalidate the puzzle engine cache
+   - Today's puzzle protection: 409 without `force=true` on modify/delete/swap
+
+#### 6c — Admin UI
+
+1. **`LoginPage.jsx`** — login form, error display, redirect to admin on success
+2. **`AdminLayout.jsx`** — auth-gated shell, navigation, logout
+3. **`PuzzleEditor.jsx`** — CRUD for puzzle slots, center selection via VariationsGrid,
+   slot navigation, swap, delete, save with dirty detection, today-warning dialogs
+4. **`VariationsGrid.jsx`** — 7-button grid showing word_count/max_score/pangram_count
+   per center letter, active center highlighted
+5. **`WordList.jsx`** — alphabetical word display with pangram highlighting,
+   block button per word with confirmation
+6. **`CombinationsBrowser.jsx`** — browse/filter 7,922 combinations with 6 filter groups
+   (requires, excludes, pangrams, word count best/worst, in_rotation),
+   sortable columns, pagination, expandable rows showing VariationsGrid
+7. **`BlockedWords.jsx`** — list, add, remove blocked words
+8. **`Schedule.jsx`** — upcoming rotation calendar
+9. **`Stats.jsx`** — achievement counts by rank and date, period selection (7/30/90 days)
+10. **Admin route** in React: `/admin` path, redirects to login if no session
+
+**BDD wiring:**
+- `features/step-definitions/auth.steps.js`
+- `features/step-definitions/admin.steps.js`
+
+**Validates:** `auth.feature`, `admin.feature`
+
+## Parallel Agent Strategy
+
+Phases are designed for maximum parallelism using worktree-isolated agents.
+Each agent gets the relevant `.feature` files as acceptance criteria and
+reads original source from `../web_kontissa` for reference.
+
+```
+Phase 0:  [Agent: scaffold]
+              │
+         ┌────┴────┐
+Phase 1:  [A: data+engine]  [B: hono-api]     ← parallel, worktree isolation
+         └────┬────┘
+              │ ← integration merge + full test run
+         ┌────┼──────────┐
+Phase 3:  [C: state]  [D: honeycomb]  [E: found+rank]  ← parallel
+         └────┬──────────┘
+              │ ← integration merge
+         ┌────┴────┐
+Phase 4:  [F: hints+share]  [G: pwa+docker]  ← parallel
+         └────┬────┘
+              │ ← final integration
+Phase 6:  [H: auth]  [I: admin-api]  [J: admin-ui]  ← H first, then I+J parallel
+         └─────────┬─────────┘
+              │ ← admin integration
+```
+
+After each parallel phase, a single integration step merges worktrees,
+resolves conflicts, and runs the full test suite before proceeding.
+
+## What Stays in web_kontissa (Temporarily)
+
+After Phase 6, the only dependency on web_kontissa is the one-time migration.
+Until Phase 6 is complete:
+
+- **Puzzle editor** (AdminKennoPuzzleTool) — remains usable for editing puzzles,
+  but edits go to web_kontissa's DB. Re-run migration if needed before Phase 6.
+- **Wordlist source** — `kotus_words.txt` is copied; authoritative source stays
+  in web_kontissa but the file is static and unlikely to change.
+
+After Phase 6, web_kontissa's kenno-related code can be removed entirely.
+
+## Key Design Decisions
+
+1. **SQLite as single data store.** One `sanakenno.db` for puzzles, blocked words,
+   achievements, and combinations. No JSON files for data. The wordlist
+   (`kotus_words.txt`) stays as a flat file since it's a static 1.2MB asset
+   that's read once at startup.
+
+2. **Runtime puzzle computation with caching.** The puzzle engine loads the
+   wordlist once, computes puzzle data on first request per slot, and caches
+   in memory. Admin writes invalidate the cache. Same pattern as the Flask
+   backend but in JS.
+
+3. **Production-grade admin auth.** Server-side sessions in SQLite, argon2id
+   password hashing, CSRF tokens, rate-limited login, security headers.
+   Admin account created via CLI script — no self-registration. The game
+   itself is public with anonymous achievements.
+
+4. **Centralized Zustand state.** Prevents prop drilling and simplifies
    communication between game logic and UI components.
-
-4. **SQLite for achievements.** Provides ACID compliance for persistent
-   data without the overhead of a full database server.
 
 5. **Finnish UI, English code.** All user-facing strings are Finnish (this is
    a Finnish word game). Variable names, comments, and docs are English.
 
-## Open questions
+6. **BDD-first, not BDD-last.** Step definitions are wired in the same phase
+   as the code they test. Each phase is green before the next begins.
+
+7. **Midnight rollover via two mechanisms.** A `setTimeout` fires at midnight
+   Helsinki time, and a `visibilitychange` handler catches tab-resume across
+   midnight. Both save current state before reloading.
+
+8. **One-time migration, then independence.** Puzzle data is migrated once from
+   web_kontissa's DB. After that (and especially after Phase 6), the standalone
+   app is fully self-contained.
+
+## Open Questions
 
 - **Subdomain vs path?** `sanakenno.erez.ac` vs `erez.ac/sanakenno`. Subdomain
   is cleaner for a standalone app but needs a TLS cert. Current site already has
-  a wildcard? Check nginx config.
-- **Shared wordlist?** The 101k wordlist is 1.2MB. Could mount as a shared
-  Docker volume instead of copying. But copying is simpler and the file is static.
-
+  a wildcard? Check nginx config. This also determines whether legacy localStorage
+  migration is possible (same-origin requirement).
+- **Combinations pre-computation.** The 7,922-row combinations table was pre-computed
+  in web_kontissa via a Python script. Need to either: (a) migrate the data as-is,
+  (b) rewrite the computation in JS, or (c) both — migrate now, rewrite later so
+  new combinations can be computed from the standalone.
