@@ -66,6 +66,7 @@ interface ConfigRow {
 const WORDLIST_PATH = join(__dirname, 'data', 'kotus_words.txt');
 
 let _allWords: Set<string> = new Set();
+let _wordlistLoaded = false;
 
 /**
  * Load the Finnish wordlist from disk. Normalizes words by lowercasing
@@ -102,6 +103,7 @@ export function getWordlist(): Set<string> {
  */
 export function setWordlist(words: Set<string>): void {
   _allWords = words;
+  _wordlistLoaded = true;
 }
 
 // --- Scoring ---
@@ -138,11 +140,22 @@ export function hashWord(word: string): string {
  * Filters the wordlist for valid words (>= 4 chars, contains center, all chars
  * in letter set, not blocked), then computes hashes, scores, and hint data.
  */
+/**
+ * Ensure the wordlist is loaded before computing. Lazy-loads on first call.
+ */
+function ensureWordlist(): void {
+  if (!_wordlistLoaded && _allWords.size === 0) {
+    loadWordlist();
+    _wordlistLoaded = true;
+  }
+}
+
 export function computePuzzle(
   letters: string | string[],
   center: string,
   blockedWords: string[] = [],
 ): PuzzleData {
+  ensureWordlist();
   const letterList =
     typeof letters === 'string'
       ? letters.split(',').map((l) => l.trim())
