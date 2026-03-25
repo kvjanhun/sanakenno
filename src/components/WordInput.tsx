@@ -46,17 +46,12 @@ export function WordInput({
   if (allFound) {
     return (
       <div
-        className="text-center font-[var(--font-mono)] text-2xl tracking-[0.15em]"
+        className="text-center text-lg font-semibold"
+        style={{ color: 'var(--color-accent)' }}
         aria-live="polite"
         aria-atomic="true"
       >
-        <span role="img" aria-label="celebration">
-          🎉
-        </span>{' '}
-        Kaikki {wordCount} sanaa löydetty!{' '}
-        <span role="img" aria-label="celebration">
-          🎉
-        </span>
+        Kaikki {wordCount} sanaa löydetty!
       </div>
     );
   }

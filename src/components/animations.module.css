@@ -53,14 +53,21 @@
 }
 
 .celebrationCardIntense {
-  border: 3px solid transparent;
-  background-clip: padding-box;
-  border-image: linear-gradient(
-      135deg,
-      var(--color-accent),
-      #ffb43c,
-      var(--color-accent)
-    )
-    1;
+  position: relative;
+  border: 3px solid var(--color-accent);
   animation: glow-intense 2s ease-in-out infinite;
+}
+
+.celebrationCardIntense::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  padding: 3px;
+  background: linear-gradient(135deg, var(--color-accent), #ffb43c, var(--color-accent));
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
 }

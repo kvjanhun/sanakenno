@@ -23,7 +23,6 @@ export interface CelebrationProps {
 }
 
 interface CelebrationConfig {
-  emoji: string;
   title: string;
   description: string;
   target: number;
@@ -44,7 +43,6 @@ export function Celebration({
   const config: CelebrationConfig =
     type === 'taysikenno'
       ? {
-          emoji: '\uD83C\uDFC6',
           title: 'Täysi kenno!',
           description: 'Täydellinen tulos! Löysit kaikki sanat.',
           target: maxScore,
@@ -52,7 +50,6 @@ export function Celebration({
           cardClass: styles.celebrationCardIntense,
         }
       : {
-          emoji: '\uD83C\uDF89',
           title: 'Ällistyttävä!',
           description: 'Huikea suoritus! Olet saavuttanut huipputason.',
           target: Math.ceil(0.7 * maxScore),
@@ -89,7 +86,6 @@ export function Celebration({
         aria-modal="true"
         aria-label={config.title}
       >
-        <div className="text-5xl mb-4">{config.emoji}</div>
         <h2 className="text-2xl font-bold mb-2">{config.title}</h2>
         <p
           className="text-sm mb-4"
@@ -108,7 +104,7 @@ export function Celebration({
             className="px-4 py-2 rounded-lg font-semibold cursor-pointer border-none text-white"
             style={{ backgroundColor: 'var(--color-accent)' }}
           >
-            {'\uD83D\uDCCB'} Jaa tulos
+            Jaa tulos
           </button>
           <button
             type="button"

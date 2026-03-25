@@ -19,6 +19,10 @@ export interface RankProgressProps {
   showRanks: boolean;
   /** Toggle the rank thresholds panel. */
   onToggleRanks: () => void;
+  /** Whether the share confirmation is showing. */
+  shareCopied: boolean;
+  /** Share button click handler. */
+  onShare: () => void;
 }
 
 /**
@@ -30,20 +34,16 @@ export function RankProgress({
   rank,
   showRanks,
   onToggleRanks,
+  shareCopied,
+  onShare,
 }: RankProgressProps): React.JSX.Element {
   const progress = progressToNextRank(score, maxScore);
   const thresholds = rankThresholds(rank, maxScore);
 
   return (
     <div className="w-full">
-      {/* Score + rank pill */}
+      {/* Rank + score + share */}
       <div className="flex items-center justify-between mb-2">
-        <span
-          className="text-sm font-medium"
-          style={{ color: 'var(--color-text-secondary)' }}
-        >
-          Pisteet: {score}
-        </span>
         <button
           type="button"
           onClick={onToggleRanks}
@@ -52,6 +52,34 @@ export function RankProgress({
         >
           {rank}
         </button>
+        <span
+          className="text-sm font-medium"
+          style={{ color: 'var(--color-text-secondary)' }}
+        >
+          {score} pistettä
+        </span>
+        <div className="flex items-center gap-2">
+          {shareCopied && (
+            <span
+              className="text-xs"
+              style={{ color: 'var(--color-text-secondary)' }}
+            >
+              Kopioitu!
+            </span>
+          )}
+          <button
+            type="button"
+            className="text-xs px-2 py-1 rounded cursor-pointer"
+            style={{
+              background: 'var(--color-bg-secondary)',
+              color: 'var(--color-text-secondary)',
+              border: '1px solid var(--color-border)',
+            }}
+            onClick={onShare}
+          >
+            Jaa tulos
+          </button>
+        </div>
       </div>
 
       {/* Progress bar */}

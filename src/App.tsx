@@ -251,37 +251,15 @@ function App() {
                 paddingBottom: '0.25rem',
               }}
             >
-              <div className="flex items-center gap-2 mb-1">
-                <RankProgress
-                  score={score}
-                  maxScore={puzzle.max_score}
-                  rank={rank}
-                  showRanks={showRanks}
-                  onToggleRanks={() => setShowRanks(!showRanks)}
-                />
-              </div>
-              <div className="flex items-center gap-2 ml-auto justify-end">
-                {shareCopied && (
-                  <span
-                    className="text-xs"
-                    style={{ color: 'var(--color-text-secondary)' }}
-                  >
-                    Kopioitu!
-                  </span>
-                )}
-                <button
-                  type="button"
-                  className="text-xs px-2 py-1 rounded cursor-pointer"
-                  style={{
-                    background: 'var(--color-bg-secondary)',
-                    color: 'var(--color-text-secondary)',
-                    border: '1px solid var(--color-border)',
-                  }}
-                  onClick={handleShare}
-                >
-                  Jaa tulos
-                </button>
-              </div>
+              <RankProgress
+                score={score}
+                maxScore={puzzle.max_score}
+                rank={rank}
+                showRanks={showRanks}
+                onToggleRanks={() => setShowRanks(!showRanks)}
+                shareCopied={shareCopied}
+                onShare={handleShare}
+              />
             </div>
 
             {/* Hints */}
