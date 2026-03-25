@@ -9,6 +9,9 @@
 
 import type { PointerEvent } from 'react';
 
+/** Prevent default to avoid stealing focus from game input area. */
+const prevent = (e: PointerEvent): void => e.preventDefault();
+
 /** Props for {@link GameControls}. */
 export interface GameControlsProps {
   /** Delete the last character. */
@@ -27,8 +30,6 @@ export function GameControls({
   onShuffle,
   onSubmit,
 }: GameControlsProps): React.JSX.Element {
-  const prevent = (e: PointerEvent): void => e.preventDefault();
-
   return (
     <div className="flex items-center justify-center gap-3">
       <button

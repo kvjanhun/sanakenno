@@ -5,7 +5,7 @@
  * @module src/components/Celebration
  */
 
-import styles from './Honeycomb/Honeycomb.module.css';
+import styles from './animations.module.css';
 
 /** Props for {@link Celebration}. */
 export interface CelebrationProps {

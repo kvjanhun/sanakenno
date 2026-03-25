@@ -3,6 +3,9 @@
  * presentational components, hooks up keyboard input, and manages
  * the game timer and midnight rollover.
  *
+ * Uses selective Zustand subscriptions to avoid full re-renders on
+ * every state change.
+ *
  * @module src/App
  */
 
@@ -22,21 +25,100 @@ import { Celebration } from './components/Celebration.js';
 import { MessageBar } from './components/MessageBar.js';
 import { GameControls } from './components/GameControls.js';
 
-function App() {
-  const store = useGameStore();
-  const timer = useGameTimer();
+/* ------------------------------------------------------------------ */
+/*  Zustand selectors — subscribe to individual slices of state        */
+/* ------------------------------------------------------------------ */
 
-  const fetchPuzzle = store.fetchPuzzle;
-  const puzzle = store.puzzle;
-  const startedAt = store.startedAt;
-  const totalPausedMs = store.totalPausedMs;
+const usePuzzle = () => useGameStore((s) => s.puzzle);
+const useLoading = () => useGameStore((s) => s.loading);
+const useFetchError = () => useGameStore((s) => s.fetchError);
+const useCurrentWord = () => useGameStore((s) => s.currentWord);
+const useScore = () => useGameStore((s) => s.score);
+const useFoundWords = () => useGameStore((s) => s.foundWords);
+const useOuterLetters = () => useGameStore((s) => s.outerLetters);
+const useMessage = () => useGameStore((s) => s.message);
+const useMessageType = () => useGameStore((s) => s.messageType);
+const useShowRules = () => useGameStore((s) => s.showRules);
+const useShowRanks = () => useGameStore((s) => s.showRanks);
+const useShowAllFoundWords = () => useGameStore((s) => s.showAllFoundWords);
+const useCelebration = () => useGameStore((s) => s.celebration);
+const useWordShake = () => useGameStore((s) => s.wordShake);
+const useLastResubmittedWord = () => useGameStore((s) => s.lastResubmittedWord);
+const useShareCopied = () => useGameStore((s) => s.shareCopied);
+const usePressedHexIndex = () => useGameStore((s) => s.pressedHexIndex);
+const useStartedAt = () => useGameStore((s) => s.startedAt);
+const useTotalPausedMs = () => useGameStore((s) => s.totalPausedMs);
+
+/* Stable action references — these don't change between renders */
+const actions = () => {
+  const s = useGameStore.getState();
+  return {
+    fetchPuzzle: s.fetchPuzzle,
+    addLetter: s.addLetter,
+    deleteLetter: s.deleteLetter,
+    shuffleLetters: s.shuffleLetters,
+    submitWord: s.submitWord,
+    setShowRules: s.setShowRules,
+    setShowRanks: s.setShowRanks,
+    setShowAllFoundWords: s.setShowAllFoundWords,
+    setPressedHexIndex: s.setPressedHexIndex,
+    setCelebration: s.setCelebration,
+    copyStatus: s.copyStatus,
+    center: s.center,
+    allLetters: s.allLetters,
+    rank: s.rank,
+    recentFoundWords: s.recentFoundWords,
+    sortedFoundWords: s.sortedFoundWords,
+  };
+};
+
+/* ------------------------------------------------------------------ */
+/*  App                                                                */
+/* ------------------------------------------------------------------ */
+
+function App() {
+  const puzzle = usePuzzle();
+  const loading = useLoading();
+  const fetchError = useFetchError();
+  const currentWord = useCurrentWord();
+  const score = useScore();
+  const foundWords = useFoundWords();
+  const outerLetters = useOuterLetters();
+  const message = useMessage();
+  const messageType = useMessageType();
+  const showRules = useShowRules();
+  const showRanks = useShowRanks();
+  const showAllFoundWords = useShowAllFoundWords();
+  const celebration = useCelebration();
+  const wordShake = useWordShake();
+  const lastResubmittedWord = useLastResubmittedWord();
+  const shareCopied = useShareCopied();
+  const pressedHexIndex = usePressedHexIndex();
+  const startedAt = useStartedAt();
+  const totalPausedMs = useTotalPausedMs();
+
+  const {
+    fetchPuzzle,
+    addLetter,
+    deleteLetter,
+    shuffleLetters,
+    submitWord,
+    setShowRules,
+    setShowRanks,
+    setShowAllFoundWords,
+    setPressedHexIndex,
+    setCelebration,
+    copyStatus,
+  } = actions();
+
+  const timer = useGameTimer();
 
   // Fetch puzzle on mount
   useEffect(() => {
     fetchPuzzle();
   }, [fetchPuzzle]);
 
-  // Start timer when puzzle loads; restore persisted timer state
+  // Restore or start timer when puzzle loads
   useEffect(() => {
     if (puzzle && startedAt) {
       timer.restore(startedAt, totalPausedMs);
@@ -47,33 +129,33 @@ function App() {
 
   useMidnightRollover();
 
-  // Keyboard handler
+  // Keyboard handler — uses stable action refs, no dependency on store object
   const handleEscape = useCallback(() => {
-    if (store.showRules) store.setShowRules(false);
-  }, [store]);
+    const { showRules: isOpen, setShowRules: setRules } =
+      useGameStore.getState();
+    if (isOpen) setRules(false);
+  }, []);
 
   useKeyboard({
-    onLetter: store.addLetter,
-    onBackspace: store.deleteLetter,
-    onEnter: () => store.submitWord(),
+    onLetter: addLetter,
+    onBackspace: deleteLetter,
+    onEnter: () => submitWord(),
     onEscape: handleEscape,
-    enabled: !store.showRules && !!store.puzzle,
+    enabled: !showRules && !!puzzle,
   });
 
   // Derived values
-  const center = store.center();
-  const allLetters = store.allLetters();
-  const rank = store.rank();
-  const recentFoundWords = store.recentFoundWords();
-  const sortedFoundWords = store.sortedFoundWords();
+  const center = actions().center();
+  const allLetters = actions().allLetters();
+  const rank = actions().rank();
+  const recentFoundWords = actions().recentFoundWords();
+  const sortedFoundWords = actions().sortedFoundWords();
   const allFound =
-    store.puzzle !== null &&
-    store.foundWords.size === store.puzzle.hint_data.word_count;
+    puzzle !== null && foundWords.size === puzzle.hint_data.word_count;
 
-  // Share button handler
   const handleShare = useCallback(async () => {
-    await store.copyStatus();
-  }, [store]);
+    await copyStatus();
+  }, [copyStatus]);
 
   return (
     <>
@@ -97,17 +179,17 @@ function App() {
             style={{ color: 'var(--color-text-primary)' }}
           >
             Sanakenno
-            {store.puzzle && (
+            {puzzle && (
               <span style={{ color: 'var(--color-text-tertiary)' }}>
                 {' '}
-                — #{store.puzzle.puzzle_number + 1}
+                — #{puzzle.puzzle_number + 1}
               </span>
             )}
           </h1>
           <div className="flex items-center gap-1">
             <button
               type="button"
-              onClick={() => store.setShowRules(true)}
+              onClick={() => setShowRules(true)}
               className="p-2 rounded-lg text-sm font-semibold bg-transparent border-none cursor-pointer"
               style={{ color: 'var(--color-text-tertiary)' }}
               aria-label="Säännöt"
@@ -120,10 +202,7 @@ function App() {
       </header>
 
       {/* Rules modal */}
-      <RulesModal
-        show={store.showRules}
-        onClose={() => store.setShowRules(false)}
-      />
+      <RulesModal show={showRules} onClose={() => setShowRules(false)} />
 
       {/* Main content */}
       <div
@@ -139,7 +218,7 @@ function App() {
           aria-hidden="true"
         />
 
-        {store.loading && (
+        {loading && (
           <div
             className="text-center py-16"
             style={{ color: 'var(--color-text-secondary)' }}
@@ -148,14 +227,14 @@ function App() {
           </div>
         )}
 
-        {!store.loading && store.fetchError && (
+        {!loading && fetchError && (
           <ErrorState
             message="Lataus epäonnistui."
-            onRetry={() => store.fetchPuzzle()}
+            onRetry={() => fetchPuzzle()}
           />
         )}
 
-        {!store.loading && !store.fetchError && store.puzzle && (
+        {!loading && !fetchError && puzzle && (
           <>
             {/* Score + rank + share */}
             <div
@@ -169,15 +248,15 @@ function App() {
             >
               <div className="flex items-center gap-2 mb-1">
                 <RankProgress
-                  score={store.score}
-                  maxScore={store.puzzle.max_score}
+                  score={score}
+                  maxScore={puzzle.max_score}
                   rank={rank}
-                  showRanks={store.showRanks}
-                  onToggleRanks={() => store.setShowRanks(!store.showRanks)}
+                  showRanks={showRanks}
+                  onToggleRanks={() => setShowRanks(!showRanks)}
                 />
               </div>
               <div className="flex items-center gap-2 ml-auto justify-end">
-                {store.shareCopied && (
+                {shareCopied && (
                   <span
                     className="text-xs"
                     style={{ color: 'var(--color-text-secondary)' }}
@@ -203,19 +282,19 @@ function App() {
             {/* Word input */}
             <div className="mb-2">
               <WordInput
-                currentWord={store.currentWord}
+                currentWord={currentWord}
                 center={center}
                 allLetters={allLetters}
-                shake={store.wordShake}
+                shake={wordShake}
                 allFound={allFound}
-                wordCount={store.puzzle.hint_data.word_count}
+                wordCount={puzzle.hint_data.word_count}
               />
             </div>
 
             {/* Message bar */}
             {!allFound && (
               <div className="mb-2">
-                <MessageBar message={store.message} type={store.messageType} />
+                <MessageBar message={message} type={messageType} />
               </div>
             )}
 
@@ -226,12 +305,12 @@ function App() {
             >
               <Honeycomb
                 center={center}
-                outerLetters={store.outerLetters}
-                pressedHexIndex={store.pressedHexIndex}
+                outerLetters={outerLetters}
+                pressedHexIndex={pressedHexIndex}
                 disabled={allFound}
-                onLetterPress={store.addLetter}
-                onHexDown={store.setPressedHexIndex}
-                onHexUp={() => store.setPressedHexIndex(null)}
+                onLetterPress={addLetter}
+                onHexDown={setPressedHexIndex}
+                onHexUp={() => setPressedHexIndex(null)}
               />
             </div>
 
@@ -239,9 +318,9 @@ function App() {
             {!allFound && (
               <div className="mb-3">
                 <GameControls
-                  onDelete={store.deleteLetter}
-                  onShuffle={store.shuffleLetters}
-                  onSubmit={() => store.submitWord()}
+                  onDelete={deleteLetter}
+                  onShuffle={shuffleLetters}
+                  onSubmit={() => submitWord()}
                 />
               </div>
             )}
@@ -250,23 +329,21 @@ function App() {
             <FoundWords
               foundWords={sortedFoundWords}
               recentWords={recentFoundWords}
-              showAll={store.showAllFoundWords}
-              onToggleShowAll={() =>
-                store.setShowAllFoundWords(!store.showAllFoundWords)
-              }
-              lastResubmittedWord={store.lastResubmittedWord}
+              showAll={showAllFoundWords}
+              onToggleShowAll={() => setShowAllFoundWords(!showAllFoundWords)}
+              lastResubmittedWord={lastResubmittedWord}
             />
           </>
         )}
       </div>
 
       {/* Celebration overlay */}
-      {store.celebration && store.puzzle && (
+      {celebration && puzzle && (
         <Celebration
-          type={store.celebration}
-          score={store.score}
-          maxScore={store.puzzle.max_score}
-          onClose={() => store.setCelebration(null)}
+          type={celebration}
+          score={score}
+          maxScore={puzzle.max_score}
+          onClose={() => setCelebration(null)}
           onShare={handleShare}
         />
       )}

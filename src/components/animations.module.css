@@ -1,0 +1,66 @@
+/** Shared UI animations used across multiple components. */
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-8px);
+  }
+  40% {
+    transform: translateX(8px);
+  }
+  60% {
+    transform: translateX(-5px);
+  }
+  80% {
+    transform: translateX(5px);
+  }
+}
+
+.wordShake {
+  animation: shake 0.4s ease-in-out;
+}
+
+@keyframes glow {
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgba(255, 100, 62, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 100, 62, 0.6);
+  }
+}
+
+.celebrationCard {
+  border: 2px solid var(--color-accent);
+  animation: glow 2s ease-in-out infinite;
+}
+
+@keyframes glow-intense {
+  0%,
+  100% {
+    box-shadow:
+      0 0 12px rgba(255, 100, 62, 0.4),
+      0 0 24px rgba(255, 180, 60, 0.2);
+  }
+  50% {
+    box-shadow:
+      0 0 28px rgba(255, 100, 62, 0.7),
+      0 0 48px rgba(255, 180, 60, 0.4);
+  }
+}
+
+.celebrationCardIntense {
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-image: linear-gradient(
+      135deg,
+      var(--color-accent),
+      #ffb43c,
+      var(--color-accent)
+    )
+    1;
+  animation: glow-intense 2s ease-in-out infinite;
+}

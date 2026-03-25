@@ -7,7 +7,7 @@
  */
 
 import { colorizeWord } from '../utils/scoring.js';
-import styles from './Honeycomb/Honeycomb.module.css';
+import styles from './animations.module.css';
 
 /** Props for {@link WordInput}. */
 export interface WordInputProps {

@@ -85,15 +85,18 @@ export function useGameTimer(): GameTimerApi {
     };
 
     const handleBlur = (): void => pause();
+    const handleFocus = (): void => resume();
     const handlePageHide = (): void => pause();
 
     document.addEventListener('visibilitychange', handleVisibility);
     window.addEventListener('blur', handleBlur);
+    window.addEventListener('focus', handleFocus);
     window.addEventListener('pagehide', handlePageHide);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibility);
       window.removeEventListener('blur', handleBlur);
+      window.removeEventListener('focus', handleFocus);
       window.removeEventListener('pagehide', handlePageHide);
     };
   }, []);

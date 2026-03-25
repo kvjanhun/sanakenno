@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import styles from './Honeycomb.module.css';
 
 /** Props for the Honeycomb SVG letter grid component. */
 export interface HoneycombProps {
@@ -154,6 +153,3 @@ export function Honeycomb({
     </svg>
   );
 }
-
-export { styles as honeycombStyles };
-export default Honeycomb;

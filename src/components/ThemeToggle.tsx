@@ -7,6 +7,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
+import { loadFromStorage, saveToStorage } from '../utils/storage.js';
 
 const STORAGE_KEY = 'sanakenno_theme';
 type Theme = 'light' | 'dark';
@@ -22,7 +23,7 @@ function applyTheme(theme: Theme): void {
  * @returns The resolved theme.
  */
 function resolveInitialTheme(): Theme {
-  const stored = localStorage.getItem(STORAGE_KEY);
+  const stored = loadFromStorage<string>(STORAGE_KEY);
   if (stored === 'dark' || stored === 'light') return stored;
   return window.matchMedia('(prefers-color-scheme: dark)').matches
     ? 'dark'
@@ -42,7 +43,7 @@ export function ThemeToggle(): React.JSX.Element {
   const toggle = useCallback(() => {
     setTheme((prev) => {
       const next: Theme = prev === 'light' ? 'dark' : 'light';
-      localStorage.setItem(STORAGE_KEY, next);
+      saveToStorage(STORAGE_KEY, next);
       return next;
     });
   }, []);
