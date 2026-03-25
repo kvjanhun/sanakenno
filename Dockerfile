@@ -1,6 +1,8 @@
 # --- Build stage ---
 FROM node:22-alpine AS build
 
+RUN apk add --no-cache python3 make g++
+
 WORKDIR /app
 
 COPY package.json package-lock.json ./
@@ -12,13 +14,15 @@ RUN npm run build
 # --- Runtime stage ---
 FROM node:22-alpine AS runtime
 
+RUN apk add --no-cache python3 make g++
+
 RUN addgroup -S sanakenno && adduser -S sanakenno -G sanakenno
 
 WORKDIR /app
 
-# Copy production dependencies
+# Copy production dependencies (argon2 needs native compilation)
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+RUN npm ci --omit=dev && npm cache clean --force && apk del python3 make g++
 
 # Copy built frontend
 COPY --from=build /app/dist ./dist
