@@ -68,12 +68,21 @@ export function WordInput({
     >
       {chars ? (
         chars.map((c, i) => (
-          <span key={i} className="mr-0.75" style={{ color: COLOR_MAP[c.color] }}>
+          <span
+            key={i}
+            className="mr-0.75"
+            style={{ color: COLOR_MAP[c.color] }}
+          >
             {c.char.toUpperCase()}
           </span>
         ))
       ) : (
-        <span className={styles.idleCharacter} style={{ color: 'var(--color-text-tertiary)' }}>|</span>
+        <span
+          className={styles.idleCharacter}
+          style={{ color: 'var(--color-text-tertiary)' }}
+        >
+          |
+        </span>
       )}
     </div>
   );
