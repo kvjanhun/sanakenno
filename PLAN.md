@@ -185,11 +185,12 @@ Set up the monorepo structure, tooling, and CI pipeline.
 1. Initialize project: `package.json`, Vite config, Tailwind, ESLint, Prettier
 2. Scaffold empty directory structure (see Architecture above)
 3. Configure Vitest (unit), Cucumber.js (BDD), Playwright (E2E placeholder)
-4. `.github/workflows/test.yml`:
-   - **Lint**: ESLint + Prettier check
+4. `.github/workflows/ci.yml`:
+   - **Typecheck**: `tsc --noEmit`
+   - **Prettier**: format check
    - **Vitest**: Unit tests
-   - **Cucumber**: BDD specs
-   - **Playwright**: E2E tests (initially skipped)
+   - **Cucumber**: BDD specs (continue-on-error until all steps defined)
+   - **Deploy**: webhook trigger on main push after tests pass
 5. `.dockerignore`, `.gitignore`, `scripts/setup-dev.sh`
 
 **Validates:** Project builds and CI runs green (no tests yet).
@@ -276,53 +277,41 @@ The playable game without hints, celebrations polish, or PWA. **Complete.**
 `persistence.feature`, `timer.feature`, `interaction.feature`, `theme.feature`,
 `error-handling.feature`, `accessibility.feature`
 
-### Phase 4 — Hints, Celebrations Polish, Share
+### Phase 4 — Hints, Celebrations Polish, Share ✓
 
-The polish layer. Celebrations and share already have basic implementations from
-Phase 3; this phase adds hints and refines the existing components.
+The polish layer. **Complete.**
 
 1. `useHintData.ts`: derive letter/length/pair/pangram stats from Zustand store
 2. `HintPanels.tsx`: 4 panels with unlock/collapse, persisted unlock state
-3. Celebration polish: timing (Ällistyttävä 5s, Täysi kenno 8s), rank toasts (3s)
-4. Share text refinement (share URL: `erez.ac/sanakenno-react` during dual deployment)
+3. Celebration polish: timing (Ällistyttävä 5s, Täysi kenno 8s), auto-close
+4. Share text with hint icons, copy to clipboard
 5. Achievement fire-and-forget POST on rank transition (session-deduplicated)
+6. SVG icons for hints and theme toggle (inline, currentColor)
+7. Expanded rules modal with Kotus link and erez.ac footer
+8. Dev console helpers (`window.sk`) for testing UI states
 
-**BDD wiring:**
-- `features/step-definitions/hints.steps.ts`
-- `features/step-definitions/achievements.steps.ts`
+### Phase 5 — PWA + Docker + Deployment ✓
 
-**Validates:** `hints.feature`, `achievements.feature`
+Installable PWA with containerized deployment. **Complete.**
 
-### Phase 5 — PWA + Docker + Deployment
+1. `vite-plugin-pwa`: Workbox strategies (NetworkOnly for API, StaleWhileRevalidate for assets, CacheFirst for images)
+2. PWA manifest: standalone display, icons at 192/512/maskable, theme color
+3. iOS standalone: `touch-action: none` on hex/controls, safe area padding, no-zoom viewport
+4. `Dockerfile`: multi-stage build (node:22-alpine), non-root `sanakenno` user
+5. `docker-compose.yml`: port 8081:3001, SQLite volume, health check
+6. `nginx.conf`: static from `/var/www/sanakenno/dist/`, API proxy to container
+7. `.github/workflows/ci.yml`: typecheck, prettier, unit tests, BDD, deploy webhook
+8. `server/deploy-sanakenno.sh`: git pull, docker build, extract dist to `/var/www`
 
-Make it installable and deploy.
+### Phase 5.5 — On-server Infrastructure ✓
 
-1. `vite-plugin-pwa` configuration:
-   - Network-first for navigation, stale-while-revalidate for assets, network-only for API
-   - Manifest: standalone display, icons at 192/512, theme color
-2. iOS standalone quirks: `touch-action: manipulation`, double-tap prevention
-3. Safe area support: `viewport-fit=cover`, `env(safe-area-inset-*)`
-4. `Dockerfile`: multi-stage build, Node alpine, non-root user
-5. `docker-compose.yml`: Hono container, health check, Loki logging driver
-6. `nginx.conf`: static files + `/api` proxy
-7. Icons: generate 192×192, 512×512, apple-touch from existing SVG source
+Integration with the existing NUC server stack. **Complete.**
 
-**BDD wiring:**
-- `features/step-definitions/pwa.steps.ts`
-- `features/step-definitions/infrastructure.steps.ts`
-
-**Validates:** `pwa.feature`, `infrastructure.feature`
-
-### Phase 5.5 — On-server Infrastructure
-
-Integrate with the existing NUC server stack. This phase is done manually
-on the server, not by agents.
-
-1. **Nginx**: proxy `/sanakenno-react` to new container (port 8081); original `/sanakenno` stays on Nuxt
-2. **Deploy script**: `scripts/deploy-sanakenno.sh` (pull, build, restart)
-3. **Webhook**: trigger deploy on push to main
-4. **Litestream**: replicate `sanakenno.db` to Backblaze B2
-5. **Systemd**: `sanakenno.service` to manage docker-compose lifecycle
+1. **Nginx**: sanakenno location blocks in `erez.ac.conf`, static from `/var/www/sanakenno/dist/`, API proxy to port 8081
+2. **Deploy script**: `server/deploy-sanakenno.sh` (pull, build, docker cp dist to /var/www)
+3. **Webhook**: `deploy-sanakenno` hook on port 9000, triggered by GitHub Actions after CI passes
+4. **Deploy key**: separate `sanakenno_deploy_key` for git pull access
+5. **TODO**: Litestream replication of `sanakenno.db` to Backblaze B2
 
 ### Phase 6 — Authentication + Admin Tool
 
