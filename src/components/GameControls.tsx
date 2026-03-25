@@ -31,7 +31,10 @@ export function GameControls({
   onSubmit,
 }: GameControlsProps): React.JSX.Element {
   return (
-    <div className="flex items-center justify-center gap-3">
+    <div
+      className="flex items-center justify-center gap-3 select-none"
+      style={{ touchAction: 'none' }}
+    >
       <button
         type="button"
         onPointerDown={(e) => {

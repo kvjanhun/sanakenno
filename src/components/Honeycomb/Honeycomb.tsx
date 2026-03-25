@@ -98,7 +98,7 @@ export function Honeycomb({
       role="img"
       aria-label={ariaLabel}
       className="select-none"
-      style={{ touchAction: 'manipulation' }}
+      style={{ touchAction: 'none' }}
       onTouchMove={(e) => e.preventDefault()}
     >
       {hexes.map((hex, i) => (
