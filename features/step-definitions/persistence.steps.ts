@@ -15,12 +15,9 @@ Given(
   },
 );
 
-When(
-  'the player finds a word',
-  function (this: SanakennoWorld) {
-    return 'pending';
-  },
-);
+When('the player finds a word', function (this: SanakennoWorld) {
+  return 'pending';
+});
 
 Then(
   'localStorage key {string} should be updated',
@@ -43,12 +40,9 @@ When(
   },
 );
 
-Then(
-  'the found words list should be empty',
-  function (this: SanakennoWorld) {
-    return 'pending';
-  },
-);
+Then('the found words list should be empty', function (this: SanakennoWorld) {
+  return 'pending';
+});
 
 Then(
   'the score should be {int}',
@@ -64,26 +58,17 @@ When(
   },
 );
 
-Then(
-  'the found words should be restored',
-  function (this: SanakennoWorld) {
-    return 'pending';
-  },
-);
+Then('the found words should be restored', function (this: SanakennoWorld) {
+  return 'pending';
+});
 
-Then(
-  'the score should be restored',
-  function (this: SanakennoWorld) {
-    return 'pending';
-  },
-);
+Then('the score should be restored', function (this: SanakennoWorld) {
+  return 'pending';
+});
 
-Then(
-  'the unlocked hints should be restored',
-  function (this: SanakennoWorld) {
-    return 'pending';
-  },
-);
+Then('the unlocked hints should be restored', function (this: SanakennoWorld) {
+  return 'pending';
+});
 
 Then(
   'the timer start time should be restored',
@@ -106,12 +91,9 @@ When(
   },
 );
 
-When(
-  'the player reloads',
-  function (this: SanakennoWorld) {
-    return 'pending';
-  },
-);
+When('the player reloads', function (this: SanakennoWorld) {
+  return 'pending';
+});
 
 Then(
   'the blocked word should be removed from found words',
@@ -120,12 +102,9 @@ Then(
   },
 );
 
-Then(
-  'the score should be recalculated',
-  function (this: SanakennoWorld) {
-    return 'pending';
-  },
-);
+Then('the score should be recalculated', function (this: SanakennoWorld) {
+  return 'pending';
+});
 
 Given(
   'localStorage has a {string} key with puzzle number {int}',
@@ -141,12 +120,9 @@ Then(
   },
 );
 
-Then(
-  'the legacy key should be removed',
-  function (this: SanakennoWorld) {
-    return 'pending';
-  },
-);
+Then('the legacy key should be removed', function (this: SanakennoWorld) {
+  return 'pending';
+});
 
 Given(
   'localStorage does not have a {string} key',
@@ -155,16 +131,10 @@ Given(
   },
 );
 
-Then(
-  'migration should not run',
-  function (this: SanakennoWorld) {
-    return 'pending';
-  },
-);
+Then('migration should not run', function (this: SanakennoWorld) {
+  return 'pending';
+});
 
-Then(
-  'the game should load normally',
-  function (this: SanakennoWorld) {
-    return 'pending';
-  },
-);
+Then('the game should load normally', function (this: SanakennoWorld) {
+  return 'pending';
+});

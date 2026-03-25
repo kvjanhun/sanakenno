@@ -8,12 +8,9 @@
 import { Given, When, Then } from '@cucumber/cucumber';
 import type { SanakennoWorld } from './types.js';
 
-Given(
-  'the puzzle is loaded',
-  function (this: SanakennoWorld) {
-    return 'pending';
-  },
-);
+Given('the puzzle is loaded', function (this: SanakennoWorld) {
+  return 'pending';
+});
 
 When(
   'the player presses Ctrl+A, Alt+K, or Cmd+S',
@@ -29,19 +26,13 @@ Then(
   },
 );
 
-When(
-  'the player presses Tab',
-  function (this: SanakennoWorld) {
-    return 'pending';
-  },
-);
+When('the player presses Tab', function (this: SanakennoWorld) {
+  return 'pending';
+});
 
-Then(
-  'no letter should be added',
-  function (this: SanakennoWorld) {
-    return 'pending';
-  },
-);
+Then('no letter should be added', function (this: SanakennoWorld) {
+  return 'pending';
+});
 
 Then(
   'default browser focus behaviour should not be prevented',
@@ -85,12 +76,9 @@ When(
   },
 );
 
-Then(
-  'the page should not zoom',
-  function (this: SanakennoWorld) {
-    return 'pending';
-  },
-);
+Then('the page should not zoom', function (this: SanakennoWorld) {
+  return 'pending';
+});
 
 Then(
   'both taps should register as letter input',
@@ -99,12 +87,9 @@ Then(
   },
 );
 
-When(
-  'the page loads',
-  function (this: SanakennoWorld) {
-    return 'pending';
-  },
-);
+When('the page loads', function (this: SanakennoWorld) {
+  return 'pending';
+});
 
 Then(
   'all interactive elements should have touch-action: manipulation',

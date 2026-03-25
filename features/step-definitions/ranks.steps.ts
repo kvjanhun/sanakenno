@@ -32,7 +32,7 @@ When(
 );
 
 When(
-  'the player\'s rank is {string}',
+  "the player's rank is {string}",
   function (this: SanakennoWorld, rank: string) {
     this.currentRank = rank;
   },

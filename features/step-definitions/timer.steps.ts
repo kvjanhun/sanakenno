@@ -17,24 +17,19 @@ import type { SanakennoWorld } from './types.js';
 function getElapsedMs(world: SanakennoWorld, now: number): number {
   if (world.timerStartedAt === null) return 0;
   const raw = now - world.timerStartedAt;
-  const paused = world.timerTotalPausedMs +
+  const paused =
+    world.timerTotalPausedMs +
     (world.timerHiddenAt !== null ? now - world.timerHiddenAt : 0);
   return Math.max(0, raw - paused);
 }
 
-When(
-  'the player loads a puzzle',
-  function (this: SanakennoWorld) {
-    return 'pending';
-  },
-);
+When('the player loads a puzzle', function (this: SanakennoWorld) {
+  return 'pending';
+});
 
-Then(
-  'the timer should start automatically',
-  function (this: SanakennoWorld) {
-    return 'pending';
-  },
-);
+Then('the timer should start automatically', function (this: SanakennoWorld) {
+  return 'pending';
+});
 
 Given(
   'the timer has been running for {int} seconds',
@@ -58,35 +53,23 @@ Then(
   },
 );
 
-Given(
-  'the timer is running',
-  function (this: SanakennoWorld) {
-    this.timerStartedAt = Date.now();
-    this.timerTotalPausedMs = 0;
-    this.timerHiddenAt = null;
-  },
-);
+Given('the timer is running', function (this: SanakennoWorld) {
+  this.timerStartedAt = Date.now();
+  this.timerTotalPausedMs = 0;
+  this.timerHiddenAt = null;
+});
 
-When(
-  'the player switches to another tab',
-  function (this: SanakennoWorld) {
-    return 'pending';
-  },
-);
+When('the player switches to another tab', function (this: SanakennoWorld) {
+  return 'pending';
+});
 
-Then(
-  'the timer should pause',
-  function (this: SanakennoWorld) {
-    return 'pending';
-  },
-);
+Then('the timer should pause', function (this: SanakennoWorld) {
+  return 'pending';
+});
 
-Then(
-  'elapsed time should stop increasing',
-  function (this: SanakennoWorld) {
-    return 'pending';
-  },
-);
+Then('elapsed time should stop increasing', function (this: SanakennoWorld) {
+  return 'pending';
+});
 
 Given(
   'the timer is paused because the tab was hidden',
@@ -95,19 +78,13 @@ Given(
   },
 );
 
-When(
-  'the player returns to the tab',
-  function (this: SanakennoWorld) {
-    return 'pending';
-  },
-);
+When('the player returns to the tab', function (this: SanakennoWorld) {
+  return 'pending';
+});
 
-Then(
-  'the timer should resume',
-  function (this: SanakennoWorld) {
-    return 'pending';
-  },
-);
+Then('the timer should resume', function (this: SanakennoWorld) {
+  return 'pending';
+});
 
 Then(
   'the hidden duration should not count toward elapsed time',
@@ -116,26 +93,17 @@ Then(
   },
 );
 
-When(
-  'the browser window loses focus',
-  function (this: SanakennoWorld) {
-    return 'pending';
-  },
-);
+When('the browser window loses focus', function (this: SanakennoWorld) {
+  return 'pending';
+});
 
-When(
-  'the document is hidden',
-  function (this: SanakennoWorld) {
-    return 'pending';
-  },
-);
+When('the document is hidden', function (this: SanakennoWorld) {
+  return 'pending';
+});
 
-When(
-  'a pagehide event fires',
-  function (this: SanakennoWorld) {
-    return 'pending';
-  },
-);
+When('a pagehide event fires', function (this: SanakennoWorld) {
+  return 'pending';
+});
 
 Then(
   'if the tab was already paused, pagehide should not double-record',
@@ -215,12 +183,9 @@ Given(
   },
 );
 
-When(
-  'the player reloads the page',
-  function (this: SanakennoWorld) {
-    return 'pending';
-  },
-);
+When('the player reloads the page', function (this: SanakennoWorld) {
+  return 'pending';
+});
 
 Then(
   'the timer should resume from the saved start time',
