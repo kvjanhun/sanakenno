@@ -155,12 +155,34 @@ export function RulesModal({
               className="font-medium mb-1"
               style={{ color: 'var(--color-text-primary)' }}
             >
-              💡 Avut:
+              Avut:
             </p>
             <p>
               Neljä vihjettä, jotka jäävät auki koko pelin ajaksi.
             </p>
           </div>
+
+          <hr
+            style={{
+              border: 'none',
+              borderTop: '1px solid var(--color-border)',
+              margin: '0.5rem 0',
+            }}
+          />
+
+          <p
+            className="text-xs text-center"
+            style={{ color: 'var(--color-text-tertiary)' }}
+          >
+            <a
+              href="https://erez.ac"
+              target="_blank"
+              rel="noopener"
+              style={{ color: 'var(--color-text-tertiary)', textDecoration: 'underline' }}
+            >
+              erez.ac
+            </a>
+          </p>
         </div>
       </div>
     </div>
