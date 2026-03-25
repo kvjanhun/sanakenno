@@ -4,9 +4,9 @@ Porting the Sanakenno game from web_kontissa website repository to a standalone
 React + Hono project. Spec-first approach: Gherkin features define
 the behaviour, implementation satisfies the specs.
 
-### Core Directive: Parity & Reuse
+### Core Directive: Clean React, Visual Parity
 - **Visual Identity**: The standalone game MUST be visually and behaviorally identical to the original Nuxt version (styles, colors, animations, SVG honeycomb).
-- **Code Reuse**: Maximum reuse of the original logic (`useSanakennoLogic.js`, `useGameTimer.js`, `useHintData.js`) by porting from Vue composables to React hooks/Zustand.
+- **Idiomatic React**: Write clean, idiomatic React — not a mechanical Vue-to-React port. The original Vue code is a reference for what the app does, not how the React code should be structured.
 - **Asset Reuse**: Reuse existing SVG icons, manifest properties, and the 101k wordlist source.
 
 ## Stack
@@ -60,20 +60,23 @@ sanakenno/
 │   ├── store/
 │   │   └── useGameStore.ts    # Zustand store (state, words, score, timer)
 │   ├── hooks/
-│   │   ├── useGameTimer.ts    # Logic for active play-time tracking
-│   │   ├── useHintData.ts     # Derived hint computations
+│   │   ├── useGameTimer.ts    # Ref-based play-time tracking (no re-renders)
+│   │   ├── useKeyboard.ts     # Global keydown handler with stable ref pattern
+│   │   ├── useHintData.ts     # Derived hint computations (Phase 4)
 │   │   └── useMidnightRollover.ts  # Midnight detection and reload
 │   ├── components/
-│   │   ├── Honeycomb/         # Hex grid + CSS Module animations
-│   │   │   ├── Honeycomb.tsx
-│   │   │   └── Honeycomb.module.css
-│   │   ├── WordInput.tsx      # Current word display
-│   │   ├── FoundWords.tsx     # Word lists
-│   │   ├── HintPanels.tsx     # Unlock-able hint cards
-│   │   ├── RankProgress.tsx   # Score bar
-│   │   ├── ShareButton.tsx    # Result sharing
-│   │   ├── Celebration.tsx    # Overlays
-│   │   ├── RulesModal.tsx     # Instructions
+│   │   ├── animations.module.css  # Shared animations (shake, glow, celebration)
+│   │   ├── Honeycomb/         # Hex grid SVG component
+│   │   │   └── Honeycomb.tsx
+│   │   ├── WordInput.tsx      # Current word display with per-char coloring
+│   │   ├── FoundWords.tsx     # Collapsed/expanded word lists
+│   │   ├── GameControls.tsx   # Delete/shuffle/submit buttons
+│   │   ├── MessageBar.tsx     # Ephemeral status messages
+│   │   ├── HintPanels.tsx     # Unlock-able hint cards (Phase 4)
+│   │   ├── RankProgress.tsx   # Score bar + rank thresholds
+│   │   ├── Celebration.tsx    # Rank celebration overlays
+│   │   ├── ThemeToggle.tsx    # Light/dark mode toggle
+│   │   ├── RulesModal.tsx     # Finnish instructions
 │   │   ├── ErrorState.tsx     # Network/load error display with retry
 │   │   └── admin/             # Admin UI (Phase 6)
 │   │       ├── LoginPage.tsx
@@ -140,20 +143,21 @@ edits to take effect immediately (cache invalidation on write).
 
 ## Code Reuse Strategy
 
-What to copy, port, or rewrite from `../web_kontissa`:
+The original Vue code is a reference for *behaviour*, not a template for structure.
+React implementations use idiomatic patterns (Zustand selectors, ref-based timers, CSS Modules).
 
-| Source file | Action | Rationale |
+| Source file | Action | Status |
 |---|---|---|
-| `composables/useSanakennoLogic.js` | **Copy + type** → `src/utils/scoring.ts` | Pure functions with TypeScript interfaces |
-| `composables/useGameTimer.js` | **Light port** → `src/hooks/useGameTimer.ts` | Replace Vue `ref()` with Zustand/React state |
-| `composables/useHintData.js` | **Light port** → `src/hooks/useHintData.ts` | Replace Vue `computed()` with `useMemo` |
-| `app/wordlists/kotus_words.txt` | **Copy** → `server/data/kotus_words.txt` | Static asset, 1.2MB |
-| `sanakenno.vue` scoped CSS | **Extract & copy** → CSS Modules | Hex geometry, animations, color vars |
-| `sanakenno.webmanifest` | **Reference** for vite-plugin-pwa config | Values only, not the file itself |
-| `tests/unit/useSanakennoLogic.test.js` | **Port** → `tests/scoring.test.ts` | 37 test cases, adapt to Vitest |
-| `api/kenno.py` | **Port** → `server/puzzle-engine.ts` | Word filtering, hashing, hint computation |
-| `sanakenno-sw.js` | **Skip** | `vite-plugin-pwa` generates service worker |
-| `app/data/site.db` | **One-time migration** → `sanakenno.db` | Puzzles, blocked words, combinations |
+| `composables/useSanakennoLogic.js` | Pure functions → `src/utils/scoring.ts` | Done |
+| `composables/useGameTimer.js` | Ref-based hook → `src/hooks/useGameTimer.ts` | Done |
+| `composables/useHintData.js` | Zustand-derived → `src/hooks/useHintData.ts` | Phase 4 |
+| `app/wordlists/kotus_words.txt` | Copy → `server/data/kotus_words.txt` | Done |
+| `sanakenno.vue` scoped CSS | CSS Modules: `animations.module.css` | Done |
+| `sanakenno.webmanifest` | Reference for vite-plugin-pwa config | Phase 5 |
+| `tests/unit/useSanakennoLogic.test.js` | Vitest → `tests/scoring.test.ts` | Done |
+| `api/kenno.py` | TypeScript → `server/puzzle-engine.ts` | Done |
+| `sanakenno-sw.js` | Skip — `vite-plugin-pwa` generates SW | Phase 5 |
+| `app/data/site.db` | One-time migration → `sanakenno.db` | Done |
 
 ## Data Migration
 
@@ -195,24 +199,24 @@ Set up the monorepo structure, tooling, and CI pipeline.
 Set up the database, migrate data from web_kontissa, build the puzzle engine,
 and port the pure game logic.
 
-1. Create `server/db/schema.sql` and `server/db/connection.js`
+1. Create `server/db/schema.sql` and `server/db/connection.ts`
 2. Write `scripts/migrate-from-kontissa.js`:
    - Read web_kontissa's `site.db` directly (no API auth needed)
    - Populate `puzzles`, `blocked_words`, `combinations`, `config` tables
 3. Copy `kotus_words.txt` from web_kontissa
-4. Write `server/puzzle-engine.js`:
-   - Load wordlist once at startup
+4. Write `server/puzzle-engine.ts`:
+   - Lazy-load wordlist on first `computePuzzle()` call
    - `computePuzzle(letters, center, blockedWords)` → words, hashes, hints, max_score
    - In-memory cache per puzzle slot, with invalidation
    - Port the filtering/scoring logic from `kenno.py`
-5. Copy `useSanakennoLogic.js` → `src/utils/scoring.js` (verbatim — pure functions)
-6. Port `useSanakennoLogic.test.js` → `tests/scoring.test.js` (37 test cases)
-7. Write `src/utils/hash.js`: SHA-256 via `crypto.subtle`
+5. Pure game functions → `src/utils/scoring.ts` (typed, tested)
+6. Port tests → `tests/scoring.test.ts` (43 test cases)
+7. Write `src/utils/hash.ts`: SHA-256 via `crypto.subtle`
 8. Validate: puzzle engine output matches Flask API for sample puzzles
 
 **BDD wiring:**
-- `features/step-definitions/scoring.steps.js` — wire to `scoring.js`
-- `features/step-definitions/word-validation.steps.js` — wire to `scoring.js` + `hash.js`
+- `features/step-definitions/scoring.steps.ts` — wire to `scoring.js`
+- `features/step-definitions/word-validation.steps.ts` — wire to `scoring.js` + `hash.js`
 
 **Validates:** `scoring.feature`, `word-validation.feature`
 
@@ -220,7 +224,7 @@ and port the pure game logic.
 
 Minimal backend serving puzzles and recording achievements.
 
-1. `server/index.js`: Hono app with JSON body parsing, structured logging
+1. `server/index.ts`: Hono app with JSON body parsing, structured logging
 2. `GET /api/health` — DB reachability check
 3. `GET /api/puzzle` — call puzzle engine, compute today's slot by Helsinki-date rotation
 4. `GET /api/puzzle/:number` — serve specific puzzle (wrap around total)
@@ -228,66 +232,64 @@ Minimal backend serving puzzles and recording achievements.
 6. CORS configuration
 
 **BDD wiring:**
-- `features/step-definitions/api.steps.js` — wire with Hono's `app.request()`
-- `features/step-definitions/puzzle.steps.js` — daily rotation, structure validation
+- `features/step-definitions/api.steps.ts` — wire with Hono's `app.request()`
+- `features/step-definitions/puzzle.steps.ts` — daily rotation, structure validation
 
 **Validates:** `api.feature`, `puzzle.feature` (structure + rotation scenarios)
 
-### Phase 3 — React Game (Core)
+### Phase 3 — React Game (Core) ✓
 
-The playable game without hints, celebrations, or PWA.
+The playable game without hints, celebrations polish, or PWA. **Complete.**
 
-1. React + Tailwind + Zustand scaffold (`src/main.jsx`, `src/App.jsx`)
-2. `useGameStore.js`: Zustand store
+1. React + Tailwind + Zustand scaffold (`src/main.tsx`, `src/App.tsx`)
+2. `useGameStore.ts`: Zustand store with selective subscriptions
    - Puzzle fetch, found words (Set), score, rank, currentWord, message
    - Validation chain: length → center → puzzle letters → hash → duplicate
    - localStorage persistence per puzzle (`sanakenno_state_{n}`)
-   - Legacy key migration (conditional on same-origin deployment)
-3. `useGameTimer.js`: port from Vue, track active play time
-4. `useMidnightRollover.js`: setTimeout to midnight + visibilitychange detection
-5. `Honeycomb/`: SVG hex grid, CSS Module animations, press feedback
-6. `WordInput.jsx`: colored character display (center letter = accent)
-7. Keyboard handler: letters (a-z, ä, ö, hyphen), Backspace, Enter; ignore modifiers
-8. `FoundWords.jsx`: recent 6 visible, expandable alphabetical list
-9. `RankProgress.jsx`: bar with thresholds, Täysi kenno hidden until achieved
-10. `RulesModal.jsx`: Finnish instructions
-11. Theme toggle (light/dark, system default, localStorage persistence)
-12. `ErrorState.jsx`: network error display with retry button
-13. `src/utils/storage.js`: localStorage wrapper with quota-exceeded handling
+   - Legacy key migration from `sanakenno_state`
+3. `useGameTimer.ts`: ref-based timer (no re-renders), pause on blur/hidden, resume on focus/visible
+4. `useMidnightRollover.ts`: setTimeout to midnight + visibilitychange detection
+5. `Honeycomb/`: SVG hex grid, press feedback via scale transform
+6. `animations.module.css`: shared CSS Module animations (shake, glow, celebration)
+7. `WordInput.tsx`: colored character display (center letter = accent)
+8. `useKeyboard.ts`: letters (a-z, ä, ö, hyphen), Backspace, Enter, Escape; ref-based options for stable listener
+9. `FoundWords.tsx`: recent 6 visible, expandable alphabetical columns
+10. `RankProgress.tsx`: bar with thresholds, Täysi kenno hidden until achieved
+11. `RulesModal.tsx`: Finnish instructions
+12. `ThemeToggle.tsx`: light/dark toggle, system default, consistent storage utility usage
+13. `ErrorState.tsx`: network error display with retry button
+14. `GameControls.tsx`: delete/shuffle/submit with preventDefault for focus retention
+15. `MessageBar.tsx`: ephemeral status messages with fade transition
+16. `Celebration.tsx`: Ällistyttävä and Täysi kenno overlays
+17. `src/utils/storage.ts`: localStorage wrapper with quota-exceeded handling
 
 **BDD wiring:**
-- `features/step-definitions/ranks.steps.js` — pure logic tests
-- `features/step-definitions/timer.steps.js` — hook tests with fake timers
-- `features/step-definitions/persistence.steps.js` — localStorage scenarios
-- `features/step-definitions/interaction.steps.js` — Playwright E2E
-- `features/step-definitions/theme.steps.js` — localStorage + class toggle
-- `features/step-definitions/error-handling.steps.js` — error scenarios
-- `features/step-definitions/accessibility.steps.js` — keyboard/touch
+- `features/step-definitions/ranks.steps.ts` — pure logic tests
+- `features/step-definitions/timer.steps.ts` — hook tests with fake timers
+- `features/step-definitions/persistence.steps.ts` — localStorage scenarios
+- `features/step-definitions/interaction.steps.ts` — Playwright E2E
+- `features/step-definitions/theme.steps.ts` — localStorage + class toggle
+- `features/step-definitions/error-handling.steps.ts` — error scenarios
+- `features/step-definitions/accessibility.steps.ts` — keyboard/touch
 
 **Validates:** `scoring.feature`, `word-validation.feature`, `ranks.feature`,
 `persistence.feature`, `timer.feature`, `interaction.feature`, `theme.feature`,
 `error-handling.feature`, `accessibility.feature`
 
-### Phase 4 — Hints, Celebrations, Share
+### Phase 4 — Hints, Celebrations Polish, Share
 
-The polish layer.
+The polish layer. Celebrations and share already have basic implementations from
+Phase 3; this phase adds hints and refines the existing components.
 
-1. `useHintData.js`: port from Vue, derive letter/length/pair/pangram stats
-2. `HintPanels.jsx`: 4 panels with unlock/collapse, persisted unlock state
-3. `Celebration.jsx`: Ällistyttävä glow (5s), Täysi kenno gold (8s), rank toasts (3s)
-4. `ShareButton.jsx`: clipboard copy with formatted text:
-   ```
-   Sanakenno — Peli #N
-   RankName · N sanaa
-   score/max pistettä
-   Avut: 📊🔤📏🔠  (only if hints unlocked)
-   erez.ac/sanakenno
-   ```
+1. `useHintData.ts`: derive letter/length/pair/pangram stats from Zustand store
+2. `HintPanels.tsx`: 4 panels with unlock/collapse, persisted unlock state
+3. Celebration polish: timing (Ällistyttävä 5s, Täysi kenno 8s), rank toasts (3s)
+4. Share text refinement (share URL: `erez.ac/sanakenno-react` during dual deployment)
 5. Achievement fire-and-forget POST on rank transition (session-deduplicated)
 
 **BDD wiring:**
-- `features/step-definitions/hints.steps.js`
-- `features/step-definitions/achievements.steps.js`
+- `features/step-definitions/hints.steps.ts`
+- `features/step-definitions/achievements.steps.ts`
 
 **Validates:** `hints.feature`, `achievements.feature`
 
@@ -306,8 +308,8 @@ Make it installable and deploy.
 7. Icons: generate 192×192, 512×512, apple-touch from existing SVG source
 
 **BDD wiring:**
-- `features/step-definitions/pwa.steps.js`
-- `features/step-definitions/infrastructure.steps.js`
+- `features/step-definitions/pwa.steps.ts`
+- `features/step-definitions/infrastructure.steps.ts`
 
 **Validates:** `pwa.feature`, `infrastructure.feature`
 
@@ -316,7 +318,7 @@ Make it installable and deploy.
 Integrate with the existing NUC server stack. This phase is done manually
 on the server, not by agents.
 
-1. **Nginx**: proxy `/sanakenno` to container (port 8081), trailing-slash normalization
+1. **Nginx**: proxy `/sanakenno-react` to new container (port 8081); original `/sanakenno` stays on Nuxt
 2. **Deploy script**: `scripts/deploy-sanakenno.sh` (pull, build, restart)
 3. **Webhook**: trigger deploy on push to main
 4. **Litestream**: replicate `sanakenno.db` to Backblaze B2
@@ -329,17 +331,17 @@ After this phase, web_kontissa's kenno admin is no longer needed.
 
 #### 6a — Authentication Infrastructure
 
-1. **`scripts/create-admin.js`** — CLI script to create admin account:
+1. **`scripts/create-admin.ts`** — CLI script to create admin account:
    - Prompts for username and password
    - Enforces minimum 12-char password
    - Stores argon2id hash in `admins` table
    - Never logs or stores plaintext password
-2. **`server/auth/session.js`** — server-side session management:
+2. **`server/auth/session.ts`** — server-side session management:
    - Create session: generate cryptographically random session ID + CSRF token
    - Store in `sessions` table with expiry (configurable, e.g. 7 days)
    - Validate: check session exists, not expired, matches admin_id
    - Expire: delete session row, periodic cleanup of stale sessions
-3. **`server/auth/routes.js`** — auth endpoints:
+3. **`server/auth/routes.ts`** — auth endpoints:
    - `POST /api/auth/login` — verify argon2id hash, create session, set cookie
      - Constant-time comparison to prevent timing attacks
      - Rate limit: 5 attempts/minute per IP, 60s lockout
@@ -347,7 +349,7 @@ After this phase, web_kontissa's kenno admin is no longer needed.
    - `POST /api/auth/logout` — delete session, clear cookie
    - `POST /api/auth/change-password` — require current password, update hash,
      invalidate all other sessions
-4. **`server/auth/middleware.js`** — applied to all `/api/admin/*` routes:
+4. **`server/auth/middleware.ts`** — applied to all `/api/admin/*` routes:
    - Validate session cookie (HttpOnly, Secure, SameSite=Strict)
    - Verify CSRF token on state-changing requests (POST, PUT, DELETE)
    - Set security headers: `X-Content-Type-Options: nosniff`,
@@ -356,7 +358,7 @@ After this phase, web_kontissa's kenno admin is no longer needed.
 
 #### 6b — Admin API
 
-1. **Admin API routes** (`server/routes/admin.js`):
+1. **Admin API routes** (`server/routes/admin.ts`):
    - `POST /api/admin/puzzle` — create/update puzzle slot (letters + center)
    - `DELETE /api/admin/puzzle/:slot` — delete puzzle
    - `POST /api/admin/puzzle/swap` — swap two slots
@@ -374,25 +376,25 @@ After this phase, web_kontissa's kenno admin is no longer needed.
 
 #### 6c — Admin UI
 
-1. **`LoginPage.jsx`** — login form, error display, redirect to admin on success
-2. **`AdminLayout.jsx`** — auth-gated shell, navigation, logout
-3. **`PuzzleEditor.jsx`** — CRUD for puzzle slots, center selection via VariationsGrid,
+1. **`LoginPage.tsx`** — login form, error display, redirect to admin on success
+2. **`AdminLayout.tsx`** — auth-gated shell, navigation, logout
+3. **`PuzzleEditor.tsx`** — CRUD for puzzle slots, center selection via VariationsGrid,
    slot navigation, swap, delete, save with dirty detection, today-warning dialogs
-4. **`VariationsGrid.jsx`** — 7-button grid showing word_count/max_score/pangram_count
+4. **`VariationsGrid.tsx`** — 7-button grid showing word_count/max_score/pangram_count
    per center letter, active center highlighted
-5. **`WordList.jsx`** — alphabetical word display with pangram highlighting,
+5. **`WordList.tsx`** — alphabetical word display with pangram highlighting,
    block button per word with confirmation
-6. **`CombinationsBrowser.jsx`** — browse/filter 7,922 combinations with 6 filter groups
+6. **`CombinationsBrowser.tsx`** — browse/filter 7,922 combinations with 6 filter groups
    (requires, excludes, pangrams, word count best/worst, in_rotation),
    sortable columns, pagination, expandable rows showing VariationsGrid
-7. **`BlockedWords.jsx`** — list, add, remove blocked words
-8. **`Schedule.jsx`** — upcoming rotation calendar
-9. **`Stats.jsx`** — achievement counts by rank and date, period selection (7/30/90 days)
+7. **`BlockedWords.tsx`** — list, add, remove blocked words
+8. **`Schedule.tsx`** — upcoming rotation calendar
+9. **`Stats.tsx`** — achievement counts by rank and date, period selection (7/30/90 days)
 10. **Admin route** in React: `/admin` path, redirects to login if no session
 
 **BDD wiring:**
-- `features/step-definitions/auth.steps.js`
-- `features/step-definitions/admin.steps.js`
+- `features/step-definitions/auth.steps.ts`
+- `features/step-definitions/admin.steps.ts`
 
 **Validates:** `auth.feature`, `admin.feature`
 
@@ -473,11 +475,15 @@ After Phase 6, web_kontissa's kenno-related code can be removed entirely.
 
 ## Open Questions
 
-- **Subdomain vs path?** `sanakenno.erez.ac` vs `erez.ac/sanakenno`. Subdomain
-  is cleaner for a standalone app but needs a TLS cert. Current site already has
-  a wildcard? Check nginx config. This also determines whether legacy localStorage
-  migration is possible (same-origin requirement).
 - **Combinations pre-computation.** The 7,922-row combinations table was pre-computed
   in web_kontissa via a Python script. Need to either: (a) migrate the data as-is,
   (b) rewrite the computation in JS, or (c) both — migrate now, rewrite later so
   new combinations can be computed from the standalone.
+
+## Resolved Decisions
+
+- **Path-based deployment with dual routing.** React version deploys to
+  `erez.ac/sanakenno-react` (Vite `base: '/sanakenno-react/'`). Original Nuxt
+  game stays at `erez.ac/sanakenno` until React version is validated. On cutover,
+  base changes to `/sanakenno/`. This means legacy localStorage migration is NOT
+  possible (different path = different origin for storage purposes).

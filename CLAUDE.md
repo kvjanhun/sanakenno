@@ -10,9 +10,9 @@ This file provides foundational mandates for the Sanakenno standalone project. A
 - **Testing**: Vitest (Unit/Logic), Cucumber.js (BDD/Integration), Playwright (E2E).
 - **PWA**: `vite-plugin-pwa`.
 
-## Core Directive: Parity & Reuse
-- **Visual & Behavioral Identity**: The standalone version MUST remain visually and behaviorally identical to the original Nuxt version (CSS styles, SVG Honeycomb geometry, animations).
-- **Logic Porting**: Maximize code reuse by porting the original Vue logic (`useSanakennoLogic.js`, `useGameTimer.js`, `useHintData.js`) into equivalent React hooks and Zustand stores.
+## Core Directive: Clean React, Visual Parity
+- **Visual & Behavioral Identity**: The standalone version MUST be visually and behaviorally identical to the original Nuxt version (CSS styles, SVG Honeycomb geometry, animations).
+- **Idiomatic React**: Write clean, idiomatic React — not a mechanical Vue-to-React port. Use proper patterns: selective Zustand subscriptions, stable action refs, memoization where it matters, ref-based non-rendering state. The original Vue code is a reference for *what* the app does, not *how* the React code should be structured.
 
 ## Coding Standards
 - **Language**: All user-facing UI strings must be in **Finnish**. All code (variables, functions, comments, documentation) must be in **English**.
