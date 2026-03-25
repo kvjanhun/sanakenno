@@ -251,7 +251,6 @@ export const useGameStore = create<GameState>()((set, get) => ({
   addLetter: (letter: string) => {
     const { wordRejected } = get();
     if (wordRejected) {
-      // Clear the rejected word and start fresh with the new letter
       set({ currentWord: letter, wordRejected: false, wordShake: false });
       return;
     }
@@ -281,8 +280,9 @@ export const useGameStore = create<GameState>()((set, get) => ({
     // 1. Too short
     if (normalized.length < 4) {
       get().showMessageAction('Liian lyhyt!', 'error');
-      set({ wordShake: true });
+      set({ wordRejected: true, wordShake: true });
       setTimeout(() => set({ wordShake: false }), 400);
+
       return;
     }
 
@@ -290,8 +290,9 @@ export const useGameStore = create<GameState>()((set, get) => ({
     if (!normalized.includes(puzzle.center)) {
       const upper = puzzle.center.toUpperCase();
       get().showMessageAction(`Kirjain '${upper}' puuttuu!`, 'error');
-      set({ wordShake: true });
+      set({ wordRejected: true, wordShake: true });
       setTimeout(() => set({ wordShake: false }), 400);
+
       return;
     }
 
@@ -300,8 +301,9 @@ export const useGameStore = create<GameState>()((set, get) => ({
     for (const ch of normalized) {
       if (!validLetters.has(ch)) {
         get().showMessageAction('Käytä vain annettuja kirjaimia!', 'error');
-        set({ wordShake: true });
+        set({ wordRejected: true, wordShake: true });
         setTimeout(() => set({ wordShake: false }), 400);
+
         return;
       }
     }
@@ -310,12 +312,14 @@ export const useGameStore = create<GameState>()((set, get) => ({
     if (foundWords.has(normalized)) {
       get().showMessageAction('Löysit jo tämän!', 'error');
       set({
+        wordRejected: true,
         wordShake: true,
         lastResubmittedWord: normalized,
       });
       setTimeout(() => {
         set({ wordShake: false, lastResubmittedWord: null });
       }, 1200);
+
       return;
     }
 
@@ -326,6 +330,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
       get().showMessageAction('Ei sanakirjassa', 'error');
       set({ wordRejected: true, wordShake: true });
       setTimeout(() => set({ wordShake: false }), 400);
+
       return;
     }
 
@@ -452,7 +457,12 @@ export const useGameStore = create<GameState>()((set, get) => ({
     if (messageTimer !== null) clearTimeout(messageTimer);
     set({ message: msg, messageType: type });
     messageTimer = setTimeout(() => {
-      set({ message: '', messageType: 'ok' });
+      const cleared: Partial<GameState> = { message: '', messageType: 'ok' };
+      if (get().wordRejected) {
+        cleared.currentWord = '';
+        cleared.wordRejected = false;
+      }
+      set(cleared);
       messageTimer = null;
     }, duration);
   },

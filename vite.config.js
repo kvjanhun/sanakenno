@@ -2,8 +2,8 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
-export default defineConfig({
-  base: '/sanakenno-react/',
+export default defineConfig(({ command }) => ({
+  base: command === 'build' ? '/sanakenno-react/' : '/',
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
@@ -17,4 +17,4 @@ export default defineConfig({
     passWithNoTests: true,
     exclude: ['node_modules', '.claude'],
   },
-});
+}));
