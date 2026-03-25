@@ -28,4 +28,10 @@ export interface SanakennoWorld {
   puzzleSlot2: number;
   totalPuzzles: number;
   puzzleNumber: number;
+  maxScore: number;
+  currentScore: number;
+  currentRank: string;
+  timerStartedAt: number | null;
+  timerTotalPausedMs: number;
+  timerHiddenAt: number | null;
 }

@@ -4,7 +4,9 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "vite",
+    "dev": "npx tsx watch server/index.ts & vite --open",
+    "dev:client": "vite",
+    "dev:server": "npx tsx watch server/index.ts",
     "build": "vite build",
     "preview": "vite preview",
     "test:unit": "vitest run",
