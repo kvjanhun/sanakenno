@@ -34,4 +34,18 @@ export interface SanakennoWorld {
   timerStartedAt: number | null;
   timerTotalPausedMs: number;
   timerHiddenAt: number | null;
+  /* Phase 4: Hints */
+  hintData: {
+    word_count: number;
+    pangram_count: number;
+    by_letter: Record<string, number>;
+    by_length: Record<string, number>;
+    by_pair: Record<string, number>;
+  } | null;
+  hintsUnlocked: Set<string>;
+  derivedHints: import('../../src/hooks/useHintData.js').DerivedHintData | null;
+  /* Phase 4: Achievements */
+  achievementPosts: Array<Record<string, unknown>>;
+  achievementSessionKeys: Set<string>;
+  achievementResponses: Response[];
 }

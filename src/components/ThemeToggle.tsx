@@ -8,6 +8,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { loadFromStorage, saveToStorage } from '../utils/storage.js';
+import { SunIcon, MoonIcon } from './icons.js';
 
 const STORAGE_KEY = 'sanakenno_theme';
 type Theme = 'light' | 'dark';
@@ -52,13 +53,13 @@ export function ThemeToggle(): React.JSX.Element {
     <button
       type="button"
       onClick={toggle}
-      className="bg-transparent border-none cursor-pointer text-lg p-1 leading-none"
+      className="bg-transparent border-none cursor-pointer p-1 leading-none flex items-center"
       style={{ color: 'var(--color-text-tertiary)' }}
       aria-label={
         theme === 'dark' ? 'Vaihda vaaleaan teemaan' : 'Vaihda tummaan teemaan'
       }
     >
-      {theme === 'dark' ? '\u2600\uFE0F' : '\uD83C\uDF19'}
+      {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
     </button>
   );
 }

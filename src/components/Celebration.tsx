@@ -5,6 +5,7 @@
  * @module src/components/Celebration
  */
 
+import { useEffect } from 'react';
 import styles from './animations.module.css';
 
 /** Props for {@link Celebration}. */
@@ -58,6 +59,13 @@ export function Celebration({
           closeLabel: 'Jatka pelaamista',
           cardClass: styles.celebrationCard,
         };
+
+  const autoCloseMs = type === 'taysikenno' ? 8000 : 5000;
+
+  useEffect(() => {
+    const timer = setTimeout(onClose, autoCloseMs);
+    return () => clearTimeout(timer);
+  }, [onClose, autoCloseMs]);
 
   const handleShare = (): void => {
     onShare();

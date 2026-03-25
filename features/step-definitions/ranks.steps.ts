@@ -63,7 +63,7 @@ Then(
   'the progress toward {string} should be {int}%',
   function (this: SanakennoWorld, _nextRank: string, expectedPct: number) {
     const progress = progressToNextRank(this.currentScore, this.maxScore);
-    assert.equal(Math.round(progress), expectedPct);
+    assert.equal(Math.floor(progress), expectedPct);
   },
 );
 
@@ -71,7 +71,7 @@ Then(
   'the progress should be {int}%',
   function (this: SanakennoWorld, expectedPct: number) {
     const progress = progressToNextRank(this.currentScore, this.maxScore);
-    assert.equal(Math.round(progress), expectedPct);
+    assert.equal(Math.floor(progress), expectedPct);
   },
 );
 

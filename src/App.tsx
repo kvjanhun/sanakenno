@@ -24,6 +24,7 @@ import { ThemeToggle } from './components/ThemeToggle.js';
 import { Celebration } from './components/Celebration.js';
 import { MessageBar } from './components/MessageBar.js';
 import { GameControls } from './components/GameControls.js';
+import { HintPanels } from './components/HintPanels.js';
 
 /* ------------------------------------------------------------------ */
 /*  Zustand selectors — subscribe to individual slices of state        */
@@ -45,6 +46,7 @@ const useCelebration = () => useGameStore((s) => s.celebration);
 const useWordShake = () => useGameStore((s) => s.wordShake);
 const useLastResubmittedWord = () => useGameStore((s) => s.lastResubmittedWord);
 const useShareCopied = () => useGameStore((s) => s.shareCopied);
+const useHintsUnlocked = () => useGameStore((s) => s.hintsUnlocked);
 const usePressedHexIndex = () => useGameStore((s) => s.pressedHexIndex);
 const useStartedAt = () => useGameStore((s) => s.startedAt);
 const useTotalPausedMs = () => useGameStore((s) => s.totalPausedMs);
@@ -64,6 +66,7 @@ const actions = () => {
     setPressedHexIndex: s.setPressedHexIndex,
     setCelebration: s.setCelebration,
     copyStatus: s.copyStatus,
+    unlockHint: s.unlockHint,
     center: s.center,
     allLetters: s.allLetters,
     rank: s.rank,
@@ -93,6 +96,7 @@ function App() {
   const wordShake = useWordShake();
   const lastResubmittedWord = useLastResubmittedWord();
   const shareCopied = useShareCopied();
+  const hintsUnlocked = useHintsUnlocked();
   const pressedHexIndex = usePressedHexIndex();
   const startedAt = useStartedAt();
   const totalPausedMs = useTotalPausedMs();
@@ -109,6 +113,7 @@ function App() {
     setPressedHexIndex,
     setCelebration,
     copyStatus,
+    unlockHint,
   } = actions();
 
   const timer = useGameTimer();
@@ -278,6 +283,12 @@ function App() {
                 </button>
               </div>
             </div>
+
+            {/* Hints */}
+            <HintPanels
+              hintsUnlocked={hintsUnlocked}
+              onUnlock={unlockHint}
+            />
 
             {/* Word input */}
             <div className="mb-2">

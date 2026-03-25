@@ -46,8 +46,8 @@ export type MessageType = 'ok' | 'error' | 'special';
 /** Celebration overlay type. */
 export type CelebrationType = 'allistyttava' | 'taysikenno' | null;
 
-/** Hint icon identifiers for the share line. */
-type HintId = 'summary' | 'letter' | 'length' | 'pair';
+/** Hint icon identifiers for the share line (must match panel IDs). */
+type HintId = 'summary' | 'letters' | 'distribution' | 'pairs';
 
 /** Persisted state shape in localStorage. */
 interface PersistedState {
@@ -147,13 +147,13 @@ function fisherYatesShuffle<T>(arr: readonly T[]): T[] {
 /** Map hint IDs to their share emoji. */
 const HINT_ICONS: Record<HintId, string> = {
   summary: '\u{1F4CA}',
-  letter: '\u{1F524}',
-  length: '\u{1F4CF}',
-  pair: '\u{1F520}',
+  letters: '\u{1F524}',
+  distribution: '\u{1F4CF}',
+  pairs: '\u{1F520}',
 };
 
 /** Ordered hint IDs for consistent share line output. */
-const HINT_ORDER: HintId[] = ['summary', 'letter', 'length', 'pair'];
+const HINT_ORDER: HintId[] = ['summary', 'letters', 'distribution', 'pairs'];
 
 let messageTimer: ReturnType<typeof setTimeout> | null = null;
 
