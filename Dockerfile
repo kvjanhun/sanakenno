@@ -27,8 +27,9 @@ RUN npm ci --omit=dev && npm cache clean --force && apk del python3 make g++
 # Copy built frontend
 COPY --from=build /app/dist ./dist
 
-# Copy server source (executed via tsx at runtime)
+# Copy server source and admin scripts (executed via tsx at runtime)
 COPY server ./server
+COPY scripts ./scripts
 
 # Data directory for SQLite
 RUN mkdir -p /data && chown sanakenno:sanakenno /data
