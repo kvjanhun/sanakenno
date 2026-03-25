@@ -8,6 +8,10 @@
  */
 
 import { create } from 'zustand';
+
+/** API base path, derived from Vite's `base` config (e.g. `/sanakenno-react` in production). */
+const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+
 import { hashWord } from '../utils/hash.js';
 import { scoreWord, recalcScore, rankForScore } from '../utils/scoring.js';
 import {
@@ -220,8 +224,8 @@ export const useGameStore = create<GameState>()((set, get) => ({
     try {
       const url =
         overrideNumber !== undefined
-          ? `/api/puzzle/${overrideNumber}`
-          : '/api/puzzle';
+          ? `${API_BASE}/api/puzzle/${overrideNumber}`
+          : `${API_BASE}/api/puzzle`;
       const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = (await res.json()) as Puzzle;
@@ -364,7 +368,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
 
       // Fire-and-forget achievement POST
       const elapsed = Date.now() - state.startedAt - state.totalPausedMs;
-      fetch('/api/achievement', {
+      fetch(`${API_BASE}/api/achievement`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
