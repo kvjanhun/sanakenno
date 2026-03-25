@@ -38,10 +38,7 @@ function createDevHelpers(): DevHelpers {
       }
       const next = new Set(foundWords);
       next.delete(word);
-      const allLetters = new Set([
-        puzzle!.center,
-        ...puzzle!.letters,
-      ]);
+      const allLetters = new Set([puzzle!.center, ...puzzle!.letters]);
       const score = recalcScore([...next], allLetters);
       store.setState({ foundWords: next, score });
       store.getState().saveState();

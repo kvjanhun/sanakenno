@@ -48,25 +48,25 @@ const PANELS: PanelConfig[] = [
 /*  Sub-components: panel content renderers                            */
 /* ------------------------------------------------------------------ */
 
-function SummaryContent({ data }: { data: DerivedHintData }): React.JSX.Element {
+function SummaryContent({
+  data,
+}: {
+  data: DerivedHintData;
+}): React.JSX.Element {
   if (data.wordsRemaining === 0) {
-    return (
-      <div style={{ color: 'var(--color-accent)' }}>kaikki löydetty</div>
-    );
+    return <div style={{ color: 'var(--color-accent)' }}>kaikki löydetty</div>;
   }
 
   const pct = Math.round((data.wordsFound / data.wordCount) * 100);
   const { pangramStats } = data;
-  const pangramLabel =
-    pangramStats.total === 1 ? 'pangrammi' : 'pangrammia';
+  const pangramLabel = pangramStats.total === 1 ? 'pangrammi' : 'pangrammia';
 
-  const unfoundLengths = data.lengthDistribution.filter(
-    (e) => e.remaining > 0,
-  );
+  const unfoundLengths = data.lengthDistribution.filter((e) => e.remaining > 0);
   const uniqueCount = unfoundLengths.length;
-  const longest = unfoundLengths.length > 0
-    ? Math.max(...unfoundLengths.map((e) => e.len))
-    : 0;
+  const longest =
+    unfoundLengths.length > 0
+      ? Math.max(...unfoundLengths.map((e) => e.len))
+      : 0;
   const lengthLabel = uniqueCount === 1 ? 'sanapituus' : 'sanapituutta';
 
   return (
@@ -81,8 +81,8 @@ function SummaryContent({ data }: { data: DerivedHintData }): React.JSX.Element 
         </span>
       </div>
       <div style={{ color: 'var(--color-text-secondary)' }}>
-        {uniqueCount} eri {lengthLabel} &middot; Pisin sana{' '}
-        {longest}&nbsp;merkkiä
+        {uniqueCount} eri {lengthLabel} &middot; Pisin sana {longest}
+        &nbsp;merkkiä
       </div>
     </div>
   );
@@ -144,11 +144,7 @@ function DistributionContent({
   );
 }
 
-function PairsContent({
-  data,
-}: {
-  data: DerivedHintData;
-}): React.JSX.Element {
+function PairsContent({ data }: { data: DerivedHintData }): React.JSX.Element {
   return (
     <div
       className="flex flex-wrap gap-x-3 gap-y-0.5"
@@ -246,9 +242,7 @@ export function HintPanels({
                   className="flex items-center justify-between mb-1"
                   style={{ cursor: isUnlocked ? 'pointer' : undefined }}
                   onClick={
-                    isUnlocked
-                      ? () => toggleCollapse(panel.id)
-                      : undefined
+                    isUnlocked ? () => toggleCollapse(panel.id) : undefined
                   }
                 >
                   <span style={{ color: 'var(--color-text-secondary)' }}>

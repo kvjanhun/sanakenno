@@ -64,7 +64,12 @@
   inset: -3px;
   border-radius: inherit;
   padding: 3px;
-  background: linear-gradient(135deg, var(--color-accent), #ffb43c, var(--color-accent));
+  background: linear-gradient(
+    135deg,
+    var(--color-accent),
+    #ffb43c,
+    var(--color-accent)
+  );
   mask:
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);

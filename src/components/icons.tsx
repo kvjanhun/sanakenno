@@ -58,7 +58,12 @@ export function LettersIcon(): React.JSX.Element {
     <span
       aria-hidden="true"
       className="inline-block ml-1"
-      style={{ fontWeight: 450, fontSize: '1.1em', lineHeight: 1, verticalAlign: 'baseline' }}
+      style={{
+        fontWeight: 450,
+        fontSize: '1.1em',
+        lineHeight: 1,
+        verticalAlign: 'baseline',
+      }}
     >
       A
     </span>
@@ -78,7 +83,15 @@ export function DistributionIcon(): React.JSX.Element {
       aria-hidden="true"
       className="inline-block align-middle ml-1"
     >
-      <rect x="0.5" y="0.5" width="19" height="13" rx="1" fill="none" strokeWidth="1.3" />
+      <rect
+        x="0.5"
+        y="0.5"
+        width="19"
+        height="13"
+        rx="1"
+        fill="none"
+        strokeWidth="1.3"
+      />
       <line x1="4" y1="0.5" x2="4" y2="5" strokeWidth="1" />
       <line x1="8" y1="0.5" x2="8" y2="7.5" strokeWidth="1" />
       <line x1="12" y1="0.5" x2="12" y2="5" strokeWidth="1" />
@@ -93,7 +106,12 @@ export function PairsIcon(): React.JSX.Element {
     <span
       aria-hidden="true"
       className="inline-block ml-1"
-      style={{ fontWeight: 450, fontSize: '1.1em', lineHeight: 1, verticalAlign: 'baseline' }}
+      style={{
+        fontWeight: 450,
+        fontSize: '1.1em',
+        lineHeight: 1,
+        verticalAlign: 'baseline',
+      }}
     >
       AB
     </span>

@@ -32,10 +32,10 @@ Given(
     const thresholds: Record<string, number> = {
       'Etsi sanoja!': 0,
       'Hyvä alku': 0.02,
-      'Nyt mennään!': 0.10,
-      'Onnistuja': 0.20,
-      'Sanavalmis': 0.40,
-      'Ällistyttävä': 0.70,
+      'Nyt mennään!': 0.1,
+      Onnistuja: 0.2,
+      Sanavalmis: 0.4,
+      Ällistyttävä: 0.7,
       'Täysi kenno': 1.0,
     };
     const pct = thresholds[rank] ?? 0;
@@ -51,10 +51,10 @@ When(
     const thresholds: Record<string, number> = {
       'Etsi sanoja!': 0,
       'Hyvä alku': 0.02,
-      'Nyt mennään!': 0.10,
-      'Onnistuja': 0.20,
-      'Sanavalmis': 0.40,
-      'Ällistyttävä': 0.70,
+      'Nyt mennään!': 0.1,
+      Onnistuja: 0.2,
+      Sanavalmis: 0.4,
+      Ällistyttävä: 0.7,
       'Täysi kenno': 1.0,
     };
     const pct = thresholds[newRank] ?? 0;
@@ -179,15 +179,12 @@ When(
   },
 );
 
-Then(
-  'a new achievement should be recorded',
-  function (this: SanakennoWorld) {
-    assert.ok(
-      this.achievementPosts.length >= 2,
-      `Expected at least 2 achievement records, got ${this.achievementPosts.length}`,
-    );
-  },
-);
+Then('a new achievement should be recorded', function (this: SanakennoWorld) {
+  assert.ok(
+    this.achievementPosts.length >= 2,
+    `Expected at least 2 achievement records, got ${this.achievementPosts.length}`,
+  );
+});
 
 /* ------------------------------------------------------------------ */
 /*  Rate limiting                                                      */

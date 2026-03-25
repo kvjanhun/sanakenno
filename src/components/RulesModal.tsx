@@ -62,8 +62,7 @@ export function RulesModal({
           style={{ color: 'var(--color-text-secondary)' }}
         >
           <p>
-            Löydä mahdollisimman monta sanaa seitsemästä annetusta
-            kirjaimesta.
+            Löydä mahdollisimman monta sanaa seitsemästä annetusta kirjaimesta.
           </p>
 
           <div>
@@ -143,9 +142,7 @@ export function RulesModal({
             </p>
             <p>
               Pisteesi määrittävät tason. Tavoittele tasoa{' '}
-              <span style={{ color: 'var(--color-accent)' }}>
-                Ällistyttävä
-              </span>
+              <span style={{ color: 'var(--color-accent)' }}>Ällistyttävä</span>
               !
             </p>
           </div>
@@ -157,9 +154,7 @@ export function RulesModal({
             >
               Avut:
             </p>
-            <p>
-              Neljä vihjettä, jotka jäävät auki koko pelin ajaksi.
-            </p>
+            <p>Neljä vihjettä, jotka jäävät auki koko pelin ajaksi.</p>
           </div>
 
           <hr
@@ -178,7 +173,10 @@ export function RulesModal({
               href="https://erez.ac"
               target="_blank"
               rel="noopener"
-              style={{ color: 'var(--color-text-tertiary)', textDecoration: 'underline' }}
+              style={{
+                color: 'var(--color-text-tertiary)',
+                textDecoration: 'underline',
+              }}
             >
               erez.ac
             </a>

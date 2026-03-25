@@ -41,4 +41,19 @@ body {
   background-color: var(--color-bg-primary);
   margin: 0;
   padding: 0;
+  /* Prevent iOS double-tap zoom in standalone mode */
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Prevent double-tap zoom on interactive elements */
+button,
+input,
+a {
+  touch-action: manipulation;
+}
+
+/* Safe area padding for notch / Dynamic Island */
+html {
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
 }

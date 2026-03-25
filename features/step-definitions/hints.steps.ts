@@ -66,11 +66,7 @@ Given(
     this.center = 'k';
     this.foundWords = [];
     this.hintsUnlocked = new Set();
-    this.derivedHints = deriveHintData(
-      hintData,
-      new Set<string>(),
-      allLetters,
-    );
+    this.derivedHints = deriveHintData(hintData, new Set<string>(), allLetters);
   },
 );
 
@@ -90,13 +86,10 @@ When(
   },
 );
 
-Then(
-  'it should show the total word count',
-  function (this: SanakennoWorld) {
-    assert.ok(this.derivedHints);
-    assert.equal(this.derivedHints!.wordCount, this.hintData!.word_count);
-  },
-);
+Then('it should show the total word count', function (this: SanakennoWorld) {
+  assert.ok(this.derivedHints);
+  assert.equal(this.derivedHints!.wordCount, this.hintData!.word_count);
+});
 
 Then(
   'it should show how many words remain unfound',
@@ -133,12 +126,15 @@ Then(
   },
 );
 
-Then('letters should be sorted alphabetically', function (this: SanakennoWorld) {
-  assert.ok(this.derivedHints);
-  const letters = this.derivedHints!.letterMap.map((e) => e.letter);
-  const sorted = [...letters].sort((a, b) => a.localeCompare(b));
-  assert.deepEqual(letters, sorted);
-});
+Then(
+  'letters should be sorted alphabetically',
+  function (this: SanakennoWorld) {
+    assert.ok(this.derivedHints);
+    const letters = this.derivedHints!.letterMap.map((e) => e.letter);
+    const sorted = [...letters].sort((a, b) => a.localeCompare(b));
+    assert.deepEqual(letters, sorted);
+  },
+);
 
 Then(
   'found words should reduce the remaining count',
@@ -218,12 +214,9 @@ Then(
 /*  Unlock mechanics                                                   */
 /* ------------------------------------------------------------------ */
 
-When(
-  'the player loads a fresh puzzle',
-  function (this: SanakennoWorld) {
-    this.hintsUnlocked = new Set();
-  },
-);
+When('the player loads a fresh puzzle', function (this: SanakennoWorld) {
+  this.hintsUnlocked = new Set();
+});
 
 Then('no hints should be unlocked', function (this: SanakennoWorld) {
   assert.equal(this.hintsUnlocked.size, 0);
@@ -246,12 +239,7 @@ Then(
 
 Then(
   '{string}, {string}, and {string} should still be locked',
-  function (
-    this: SanakennoWorld,
-    a: string,
-    b: string,
-    c: string,
-  ) {
+  function (this: SanakennoWorld, a: string, b: string, c: string) {
     assert.ok(!this.hintsUnlocked.has(a));
     assert.ok(!this.hintsUnlocked.has(b));
     assert.ok(!this.hintsUnlocked.has(c));
@@ -302,14 +290,11 @@ Then(
 /*  Share integration                                                  */
 /* ------------------------------------------------------------------ */
 
-When(
-  'the player shares their result',
-  function (this: SanakennoWorld) {
-    // Share text generation is tested via the store's copyStatus action;
-    // here we just verify the unlocked set is correct for the assertion
-    return 'pending';
-  },
-);
+When('the player shares their result', function (this: SanakennoWorld) {
+  // Share text generation is tested via the store's copyStatus action;
+  // here we just verify the unlocked set is correct for the assertion
+  return 'pending';
+});
 
 Then(
   'the share text should include hint icons for the unlocked hints',

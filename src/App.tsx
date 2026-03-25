@@ -174,7 +174,10 @@ function App() {
       >
         <div className="max-w-sm mx-auto px-6 h-12 flex justify-between items-center">
           {/* Spacer to balance the right-side buttons */}
-          <div className="flex items-center gap-1" style={{ visibility: 'hidden' }}>
+          <div
+            className="flex items-center gap-1"
+            style={{ visibility: 'hidden' }}
+          >
             <span className="p-2 text-sm">?</span>
             <span style={{ width: 20 }} />
           </div>
@@ -262,10 +265,7 @@ function App() {
             </div>
 
             {/* Hints */}
-            <HintPanels
-              hintsUnlocked={hintsUnlocked}
-              onUnlock={unlockHint}
-            />
+            <HintPanels hintsUnlocked={hintsUnlocked} onUnlock={unlockHint} />
 
             {/* Word input */}
             <div className="mb-2">
