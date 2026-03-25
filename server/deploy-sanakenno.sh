@@ -28,9 +28,8 @@ docker compose up --build -d || fail "docker compose"
 
 echo "Extracting frontend build to /var/www/sanakenno/dist..."
 docker cp sanakenno:/app/dist /tmp/sanakenno-dist || fail "docker cp dist"
-sudo rm -rf /var/www/sanakenno/dist
-sudo cp -r /tmp/sanakenno-dist /var/www/sanakenno/dist || fail "copy to /var/www"
-sudo chown -R www-data:www-data /var/www/sanakenno/dist
+rm -rf /var/www/sanakenno/dist
+cp -r /tmp/sanakenno-dist /var/www/sanakenno/dist || fail "copy to /var/www"
 rm -rf /tmp/sanakenno-dist
 
 COMMIT_MSG=$(git log -1 --pretty=%s)
