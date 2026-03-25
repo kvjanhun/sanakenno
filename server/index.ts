@@ -1,14 +1,19 @@
 /**
  * Hono API server entry point.
  *
- * Mounts puzzle and achievement routes, applies middleware for
- * CORS, JSON parsing, and structured logging.
+ * Mounts puzzle, achievement, auth, and admin routes with middleware for
+ * CORS, JSON parsing, structured logging, and security headers.
  *
  * Endpoints:
  *   GET  /api/health              - Health check with DB reachability
  *   GET  /api/puzzle              - Today's puzzle
  *   GET  /api/puzzle/:number      - Specific puzzle by slot number
  *   POST /api/achievement         - Record player achievement
+ *   POST /api/auth/login          - Admin login
+ *   POST /api/auth/logout         - Admin logout
+ *   GET  /api/auth/session        - Check session validity
+ *   POST /api/auth/change-password - Change admin password
+ *   /api/admin/*                  - Admin API (auth required)
  *
  * @module server/index
  */
@@ -18,6 +23,12 @@ import { cors } from 'hono/cors';
 import { getDb } from './db/connection.js';
 import puzzleRoutes from './routes/puzzle.js';
 import achievementRoutes from './routes/achievement.js';
+import authRoutes from './auth/routes.js';
+import {
+  securityHeaders,
+  requireAuth,
+  requireCsrf,
+} from './auth/middleware.js';
 
 const app = new Hono();
 
@@ -59,10 +70,21 @@ app.get('/api/health', (c) => {
   }
 });
 
+// --- Security headers on auth and admin routes ---
+
+app.use('/api/auth/*', securityHeaders);
+app.use('/api/admin/*', securityHeaders);
+
+// --- Auth gate for admin routes ---
+
+app.use('/api/admin/*', requireAuth);
+app.use('/api/admin/*', requireCsrf);
+
 // --- Route mounting ---
 
 app.route('/api/puzzle', puzzleRoutes);
 app.route('/api/achievement', achievementRoutes);
+app.route('/api/auth', authRoutes);
 
 // --- Server startup ---
 
