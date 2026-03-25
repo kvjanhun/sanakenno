@@ -6,23 +6,50 @@ Find words from 7 letters. Every word must contain the center letter. Pangrams (
 
 ## Status
 
-**Early planning stage.** The game currently runs as part of [web_kontissa](https://github.com/kvjanhun/web_kontissa). This repo is the standalone rewrite.
+**Phase 3 — React Game Core.** The playable game UI is under construction.
 
-What exists so far:
-- BDD feature specs defining all game behaviour (see below)
-- Implementation plan covering stack, architecture, and phasing
+Completed:
+- Project scaffold, CI pipeline (GitHub Actions)
+- SQLite database, data migration from web_kontissa
+- Puzzle engine with runtime word filtering, SHA-256 hashing, in-memory cache
+- Hono API: `GET /api/puzzle`, `GET /api/puzzle/:n`, `POST /api/achievement`
+- Full TypeScript migration (strict mode, no `any`)
+- React components: Honeycomb grid, word input, found words, rank progress, rules modal, error state, theme toggle, celebrations
+- Zustand game store with localStorage persistence
+- Game timer, midnight rollover, keyboard handler
 
-No application code yet. Next step is Phase 1 (data pipeline).
+Coming next:
+- BDD step definitions for Phase 3 features
+- Phase 4: Hints, celebrations polish, share functionality
+- Phase 5: PWA + Docker deployment
+- Phase 6: Admin authentication + puzzle management tool
 
-## Planned stack
+## Stack
 
-React 19 + Vite | Tailwind CSS | Express | JSON file storage
+| Layer | Choice |
+|---|---|
+| Language | TypeScript (strict) |
+| Frontend | React 19, Vite, Zustand, Tailwind CSS 4 |
+| Backend | Hono (Node.js via tsx) |
+| Storage | SQLite (better-sqlite3) |
+| Testing | Vitest, Cucumber.js, Playwright |
+| PWA | vite-plugin-pwa (planned) |
 
-See [PLAN.md](PLAN.md) for full details and rationale.
+## Commands
+
+```
+npm install          # Install dependencies
+npm run dev          # Start dev server
+npm run build        # Production build
+npm run typecheck    # TypeScript check
+npm run test:unit    # Vitest unit tests
+npm run test:bdd     # Cucumber.js BDD specs
+npm run lint         # ESLint + Prettier check
+```
 
 ## Feature specs
 
-The `features/` directory contains Gherkin specs that serve as the design document. They define what the game does before any code is written.
+The `features/` directory contains Gherkin specs defining all game behaviour.
 
 | Feature | What it covers |
 |---|---|
@@ -35,7 +62,13 @@ The `features/` directory contains Gherkin specs that serve as the design docume
 | [timer](features/timer.feature) | Elapsed time tracking, pause on tab hidden/blur |
 | [persistence](features/persistence.feature) | localStorage per-puzzle, validation on reload |
 | [achievements](features/achievements.feature) | Server-side rank recording, session dedup |
-| [api](features/api.feature) | Express endpoints, response shape, rate limiting |
+| [api](features/api.feature) | Hono endpoints, response shape, rate limiting |
+| [theme](features/theme.feature) | Light/dark mode toggle, system preference |
+| [error-handling](features/error-handling.feature) | Network errors, corrupt data, storage limits |
+| [accessibility](features/accessibility.feature) | Keyboard behaviour, touch quirks, safe areas |
 | [pwa](features/pwa.feature) | Installability, service worker strategies, iOS quirks |
+| [infrastructure](features/infrastructure.feature) | Docker, nginx, health checks |
+| [auth](features/auth.feature) | Admin authentication, sessions, CSRF |
+| [admin](features/admin.feature) | Puzzle CRUD, blocked words, schedule |
 
-These will later be wired to [Cucumber.js](https://github.com/cucumber/cucumber-js) for automated acceptance testing.
+See [PLAN.md](PLAN.md) for architecture, phasing, and design decisions.
