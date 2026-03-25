@@ -39,6 +39,7 @@ jobs:
     steps:
       - name: Trigger deploy webhook
         run: |
-          curl -s -o /dev/null -w "%{http_code}" \
-            "https://erez.ac/hooks/deploy-sanakenno?token=${{ secrets.DEPLOY_TOKEN }}" \
-            | grep -q "^200$"
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://erez.ac/hooks/deploy-sanakenno?token=${{ secrets.DEPLOY_TOKEN }}")
+          echo "HTTP response: $HTTP_CODE"
+          [ "$HTTP_CODE" = "200" ]
