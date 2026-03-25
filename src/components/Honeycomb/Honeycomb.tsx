@@ -139,8 +139,8 @@ export function Honeycomb({
             dominantBaseline="central"
             style={{
               fill: hex.isCenter ? '#ffffff' : 'var(--color-text-primary)',
-              fontSize: '20px',
-              fontWeight: hex.isCenter ? 700 : 500,
+              fontSize: '24px',
+              fontWeight: hex.isCenter ? 500 : 400,
               fontFamily: 'var(--font-sans)',
               pointerEvents: 'none',
               userSelect: 'none',

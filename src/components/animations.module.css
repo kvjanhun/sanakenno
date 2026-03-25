@@ -58,6 +58,20 @@
   animation: glow-intense 2s ease-in-out infinite;
 }
 
+@keyframes instantFlash {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+.idleCharacter {
+  animation: instantFlash 1.5s steps(1, start) infinite;
+}
+
 .celebrationCardIntense::before {
   content: '';
   position: absolute;

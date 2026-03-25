@@ -62,18 +62,18 @@ export function WordInput({
 
   return (
     <div
-      className={`text-center font-[var(--font-mono)] text-2xl tracking-[0.15em]${shake ? ` ${styles.wordShake}` : ''}`}
+      className={`text-center font-[var(--font-mono)] text-2xl ${shake ? ` ${styles.wordShake}` : ''}`}
       aria-live="polite"
       aria-atomic="true"
     >
       {chars ? (
         chars.map((c, i) => (
-          <span key={i} style={{ color: COLOR_MAP[c.color] }}>
-            {c.char}
+          <span key={i} className="mr-0.75" style={{ color: COLOR_MAP[c.color] }}>
+            {c.char.toUpperCase()}
           </span>
         ))
       ) : (
-        <span style={{ color: 'var(--color-text-tertiary)' }}>&mdash;</span>
+        <span className={styles.idleCharacter} style={{ color: 'var(--color-text-tertiary)' }}>|</span>
       )}
     </div>
   );

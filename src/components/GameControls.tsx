@@ -41,7 +41,7 @@ export function GameControls({
           prevent(e);
           onDelete();
         }}
-        className="px-4 py-2 rounded-lg font-semibold cursor-pointer border-none"
+        className="px-4 py-2 rounded-lg font-normal cursor-pointer border-none"
         style={{
           backgroundColor: 'var(--color-bg-secondary)',
           color: 'var(--color-text-primary)',
@@ -55,7 +55,7 @@ export function GameControls({
           prevent(e);
           onShuffle();
         }}
-        className="px-4 py-2 rounded-lg font-semibold cursor-pointer border-none"
+        className="px-4 py-2 rounded-lg font-normal cursor-pointer border-none"
         style={{
           backgroundColor: 'var(--color-bg-secondary)',
           color: 'var(--color-text-primary)',
@@ -69,7 +69,7 @@ export function GameControls({
           prevent(e);
           onSubmit();
         }}
-        className="px-4 py-2 rounded-lg font-semibold cursor-pointer border-none text-white"
+        className="px-4 py-2 rounded-lg font-normal cursor-pointer border-none text-white"
         style={{ backgroundColor: 'var(--color-accent)' }}
       >
         OK
