@@ -24,6 +24,7 @@ import { getDb } from './db/connection.js';
 import puzzleRoutes from './routes/puzzle.js';
 import achievementRoutes from './routes/achievement.js';
 import authRoutes from './auth/routes.js';
+import adminRoutes from './routes/admin.js';
 import {
   securityHeaders,
   requireAuth,
@@ -85,6 +86,7 @@ app.use('/api/admin/*', requireCsrf);
 app.route('/api/puzzle', puzzleRoutes);
 app.route('/api/achievement', achievementRoutes);
 app.route('/api/auth', authRoutes);
+app.route('/api/admin', adminRoutes);
 
 // --- Server startup ---
 

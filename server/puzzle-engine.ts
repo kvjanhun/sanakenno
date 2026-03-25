@@ -106,6 +106,13 @@ export function setWordlist(words: Set<string>): void {
   _wordlistLoaded = true;
 }
 
+// --- Constants ---
+
+/** Valid Finnish alphabet letters for puzzle validation. */
+export const FINNISH_LETTERS = new Set(
+  'abcdefghijklmnopqrstuvwxyzäö'.split(''),
+);
+
 // --- Scoring ---
 
 /**
@@ -220,6 +227,35 @@ export function computePuzzle(
     max_score: maxScore,
     hint_data: hintData,
   };
+}
+
+// --- Variation computation ---
+
+/** Per-center variation stats. */
+export interface VariationData {
+  center: string;
+  word_count: number;
+  max_score: number;
+  pangram_count: number;
+}
+
+/**
+ * Compute stats for all 7 center letter variations of a puzzle.
+ * Used by admin preview and variations endpoints.
+ */
+export function computeVariations(
+  letters: string[],
+  blockedWords: string[] = [],
+): VariationData[] {
+  return letters.map((center) => {
+    const result = computePuzzle(letters, center, blockedWords);
+    return {
+      center,
+      word_count: result.hint_data.word_count,
+      max_score: result.max_score,
+      pangram_count: result.hint_data.pangram_count,
+    };
+  });
 }
 
 // --- In-memory cache ---
