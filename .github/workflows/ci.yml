@@ -38,8 +38,10 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - name: Trigger deploy webhook
+        env:
+          TOKEN: ${{ secrets.DEPLOY_TOKEN }}
         run: |
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-            "https://erez.ac/hooks/deploy-sanakenno?token=${{ secrets.DEPLOY_TOKEN }}")
+          echo "Token length: ${#TOKEN}"
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "https://erez.ac/hooks/deploy-sanakenno?token=${TOKEN}")
           echo "HTTP response: $HTTP_CODE"
           [ "$HTTP_CODE" = "200" ]
