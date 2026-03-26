@@ -109,5 +109,11 @@ When('the player double-taps quickly', function (this: SanakennoWorld) {
   return 'pending';
 });
 
-// "the page should not zoom" and "letter input should still work normally"
-// are defined in accessibility.steps.ts and reused here.
+// "the page should not zoom" is defined in accessibility.steps.ts.
+
+Then(
+  'letter input should still work normally',
+  function (this: SanakennoWorld) {
+    return 'pending';
+  },
+);

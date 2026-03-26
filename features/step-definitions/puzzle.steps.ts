@@ -5,7 +5,14 @@
  * Wires Cucumber scenarios to the Hono app and puzzle engine.
  */
 
-import { Given, When, Then, Before, After } from '@cucumber/cucumber';
+import {
+  Given,
+  When,
+  Then,
+  Before,
+  After,
+  type ITestCaseHookParameter,
+} from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
 import app from '../../server/index.js';
 import { getDb, closeDb, setDb } from '../../server/db/connection.js';
@@ -17,7 +24,9 @@ import {
 } from '../../server/puzzle-engine.js';
 import type { SanakennoWorld } from './types.js';
 
-Before(function (this: SanakennoWorld) {
+Before(function (this: SanakennoWorld, scenario: ITestCaseHookParameter) {
+  if (!scenario.gherkinDocument?.uri?.includes('puzzle.feature')) return;
+
   closeDb();
   setDb(null);
   const db = getDb({ inMemory: true });
@@ -50,7 +59,9 @@ Before(function (this: SanakennoWorld) {
   );
 });
 
-After(function (this: SanakennoWorld) {
+After(function (scenario: ITestCaseHookParameter) {
+  if (!scenario.gherkinDocument?.uri?.includes('puzzle.feature')) return;
+
   invalidateAll();
   closeDb();
   setDb(null);

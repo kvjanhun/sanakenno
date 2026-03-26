@@ -21,7 +21,7 @@ Feature: Admin tool
     Then the server should respond with 400
 
   Scenario: Puzzle letters must be valid Finnish characters
-    When the admin submits a puzzle with letter "w"
+    When the admin submits a puzzle with letter "ñ"
     Then the server should respond with 400
 
   Scenario: Center letter must be one of the 7 puzzle letters

@@ -311,11 +311,11 @@ Integration with the existing NUC server stack. **Complete.**
 2. **Deploy script**: `server/deploy-sanakenno.sh` (pull, build, docker cp dist to /var/www)
 3. **Webhook**: `deploy-sanakenno` hook on port 9000, triggered by GitHub Actions after CI passes
 4. **Deploy key**: separate `sanakenno_deploy_key` for git pull access
-5. **TODO**: Litestream replication of `sanakenno.db` to Backblaze B2
+5. **Litestream**: Replication added to web_kontissa's Litestream container via extra volume mount + dbs entry
 
-### Phase 6 — Authentication + Admin Tool
+### Phase 6 — Authentication + Admin Tool ✓
 
-Build the auth system and port the puzzle management UI from web_kontissa.
+Auth system and admin UI for puzzle management. **Complete.**
 After this phase, web_kontissa's kenno admin is no longer needed.
 
 #### 6a — Authentication Infrastructure
@@ -461,13 +461,6 @@ After Phase 6, web_kontissa's kenno-related code can be removed entirely.
 8. **One-time migration, then independence.** Puzzle data is migrated once from
    web_kontissa's DB. After that (and especially after Phase 6), the standalone
    app is fully self-contained.
-
-## Open Questions
-
-- **Combinations pre-computation.** The 7,922-row combinations table was pre-computed
-  in web_kontissa via a Python script. Need to either: (a) migrate the data as-is,
-  (b) rewrite the computation in JS, or (c) both — migrate now, rewrite later so
-  new combinations can be computed from the standalone.
 
 ## Resolved Decisions
 
