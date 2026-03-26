@@ -152,18 +152,17 @@ export function Stats() {
 
           {/* Legend */}
           <div className="flex gap-2 flex-wrap">
-            {SHORT_RANKS.map((sr, i) => (
+            {RANKS.map((rank, i) => (
               <span
-                key={sr}
+                key={rank}
                 className="flex items-center gap-1 text-xs"
                 style={{ color: 'var(--color-text-secondary)' }}
-                title={RANKS[i]}
               >
                 <span
                   className="inline-block w-2.5 h-2.5 rounded-sm"
                   style={{ backgroundColor: RANK_COLORS[i] }}
                 />
-                {sr}
+                {rank}
               </span>
             ))}
           </div>
@@ -199,30 +198,32 @@ export function Stats() {
                     {dateLabel}
                   </span>
 
-                  {/* Stacked bar */}
-                  <div
-                    className="flex h-4 rounded-sm overflow-hidden shrink-0"
-                    style={{
-                      width: `${barWidth}%`,
-                      minWidth: day.total > 0 ? '4px' : '0',
-                    }}
-                  >
-                    {RANKS.map((rank, i) => {
-                      const count = day.counts[rank] || 0;
-                      if (count === 0) return null;
-                      const pct = (count / day.total) * 100;
-                      return (
-                        <div
-                          key={rank}
-                          title={`${RANKS[i]}: ${count}`}
-                          style={{
-                            width: `${pct}%`,
-                            backgroundColor: RANK_COLORS[i],
-                            minWidth: '2px',
-                          }}
-                        />
-                      );
-                    })}
+                  {/* Stacked bar — wrapper constrains width */}
+                  <div className="flex-1 min-w-0">
+                    <div
+                      className="flex h-4 rounded-sm overflow-hidden"
+                      style={{
+                        width: `${barWidth}%`,
+                        minWidth: day.total > 0 ? '4px' : '0',
+                      }}
+                    >
+                      {RANKS.map((rank, i) => {
+                        const count = day.counts[rank] || 0;
+                        if (count === 0) return null;
+                        const pct = (count / day.total) * 100;
+                        return (
+                          <div
+                            key={rank}
+                            title={`${RANKS[i]}: ${count}`}
+                            style={{
+                              width: `${pct}%`,
+                              backgroundColor: RANK_COLORS[i],
+                              minWidth: '2px',
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
                   </div>
 
                   {/* Digit summary + total */}
