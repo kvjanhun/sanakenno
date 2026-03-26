@@ -760,7 +760,7 @@ admin.get('/schedule', (c) => {
 
 // --- Achievement stats ---
 
-/** Valid rank names for stats. */
+/** Valid rank names for stats, ordered lowest to highest. */
 const RANKS = [
   'Etsi sanoja!',
   'Hyvä alku',
@@ -771,59 +771,104 @@ const RANKS = [
   'Täysi kenno',
 ];
 
+/** Map rank name to numeric index for comparison. */
+const RANK_INDEX = new Map(RANKS.map((r, i) => [r, i]));
+
+interface AchievementRow {
+  rank: string;
+  achieved_at: string;
+  session_id: string | null;
+}
+
+/**
+ * Group rows by Helsinki date, counting per rank.
+ * When `bySession` is true, only the highest rank per session_id is counted.
+ */
+function groupByDay(
+  rows: AchievementRow[],
+  bySession: boolean,
+): {
+  dailyMap: Map<string, Record<string, number>>;
+  totals: Record<string, number>;
+} {
+  const dailyMap = new Map<string, Record<string, number>>();
+  const totals: Record<string, number> = {};
+  for (const rank of RANKS) totals[rank] = 0;
+
+  if (bySession) {
+    // First pass: find best rank per (date, session_id)
+    const sessionBest = new Map<string, { date: string; rankIdx: number }>();
+    for (const row of rows) {
+      const utcDate = new Date(row.achieved_at + 'Z');
+      const dateStr = utcDate.toLocaleDateString('en-CA', {
+        timeZone: 'Europe/Helsinki',
+      });
+      // Use session_id if available, fall back to row-level counting
+      const key = row.session_id
+        ? `${dateStr}:${row.session_id}`
+        : `${dateStr}:${row.achieved_at}`;
+      const idx = RANK_INDEX.get(row.rank) ?? 0;
+      const existing = sessionBest.get(key);
+      if (!existing || idx > existing.rankIdx) {
+        sessionBest.set(key, { date: dateStr, rankIdx: idx });
+      }
+    }
+
+    // Second pass: count best ranks per day
+    for (const { date, rankIdx } of sessionBest.values()) {
+      if (!dailyMap.has(date)) {
+        dailyMap.set(date, Object.fromEntries(RANKS.map((r) => [r, 0])));
+      }
+      const rankName = RANKS[rankIdx];
+      dailyMap.get(date)![rankName]++;
+      totals[rankName]++;
+    }
+  } else {
+    // Raw mode: count every achievement row
+    for (const row of rows) {
+      const utcDate = new Date(row.achieved_at + 'Z');
+      const dateStr = utcDate.toLocaleDateString('en-CA', {
+        timeZone: 'Europe/Helsinki',
+      });
+      if (!dailyMap.has(dateStr)) {
+        dailyMap.set(dateStr, Object.fromEntries(RANKS.map((r) => [r, 0])));
+      }
+      const dayCounts = dailyMap.get(dateStr)!;
+      if (dayCounts[row.rank] !== undefined) dayCounts[row.rank]++;
+      if (totals[row.rank] !== undefined) totals[row.rank]++;
+    }
+  }
+
+  return { dailyMap, totals };
+}
+
 /**
  * GET /achievements
  * Daily achievement breakdown by rank.
+ * Query params:
+ *   days=7 (default) — period length
+ *   mode=sessions — count only highest rank per session (default: all events)
  */
 admin.get('/achievements', (c) => {
   const days = Math.min(
     90,
     Math.max(1, parseInt(c.req.query('days') || '7', 10)),
   );
+  const bySession = c.req.query('mode') === 'sessions';
 
   const db = getDb();
 
-  // Get achievements for the period
   const rows = db
     .prepare(
-      `SELECT rank, achieved_at FROM achievements
+      `SELECT rank, achieved_at, session_id FROM achievements
        WHERE achieved_at >= datetime('now', ?)
        ORDER BY achieved_at DESC`,
     )
-    .all(`-${days} days`) as Array<{ rank: string; achieved_at: string }>;
+    .all(`-${days} days`) as AchievementRow[];
 
-  // Group by Helsinki date
-  const dailyMap = new Map<string, Record<string, number>>();
-  const totals: Record<string, number> = {};
-  for (const rank of RANKS) {
-    totals[rank] = 0;
-  }
+  const { dailyMap, totals } = groupByDay(rows, bySession);
 
-  for (const row of rows) {
-    // Convert UTC to Helsinki for date grouping
-    const utcDate = new Date(row.achieved_at + 'Z');
-    const helsinkiStr = utcDate.toLocaleDateString('en-CA', {
-      timeZone: 'Europe/Helsinki',
-    });
-
-    if (!dailyMap.has(helsinkiStr)) {
-      const counts: Record<string, number> = {};
-      for (const rank of RANKS) {
-        counts[rank] = 0;
-      }
-      dailyMap.set(helsinkiStr, counts);
-    }
-
-    const dayCounts = dailyMap.get(helsinkiStr)!;
-    if (dayCounts[row.rank] !== undefined) {
-      dayCounts[row.rank]++;
-    }
-    if (totals[row.rank] !== undefined) {
-      totals[row.rank]++;
-    }
-  }
-
-  // Convert to sorted array and fill missing days
+  // Fill missing days
   const now = new Date();
   const today = new Date(
     now.toLocaleString('en-US', { timeZone: 'Europe/Helsinki' }),
@@ -845,7 +890,7 @@ admin.get('/achievements', (c) => {
     daily.push({ date: dateStr, counts, total });
   }
 
-  return c.json({ days, daily, totals });
+  return c.json({ days, daily, totals, mode: bySession ? 'sessions' : 'all' });
 });
 
 export default admin;

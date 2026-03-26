@@ -31,6 +31,7 @@ interface AchievementBody {
   max_score: number;
   words_found: number;
   elapsed_ms?: number;
+  session_id?: string;
 }
 
 /** In-memory rate limiter: maps IP address to request count. Resets every 60s. */
@@ -99,8 +100,15 @@ achievement.post('/', rateLimitMiddleware, async (c) => {
     return c.json({ error: 'Invalid JSON body' }, 400);
   }
 
-  const { puzzle_number, rank, score, max_score, words_found, elapsed_ms } =
-    body;
+  const {
+    puzzle_number,
+    rank,
+    score,
+    max_score,
+    words_found,
+    elapsed_ms,
+    session_id,
+  } = body;
 
   if (
     puzzle_number === undefined ||
@@ -134,8 +142,8 @@ achievement.post('/', rateLimitMiddleware, async (c) => {
 
   const db = getDb();
   const stmt = db.prepare(`
-    INSERT INTO achievements (puzzle_number, rank, score, max_score, words_found, elapsed_ms)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO achievements (puzzle_number, rank, score, max_score, words_found, elapsed_ms, session_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
   `);
 
   stmt.run(
@@ -145,6 +153,7 @@ achievement.post('/', rateLimitMiddleware, async (c) => {
     max_score,
     words_found,
     elapsed_ms ?? null,
+    session_id ?? null,
   );
 
   return c.json({ status: 'recorded' }, 201);

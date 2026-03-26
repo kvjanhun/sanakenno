@@ -95,6 +95,7 @@ export interface GameState {
   pressedHexIndex: number | null;
   startedAt: number;
   totalPausedMs: number;
+  sessionId: string;
 
   /* --- Derived helpers (synchronous) --- */
   center: () => string;
@@ -134,6 +135,35 @@ export interface GameState {
 /** Storage key for a given puzzle number. */
 function storageKey(puzzleNumber: number): string {
   return `sanakenno_state_${puzzleNumber}`;
+}
+
+/**
+ * Get or create a stable device ID from localStorage.
+ * Combined with puzzle_number, this gives a consistent session ID
+ * for the same player on the same puzzle across refreshes.
+ */
+function getDeviceId(): string {
+  const key = 'sanakenno_device_id';
+  let id = localStorage.getItem(key);
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem(key, id);
+  }
+  return id;
+}
+
+/**
+ * Build a deterministic session ID from deviceId + puzzle number.
+ * Uses a simple hash to keep it short and non-reversible.
+ */
+async function buildSessionId(puzzleNumber: number): Promise<string> {
+  const input = `${getDeviceId()}:${puzzleNumber}`;
+  const data = new TextEncoder().encode(input);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  const bytes = new Uint8Array(hash);
+  return Array.from(bytes.slice(0, 16))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 const LEGACY_KEY = 'sanakenno_state';
@@ -188,6 +218,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
   pressedHexIndex: null,
   startedAt: 0,
   totalPausedMs: 0,
+  sessionId: '',
 
   /* --- Derived helpers --- */
 
@@ -231,6 +262,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
       const data = (await res.json()) as Puzzle;
 
       const outerLetters = data.letters.filter((l) => l !== data.center);
+      const sessionId = await buildSessionId(data.puzzle_number);
       set({
         puzzle: data,
         outerLetters,
@@ -243,6 +275,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
         celebration: null,
         startedAt: Date.now(),
         totalPausedMs: 0,
+        sessionId,
       });
 
       await get().loadState();
@@ -378,6 +411,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
           max_score: puzzle.max_score,
           words_found: newFoundWords.size,
           elapsed_ms: elapsed,
+          session_id: state.sessionId || undefined,
         }),
       }).catch(() => {});
     } else if (isPangram) {
