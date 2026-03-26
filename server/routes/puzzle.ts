@@ -52,7 +52,12 @@ function buildPuzzleResponse(slot: number): PuzzleResponse {
  * Returns today's puzzle based on Helsinki timezone date rotation.
  */
 puzzle.get('/', (c) => {
-  const slot = getPuzzleForDate(new Date());
+  // Convert to Helsinki timezone so rotation aligns with Finnish midnight
+  const now = new Date();
+  const helsinki = new Date(
+    now.toLocaleString('en-US', { timeZone: 'Europe/Helsinki' }),
+  );
+  const slot = getPuzzleForDate(helsinki);
   return c.json(buildPuzzleResponse(slot));
 });
 
