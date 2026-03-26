@@ -199,7 +199,7 @@ export function Stats() {
                   </span>
 
                   {/* Stacked bar — wrapper constrains width */}
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 overflow-hidden">
                     <div
                       className="flex h-4 rounded-sm overflow-hidden"
                       style={{
