@@ -2,12 +2,10 @@
  * Combined puzzle editor and combinations browser.
  *
  * Layout from top to bottom:
- *   1. Toolbar: slot nav, swap, delete
- *   2. Current puzzle letter tiles with dirty badge
- *   3. Save/restore buttons (when dirty)
- *   4. Combinations search with filters (scrollable, 10 rows visible)
- *   5. Center letter selector (VariationsGrid) for selected combo
- *   6. Word list for active combo + center
+ *   1. Toolbar: slot nav, swap, delete, save/restore
+ *   2. Center letter selector (VariationsGrid)
+ *   3. Combinations search with filters (scrollable, 10 rows visible)
+ *   4. Word list for active combo + center
  *
  * @module src/components/admin/PuzzleEditor
  */
@@ -84,6 +82,9 @@ export function PuzzleEditor() {
   const isDirty =
     activeLetters !== savedLetters || activeCenter !== savedCenter;
 
+  // Which variations to show: from selected combo, or from current puzzle
+  const displayVariations = selectedCombo ? selectedVariations : variations;
+
   // Load initial slot when totalPuzzles becomes available
   useEffect(() => {
     if (totalPuzzles > 0 && !initialLoaded) {
@@ -91,6 +92,13 @@ export function PuzzleEditor() {
       loadSlot(currentSlot);
     }
   }, [totalPuzzles, initialLoaded, currentSlot, loadSlot]);
+
+  // Sync search "requires" filter to the loaded puzzle's letters
+  useEffect(() => {
+    if (savedLetters) {
+      setFilters((prev) => ({ ...prev, requires: savedLetters }));
+    }
+  }, [savedLetters]);
 
   // Clear status message after 3 seconds
   useEffect(() => {
@@ -164,6 +172,7 @@ export function PuzzleEditor() {
   const handleSelectCombo = useCallback(
     (combo: CombinationEntry) => {
       if (selectedCombo === combo.letters) {
+        // Deselect — revert to current puzzle
         setSelectedCombo(null);
         setSelectedVariations([]);
         return;
@@ -174,39 +183,53 @@ export function PuzzleEditor() {
     [selectedCombo],
   );
 
-  const handleComboCenter = useCallback(
+  /** Handle center selection from the VariationsGrid. */
+  const handleCenterSelect = useCallback(
     (center: string) => {
-      if (!selectedCombo) return;
-      const letters = selectedCombo.split('');
-      useAdminStore.setState({
-        activeLetters: selectedCombo,
-        activeCenter: center,
-      });
-      previewCombo(letters, center);
+      if (selectedCombo) {
+        // Browsing a combo from search — preview it
+        const letters = selectedCombo.split('');
+        useAdminStore.setState({
+          activeLetters: selectedCombo,
+          activeCenter: center,
+        });
+        previewCombo(letters, center);
+      } else if (center === savedCenter && activeLetters === savedLetters) {
+        // Current puzzle, no local changes — persist center change to DB
+        changeCenter(center);
+      } else {
+        // Current puzzle with local changes — just update local state
+        setActiveCenter(center);
+      }
     },
-    [selectedCombo, previewCombo],
+    [
+      selectedCombo,
+      savedCenter,
+      savedLetters,
+      activeLetters,
+      previewCombo,
+      changeCenter,
+      setActiveCenter,
+    ],
   );
 
   // --- Slot navigation ---
 
   const handlePrev = useCallback(() => {
-    if (currentSlot > 0) loadSlot(currentSlot - 1);
+    if (currentSlot > 0) {
+      setSelectedCombo(null);
+      setSelectedVariations([]);
+      loadSlot(currentSlot - 1);
+    }
   }, [currentSlot, loadSlot]);
 
   const handleNext = useCallback(() => {
-    if (currentSlot < totalPuzzles - 1) loadSlot(currentSlot + 1);
+    if (currentSlot < totalPuzzles - 1) {
+      setSelectedCombo(null);
+      setSelectedVariations([]);
+      loadSlot(currentSlot + 1);
+    }
   }, [currentSlot, totalPuzzles, loadSlot]);
-
-  const handleCenterSelect = useCallback(
-    (center: string) => {
-      if (center === savedCenter && activeLetters === savedLetters) {
-        changeCenter(center);
-      } else {
-        setActiveCenter(center);
-      }
-    },
-    [savedCenter, savedLetters, activeLetters, changeCenter, setActiveCenter],
-  );
 
   const handleSwap = useCallback(() => {
     const target = parseInt(swapTarget, 10) - 1;
@@ -228,6 +251,8 @@ export function PuzzleEditor() {
   }, [currentSlot, deleteSlot]);
 
   const handleRestore = useCallback(() => {
+    setSelectedCombo(null);
+    setSelectedVariations([]);
     useAdminStore.setState({
       activeLetters: savedLetters,
       activeCenter: savedCenter,
@@ -242,8 +267,6 @@ export function PuzzleEditor() {
     },
     [blockWord],
   );
-
-  const lettersArray = activeLetters.split('');
 
   const inputStyle = {
     backgroundColor: 'var(--color-bg-primary)',
@@ -319,6 +342,37 @@ export function PuzzleEditor() {
           >
             &gt;
           </button>
+          {isDirty && (
+            <>
+              <button
+                type="button"
+                onClick={() => saveSlot()}
+                disabled={saving}
+                className="px-3 py-1 rounded text-xs font-semibold cursor-pointer ml-2"
+                style={{
+                  backgroundColor: 'var(--color-accent)',
+                  color: '#fff',
+                  border: 'none',
+                  opacity: saving ? 0.6 : 1,
+                }}
+              >
+                {saving ? 'Tallennetaan...' : 'Tallenna'}
+              </button>
+              <button
+                type="button"
+                onClick={handleRestore}
+                disabled={saving}
+                className="px-3 py-1 rounded text-xs cursor-pointer"
+                style={{
+                  backgroundColor: 'var(--color-bg-primary)',
+                  border: '1px solid var(--color-border)',
+                  color: 'var(--color-text-primary)',
+                }}
+              >
+                Palauta
+              </button>
+            </>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -361,81 +415,10 @@ export function PuzzleEditor() {
         </div>
       </div>
 
-      {/* Letter tiles */}
-      {activeLetters && (
-        <div className="flex justify-center">
-          <div className="flex items-center gap-1.5">
-            {lettersArray.map((letter, i) => (
-              <div
-                key={`${letter}-${i}`}
-                className="w-10 h-10 flex items-center justify-center rounded-lg text-lg font-bold uppercase"
-                style={{
-                  backgroundColor:
-                    letter === activeCenter
-                      ? 'var(--color-accent)'
-                      : 'var(--color-bg-secondary)',
-                  color:
-                    letter === activeCenter
-                      ? '#fff'
-                      : 'var(--color-text-primary)',
-                  border: `2px solid ${letter === activeCenter ? 'var(--color-accent)' : 'var(--color-border)'}`,
-                }}
-              >
-                {letter}
-              </div>
-            ))}
-            {isDirty && (
-              <span
-                className="text-xs px-2 py-0.5 rounded-full ml-2"
-                style={{
-                  backgroundColor: 'rgba(234, 179, 8, 0.15)',
-                  color: '#ca8a04',
-                }}
-              >
-                muokattu
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Save / Restore */}
-      {isDirty && (
-        <div className="flex justify-center gap-2">
-          <button
-            type="button"
-            onClick={() => saveSlot()}
-            disabled={saving}
-            className="px-4 py-1.5 rounded text-sm font-semibold cursor-pointer"
-            style={{
-              backgroundColor: 'var(--color-accent)',
-              color: '#fff',
-              border: 'none',
-              opacity: saving ? 0.6 : 1,
-            }}
-          >
-            {saving ? 'Tallennetaan...' : 'Tallenna'}
-          </button>
-          <button
-            type="button"
-            onClick={handleRestore}
-            disabled={saving}
-            className="px-4 py-1.5 rounded text-sm cursor-pointer"
-            style={{
-              backgroundColor: 'var(--color-bg-secondary)',
-              border: '1px solid var(--color-border)',
-              color: 'var(--color-text-primary)',
-            }}
-          >
-            Palauta
-          </button>
-        </div>
-      )}
-
-      {/* Variations grid for current puzzle */}
-      {variations.length > 0 && (
+      {/* Center letter selector */}
+      {displayVariations.length > 0 && (
         <VariationsGrid
-          variations={variations}
+          variations={displayVariations}
           activeCenter={activeCenter}
           onSelect={handleCenterSelect}
         />
@@ -612,23 +595,6 @@ export function PuzzleEditor() {
           </table>
         </div>
       </div>
-
-      {/* Center selector for selected combo */}
-      {selectedCombo && selectedVariations.length > 0 && (
-        <div>
-          <div
-            className="text-xs mb-1"
-            style={{ color: 'var(--color-text-tertiary)' }}
-          >
-            Keskuskirjain: {selectedCombo}
-          </div>
-          <VariationsGrid
-            variations={selectedVariations}
-            activeCenter={activeCenter}
-            onSelect={handleComboCenter}
-          />
-        </div>
-      )}
 
       {/* Word list */}
       <WordList

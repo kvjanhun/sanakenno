@@ -51,7 +51,13 @@ export function AdminLayout() {
       });
       if (res.ok) {
         const data = await res.json();
-        useAdminStore.setState({ totalPuzzles: data.total_puzzles });
+        const todayEntry = data.schedule?.find(
+          (e: { is_today: boolean }) => e.is_today,
+        );
+        useAdminStore.setState({
+          totalPuzzles: data.total_puzzles,
+          ...(todayEntry ? { currentSlot: todayEntry.slot } : {}),
+        });
       }
     } catch {
       // Ignore
