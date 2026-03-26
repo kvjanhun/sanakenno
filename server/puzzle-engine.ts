@@ -108,9 +108,9 @@ export function setWordlist(words: Set<string>): void {
 
 // --- Constants ---
 
-/** Valid Finnish alphabet letters for puzzle validation. */
+/** Valid Finnish alphabet letters for puzzle validation (a–ö, including å). */
 export const FINNISH_LETTERS = new Set(
-  'abcdefghijklmnopqrstuvwxyzäö'.split(''),
+  'abcdefghijklmnopqrstuvwxyzåäö'.split(''),
 );
 
 // --- Scoring ---

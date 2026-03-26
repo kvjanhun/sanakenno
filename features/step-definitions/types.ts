@@ -43,7 +43,7 @@ export interface SanakennoWorld {
     by_pair: Record<string, number>;
   } | null;
   hintsUnlocked: Set<string>;
-  derivedHints: import('../../src/hooks/useHintData.js').DerivedHintData | null;
+  derivedHints: import('../../src/utils/hint-data.js').DerivedHintData | null;
   /* Phase 4: Achievements */
   achievementPosts: Array<Record<string, unknown>>;
   achievementSessionKeys: Set<string>;

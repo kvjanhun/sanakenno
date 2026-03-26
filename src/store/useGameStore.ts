@@ -24,14 +24,8 @@ import {
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
-/** Shape of the hint_data object returned by the puzzle API. */
-export interface HintData {
-  word_count: number;
-  pangram_count: number;
-  by_letter: Record<string, number>;
-  by_length: Record<string, number>;
-  by_pair: Record<string, number>;
-}
+import type { HintData } from '../utils/hint-data.js';
+export type { HintData } from '../utils/hint-data.js';
 
 /** Shape of the puzzle payload from GET /api/puzzle. */
 export interface Puzzle {
