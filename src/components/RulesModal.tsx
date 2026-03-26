@@ -180,6 +180,18 @@ export function RulesModal({
             >
               erez.ac
             </a>
+            {' · '}
+            <a
+              href="https://github.com/kvjanhun/sanakenno"
+              target="_blank"
+              rel="noopener"
+              style={{
+                color: 'var(--color-text-tertiary)',
+                textDecoration: 'underline',
+              }}
+            >
+              GitHub
+            </a>
           </p>
         </div>
       </div>
