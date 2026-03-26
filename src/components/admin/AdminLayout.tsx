@@ -11,18 +11,16 @@ import { useEffect, useState, useCallback } from 'react';
 import { useAdminStore } from '../../store/useAdminStore.js';
 import { LoginPage } from './LoginPage.js';
 import { PuzzleEditor } from './PuzzleEditor.js';
-import { CombinationsBrowser } from './CombinationsBrowser.js';
 import { BlockedWords } from './BlockedWords.js';
 import { Schedule } from './Schedule.js';
 import { Stats } from './Stats.js';
 
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
-type Tab = 'editor' | 'combinations' | 'blocked' | 'schedule' | 'stats';
+type Tab = 'editor' | 'blocked' | 'schedule' | 'stats';
 
 const TABS: { key: Tab; label: string }[] = [
   { key: 'editor', label: 'Työkalu' },
-  { key: 'combinations', label: 'Yhdistelmät' },
   { key: 'blocked', label: 'Estetyt' },
   { key: 'schedule', label: 'Aikataulu' },
   { key: 'stats', label: 'Tilastot' },
@@ -165,7 +163,6 @@ export function AdminLayout() {
       {/* Content */}
       <main className="max-w-3xl mx-auto px-4 py-4">
         {activeTab === 'editor' && <PuzzleEditor />}
-        {activeTab === 'combinations' && <CombinationsBrowser />}
         {activeTab === 'blocked' && <BlockedWords />}
         {activeTab === 'schedule' && <Schedule />}
         {activeTab === 'stats' && <Stats />}

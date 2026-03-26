@@ -1,16 +1,43 @@
 /**
- * Puzzle editor: toolbar, letter tiles, variations grid, and word list.
+ * Combined puzzle editor and combinations browser.
  *
- * Provides slot navigation, save/restore, swap, delete, and new puzzle
- * controls. Mirrors the Vue AdminKennoPuzzleTool functionality.
+ * Layout from top to bottom:
+ *   1. Toolbar: slot nav, swap, delete
+ *   2. Current puzzle letter tiles with dirty badge
+ *   3. Save/restore buttons (when dirty)
+ *   4. Combinations search with filters (scrollable, 10 rows visible)
+ *   5. Center letter selector (VariationsGrid) for selected combo
+ *   6. Word list for active combo + center
  *
  * @module src/components/admin/PuzzleEditor
  */
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAdminStore } from '../../store/useAdminStore.js';
+import type {
+  CombinationEntry,
+  VariationData,
+} from '../../store/useAdminStore.js';
 import { VariationsGrid } from './VariationsGrid.js';
 import { WordList } from './WordList.js';
+
+const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+interface Filters {
+  requires: string;
+  excludes: string;
+  min_pangrams: string;
+  min_words: string;
+  in_rotation: string;
+}
+
+const DEFAULT_FILTERS: Filters = {
+  requires: '',
+  excludes: '',
+  min_pangrams: '',
+  min_words: '',
+  in_rotation: '',
+};
 
 export function PuzzleEditor() {
   const currentSlot = useAdminStore((s) => s.currentSlot);
@@ -26,6 +53,7 @@ export function PuzzleEditor() {
   const saving = useAdminStore((s) => s.saving);
   const statusMessage = useAdminStore((s) => s.statusMessage);
   const statusType = useAdminStore((s) => s.statusType);
+  const csrfToken = useAdminStore((s) => s.csrfToken);
 
   const loadSlot = useAdminStore((s) => s.loadSlot);
   const saveSlot = useAdminStore((s) => s.saveSlot);
@@ -33,20 +61,36 @@ export function PuzzleEditor() {
   const swapSlots = useAdminStore((s) => s.swapSlots);
   const deleteSlot = useAdminStore((s) => s.deleteSlot);
   const blockWord = useAdminStore((s) => s.blockWord);
+  const previewCombo = useAdminStore((s) => s.previewCombo);
   const setStatusMessage = useAdminStore((s) => s.setStatusMessage);
   const setActiveCenter = useAdminStore((s) => s.setActiveCenter);
 
   const [swapTarget, setSwapTarget] = useState('');
+  const [initialLoaded, setInitialLoaded] = useState(false);
+
+  // Combinations browser state
+  const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
+  const [sort, setSort] = useState('words_max');
+  const [order, setOrder] = useState<'asc' | 'desc'>('desc');
+  const [comboResults, setComboResults] = useState<CombinationEntry[]>([]);
+  const [comboTotal, setComboTotal] = useState(0);
+  const [comboLoading, setComboLoading] = useState(false);
+  const [selectedCombo, setSelectedCombo] = useState<string | null>(null);
+  const [selectedVariations, setSelectedVariations] = useState<VariationData[]>(
+    [],
+  );
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const isDirty =
     activeLetters !== savedLetters || activeCenter !== savedCenter;
 
-  // Load initial slot
+  // Load initial slot when totalPuzzles becomes available
   useEffect(() => {
-    if (totalPuzzles > 0) {
+    if (totalPuzzles > 0 && !initialLoaded) {
+      setInitialLoaded(true);
       loadSlot(currentSlot);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [totalPuzzles, initialLoaded, currentSlot, loadSlot]);
 
   // Clear status message after 3 seconds
   useEffect(() => {
@@ -55,6 +99,95 @@ export function PuzzleEditor() {
       return () => clearTimeout(t);
     }
   }, [statusMessage, setStatusMessage]);
+
+  // --- Combinations fetch ---
+
+  const fetchCombinations = useCallback(async () => {
+    setComboLoading(true);
+    const params = new URLSearchParams();
+    if (filters.requires) params.set('requires', filters.requires);
+    if (filters.excludes) params.set('excludes', filters.excludes);
+    if (filters.min_pangrams) params.set('min_pangrams', filters.min_pangrams);
+    if (filters.min_words) params.set('min_words', filters.min_words);
+    if (filters.in_rotation) params.set('in_rotation', filters.in_rotation);
+    params.set('sort', sort);
+    params.set('order', order);
+    params.set('page', '1');
+    params.set('per_page', '50');
+
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/combinations?${params}`, {
+        credentials: 'same-origin',
+        headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {},
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setComboResults(data.combinations);
+        setComboTotal(data.total);
+      }
+    } catch {
+      // Ignore
+    }
+    setComboLoading(false);
+  }, [filters, sort, order, csrfToken]);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      fetchCombinations();
+    }, 300);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [fetchCombinations]);
+
+  const updateFilter = (key: keyof Filters, value: string) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleSort = (col: string) => {
+    if (sort === col) {
+      setOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSort(col);
+      setOrder('desc');
+    }
+  };
+
+  const sortIndicator = (col: string) => {
+    if (sort !== col) return '';
+    return order === 'asc' ? ' ^' : ' v';
+  };
+
+  // --- Combo selection ---
+
+  const handleSelectCombo = useCallback(
+    (combo: CombinationEntry) => {
+      if (selectedCombo === combo.letters) {
+        setSelectedCombo(null);
+        setSelectedVariations([]);
+        return;
+      }
+      setSelectedCombo(combo.letters);
+      setSelectedVariations(combo.variations as VariationData[]);
+    },
+    [selectedCombo],
+  );
+
+  const handleComboCenter = useCallback(
+    (center: string) => {
+      if (!selectedCombo) return;
+      const letters = selectedCombo.split('');
+      useAdminStore.setState({
+        activeLetters: selectedCombo,
+        activeCenter: center,
+      });
+      previewCombo(letters, center);
+    },
+    [selectedCombo, previewCombo],
+  );
+
+  // --- Slot navigation ---
 
   const handlePrev = useCallback(() => {
     if (currentSlot > 0) loadSlot(currentSlot - 1);
@@ -67,10 +200,8 @@ export function PuzzleEditor() {
   const handleCenterSelect = useCallback(
     (center: string) => {
       if (center === savedCenter && activeLetters === savedLetters) {
-        // Same combo, just change center on server
         changeCenter(center);
       } else {
-        // Different combo or previewing — just update local state
         setActiveCenter(center);
       }
     },
@@ -113,6 +244,12 @@ export function PuzzleEditor() {
   );
 
   const lettersArray = activeLetters.split('');
+
+  const inputStyle = {
+    backgroundColor: 'var(--color-bg-primary)',
+    border: '1px solid var(--color-border)',
+    color: 'var(--color-text-primary)',
+  };
 
   return (
     <div className="space-y-4">
@@ -185,7 +322,6 @@ export function PuzzleEditor() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Swap */}
           <input
             type="number"
             value={swapTarget}
@@ -194,11 +330,7 @@ export function PuzzleEditor() {
             min={1}
             max={totalPuzzles}
             className="w-14 px-1 py-1 rounded text-sm text-center"
-            style={{
-              backgroundColor: 'var(--color-bg-primary)',
-              border: '1px solid var(--color-border)',
-              color: 'var(--color-text-primary)',
-            }}
+            style={inputStyle}
           />
           <button
             type="button"
@@ -213,8 +345,6 @@ export function PuzzleEditor() {
           >
             Vaihda
           </button>
-
-          {/* Delete */}
           <button
             type="button"
             onClick={handleDelete}
@@ -302,13 +432,202 @@ export function PuzzleEditor() {
         </div>
       )}
 
-      {/* Variations grid */}
+      {/* Variations grid for current puzzle */}
       {variations.length > 0 && (
         <VariationsGrid
           variations={variations}
           activeCenter={activeCenter}
           onSelect={handleCenterSelect}
         />
+      )}
+
+      {/* Combinations search */}
+      <div
+        className="p-3 rounded-lg space-y-2"
+        style={{
+          backgroundColor: 'var(--color-bg-secondary)',
+          border: '1px solid var(--color-border)',
+        }}
+      >
+        <div
+          className="text-xs font-semibold mb-1"
+          style={{ color: 'var(--color-text-secondary)' }}
+        >
+          Yhdistelmähaku
+          {!comboLoading && (
+            <span
+              className="font-normal ml-2"
+              style={{ color: 'var(--color-text-tertiary)' }}
+            >
+              {comboTotal} tulosta
+            </span>
+          )}
+        </div>
+        <div className="grid grid-cols-3 gap-2 text-sm">
+          <input
+            type="text"
+            value={filters.requires}
+            onChange={(e) => updateFilter('requires', e.target.value)}
+            placeholder="Sisältää..."
+            className="px-2 py-1 rounded text-sm"
+            style={inputStyle}
+          />
+          <input
+            type="text"
+            value={filters.excludes}
+            onChange={(e) => updateFilter('excludes', e.target.value)}
+            placeholder="Ei sisällä..."
+            className="px-2 py-1 rounded text-sm"
+            style={inputStyle}
+          />
+          <select
+            value={filters.in_rotation}
+            onChange={(e) => updateFilter('in_rotation', e.target.value)}
+            className="px-2 py-1 rounded text-sm"
+            style={inputStyle}
+          >
+            <option value="">Kaikki</option>
+            <option value="true">Kierrossa</option>
+            <option value="false">Ei kierrossa</option>
+          </select>
+        </div>
+
+        {/* Scrollable results table */}
+        <div className="overflow-y-auto" style={{ maxHeight: '280px' }}>
+          <table
+            className="w-full text-sm"
+            style={{ borderCollapse: 'collapse' }}
+          >
+            <thead
+              className="sticky top-0"
+              style={{ backgroundColor: 'var(--color-bg-secondary)' }}
+            >
+              <tr
+                style={{
+                  borderBottom: '1px solid var(--color-border)',
+                  color: 'var(--color-text-secondary)',
+                }}
+              >
+                <th
+                  className="text-left py-1 px-2 cursor-pointer"
+                  onClick={() => handleSort('letters')}
+                >
+                  Kirjaimet{sortIndicator('letters')}
+                </th>
+                <th
+                  className="text-right py-1 px-2 cursor-pointer"
+                  onClick={() => handleSort('pangrams')}
+                >
+                  Pg{sortIndicator('pangrams')}
+                </th>
+                <th
+                  className="text-right py-1 px-2 cursor-pointer"
+                  onClick={() => handleSort('words_max')}
+                >
+                  Max{sortIndicator('words_max')}
+                </th>
+                <th
+                  className="text-right py-1 px-2 cursor-pointer"
+                  onClick={() => handleSort('words_min')}
+                >
+                  Min{sortIndicator('words_min')}
+                </th>
+                <th
+                  className="text-right py-1 px-2 cursor-pointer"
+                  onClick={() => handleSort('score_max')}
+                >
+                  Pisteet{sortIndicator('score_max')}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {comboLoading && (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="py-2 text-center text-xs"
+                    style={{ color: 'var(--color-text-tertiary)' }}
+                  >
+                    Ladataan...
+                  </td>
+                </tr>
+              )}
+              {!comboLoading &&
+                comboResults.map((combo) => (
+                  <tr
+                    key={combo.letters}
+                    className="cursor-pointer"
+                    onClick={() => handleSelectCombo(combo)}
+                    style={{
+                      borderBottom: '1px solid var(--color-border)',
+                      backgroundColor:
+                        selectedCombo === combo.letters
+                          ? 'rgba(255, 100, 62, 0.08)'
+                          : combo.letters === savedLetters
+                            ? 'rgba(22, 163, 74, 0.06)'
+                            : 'transparent',
+                    }}
+                  >
+                    <td
+                      className="py-1 px-2 font-mono"
+                      style={{ color: 'var(--color-text-primary)' }}
+                    >
+                      {combo.letters}
+                      {combo.in_rotation && (
+                        <span
+                          className="ml-1 text-xs"
+                          style={{ color: 'var(--color-accent)' }}
+                        >
+                          *
+                        </span>
+                      )}
+                    </td>
+                    <td
+                      className="py-1 px-2 text-right"
+                      style={{ color: 'var(--color-text-secondary)' }}
+                    >
+                      {combo.total_pangrams}
+                    </td>
+                    <td
+                      className="py-1 px-2 text-right"
+                      style={{ color: 'var(--color-text-secondary)' }}
+                    >
+                      {combo.max_word_count}
+                    </td>
+                    <td
+                      className="py-1 px-2 text-right"
+                      style={{ color: 'var(--color-text-secondary)' }}
+                    >
+                      {combo.min_word_count}
+                    </td>
+                    <td
+                      className="py-1 px-2 text-right"
+                      style={{ color: 'var(--color-text-secondary)' }}
+                    >
+                      {combo.max_max_score}
+                    </td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Center selector for selected combo */}
+      {selectedCombo && selectedVariations.length > 0 && (
+        <div>
+          <div
+            className="text-xs mb-1"
+            style={{ color: 'var(--color-text-tertiary)' }}
+          >
+            Keskuskirjain: {selectedCombo}
+          </div>
+          <VariationsGrid
+            variations={selectedVariations}
+            activeCenter={activeCenter}
+            onSelect={handleComboCenter}
+          />
+        </div>
       )}
 
       {/* Word list */}

@@ -27,10 +27,8 @@ echo "Rebuilding Docker container..."
 docker compose up --build -d || fail "docker compose"
 
 echo "Extracting frontend build to /var/www/sanakenno/dist..."
-docker cp sanakenno:/app/dist /tmp/sanakenno-dist || fail "docker cp dist"
 rm -rf /var/www/sanakenno/dist
-cp -r /tmp/sanakenno-dist /var/www/sanakenno/dist || fail "copy to /var/www"
-rm -rf /tmp/sanakenno-dist
+docker cp sanakenno:/app/dist /var/www/sanakenno/dist || fail "docker cp dist"
 
 COMMIT_MSG=$(git log -1 --pretty=%s)
 COMMIT_HASH=$(git log -1 --pretty=%h)
