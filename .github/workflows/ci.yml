@@ -22,15 +22,23 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Prettier
-        run: npx prettier --check "src/**/*.{ts,tsx}" "features/**/*.ts" "server/**/*.ts"
+      - name: Lint
+        run: npm run lint
 
       - name: Unit tests
         run: npm run test:unit
 
       - name: BDD tests
         run: npm run test:bdd
-        continue-on-error: true
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E tests
+        run: npx playwright test
+
+      - name: Build
+        run: npm run build
 
   deploy:
     runs-on: ubuntu-latest
