@@ -39,6 +39,19 @@ function applySchema(db: BetterSqlite3.Database): void {
   const schemaPath = join(__dirname, 'schema.sql');
   const schema = readFileSync(schemaPath, 'utf-8');
   db.exec(schema);
+
+  // Migrations: add columns that may be missing from older databases.
+  // SQLite's ALTER TABLE ADD COLUMN is idempotent-safe via try/catch.
+  const migrations = [
+    'ALTER TABLE achievements ADD COLUMN session_id TEXT',
+  ];
+  for (const sql of migrations) {
+    try {
+      db.exec(sql);
+    } catch {
+      // Column already exists — expected, ignore
+    }
+  }
 }
 
 /**
