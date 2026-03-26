@@ -42,9 +42,7 @@ function applySchema(db: BetterSqlite3.Database): void {
 
   // Migrations: add columns that may be missing from older databases.
   // SQLite's ALTER TABLE ADD COLUMN is idempotent-safe via try/catch.
-  const migrations = [
-    'ALTER TABLE achievements ADD COLUMN session_id TEXT',
-  ];
+  const migrations = ['ALTER TABLE achievements ADD COLUMN session_id TEXT'];
   for (const sql of migrations) {
     try {
       db.exec(sql);
