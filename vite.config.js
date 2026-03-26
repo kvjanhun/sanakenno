@@ -80,6 +80,6 @@ export default defineConfig(({ command }) => ({
     setupFiles: ['./tests/setup.ts'],
     globals: true,
     passWithNoTests: true,
-    exclude: ['node_modules', '.claude'],
+    exclude: ['node_modules', '.claude', 'tests/e2e'],
   },
 }));

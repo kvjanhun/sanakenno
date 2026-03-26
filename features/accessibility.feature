@@ -1,3 +1,4 @@
+@e2e
 Feature: Accessibility
   The game is playable with keyboard only and respects platform conventions
   for touch and assistive input.

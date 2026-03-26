@@ -50,14 +50,17 @@ Feature: Rank progression
 
   # --- Celebrations ---
 
+  @e2e
   Scenario: Reaching Ällistyttävä triggers a glow celebration
     When the player reaches "Ällistyttävä" rank
     Then a celebration banner should appear for 5 seconds
 
+  @e2e
   Scenario: Reaching Täysi kenno triggers a golden celebration
     When the player reaches "Täysi kenno" rank
     Then a golden celebration should appear for 8 seconds
 
+  @e2e
   Scenario: Other rank transitions show a brief message
     When the player reaches "Onnistuja" rank
     Then the message "Uusi taso: Onnistuja!" should appear for 3 seconds

@@ -8,6 +8,7 @@
 import { Given, When, Then, Before } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
 import { rankForScore } from '../../src/utils/scoring.js';
+import app from '../../server/index.js';
 import type { SanakennoWorld } from './types.js';
 
 /** Simulated max score for rank threshold tests. */
@@ -192,10 +193,20 @@ Then('a new achievement should be recorded', function (this: SanakennoWorld) {
 
 When(
   'more than {int} achievements are posted in one minute',
-  function (this: SanakennoWorld, _limit: number) {
-    // Rate limiting is tested at the API level via api.steps.ts.
-    // Here we mark as pending since it needs the Hono server.
-    return 'pending';
+  async function (this: SanakennoWorld, limit: number) {
+    for (let i = 0; i <= limit; i++) {
+      this.response = await app.request('/api/achievement', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          puzzle_number: 0,
+          rank: 'Hyvä alku',
+          score: 5,
+          max_score: 100,
+          words_found: 3,
+        }),
+      });
+    }
   },
 );
 

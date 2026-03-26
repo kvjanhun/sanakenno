@@ -727,7 +727,7 @@ admin.get('/schedule', (c) => {
   );
   today.setHours(0, 0, 0, 0);
 
-  const todaySlot = todaysSlot();
+  const _todaySlot = todaysSlot();
   const db = getDb();
   const schedule: Array<{
     date: string;

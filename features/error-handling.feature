@@ -1,3 +1,4 @@
+@e2e
 Feature: Error handling
   The game handles network failures, corrupt data, and storage limits
   gracefully without breaking the play experience.

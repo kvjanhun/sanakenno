@@ -4,12 +4,14 @@ Feature: Container Infrastructure
 
   # --- Security & Environment ---
 
+  @docker
   Scenario: Application runs as a non-privileged user
     Given the Sanakenno container is running
     When I check the process owner
     Then it should not be "root"
     And the process should have no write access to the root filesystem
 
+  @docker
   Scenario: Configuration via environment variables
     Given the container is started with PORT=8081 and DATA_DIR=/data
     Then the Hono server should listen on port 8081
@@ -29,6 +31,7 @@ Feature: Container Infrastructure
 
   # --- Multi-stage Build ---
 
+  @docker
   Scenario: Production image is minimal
     When I inspect the production image
     Then it should not contain build tools (npm, compiler, source code)

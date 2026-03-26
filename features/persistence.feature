@@ -1,3 +1,4 @@
+@e2e
 Feature: Game state persistence
   Game progress is saved to localStorage per puzzle so that players
   can close the browser and resume later. Each puzzle has its own

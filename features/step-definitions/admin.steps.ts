@@ -25,6 +25,8 @@ import {
   invalidateAll,
   setWordlist,
   getPuzzleBySlot,
+  getPuzzleForDate,
+  totalPuzzles,
 } from '../../server/puzzle-engine.js';
 import type { SanakennoWorld } from './types.js';
 
@@ -460,12 +462,35 @@ When(
 
 Given(
   "slot {int} is today's live puzzle",
-  function (this: AdminWorld, _slot: number) {
-    // We can't easily control "today's slot" in tests since it depends on date.
-    // Instead, we find today's actual slot and use that.
-    // For test purposes, we store the target slot and verify the 409 behavior
-    // using a non-force request to today's actual slot.
-    return 'pending';
+  function (this: AdminWorld, slot: number) {
+    // Adjust the rotation epoch so that today maps to the requested slot.
+    // getPuzzleForDate uses: slot = (START_INDEX + daysDiff) % total
+    // where START_INDEX = 1, daysDiff = days since epoch.
+    const db = getDb();
+    const total = totalPuzzles();
+    const daysDiff = (((slot - 1) % total) + total) % total;
+    const today = new Date();
+    const epochDate = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate() - daysDiff,
+    );
+    const y = epochDate.getFullYear();
+    const m = String(epochDate.getMonth() + 1).padStart(2, '0');
+    const d = String(epochDate.getDate()).padStart(2, '0');
+    const epochStr = `${y}-${m}-${d}`;
+    db.prepare(
+      "INSERT OR REPLACE INTO config (key, value) VALUES ('rotation_epoch', ?)",
+    ).run(epochStr);
+    invalidateAll();
+
+    // Verify the slot is correct
+    const actual = getPuzzleForDate(today);
+    assert.equal(
+      actual,
+      slot,
+      `Expected today's slot to be ${slot}, got ${actual}`,
+    );
   },
 );
 
@@ -489,7 +514,11 @@ When(
 Then(
   'the message should warn about modifying the live puzzle',
   function (this: AdminWorld) {
-    return 'pending';
+    const body = this.responseJson;
+    assert.ok(
+      typeof body.error === 'string' || typeof body.message === 'string',
+      'Response should include an error or message about the live puzzle',
+    );
   },
 );
 

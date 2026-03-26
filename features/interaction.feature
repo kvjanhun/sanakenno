@@ -1,3 +1,4 @@
+@e2e
 Feature: Game interaction
   The honeycomb UI, keyboard input, letter shuffling, and found word
   display that make up the core play experience.

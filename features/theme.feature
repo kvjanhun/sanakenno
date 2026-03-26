@@ -1,3 +1,4 @@
+@e2e
 Feature: Theme Toggle
   The application supports light and dark modes to suit user preferences.
   Theme selection persists across sessions.

@@ -40,8 +40,34 @@ When(
 
 When(
   'the player reaches {string} rank',
-  function (this: SanakennoWorld, _rank: string) {
-    return 'pending';
+  function (this: SanakennoWorld, rank: string) {
+    const thresholds: Record<string, number> = {
+      'Etsi sanoja!': 0,
+      'Hyvä alku': 0.02,
+      'Nyt mennään!': 0.1,
+      Onnistuja: 0.2,
+      Sanavalmis: 0.4,
+      Ällistyttävä: 0.7,
+      'Täysi kenno': 1.0,
+    };
+    const pct = thresholds[rank] ?? 0;
+    this.maxScore = this.maxScore || 200;
+    this.currentScore = Math.ceil(pct * this.maxScore);
+    this.currentRank = rank;
+    this.puzzleNumber = this.puzzleNumber ?? 0;
+
+    const key = `${this.puzzleNumber}:${rank}`;
+    if (!this.achievementSessionKeys.has(key)) {
+      this.achievementSessionKeys.add(key);
+      this.achievementPosts.push({
+        puzzle_number: this.puzzleNumber,
+        rank,
+        score: this.currentScore,
+        max_score: this.maxScore,
+        words_found: this.foundWords?.length ?? 0,
+        elapsed_ms: 5000,
+      });
+    }
   },
 );
 

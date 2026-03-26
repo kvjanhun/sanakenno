@@ -11,6 +11,7 @@ Feature: Achievement tracking
     Then a POST to /api/achievement should fire
     And it should include puzzle_number, rank, score, max_score, words_found, elapsed_ms
 
+  @e2e
   Scenario: Achievement is fire-and-forget
     When the achievement POST fails due to network error
     Then the game should continue normally

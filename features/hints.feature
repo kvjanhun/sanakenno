@@ -43,11 +43,13 @@ Feature: Hint panels
 
   # --- Persistence ---
 
+  @e2e
   Scenario: Unlock state persists in localStorage
     When the player unlocks "summary" and "letters"
     And the player reloads the page
     Then "summary" and "letters" should still be unlocked
 
+  @e2e
   Scenario: Collapse state does not persist
     When the player collapses the "summary" panel
     And the player reloads the page
@@ -55,6 +57,7 @@ Feature: Hint panels
 
   # --- Share integration ---
 
+  @e2e
   Scenario: Unlocked hints appear as icons in the share text
     When the player unlocks "summary" and "pairs"
     And the player shares their result
