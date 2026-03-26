@@ -523,7 +523,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
       : Math.ceil(0.7 * puzzle.max_score);
 
     const lines: string[] = [
-      `Sanakenno \u2014 Peli #${puzzle.puzzle_number}`,
+      `Sanakenno \u2014 Kenno #${puzzle.puzzle_number}`,
       `${rank} \u00B7 ${foundWords.size} sanaa`,
       `${score}/${target} pistett\u00E4`,
     ];
