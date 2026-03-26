@@ -3,16 +3,15 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
-export default defineConfig(({ command }) => ({
-  base: command === 'build' ? '/sanakenno-react/' : '/',
+export default defineConfig(({ command: _command }) => ({
+  base: '/',
   plugins: [
     react(),
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
-        navigateFallback:
-          command === 'build' ? '/sanakenno-react/index.html' : '/index.html',
+        navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [
           {
@@ -40,8 +39,8 @@ export default defineConfig(({ command }) => ({
         name: 'Sanakenno',
         short_name: 'Sanakenno',
         description: 'Suomalainen sanapeli',
-        start_url: command === 'build' ? '/sanakenno-react/' : '/',
-        scope: command === 'build' ? '/sanakenno-react/' : '/',
+        start_url: '/',
+        scope: '/',
         display: 'standalone',
         theme_color: '#3A3A3A',
         background_color: '#3A3A3A',

@@ -34,6 +34,6 @@ COMMIT_MSG=$(git log -1 --pretty=%s)
 COMMIT_HASH=$(git log -1 --pretty=%h)
 send_telegram "🚀 <b>Sanakenno deployed</b>
 <code>${COMMIT_HASH}</code> ${COMMIT_MSG}
-Site: https://erez.ac/sanakenno-react/"
+Site: https://sanakenno.fi"
 
 echo "Deploy complete."

@@ -536,7 +536,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
       lines.push(`Avut: ${unlockedIcons.join('')}`);
     }
 
-    lines.push('erez.ac/sanakenno-react');
+    lines.push('sanakenno.fi');
 
     const text = lines.join('\n');
     try {
