@@ -5,6 +5,7 @@
  * @module src/components/RankProgress
  */
 
+import { useRef, useEffect } from 'react';
 import { rankThresholds, progressToNextRank } from '../utils/scoring.js';
 
 /** Props for {@link RankProgress}. */
@@ -37,11 +38,26 @@ export function RankProgress({
   shareCopied,
   onShare,
 }: RankProgressProps): React.JSX.Element {
+  const containerRef = useRef<HTMLDivElement>(null);
   const progress = progressToNextRank(score, maxScore);
   const thresholds = rankThresholds(rank, maxScore);
 
+  useEffect(() => {
+    if (!showRanks) return;
+    function handlePointerDown(e: PointerEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        onToggleRanks();
+      }
+    }
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, [showRanks, onToggleRanks]);
+
   return (
-    <div className="w-full">
+    <div ref={containerRef} className="w-full" style={{ position: 'relative' }}>
       {/* Rank + score + share */}
       <div className="flex items-center justify-between mb-2">
         <button
@@ -101,9 +117,23 @@ export function RankProgress({
         />
       </div>
 
-      {/* Expandable rank thresholds */}
+      {/* Expandable rank thresholds — floats over content below, does not affect layout */}
       {showRanks && (
-        <ul className="mt-3 list-none p-0 m-0 text-sm space-y-1">
+        <ul
+          className="list-none p-0 m-0 text-sm space-y-1"
+          style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            zIndex: 20,
+            background: 'var(--color-bg-primary)',
+            border: '1px solid var(--color-border)',
+            borderRadius: '0 0 8px 8px',
+            padding: '0.5rem 0.75rem',
+            marginTop: '0.25rem',
+          }}
+        >
           {thresholds.map((t) => (
             <li
               key={t.name}
