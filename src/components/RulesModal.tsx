@@ -45,7 +45,7 @@ export function RulesModal({
             className="text-lg font-semibold"
             style={{ color: 'var(--color-text-primary)' }}
           >
-            Ohjeet
+            Pelin säännöt
           </h2>
           <button
             onClick={onClose}
@@ -62,7 +62,8 @@ export function RulesModal({
           style={{ color: 'var(--color-text-secondary)' }}
         >
           <p>
-            Löydä mahdollisimman monta sanaa seitsemästä annetusta kirjaimesta.
+            Yritä löytää mahdollisimman monta sanaa
+            seitsemästä annetusta kirjaimesta.
           </p>
 
           <div>
@@ -70,24 +71,26 @@ export function RulesModal({
               className="font-medium mb-1"
               style={{ color: 'var(--color-text-primary)' }}
             >
-              Jokaisen sanan täytyy:
+              Hyväksyttävien sanojen täytyy:
             </p>
             <ul className="space-y-1 list-none pl-0">
               <li>
                 ✦ Sisältää{' '}
                 <span style={{ color: 'var(--color-accent)' }}>
-                  oranssin keskikirjaimen
+                  oranssi keskikirjain
                 </span>
               </li>
-              <li>✦ Olla vähintään 4 kirjainta pitkä</li>
+              <li>
+                ✦ Olla vähintään 4 kirjaimen pituisia
+              </li>
               <li>
                 ✦ Koostua vain annetuista kirjaimista — samaa kirjainta voi
                 käyttää useasti
               </li>
               <li>
-                ✦ Löytyä suomen kielen sanakirjasta (
+                ✦ Löytyä Kotuksen sanalistasta (
                 <a
-                  href="https://kaino.kotus.fi/sanat/nykysuomi/"
+                  href="https://kotus.fi/sanakirjat/kielitoimiston-sanakirja/nykysuomen-sana-aineistot/nykysuomen-sanalista"
                   target="_blank"
                   rel="noopener"
                   style={{
@@ -110,11 +113,28 @@ export function RulesModal({
               Pisteytys:
             </p>
             <ul className="space-y-1 list-none pl-0">
-              <li>✦ 4-kirjaiminen sana = 1 piste</li>
-              <li>✦ Pidempi sana = pisteitä sanan pituuden verran</li>
+              <li>✦ 4-kirjaiminen sana: 1 piste</li>
+              <li>✦ Pidempi sana: pisteitä sanan pituuden verran</li>
               <li>
-                ✦ Pangrammi (kaikki 7 kirjainta käytetty) = +7 lisäpistettä
+                ✦ Pangrammi: +7 lisäpistettä
               </li>
+              <li style={{ color: 'var(--color-text-tertiary)' }}>
+                Sana on pangrammi sen sisältäessä kaikki 7 kirjainta.
+              </li>
+            </ul>
+          </div>
+          
+          <div>
+            <p
+              className="font-medium mb-1"
+              style={{ color: 'var(--color-text-primary)' }}
+            >
+              Avut:
+            </p>
+            <ul className="space-y-1 list-none pl-0">
+              <li>✦ Yleiskuva: mm. sanojen ja pangrammien määrä</li>
+              <li>✦ Pituudet: jäljellä olevien sanojen pituusjakauma</li>
+              <li>✦ Alkuparit: sanojen ensimmäiset 2 kirjainta</li>
             </ul>
           </div>
 
@@ -126,42 +146,23 @@ export function RulesModal({
               Yhdyssanat:
             </p>
             <p>
-              Yhdysviivallisen sanan voi kirjoittaa myös ilman viivaa — esim.{' '}
-              <span style={{ fontFamily: 'var(--font-mono)' }}>palo-ovi</span>{' '}
-              tai{' '}
-              <span style={{ fontFamily: 'var(--font-mono)' }}>paloovi</span>.
-            </p>
-          </div>
-
-          <div>
-            <p
-              className="font-medium mb-1"
-              style={{ color: 'var(--color-text-primary)' }}
-            >
-              Tasot:
+              Sanalista sisältää myös yhdyssanoja.
             </p>
             <p>
-              Pisteesi määrittävät tason. Tavoittele tasoa{' '}
-              <span style={{ color: 'var(--color-accent)' }}>Ällistyttävä</span>
-              !
+              Yhdysviivallisen sanan voi kirjoittaa joko viivalla tai ilman eli
+              esimerkiksi{' '}
+              <span style={{ fontFamily: 'var(--font-mono)' }}>palo-ovi</span>{' '}
+              tai{' '}
+              <span style={{ fontFamily: 'var(--font-mono)' }}>paloovi</span>{' '}
+              ovat molemmat hyväksyttyjä muotoja.
             </p>
-          </div>
-
-          <div>
-            <p
-              className="font-medium mb-1"
-              style={{ color: 'var(--color-text-primary)' }}
-            >
-              Avut:
-            </p>
-            <p>Neljä vihjettä, jotka jäävät auki koko pelin ajaksi.</p>
           </div>
 
           <hr
             style={{
               border: 'none',
               borderTop: '1px solid var(--color-border)',
-              margin: '0.5rem 0',
+              margin: '1.25rem 0 1.5rem 0',
             }}
           />
 
@@ -180,7 +181,7 @@ export function RulesModal({
             >
               erez.ac
             </a>
-            {' · '}
+            {'  ·  '}Lähdekoodi{' '}
             <a
               href="https://github.com/kvjanhun/sanakenno"
               target="_blank"
