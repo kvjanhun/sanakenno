@@ -2,13 +2,15 @@
  * E2E tests for core game interaction.
  *
  * Covers: honeycomb rendering, keyboard input, hexagon taps,
- * word submission (valid/invalid), shuffle, buttons, found words.
+ * word submission (valid/invalid), shuffle, buttons, found words,
+ * rejected-word clearing, share button, and achievement fire-and-forget.
  *
- * Corresponds to: interaction.feature, scoring.feature, word-validation.feature
+ * Corresponds to: interaction.feature, scoring.feature, word-validation.feature,
+ *                 achievements.feature
  */
 
 import { test, expect } from '@playwright/test';
-import { loadGame, typeWord, submitWord } from './helpers';
+import { loadGame, typeWord, submitWord, mockPuzzleApi } from './helpers';
 
 test.describe('Honeycomb', () => {
   test('renders 7 hexagons with center letter visually distinct', async ({
@@ -184,5 +186,94 @@ test.describe('Rules modal', () => {
     // Word display should still be empty (no 'K')
     const display = page.locator('[aria-atomic="true"]').first();
     await expect(display).not.toContainText('K');
+  });
+});
+
+test.describe('Rejected word clearing', () => {
+  test('next letter input clears a rejected word', async ({ page }) => {
+    await loadGame(page);
+
+    // Submit a word that is too short (rejected)
+    await submitWord(page, 'ka');
+    await expect(page.getByText('Liian lyhyt!')).toBeVisible();
+
+    // Typing a new letter should clear the rejected word
+    await page.keyboard.press('k');
+    const display = page.locator('[aria-atomic="true"]').first();
+    await expect(display).toContainText('K');
+    // Should only show the new letter, not the old rejected text
+    await expect(display).not.toContainText('KA');
+  });
+
+  test('Backspace after rejection clears the rejected word', async ({
+    page,
+  }) => {
+    await loadGame(page);
+
+    await submitWord(page, 'ka');
+    await expect(page.getByText('Liian lyhyt!')).toBeVisible();
+
+    await page.keyboard.press('Backspace');
+    const display = page.locator('[aria-atomic="true"]').first();
+    await expect(display).not.toContainText('KA');
+  });
+});
+
+test.describe('Share button', () => {
+  test('share copies result to clipboard and shows Kopioitu! popup', async ({
+    page,
+    context,
+  }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await loadGame(page);
+
+    await page.getByText('Jaa tulos').first().click();
+
+    // Popup should appear
+    await expect(page.getByText('Kopioitu!')).toBeVisible({ timeout: 3000 });
+
+    // Clipboard should contain the puzzle info
+    const clipText = await page.evaluate(() => navigator.clipboard.readText());
+    expect(clipText).toContain('Sanakenno');
+    expect(clipText).toContain('sanakenno.fi');
+  });
+
+  test('Kopioitu! popup disappears automatically', async ({
+    page,
+    context,
+  }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await loadGame(page);
+
+    await page.getByText('Jaa tulos').first().click();
+    await expect(page.getByText('Kopioitu!')).toBeVisible({ timeout: 3000 });
+
+    // Popup auto-hides after 2s
+    await expect(page.getByText('Kopioitu!')).not.toBeVisible({
+      timeout: 4000,
+    });
+  });
+});
+
+test.describe('Achievement fire-and-forget', () => {
+  test('game continues normally when achievement POST fails', async ({
+    page,
+  }) => {
+    // Override achievement mock to return a server error
+    await mockPuzzleApi(page);
+    await page.route('**/api/achievement', async (route) => {
+      await route.fulfill({ status: 500, body: 'Internal Server Error' });
+    });
+    await page.goto('/');
+    await page.locator('svg polygon').first().waitFor({ timeout: 10_000 });
+
+    // Submit enough words to trigger a rank change (Hyvä alku at 1 pt)
+    await submitWord(page, 'kala');
+
+    // Game should still be functional — no error shown
+    await expect(page.getByText('Löydetyt sanat')).toBeVisible({
+      timeout: 5000,
+    });
+    await expect(page.getByText('Lataus epäonnistui.')).not.toBeVisible();
   });
 });

@@ -45,7 +45,8 @@ export function useGameTimer(): GameTimerApi {
 
   const getElapsedMs = (): number => {
     if (startedAt.current === null) return 0;
-    return Date.now() - startedAt.current - totalPausedMs.current;
+    const end = hiddenAt.current !== null ? hiddenAt.current : Date.now();
+    return end - startedAt.current - totalPausedMs.current;
   };
 
   const reset = (): void => {

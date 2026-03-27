@@ -12,6 +12,10 @@ Feature: Progressive Web App
     And it should include icons at 192x192 and 512x512
 
   # --- Service worker ---
+  # TODO: These scenarios require complex service worker mocking that Playwright
+  # does not support out of the box. Validate manually or with a dedicated PWA
+  # testing tool (e.g. Lighthouse CI, jest-service-worker). The Workbox
+  # configuration in vite.config.js is the source of truth.
 
   @e2e
   Scenario: Navigation uses network-first strategy
@@ -31,6 +35,8 @@ Feature: Progressive Web App
     Then the service worker should not intercept or cache the request
 
   # --- iOS standalone quirks ---
+  # TODO: Requires a real iOS device or Xcode Simulator — cannot be automated
+  # in standard Playwright CI. Validate manually on iOS Safari in standalone mode.
 
   @e2e
   Scenario: Double-tap zoom is prevented in standalone mode
