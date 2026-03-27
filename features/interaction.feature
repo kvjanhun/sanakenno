@@ -101,7 +101,7 @@ Feature: Game interaction
     Given the player has score 42 on puzzle 5 with rank "Sanavalmis"
     When the player taps the share button
     Then the clipboard should contain the puzzle number, rank, score, and hints activated
-    And a "Kopioitu!" confirmation should appear for 3 seconds
+    And a "Kopioitu!" popup should appear below the share button without shifting layout
 
   Scenario: Share text format
     Given the player has score 42 of max 120 on puzzle 5
@@ -110,11 +110,11 @@ Feature: Game interaction
     When the player taps the share button
     Then the clipboard text should match this format:
       """
-      Sanakenno — Peli #5
+      Sanakenno — Kenno #5
       Sanavalmis · 28 sanaa
       42/120 pistettä
       Avut: 📊🔠
-      erez.ac/sanakenno
+      sanakenno.fi
       """
     And each unlocked hint should map to its icon: summary=📊, letters=🔤, distribution=📏, pairs=🔠
 

@@ -20,7 +20,7 @@ export interface RankProgressProps {
   showRanks: boolean;
   /** Toggle the rank thresholds panel. */
   onToggleRanks: () => void;
-  /** Whether the share confirmation is showing. */
+  /** Whether the share confirmation popup is showing. */
   shareCopied: boolean;
   /** Share button click handler. */
   onShare: () => void;
@@ -64,37 +64,54 @@ export function RankProgress({
           type="button"
           onClick={onToggleRanks}
           className="px-3 py-0.5 text-sm font-semibold text-white rounded-full cursor-pointer border-none"
-          style={{ backgroundColor: 'var(--color-accent)' }}
+          style={{ backgroundColor: 'var(--color-accent)', flexShrink: 0 }}
         >
           {rank}
         </button>
+
         <span
-          className="text-sm font-medium"
-          style={{ color: 'var(--color-text-secondary)' }}
+          className="text-base font-semibold"
+          style={{ color: 'var(--color-text-primary)' }}
         >
           {score} pistettä
         </span>
-        <div className="flex items-center gap-2">
-          {shareCopied && (
-            <span
-              className="text-xs"
-              style={{ color: 'var(--color-text-secondary)' }}
-            >
-              Kopioitu!
-            </span>
-          )}
+
+        {/* Share button — popup anchored to this wrapper */}
+        <div style={{ position: 'relative', flexShrink: 0 }}>
           <button
             type="button"
-            className="text-xs px-2 py-1 rounded cursor-pointer"
+            onClick={onShare}
+            className="px-3 py-0.5 text-sm font-semibold rounded-full cursor-pointer border-none"
             style={{
               background: 'var(--color-bg-secondary)',
               color: 'var(--color-text-secondary)',
               border: '1px solid var(--color-border)',
             }}
-            onClick={onShare}
           >
             Jaa tulos
           </button>
+
+          {/* Kopioitu! popup — floats below share button, does not affect layout */}
+          {shareCopied && (
+            <div
+              className="text-xs"
+              style={{
+                position: 'absolute',
+                top: '100%',
+                right: 0,
+                marginTop: '0.25rem',
+                zIndex: 20,
+                background: 'var(--color-bg-primary)',
+                border: '1px solid var(--color-border)',
+                borderRadius: '6px',
+                padding: '0.2rem 0.6rem',
+                whiteSpace: 'nowrap',
+                color: 'var(--color-text-secondary)',
+              }}
+            >
+              Kopioitu!
+            </div>
+          )}
         </div>
       </div>
 

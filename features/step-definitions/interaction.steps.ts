@@ -308,8 +308,8 @@ Then(
 );
 
 Then(
-  'a {string} confirmation should appear for {int} seconds',
-  function (this: SanakennoWorld, _text: string, _seconds: number) {
+  'a {string} popup should appear below the share button without shifting layout',
+  function (this: SanakennoWorld, _text: string) {
     return 'pending';
   },
 );
