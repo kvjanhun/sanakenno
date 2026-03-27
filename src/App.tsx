@@ -178,7 +178,7 @@ function App() {
             className="flex items-center gap-1"
             style={{ visibility: 'hidden' }}
           >
-            <span className="p-2 text-sm">?</span>
+            <span className="p-2 text-lg">?</span>
             <span style={{ width: 20 }} />
           </div>
           <h1
@@ -187,7 +187,12 @@ function App() {
           >
             Sanakenno
             {puzzle && (
-              <span style={{ color: 'var(--color-text-tertiary)' }}>
+              <span
+                style={{
+                  color: 'var(--color-text-tertiary)',
+                  fontWeight: 'normal',
+                }}
+              >
                 {' '}
                 — #{puzzle.puzzle_number + 1}
               </span>
@@ -197,8 +202,8 @@ function App() {
             <button
               type="button"
               onClick={() => setShowRules(true)}
-              className="p-2 rounded-lg text-sm font-semibold bg-transparent border-none cursor-pointer"
-              style={{ color: 'var(--color-text-tertiary)' }}
+              className="p-2 rounded-lg text-lg bg-transparent border-none cursor-pointer"
+              style={{ color: 'var(--color-text-primary)' }}
               aria-label="Säännöt"
             >
               ?

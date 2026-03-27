@@ -54,7 +54,7 @@ export function ThemeToggle(): React.JSX.Element {
       type="button"
       onClick={toggle}
       className="bg-transparent border-none cursor-pointer p-1 leading-none flex items-center"
-      style={{ color: 'var(--color-text-tertiary)' }}
+      style={{ color: 'var(--color-text-primary)' }}
       aria-label={
         theme === 'dark' ? 'Vaihda vaaleaan teemaan' : 'Vaihda tummaan teemaan'
       }
