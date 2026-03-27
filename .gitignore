@@ -3,7 +3,7 @@ dist/
 .output/
 .env
 *.log
-*.db
+*.db*
 server/data/kotus_words.txt
 .DS_Store
 .vite/
