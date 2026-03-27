@@ -62,8 +62,8 @@ export function RulesModal({
           style={{ color: 'var(--color-text-secondary)' }}
         >
           <p>
-            Yritä löytää mahdollisimman monta sanaa
-            seitsemästä annetusta kirjaimesta.
+            Yritä löytää mahdollisimman monta sanaa seitsemästä annetusta
+            kirjaimesta.
           </p>
 
           <div>
@@ -80,9 +80,7 @@ export function RulesModal({
                   oranssi keskikirjain
                 </span>
               </li>
-              <li>
-                ✦ Olla vähintään 4 kirjaimen pituisia
-              </li>
+              <li>✦ Olla vähintään 4 kirjaimen pituisia</li>
               <li>
                 ✦ Koostua vain annetuista kirjaimista — samaa kirjainta voi
                 käyttää useasti
@@ -115,15 +113,13 @@ export function RulesModal({
             <ul className="space-y-1 list-none pl-0">
               <li>✦ 4-kirjaiminen sana: 1 piste</li>
               <li>✦ Pidempi sana: pisteitä sanan pituuden verran</li>
-              <li>
-                ✦ Pangrammi: +7 lisäpistettä
-              </li>
+              <li>✦ Pangrammi: +7 lisäpistettä</li>
               <li style={{ color: 'var(--color-text-tertiary)' }}>
                 Sana on pangrammi sen sisältäessä kaikki 7 kirjainta.
               </li>
             </ul>
           </div>
-          
+
           <div>
             <p
               className="font-medium mb-1"
@@ -145,9 +141,7 @@ export function RulesModal({
             >
               Yhdyssanat:
             </p>
-            <p>
-              Sanalista sisältää myös yhdyssanoja.
-            </p>
+            <p>Sanalista sisältää myös yhdyssanoja.</p>
             <p>
               Yhdysviivallisen sanan voi kirjoittaa joko viivalla tai ilman eli
               esimerkiksi{' '}
