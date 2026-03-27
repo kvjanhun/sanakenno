@@ -120,7 +120,7 @@ function DistributionContent({
           lineHeight: 1,
           color: 'var(--color-text-tertiary)',
           textAlign: 'center',
-          marginBottom: '4px',
+          marginBottom: '8px',
         }}
       >
         Sanoja jäljellä
@@ -192,7 +192,7 @@ function DistributionContent({
           lineHeight: 1,
           color: 'var(--color-text-tertiary)',
           textAlign: 'center',
-          marginTop: '4px',
+          marginTop: '5px',
         }}
       >
         Pituus, kirjainta
