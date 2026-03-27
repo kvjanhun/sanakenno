@@ -270,20 +270,18 @@ Then(
 );
 
 When(
-  'the player collapses the {string} panel',
-  function (this: SanakennoWorld, _panelId: string) {
-    // Collapse state is session-only React local state — not testable at
+  'the player opens the {string} tab',
+  function (this: SanakennoWorld, _tabId: string) {
+    // Active tab state is session-only React local state — not testable at
     // the pure logic level, so we mark as pending for E2E
     return 'pending';
   },
 );
 
-Then(
-  'the {string} panel should be expanded',
-  function (this: SanakennoWorld, _panelId: string) {
-    return 'pending';
-  },
-);
+Then('no tab should be active', function (this: SanakennoWorld) {
+  // Active tab resets to null on reload — verified at E2E level
+  return 'pending';
+});
 
 /* ------------------------------------------------------------------ */
 /*  Share integration                                                  */

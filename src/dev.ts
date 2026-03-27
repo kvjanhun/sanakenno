@@ -22,6 +22,8 @@ interface DevHelpers {
   setScore: (score: number) => void;
   celebrate: (type: 'allistyttava' | 'taysikenno') => void;
   resetHints: () => void;
+  lockHint: (id: string) => void;
+  setPairs: (count: number) => void;
   state: () => void;
   words: () => string[];
 }
@@ -60,6 +62,35 @@ function createDevHelpers(): DevHelpers {
       store.setState({ hintsUnlocked: new Set() });
       store.getState().saveState();
       console.log('All hints locked');
+    },
+
+    lockHint(id: string) {
+      const next = new Set(store.getState().hintsUnlocked);
+      next.delete(id);
+      store.setState({ hintsUnlocked: next });
+      store.getState().saveState();
+      console.log(`Locked hint "${id}"`);
+    },
+
+    setPairs(count: number) {
+      const { puzzle } = store.getState();
+      if (!puzzle) {
+        console.warn('No puzzle loaded');
+        return;
+      }
+      const pairs: Record<string, number> = {};
+      const letters = 'abcdefghijklmnopqrstuvwxyz';
+      for (let i = 0; i < count; i++) {
+        pairs[letters[i % 26] + letters[(i + 1) % 26]] =
+          Math.floor(Math.random() * 15) + 1;
+      }
+      store.setState({
+        puzzle: {
+          ...puzzle,
+          hint_data: { ...puzzle.hint_data, by_pair: pairs },
+        },
+      });
+      console.log(`Set ${count} fake pairs`);
     },
 
     state() {

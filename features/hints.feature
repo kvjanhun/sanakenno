@@ -1,7 +1,8 @@
 Feature: Hint panels
-  Four individually unlockable hint panels help players find remaining
-  words without revealing the words themselves. Unlock state persists
-  across sessions; collapse state is session-only.
+  Three visible hint tabs (Yleiskuva, Pituudet, Alkuparit) help players find
+  remaining words without revealing them. A fourth panel (Alkukirjaimet) exists
+  in code but is not shown in the tab row. Unlock state persists across sessions;
+  active tab state is session-only.
 
   Background:
     Given a puzzle with 50 total words and 3 pangrams
@@ -50,10 +51,10 @@ Feature: Hint panels
     Then "summary" and "letters" should still be unlocked
 
   @e2e
-  Scenario: Collapse state does not persist
-    When the player collapses the "summary" panel
+  Scenario: Active tab state does not persist across sessions
+    When the player opens the "summary" tab
     And the player reloads the page
-    Then the "summary" panel should be expanded
+    Then no tab should be active
 
   # --- Share integration ---
 
