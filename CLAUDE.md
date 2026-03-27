@@ -1,43 +1,39 @@
-# Sanakenno Standalone — Context & Rules
+# Sanakenno — Project Rules
 
-This file provides foundational mandates for the Sanakenno standalone project. Adhere to these strictly.
+## What this is
+A Finnish word-puzzle game (standalone React + Hono, SQLite). Live at **sanakenno.fi**.
+See `src/CLAUDE.md` for frontend rules, `server/CLAUDE.md` for backend rules.
 
-## Technical Stack
-- **Language**: TypeScript (strict mode). All source, tests, and scripts in `.ts`/`.tsx`.
-- **Frontend**: React 19, Vite, Zustand (State), Tailwind 4 + CSS Modules (Styling).
-- **Backend**: Hono (Node.js runtime, executed via tsx).
-- **Storage**: SQLite (all application data). Wordlist as flat file.
-- **Testing**: Vitest (Unit/Logic), Cucumber.js (BDD/Integration), Playwright (E2E).
-- **PWA**: `vite-plugin-pwa`.
+## Tech Stack
+| Layer | Tech |
+|---|---|
+| Frontend | React 19, Vite, Zustand, Tailwind 4 |
+| Backend | Hono on Node.js (tsx) |
+| Storage | SQLite |
+| Testing | Vitest · Cucumber.js (BDD) · Playwright (E2E) |
+| PWA | vite-plugin-pwa |
 
-## Core Directive: Clean React, Visual Parity
-- **Visual & Behavioral Identity**: The standalone version MUST be visually and behaviorally identical to the original Nuxt version (CSS styles, SVG Honeycomb geometry, animations).
-- **Idiomatic React**: Write clean, idiomatic React — not a mechanical Vue-to-React port. Use proper patterns: selective Zustand subscriptions, stable action refs, memoization where it matters, ref-based non-rendering state. The original Vue code is a reference for *what* the app does, not *how* the React code should be structured.
+## BDD-First Development
+Feature files in `features/` are the source of truth for behaviour.
 
-## Coding Standards
-- **Language**: All user-facing UI strings must be in **Finnish**. All code (variables, functions, comments, documentation) must be in **English**.
-- **BDD-First**: Every feature implementation must be verified against the corresponding `.feature` file in the `features/` directory.
-- **Surgical Updates**: Prefer targeted edits to files rather than full rewrites unless scaffolding a new component.
-- **State Management**: Use Zustand for global game state (timer, found words, score) to avoid prop drilling.
-
-## Documentation
-- Every non-trivial function, hook, and module must have a JSDoc comment explaining its purpose, parameters, and return value.
-- Complex logic (puzzle engine, auth middleware, midnight rollover) must include inline comments explaining the why, not just the what.
-- Each server route file must have a header comment listing its endpoints and their purpose.
+- **New feature**: write or update the `.feature` file first, get it agreed, then implement.
+- **Modifying existing behaviour**: update the `.feature` file in the same commit as the code change.
+- **Never** ship code whose behaviour contradicts or is absent from the feature files.
+- Step definitions test pure logic (Vitest-compatible); browser behaviour goes in E2E specs under `tests/e2e/`.
 
 ## Git Discipline
-- Commit frequently — each logical unit of work gets its own commit (e.g. one commit per component, one per route, one per hook).
-- Commit messages must be clear and descriptive. Use the imperative mood ("Add Honeycomb component" not "Added" or "Adding").
-- Never commit broken or partially working code to main. If work is incomplete, use a feature branch.
-- Tests must pass before committing.
+- One logical unit of work per commit. Use the imperative mood.
+- All checks must pass before committing to `main`: typecheck → lint → unit → BDD → E2E → build.
+- Never commit broken code to `main`; use a feature branch for incomplete work.
 
 ## Commands
-- **Install**: `npm install`
-- **Dev**: `npm run dev`
-- **Type Check**: `npm run typecheck`
-- **Test (Unit)**: `npm run test:unit`
-- **Test (BDD)**: `npm run test:bdd`
-- **Build**: `npm run build`
-
-## Project Architecture
-Refer to `PLAN.md` for the detailed implementation phases and architectural mapping.
+```
+npm install            install dependencies
+npm run dev            start dev server + API (localhost:5173 → proxy :3001)
+npm run typecheck      tsc --noEmit
+npm run lint           eslint + prettier check
+npm run test:unit      vitest
+npm run test:bdd       cucumber.js
+npx playwright test    E2E tests (requires dev server running)
+npm run build          production build → dist/
+```
