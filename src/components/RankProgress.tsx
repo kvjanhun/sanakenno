@@ -63,7 +63,7 @@ export function RankProgress({
         <button
           type="button"
           onClick={onToggleRanks}
-          className="px-3 py-0.5 text-sm font-semibold text-white rounded-full cursor-pointer border-none"
+          className="px-3 py-0.5 text-sm text-white rounded-full cursor-pointer border-none"
           style={{ backgroundColor: 'var(--color-accent)', flexShrink: 0 }}
         >
           {rank}
@@ -81,7 +81,7 @@ export function RankProgress({
           <button
             type="button"
             onClick={onShare}
-            className="px-3 py-0.5 text-sm font-semibold rounded-full cursor-pointer border-none"
+            className="px-3 py-0.5 text-sm rounded-full cursor-pointer border-none"
             style={{
               background: 'var(--color-bg-secondary)',
               color: 'var(--color-text-secondary)',
