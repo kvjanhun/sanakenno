@@ -41,7 +41,6 @@ const TEST_PASSWORD = 'securepassword123';
 const TEST_LETTERS = ['a', 'e', 'k', 'l', 'n', 's', 'ö'];
 const TEST_LETTERS_STR = 'a,e,k,l,n,s,ö';
 const ALT_LETTERS = ['a', 'd', 'e', 'h', 'l', 'r', 's'];
-const ALT_LETTERS_STR = 'a,d,e,h,l,r,s';
 
 /** Build auth headers with session cookie and CSRF token. */
 function adminHeaders(
@@ -368,7 +367,7 @@ When(
 
 Then(
   'slot {int} should no longer exist',
-  function (this: AdminWorld, slot: number) {
+  function (this: AdminWorld, _slot: number) {
     assert.equal(this.responseJson.status, 'deleted');
   },
 );

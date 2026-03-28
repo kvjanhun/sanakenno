@@ -38,6 +38,7 @@ export default tseslint.config(
       'scripts/**/*',
       'server/**/*',
       'src/utils/storage.*',
+      'src/dev.*',
     ],
     languageOptions: {
       globals: {

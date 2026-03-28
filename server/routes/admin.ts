@@ -31,9 +31,7 @@ import {
   computePuzzle,
   computeVariations,
   getBlockedWords,
-  getPuzzleBySlot,
   getPuzzleForDate,
-  getRotationEpoch,
   invalidate,
   invalidateAll,
   totalPuzzles,
@@ -134,7 +132,6 @@ function checkTodayProtection(
  * Compute the next date a slot will be active.
  */
 function nextDateForSlot(slot: number): string {
-  const epoch = getRotationEpoch();
   const total = totalPuzzles();
   if (total === 0) return 'unknown';
 
