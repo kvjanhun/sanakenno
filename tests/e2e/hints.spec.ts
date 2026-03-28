@@ -31,7 +31,9 @@ test.describe('Hint unlock persistence', () => {
     await page.getByText('Yleiskuva').click(); // reopen after reload
     // Content should appear immediately — no "Aktivoi apu" prompt
     await expect(page.getByText('Aktivoi apu')).not.toBeVisible();
-    await expect(page.getByText('Pisin jäljellä', { exact: false })).toBeVisible();
+    await expect(
+      page.getByText('Pisin jäljellä', { exact: false }),
+    ).toBeVisible();
   });
 
   test('active tab state does not persist across reload', async ({ page }) => {
