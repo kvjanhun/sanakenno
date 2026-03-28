@@ -67,16 +67,17 @@ function SummaryContent({
     <div>
       <div>
         <span style={{ color: 'var(--color-text-primary)' }}>
-          {data.wordsRemaining}/{data.wordCount} sanaa jäljellä
+          {data.wordsRemaining}/{data.wordCount} sanaa löytämättä
         </span>{' '}
         <span style={{ color: 'var(--color-text-secondary)' }}>({pct}%)</span>
       </div>
       <div style={{ color: 'var(--color-text-secondary)' }}>
         {pangramStats.remaining}/{pangramStats.total} {pangramLabel}
         {' · '}
-        {uniqueCount} eri {lengthLabel}
-        {' · '}
-        pisin {longest}&nbsp;kirjainta
+        {uniqueCount} eri {lengthLabel} jäljellä
+      </div>
+      <div style={{ color: 'var(--color-text-secondary)' }}>
+        Pisin jäljellä oleva sana {longest}&nbsp;kirjainta
       </div>
     </div>
   );
@@ -116,11 +117,11 @@ function DistributionContent({
     <div className="flex flex-col w-full">
       <span
         style={{
-          fontSize: '0.6rem',
+          fontSize: '0.7rem',
           lineHeight: 1,
           color: 'var(--color-text-tertiary)',
           textAlign: 'center',
-          marginBottom: '8px',
+          marginBottom: '9px',
         }}
       >
         Sanoja jäljellä
@@ -133,7 +134,7 @@ function DistributionContent({
             <div
               key={item.len}
               className="flex flex-col items-center"
-              style={{ flex: 1 }}
+              style={{ flex: 1, fontFamily: 'var(--font-mono)' }}
             >
               <span
                 style={{
@@ -188,7 +189,7 @@ function DistributionContent({
       </div>
       <span
         style={{
-          fontSize: '0.6rem',
+          fontSize: '0.7rem',
           lineHeight: 1,
           color: 'var(--color-text-tertiary)',
           textAlign: 'center',
@@ -203,19 +204,22 @@ function DistributionContent({
 
 function PairsContent({ data }: { data: DerivedHintData }): React.JSX.Element {
   return (
-    <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+    <div className="flex flex-wrap gap-x-2 gap-y-0.5">
       {data.pairMap.map((item) => (
         <span
           key={item.pair}
           className="text-sm"
           style={{
+            fontFamily: 'var(--font-mono)',
             color:
               item.remaining === 0
                 ? 'var(--color-text-tertiary)'
                 : 'var(--color-text-primary)',
           }}
         >
-          <span style={{ fontWeight: 500 }}>{item.pair.toUpperCase()}:</span>{' '}
+          <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 500 }}>
+            {item.pair.toUpperCase()}:{' '}
+          </span>
           {item.remaining}
         </span>
       ))}
@@ -323,7 +327,7 @@ export function HintPanels({
             overflowY: 'auto',
             display: 'flex',
             alignItems: 'center',
-            fontFamily: 'ui-monospace, Menlo, Consolas, monospace',
+            fontFamily: 'var(--font-sans)',
           }}
         >
           {activeIsUnlocked && ContentComponent ? (
