@@ -30,6 +30,9 @@ interface Filters {
   min_pangrams: string;
   max_pangrams: string;
   min_words: string;
+  max_words: string;
+  min_words_min: string;
+  max_words_min: string;
   in_rotation: string;
 }
 
@@ -39,6 +42,9 @@ const DEFAULT_FILTERS: Filters = {
   min_pangrams: '',
   max_pangrams: '',
   min_words: '',
+  max_words: '',
+  min_words_min: '',
+  max_words_min: '',
   in_rotation: '',
 };
 
@@ -129,6 +135,9 @@ export function PuzzleEditor() {
     if (filters.min_pangrams) params.set('min_pangrams', filters.min_pangrams);
     if (filters.max_pangrams) params.set('max_pangrams', filters.max_pangrams);
     if (filters.min_words) params.set('min_words', filters.min_words);
+    if (filters.max_words) params.set('max_words', filters.max_words);
+    if (filters.min_words_min) params.set('min_words_min', filters.min_words_min);
+    if (filters.max_words_min) params.set('max_words_min', filters.max_words_min);
     if (filters.in_rotation) params.set('in_rotation', filters.in_rotation);
     params.set('sort', sort);
     params.set('order', order);
@@ -617,45 +626,87 @@ export function PuzzleEditor() {
           </select>
         </div>
         <div className="grid grid-cols-3 gap-2 text-sm">
-          <div className="flex items-center gap-1">
-            <input
-              type="number"
-              value={filters.min_pangrams}
-              onChange={(e) => updateFilter('min_pangrams', e.target.value)}
-              placeholder="Pg min"
-              min={0}
-              className="w-full px-2 py-1 rounded text-sm"
-              style={inputStyle}
-              aria-label="Pangrammeja vähintään"
-            />
-            <span
-              className="text-xs shrink-0"
-              style={{ color: 'var(--color-text-tertiary)' }}
-            >
-              –
-            </span>
-            <input
-              type="number"
-              value={filters.max_pangrams}
-              onChange={(e) => updateFilter('max_pangrams', e.target.value)}
-              placeholder="Pg max"
-              min={0}
-              className="w-full px-2 py-1 rounded text-sm"
-              style={inputStyle}
-              aria-label="Pangrammeja enintään"
-            />
+          {/* Pangrams range */}
+          <div className="space-y-1">
+            <div className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>Pangrammeja</div>
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                value={filters.min_pangrams}
+                onChange={(e) => updateFilter('min_pangrams', e.target.value)}
+                placeholder="min"
+                min={0}
+                className="w-full px-2 py-1 rounded text-sm"
+                style={inputStyle}
+                aria-label="Pangrammeja vähintään"
+              />
+              <span className="text-xs shrink-0" style={{ color: 'var(--color-text-tertiary)' }}>–</span>
+              <input
+                type="number"
+                value={filters.max_pangrams}
+                onChange={(e) => updateFilter('max_pangrams', e.target.value)}
+                placeholder="max"
+                min={0}
+                className="w-full px-2 py-1 rounded text-sm"
+                style={inputStyle}
+                aria-label="Pangrammeja enintään"
+              />
+            </div>
           </div>
-          <input
-            type="number"
-            value={filters.min_words}
-            onChange={(e) => updateFilter('min_words', e.target.value)}
-            placeholder="Sanoja min"
-            min={0}
-            className="px-2 py-1 rounded text-sm"
-            style={inputStyle}
-            aria-label="Sanoja vähintään"
-          />
-          <div />
+          {/* Min words per center (least) range */}
+          <div className="space-y-1">
+            <div className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>Väh. sanoja/keskus</div>
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                value={filters.min_words_min}
+                onChange={(e) => updateFilter('min_words_min', e.target.value)}
+                placeholder="min"
+                min={0}
+                className="w-full px-2 py-1 rounded text-sm"
+                style={inputStyle}
+                aria-label="Vähemmän sanojen määrä vähintään"
+              />
+              <span className="text-xs shrink-0" style={{ color: 'var(--color-text-tertiary)' }}>–</span>
+              <input
+                type="number"
+                value={filters.max_words_min}
+                onChange={(e) => updateFilter('max_words_min', e.target.value)}
+                placeholder="max"
+                min={0}
+                className="w-full px-2 py-1 rounded text-sm"
+                style={inputStyle}
+                aria-label="Vähemmän sanojen määrä enintään"
+              />
+            </div>
+          </div>
+          {/* Max words per center (most) range */}
+          <div className="space-y-1">
+            <div className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>En. sanoja/keskus</div>
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                value={filters.min_words}
+                onChange={(e) => updateFilter('min_words', e.target.value)}
+                placeholder="min"
+                min={0}
+                className="w-full px-2 py-1 rounded text-sm"
+                style={inputStyle}
+                aria-label="Enemmän sanojen määrä vähintään"
+              />
+              <span className="text-xs shrink-0" style={{ color: 'var(--color-text-tertiary)' }}>–</span>
+              <input
+                type="number"
+                value={filters.max_words}
+                onChange={(e) => updateFilter('max_words', e.target.value)}
+                placeholder="max"
+                min={0}
+                className="w-full px-2 py-1 rounded text-sm"
+                style={inputStyle}
+                aria-label="Enemmän sanojen määrä enintään"
+              />
+            </div>
+          </div>
         </div>
 
         {/* Scrollable results table */}
