@@ -12,7 +12,11 @@
 import { test, expect } from '@playwright/test';
 import { loadGame, mockPuzzleApi, submitWord } from './helpers';
 
-/** Install the Playwright fake clock at a specific wall-clock time. */
+/**
+ * Install the Playwright fake clock at a specific wall-clock time.
+ * We use UTC strings to be environment-independent.
+ * Helsinki (EET) is UTC+2 in March (before DST).
+ */
 async function installClockAt(
   page: import('@playwright/test').Page,
   isoTime: string,
@@ -22,8 +26,8 @@ async function installClockAt(
 
 test.describe('Midnight rollover', () => {
   test('timer fires at midnight and triggers page reload', async ({ page }) => {
-    // Place clock 2 minutes before midnight
-    await installClockAt(page, '2026-03-27T23:58:00');
+    // 23:58:00 Helsinki (UTC+2) -> 21:58:00 UTC
+    await installClockAt(page, '2026-03-27T21:58:00Z');
     await loadGame(page);
 
     // Advance 3 minutes — past midnight — and wait for the reload navigation
@@ -41,8 +45,8 @@ test.describe('Midnight rollover', () => {
   test('app detects date change when suspended tab becomes visible', async ({
     page,
   }) => {
-    // Start at 23:45 — well before midnight
-    await installClockAt(page, '2026-03-27T23:45:00');
+    // 23:45:00 Helsinki (UTC+2) -> 21:45:00 UTC
+    await installClockAt(page, '2026-03-27T21:45:00Z');
     await loadGame(page);
 
     // Simulate tab being hidden
@@ -56,7 +60,7 @@ test.describe('Midnight rollover', () => {
     });
 
     // Advance clock past midnight while tab is "hidden"
-    await page.clock.fastForward(20 * 60 * 1000); // +20 min → 00:05
+    await page.clock.fastForward(20 * 60 * 1000); // +20 min -> 00:05
 
     // Reveal the tab — the hook should detect date mismatch and reload
     await Promise.all([
@@ -84,7 +88,8 @@ test.describe('Midnight rollover', () => {
   test('today state is already saved in localStorage before rollover', async ({
     page,
   }) => {
-    await installClockAt(page, '2026-03-27T23:58:00');
+    // 23:58:00 Helsinki (UTC+2) -> 21:58:00 UTC
+    await installClockAt(page, '2026-03-27T21:58:00Z');
     await loadGame(page);
 
     // Submit a word so state is persisted
@@ -117,7 +122,8 @@ test.describe('Midnight rollover', () => {
   });
 
   test('midnight rollover fetches the new puzzle', async ({ page }) => {
-    await installClockAt(page, '2026-03-27T23:58:00');
+    // 23:58:00 Helsinki (UTC+2) -> 21:58:00 UTC
+    await installClockAt(page, '2026-03-27T21:58:00Z');
 
     // First load: puzzle_number = 0
     await mockPuzzleApi(page);
