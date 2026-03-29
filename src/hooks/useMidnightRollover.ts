@@ -21,27 +21,29 @@ export function msUntilMidnight(): number {
 }
 
 /**
+ * Return the Helsinki calendar date string (e.g. "Mon Mar 29 2026") for a
+ * given Date. Extracted for unit-testability.
+ */
+export function getHelsinkiDateString(date: Date = new Date()): string {
+  return new Date(
+    date.toLocaleString('en-US', { timeZone: 'Europe/Helsinki' }),
+  ).toDateString();
+}
+
+/**
  * Schedule a page reload at midnight (Helsinki time). If the page was hidden
  * across midnight, reload as soon as it becomes visible again.
  */
 export function useMidnightRollover(): void {
   useEffect(() => {
-    const getHelsinkiDate = (): string => {
-      const now = new Date();
-      const helsinki = new Date(
-        now.toLocaleString('en-US', { timeZone: 'Europe/Helsinki' }),
-      );
-      return helsinki.toDateString();
-    };
-
-    const mountDate = getHelsinkiDate();
+    const mountDate = getHelsinkiDateString();
 
     const timerId = window.setTimeout(() => {
       window.location.reload();
     }, msUntilMidnight());
 
     const handleVisibility = (): void => {
-      if (!document.hidden && getHelsinkiDate() !== mountDate) {
+      if (!document.hidden && getHelsinkiDateString() !== mountDate) {
         window.location.reload();
       }
     };

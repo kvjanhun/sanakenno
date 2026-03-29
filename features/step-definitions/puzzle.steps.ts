@@ -161,6 +161,41 @@ Then('the puzzle numbers should be different', function (this: SanakennoWorld) {
   assert.notEqual(this.puzzleSlot1, this.puzzleSlot2);
 });
 
+When(
+  'the puzzle is fetched just after Helsinki midnight',
+  function (this: SanakennoWorld) {
+    // 22:01 UTC on 2026-03-27 = 00:01 Helsinki on 2026-03-28 (UTC+2)
+    const utcDate = new Date('2026-03-27T22:01:00Z');
+    const helsinki = new Date(
+      utcDate.toLocaleString('en-US', { timeZone: 'Europe/Helsinki' }),
+    );
+    this.puzzleSlot1 = getPuzzleForDate(helsinki);
+  },
+);
+
+When(
+  'the puzzle is fetched just before that same Helsinki midnight',
+  function (this: SanakennoWorld) {
+    // 21:59 UTC on 2026-03-27 = 23:59 Helsinki on 2026-03-27 (UTC+2)
+    const utcDate = new Date('2026-03-27T21:59:00Z');
+    const helsinki = new Date(
+      utcDate.toLocaleString('en-US', { timeZone: 'Europe/Helsinki' }),
+    );
+    this.puzzleSlot2 = getPuzzleForDate(helsinki);
+  },
+);
+
+Then(
+  'the two fetches should return different puzzle numbers',
+  function (this: SanakennoWorld) {
+    assert.notEqual(
+      this.puzzleSlot1,
+      this.puzzleSlot2,
+      `Expected different puzzle slots either side of Helsinki midnight, got ${this.puzzleSlot1} both times`,
+    );
+  },
+);
+
 Given('there are N puzzles in rotation', function (this: SanakennoWorld) {
   this.totalPuzzles = getTotalPuzzles();
 });

@@ -34,6 +34,11 @@ Feature: Daily puzzle
     And the next day the player fetches the puzzle again
     Then the puzzle numbers should be different
 
+  Scenario: Server uses Helsinki midnight as the day boundary, not UTC
+    When the puzzle is fetched just after Helsinki midnight
+    And the puzzle is fetched just before that same Helsinki midnight
+    Then the two fetches should return different puzzle numbers
+
   Scenario: Puzzles cycle through the entire pool
     Given there are N puzzles in rotation
     Then after N days the rotation should return to the first puzzle
