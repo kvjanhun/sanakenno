@@ -131,7 +131,7 @@ export function Honeycomb({
       className="select-none"
       style={{
         touchAction: 'none',
-        filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.10))',
+        filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.22))',
       }}
       onTouchMove={(e) => e.preventDefault()}
     >
