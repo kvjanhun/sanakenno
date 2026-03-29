@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 
 /** Props for the Honeycomb SVG letter grid component. */
 export interface HoneycombProps {
@@ -8,6 +8,8 @@ export interface HoneycombProps {
   outerLetters: string[];
   /** Index of the currently pressed hex, or null if none. */
   pressedHexIndex: number | null;
+  /** Increments each time a word is found correctly; triggers a ripple animation. */
+  rippleKey?: number;
   /** When true, pointer interactions are disabled (e.g. all words found). */
   disabled?: boolean;
   /** Called when a letter is pressed. */
@@ -78,6 +80,7 @@ export function Honeycomb({
   center,
   outerLetters,
   pressedHexIndex,
+  rippleKey = 0,
   disabled = false,
   onLetterPress,
   onHexDown,
@@ -87,6 +90,34 @@ export function Honeycomb({
     () => computeHexes(center, outerLetters),
     [center, outerLetters],
   );
+
+  // Ripple animation: expand a circle from the center hex on each correct word.
+  const [rippleRadius, setRippleRadius] = useState<number | null>(null);
+  const rippleRafRef = useRef<number | undefined>(undefined);
+  const mountedRef = useRef(false);
+
+  useEffect(() => {
+    // Skip ripple on initial mount (restoring saved state may have rippleKey > 0).
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      return;
+    }
+    if (rippleRafRef.current !== undefined)
+      cancelAnimationFrame(rippleRafRef.current);
+    const startTime = performance.now();
+    const duration = 500;
+    const step = (now: number) => {
+      const t = Math.min((now - startTime) / duration, 1);
+      const radius = 30 + t * 125; // expands from 30 to 155
+      setRippleRadius(t < 1 ? radius : null);
+      if (t < 1) rippleRafRef.current = requestAnimationFrame(step);
+    };
+    rippleRafRef.current = requestAnimationFrame(step);
+    return () => {
+      if (rippleRafRef.current !== undefined)
+        cancelAnimationFrame(rippleRafRef.current);
+    };
+  }, [rippleKey]);
 
   const ariaLabel = `Kirjainkenno: kirjaimet ${hexes.map((h) => h.letter.toUpperCase()).join(', ')}, keskuskirjain ${center.toUpperCase()}`;
 
@@ -98,7 +129,10 @@ export function Honeycomb({
       role="img"
       aria-label={ariaLabel}
       className="select-none"
-      style={{ touchAction: 'none' }}
+      style={{
+        touchAction: 'none',
+        filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.10))',
+      }}
       onTouchMove={(e) => e.preventDefault()}
     >
       {hexes.map((hex, i) => (
@@ -129,7 +163,8 @@ export function Honeycomb({
               strokeWidth: '1.5',
               transform: pressedHexIndex === i ? 'scale(0.92)' : 'scale(1)',
               transformOrigin: `${hex.x}px ${hex.y}px`,
-              transition: 'transform 0.08s ease',
+              opacity: pressedHexIndex === i ? 0.78 : 1,
+              transition: 'transform 0.08s ease, opacity 0.08s ease',
             }}
           />
           <text
@@ -140,7 +175,7 @@ export function Honeycomb({
             style={{
               fill: hex.isCenter ? '#ffffff' : 'var(--color-text-primary)',
               fontSize: '24px',
-              fontWeight: hex.isCenter ? 500 : 400,
+              fontWeight: 600,
               fontFamily: 'var(--font-sans)',
               pointerEvents: 'none',
               userSelect: 'none',
@@ -150,6 +185,19 @@ export function Honeycomb({
           </text>
         </g>
       ))}
+      {/* Expanding ring on each correct word */}
+      {rippleRadius !== null && (
+        <circle
+          cx={150}
+          cy={150}
+          r={rippleRadius}
+          fill="none"
+          stroke="var(--color-accent)"
+          strokeWidth={2}
+          opacity={(155 - rippleRadius) / 125}
+          aria-hidden="true"
+        />
+      )}
     </svg>
   );
 }

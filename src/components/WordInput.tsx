@@ -62,7 +62,7 @@ export function WordInput({
 
   return (
     <div
-      className={`text-center font-[var(--font-mono)] text-2xl ${shake ? ` ${styles.wordShake}` : ''}`}
+      className={`flex justify-center items-end gap-1 min-h-[2.25rem]${shake ? ` ${styles.wordShake}` : ''}`}
       aria-live="polite"
       aria-atomic="true"
     >
@@ -70,8 +70,14 @@ export function WordInput({
         chars.map((c, i) => (
           <span
             key={i}
-            className="mr-0.75"
-            style={{ color: COLOR_MAP[c.color] }}
+            className="flex items-center justify-center font-[var(--font-mono)] text-xl font-semibold"
+            style={{
+              minWidth: '1.25rem',
+              paddingBottom: '3px',
+              borderBottom: '2.5px solid',
+              borderColor: COLOR_MAP[c.color],
+              color: COLOR_MAP[c.color],
+            }}
           >
             {c.char.toUpperCase()}
           </span>
@@ -79,7 +85,7 @@ export function WordInput({
       ) : (
         <span
           className={styles.idleCharacter}
-          style={{ color: 'var(--color-text-tertiary)' }}
+          style={{ color: 'var(--color-text-tertiary)', fontSize: '1.5rem' }}
         >
           |
         </span>

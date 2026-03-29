@@ -16,6 +16,7 @@
 /* Dark theme via system preference */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
+    --color-accent: #e05030;
     --color-text-primary: #f0f0f0;
     --color-text-secondary: #b0b0b0;
     --color-text-tertiary: #707070;
@@ -27,6 +28,7 @@
 
 /* Dark theme via explicit attribute */
 [data-theme='dark'] {
+  --color-accent: #e05030;
   --color-text-primary: #f0f0f0;
   --color-text-secondary: #b0b0b0;
   --color-text-tertiary: #707070;

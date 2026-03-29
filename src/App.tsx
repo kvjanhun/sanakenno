@@ -307,6 +307,7 @@ function App() {
                 center={center}
                 outerLetters={outerLetters}
                 pressedHexIndex={pressedHexIndex}
+                rippleKey={foundWords.size}
                 disabled={allFound}
                 onLetterPress={addLetter}
                 onHexDown={setPressedHexIndex}

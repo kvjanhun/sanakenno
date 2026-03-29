@@ -43,7 +43,7 @@ export function FoundWords({
   if (foundWords.length === 0) return null;
 
   const showToggle = foundWords.length > 6 || showAll;
-  const collapsed = recentWords.slice(-6);
+  const collapsed = recentWords.slice(-8);
 
   return (
     <section className="w-full">
@@ -90,17 +90,22 @@ export function FoundWords({
           ))}
         </div>
       ) : (
-        /* Collapsed: last 6 words in a single row */
-        <div className="flex gap-2 overflow-hidden">
+        /* Collapsed: last 8 words as wrapping chips */
+        <div className="flex flex-wrap gap-1.5">
           {collapsed.map((word) => (
             <span
               key={word}
-              className="font-[var(--font-mono)] text-sm transition-colors duration-300"
+              className="font-[var(--font-mono)] text-sm px-2 py-0.5 rounded-full transition-colors duration-300"
               style={{
-                color:
+                backgroundColor:
                   word === lastResubmittedWord
                     ? 'var(--color-accent)'
+                    : 'var(--color-bg-secondary)',
+                color:
+                  word === lastResubmittedWord
+                    ? '#ffffff'
                     : 'var(--color-text-primary)',
+                border: '1px solid var(--color-border)',
               }}
             >
               {word}
