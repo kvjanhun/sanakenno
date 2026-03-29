@@ -238,6 +238,42 @@ Then(
 );
 
 When(
+  'the admin creates a new puzzle with letters {string} and center {string}',
+  async function (this: AdminWorld, lettersStr: string, center: string) {
+    const letters = lettersStr.split(',').map((l) => l.trim());
+    // Omit slot so the server appends to the end of the rotation.
+    this.response = await app.request('/api/admin/puzzle', {
+      method: 'POST',
+      headers: adminHeaders(this.sessionCookie, this.csrfToken),
+      body: JSON.stringify({ letters, center }),
+    });
+    this.responseJson = (await this.response.json()) as Record<string, unknown>;
+  },
+);
+
+Then(
+  'the new puzzle slot number should be {int}',
+  function (this: AdminWorld, expectedSlot: number) {
+    assert.equal(
+      this.responseJson.slot,
+      expectedSlot,
+      `Expected slot ${expectedSlot}, got ${this.responseJson.slot}`,
+    );
+  },
+);
+
+Then(
+  'the total puzzles count should be {int}',
+  function (this: AdminWorld, expectedTotal: number) {
+    assert.equal(
+      this.responseJson.total_puzzles,
+      expectedTotal,
+      `Expected total_puzzles ${expectedTotal}, got ${this.responseJson.total_puzzles}`,
+    );
+  },
+);
+
+When(
   'the admin submits a puzzle with 6 letters',
   async function (this: AdminWorld) {
     this.response = await app.request('/api/admin/puzzle', {

@@ -14,6 +14,17 @@ Feature: Admin tool
     Then a new puzzle slot should be created
     And the response should include the slot number and next play date
 
+  Scenario: New puzzle is appended to the end of the rotation
+    Given there are 41 puzzles in rotation
+    When the admin creates a new puzzle with letters "a,d,e,h,l,r,s" and center "a"
+    Then the new puzzle slot number should be 41
+    And the total puzzles count should be 42
+
+  Scenario: Create puzzle from a previewed combination
+    When the admin previews letters "a,e,k,l,n,s,ö" with center "k"
+    And the admin submits a new puzzle with letters "a,e,k,l,n,s,ö" and center "k"
+    Then a new puzzle slot should be created
+
   Scenario: Puzzle requires exactly 7 distinct letters
     When the admin submits a puzzle with 6 letters
     Then the server should respond with 400

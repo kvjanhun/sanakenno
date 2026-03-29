@@ -2,10 +2,13 @@
  * Combined puzzle editor and combinations browser.
  *
  * Layout from top to bottom:
- *   1. Toolbar: slot nav, swap, delete, save/restore
- *   2. Center letter selector (VariationsGrid)
- *   3. Combinations search with filters (scrollable, 10 rows visible)
- *   4. Word list for active combo + center
+ *   1. Toolbar: slot nav, swap, delete, save/restore, new-puzzle button
+ *   2. New-puzzle form (collapsible): letter input + center input + create button
+ *   3. Center letter selector (VariationsGrid)
+ *   4. Combinations search with filters (scrollable, 10 rows visible)
+ *      - When a combo row is selected and a center is active, shows
+ *        "Lisää uutena pelinä" button to append it to the rotation
+ *   5. Word list for active combo + center
  *
  * @module src/components/admin/PuzzleEditor
  */
@@ -58,6 +61,7 @@ export function PuzzleEditor() {
   const changeCenter = useAdminStore((s) => s.changeCenter);
   const swapSlots = useAdminStore((s) => s.swapSlots);
   const deleteSlot = useAdminStore((s) => s.deleteSlot);
+  const createPuzzle = useAdminStore((s) => s.createPuzzle);
   const blockWord = useAdminStore((s) => s.blockWord);
   const previewCombo = useAdminStore((s) => s.previewCombo);
   const setStatusMessage = useAdminStore((s) => s.setStatusMessage);
@@ -65,6 +69,11 @@ export function PuzzleEditor() {
 
   const [swapTarget, setSwapTarget] = useState('');
   const [initialLoaded, setInitialLoaded] = useState(false);
+
+  // New-puzzle creation form state
+  const [createMode, setCreateMode] = useState(false);
+  const [newLetters, setNewLetters] = useState('');
+  const [newCenter, setNewCenter] = useState('');
 
   // Combinations browser state
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
@@ -268,6 +277,35 @@ export function PuzzleEditor() {
     [blockWord],
   );
 
+  /**
+   * Create a new puzzle from the manual letter-entry form.
+   * Parses the comma-separated letters and calls the store action.
+   */
+  const handleCreateFromForm = useCallback(async () => {
+    const letters = newLetters
+      .toLowerCase()
+      .split(/[,\s]+/)
+      .map((l) => l.trim())
+      .filter(Boolean);
+    const center = newCenter.toLowerCase().trim();
+    await createPuzzle(letters, center);
+    setCreateMode(false);
+    setNewLetters('');
+    setNewCenter('');
+  }, [newLetters, newCenter, createPuzzle]);
+
+  /**
+   * Create a new puzzle from the currently-selected combination and center.
+   * Called from the combinations browser when a combo + center are active.
+   */
+  const handleCreateFromCombo = useCallback(async () => {
+    if (!selectedCombo || !activeCenter) return;
+    const letters = activeLetters.split('');
+    await createPuzzle(letters, activeCenter);
+    setSelectedCombo(null);
+    setSelectedVariations([]);
+  }, [selectedCombo, activeLetters, activeCenter, createPuzzle]);
+
   const inputStyle = {
     backgroundColor: 'var(--color-bg-primary)',
     border: '1px solid var(--color-border)',
@@ -412,16 +450,117 @@ export function PuzzleEditor() {
           >
             Poista
           </button>
+          <button
+            type="button"
+            onClick={() => {
+              setCreateMode((v) => !v);
+              setNewLetters('');
+              setNewCenter('');
+            }}
+            disabled={saving}
+            className="px-2 py-1 rounded text-xs cursor-pointer"
+            style={{
+              backgroundColor: createMode
+                ? 'rgba(22, 163, 74, 0.15)'
+                : 'var(--color-bg-primary)',
+              border: createMode
+                ? '1px solid #16a34a'
+                : '1px solid var(--color-border)',
+              color: createMode ? '#16a34a' : 'var(--color-text-primary)',
+            }}
+            aria-label="Luo uusi peli"
+          >
+            + Uusi
+          </button>
         </div>
       </div>
 
-      {/* Center letter selector */}
+      {/* New-puzzle creation form */}
+      {createMode && (
+        <div
+          className="p-3 rounded-lg space-y-2"
+          style={{
+            backgroundColor: 'var(--color-bg-secondary)',
+            border: '1px solid #16a34a',
+          }}
+        >
+          <div className="text-xs font-semibold" style={{ color: '#16a34a' }}>
+            Uusi peli
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={newLetters}
+              onChange={(e) => setNewLetters(e.target.value)}
+              placeholder="Kirjaimet (a,b,c,d,e,f,g)"
+              className="flex-1 px-2 py-1 rounded text-sm font-mono"
+              style={inputStyle}
+              aria-label="Uuden pelin kirjaimet"
+            />
+            <input
+              type="text"
+              value={newCenter}
+              onChange={(e) => setNewCenter(e.target.value)}
+              placeholder="Keskus"
+              maxLength={1}
+              className="w-16 px-2 py-1 rounded text-sm font-mono text-center"
+              style={inputStyle}
+              aria-label="Uuden pelin keskuskirjain"
+            />
+            <button
+              type="button"
+              onClick={handleCreateFromForm}
+              disabled={saving || !newLetters.trim() || !newCenter.trim()}
+              className="px-3 py-1 rounded text-xs font-semibold cursor-pointer"
+              style={{
+                backgroundColor: '#16a34a',
+                color: '#fff',
+                border: 'none',
+                opacity:
+                  saving || !newLetters.trim() || !newCenter.trim() ? 0.5 : 1,
+              }}
+            >
+              {saving ? 'Luodaan...' : 'Luo'}
+            </button>
+          </div>
+          <div
+            className="text-xs"
+            style={{ color: 'var(--color-text-tertiary)' }}
+          >
+            Anna 7 eri kirjainta skandit mukaan lukien. Voit myös valita
+            yhdistelmän alta ja käyttää &ldquo;Lisää uutena&rdquo;-painiketta.
+          </div>
+        </div>
+      )}
+
+      {/* Center letter selector, with "add as new puzzle" button when browsing a combo */}
       {displayVariations.length > 0 && (
-        <VariationsGrid
-          variations={displayVariations}
-          activeCenter={activeCenter}
-          onSelect={handleCenterSelect}
-        />
+        <div className="space-y-2">
+          <VariationsGrid
+            variations={displayVariations}
+            activeCenter={activeCenter}
+            onSelect={handleCenterSelect}
+          />
+          {selectedCombo && activeCenter && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={handleCreateFromCombo}
+                disabled={saving}
+                className="px-3 py-1 rounded text-xs font-semibold cursor-pointer"
+                style={{
+                  backgroundColor: '#16a34a',
+                  color: '#fff',
+                  border: 'none',
+                  opacity: saving ? 0.5 : 1,
+                }}
+                aria-label="Lisää valittu yhdistelmä uutena pelinä"
+              >
+                {saving ? 'Lisätään...' : 'Lisää uutena pelinä'}
+              </button>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Combinations search */}
