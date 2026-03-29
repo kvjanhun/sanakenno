@@ -36,10 +36,51 @@ Feature: Game interaction
     When the player taps the "OK" button
     Then the word should be submitted for validation
 
+  # --- Rules modal ---
+
+  Scenario: Rules modal opens when question mark is clicked
+    Given the game is displayed
+    When the player clicks or taps the question mark (?) icon
+    Then the rules modal should open
+    And the game should remain loaded in the background
+
+  Scenario: Rules modal closes when X button is clicked
+    Given the rules modal is open
+    When the player clicks or taps the X button
+    Then the rules modal should close
+    And the game should be interactive again
+
+  Scenario: Rules modal closes when background is clicked
+    Given the rules modal is open
+    When the player clicks or taps outside the modal (on the dark background)
+    Then the rules modal should close
+    And the game should be interactive again
+
   Scenario: Keyboard is ignored when rules modal is open
     Given the rules modal is open
     When the player presses any letter key
     Then the current word should not change
+
+  # --- Midnight countdown (Rules modal) ---
+
+  Scenario: Midnight countdown displays in rules modal
+    Given the player opens the rules modal
+    Then a midnight countdown timer should be visible
+    And it should display "Seuraava kenno:" label
+    And it should show time in HH:mm:ss (24-hour) format
+    And it should be based on Helsinki timezone (Europe/Helsinki)
+
+  Scenario: Midnight countdown updates every second
+    Given the rules modal is open
+    When 1 second passes
+    Then the countdown should decrease by 1 second
+    And the display should update
+
+  Scenario: Countdown turns accent color when less than 30 minutes remain
+    Given the rules modal is open
+    When the countdown reaches 29:59 (less than 30 minutes)
+    Then the timer text should be displayed in accent colour
+    And the label "Seuraava kenno:" should remain in default color
 
   # --- Feedback and Validation ---
 

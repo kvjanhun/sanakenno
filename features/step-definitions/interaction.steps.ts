@@ -364,3 +364,73 @@ Then(
     return 'pending';
   },
 );
+
+// --- Midnight countdown (Rules modal) ---
+
+Given('the player opens the rules modal', function (this: SanakennoWorld) {
+  return 'pending';
+});
+
+Then(
+  'a midnight countdown timer should be visible',
+  function (this: SanakennoWorld) {
+    return 'pending';
+  },
+);
+
+Then(
+  'it should display {string} label',
+  function (this: SanakennoWorld, _label: string) {
+    return 'pending';
+  },
+);
+
+Then(
+  'it should show time in HH:mm:ss \\(24-hour) format',
+  function (this: SanakennoWorld) {
+    return 'pending';
+  },
+);
+
+Then(
+  'it should be based on Helsinki timezone \\(Europe/Helsinki)',
+  function (this: SanakennoWorld) {
+    return 'pending';
+  },
+);
+
+When('1 second passes', function (this: SanakennoWorld) {
+  return 'pending';
+});
+
+Then(
+  'the countdown should decrease by 1 second',
+  function (this: SanakennoWorld) {
+    return 'pending';
+  },
+);
+
+Then('the display should update', function (this: SanakennoWorld) {
+  return 'pending';
+});
+
+When(
+  'the countdown reaches 29:59 \\(less than 30 minutes)',
+  function (this: SanakennoWorld) {
+    return 'pending';
+  },
+);
+
+Then(
+  'the timer text should be displayed in accent colour',
+  function (this: SanakennoWorld) {
+    return 'pending';
+  },
+);
+
+Then(
+  'the label {string} should remain in default color',
+  function (this: SanakennoWorld, _label: string) {
+    return 'pending';
+  },
+);

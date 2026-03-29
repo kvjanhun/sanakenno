@@ -5,6 +5,9 @@
  * @module src/components/RulesModal
  */
 
+import { useEffect, useState } from 'react';
+import { msUntilMidnight } from '../hooks/useMidnightRollover';
+
 /** Props for {@link RulesModal}. */
 export interface RulesModalProps {
   /** Whether the modal is visible. */
@@ -14,12 +17,41 @@ export interface RulesModalProps {
 }
 
 /**
+ * Format milliseconds as HH:MM:SS for display.
+ */
+function formatTimeRemaining(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+/**
  * Render a full-screen modal with the game rules.
  */
 export function RulesModal({
   show,
   onClose,
 }: RulesModalProps): React.JSX.Element | null {
+  const [timeRemaining, setTimeRemaining] = useState<string>('00:00:00');
+  const [msRemaining, setMsRemaining] = useState<number>(0);
+
+  useEffect(() => {
+    if (!show) return;
+
+    const updateTimer = () => {
+      const ms = msUntilMidnight();
+      setMsRemaining(ms);
+      setTimeRemaining(formatTimeRemaining(ms));
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+
+    return () => clearInterval(interval);
+  }, [show]);
+
   if (!show) return null;
 
   return (
@@ -29,7 +61,7 @@ export function RulesModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-sm rounded-xl p-6 overflow-y-auto max-h-[90vh]"
+        className="w-full max-w-sm rounded-xl p-4 overflow-y-auto max-h-[90vh]"
         style={{
           background: 'var(--color-bg-primary)',
           border: '1px solid var(--color-border)',
@@ -39,14 +71,7 @@ export function RulesModal({
         aria-modal="true"
         aria-labelledby="rules-modal-title"
       >
-        <div className="flex justify-between items-center mb-4">
-          <h2
-            id="rules-modal-title"
-            className="text-lg font-semibold"
-            style={{ color: 'var(--color-text-primary)' }}
-          >
-            Pelin säännöt
-          </h2>
+        <div className="flex justify-end mb-1">
           <button
             onClick={onClose}
             className="p-1 rounded text-xl leading-none bg-transparent border-none cursor-pointer"
@@ -56,9 +81,35 @@ export function RulesModal({
             ✕
           </button>
         </div>
+        <div className="flex justify-between items-baseline mb-3">
+          <h2
+            id="rules-modal-title"
+            className="text-lg font-semibold"
+            style={{ color: 'var(--color-text-primary)' }}
+          >
+            Pelin säännöt
+          </h2>
+          <div
+            className="text-xs"
+            style={{ color: 'var(--color-text-tertiary)' }}
+          >
+            Seuraava kenno:{' '}
+            <span
+              className="font-bold"
+              style={{
+                color:
+                  msRemaining < 30 * 60 * 1000
+                    ? 'var(--color-accent)'
+                    : 'var(--color-text-primary)',
+              }}
+            >
+              {timeRemaining}
+            </span>
+          </div>
+        </div>
 
         <div
-          className="text-sm space-y-4"
+          className="text-sm space-y-3"
           style={{ color: 'var(--color-text-secondary)' }}
         >
           <p>
@@ -156,7 +207,7 @@ export function RulesModal({
             style={{
               border: 'none',
               borderTop: '1px solid var(--color-border)',
-              margin: '1.25rem 0 1.5rem 0',
+              margin: '0.5rem 0 0.5rem 0',
             }}
           />
 

@@ -187,6 +187,42 @@ test.describe('Rules modal', () => {
     const display = page.locator('[aria-atomic="true"]').first();
     await expect(display).not.toContainText('K');
   });
+
+  test('midnight countdown displays and updates', async ({ page }) => {
+    // Set time to 23:59:00 Helsinki (UTC+2) -> 21:59:00 UTC
+    await page.clock.install({
+      time: new Date('2026-03-27T21:59:00Z').getTime(),
+    });
+    await loadGame(page);
+
+    await page.getByLabel('Säännöt').click();
+
+    const countdown = page.locator('text=Seuraava kenno:').locator('span');
+    await expect(countdown).toHaveText('00:01:00');
+
+    // Fast forward 1 second
+    await page.clock.fastForward(1000);
+    await expect(countdown).toHaveText('00:00:59');
+  });
+
+  test('countdown turns accent color when < 30 min remain', async ({
+    page,
+  }) => {
+    // Set time to 23:30:05 Helsinki -> 21:30:05 UTC (29m 55s remaining)
+    await page.clock.install({
+      time: new Date('2026-03-27T21:30:05Z').getTime(),
+    });
+    await loadGame(page);
+
+    await page.getByLabel('Säännöt').click();
+
+    const countdown = page.locator('text=Seuraava kenno:').locator('span');
+    await expect(countdown).toHaveText('00:29:55');
+
+    // Should have accent color (orange)
+    // #ff643e -> rgb(255, 100, 62)
+    await expect(countdown).toHaveCSS('color', 'rgb(255, 100, 62)');
+  });
 });
 
 test.describe('Rejected word clearing', () => {

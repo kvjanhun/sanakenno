@@ -47,24 +47,24 @@ Feature: Daily puzzle
   # --- Midnight rollover ---
 
   @e2e
-  Scenario: Puzzle changes at midnight Helsinki time
-    Given it is 23:59 on 2026-03-01 in Helsinki
-    When the clock crosses midnight
+  Scenario: Puzzle changes at midnight Europe/Helsinki time
+    Given it is 23:59 on 2026-03-01 in Europe/Helsinki timezone
+    When the clock crosses midnight in Europe/Helsinki
     Then the puzzle should change to the next day's puzzle
 
   @e2e
-  Scenario: Midnight rollover via scheduled timer
-    Given the app loaded at 22:00 Helsinki time
-    Then a timer should be set to fire at midnight
+  Scenario: Midnight rollover via scheduled timer uses Europe/Helsinki timezone
+    Given the app loaded at 22:00 Europe/Helsinki time
+    Then a timer should be set to fire at midnight Europe/Helsinki time
     When the timer fires
     Then the app should reload and fetch the next day's puzzle
 
   @e2e
-  Scenario: Midnight rollover after suspended tab
-    Given the app loaded before midnight
+  Scenario: Midnight rollover after suspended tab (Europe/Helsinki)
+    Given the app loaded before midnight Europe/Helsinki time
     And the player switches away and the tab is suspended
-    When the player returns after midnight
-    Then the app should detect that the date has changed
+    When the player returns after midnight Europe/Helsinki time
+    Then the app should detect that the date has changed in Europe/Helsinki timezone
     And reload to fetch the next day's puzzle
 
   @e2e
