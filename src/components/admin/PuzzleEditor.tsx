@@ -136,8 +136,10 @@ export function PuzzleEditor() {
     if (filters.max_pangrams) params.set('max_pangrams', filters.max_pangrams);
     if (filters.min_words) params.set('min_words', filters.min_words);
     if (filters.max_words) params.set('max_words', filters.max_words);
-    if (filters.min_words_min) params.set('min_words_min', filters.min_words_min);
-    if (filters.max_words_min) params.set('max_words_min', filters.max_words_min);
+    if (filters.min_words_min)
+      params.set('min_words_min', filters.min_words_min);
+    if (filters.max_words_min)
+      params.set('max_words_min', filters.max_words_min);
     if (filters.in_rotation) params.set('in_rotation', filters.in_rotation);
     params.set('sort', sort);
     params.set('order', order);
@@ -628,7 +630,12 @@ export function PuzzleEditor() {
         <div className="grid grid-cols-3 gap-2 text-sm">
           {/* Pangrams range */}
           <div className="space-y-1">
-            <div className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>Pangrammeja</div>
+            <div
+              className="text-xs"
+              style={{ color: 'var(--color-text-tertiary)' }}
+            >
+              Pangrammeja
+            </div>
             <div className="flex items-center gap-1">
               <input
                 type="number"
@@ -640,7 +647,12 @@ export function PuzzleEditor() {
                 style={inputStyle}
                 aria-label="Pangrammeja vähintään"
               />
-              <span className="text-xs shrink-0" style={{ color: 'var(--color-text-tertiary)' }}>–</span>
+              <span
+                className="text-xs shrink-0"
+                style={{ color: 'var(--color-text-tertiary)' }}
+              >
+                –
+              </span>
               <input
                 type="number"
                 value={filters.max_pangrams}
@@ -655,7 +667,12 @@ export function PuzzleEditor() {
           </div>
           {/* Min words per center (least) range */}
           <div className="space-y-1">
-            <div className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>Väh. sanoja/keskus</div>
+            <div
+              className="text-xs"
+              style={{ color: 'var(--color-text-tertiary)' }}
+            >
+              Väh. sanoja/keskus
+            </div>
             <div className="flex items-center gap-1">
               <input
                 type="number"
@@ -667,7 +684,12 @@ export function PuzzleEditor() {
                 style={inputStyle}
                 aria-label="Vähemmän sanojen määrä vähintään"
               />
-              <span className="text-xs shrink-0" style={{ color: 'var(--color-text-tertiary)' }}>–</span>
+              <span
+                className="text-xs shrink-0"
+                style={{ color: 'var(--color-text-tertiary)' }}
+              >
+                –
+              </span>
               <input
                 type="number"
                 value={filters.max_words_min}
@@ -682,7 +704,12 @@ export function PuzzleEditor() {
           </div>
           {/* Max words per center (most) range */}
           <div className="space-y-1">
-            <div className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>En. sanoja/keskus</div>
+            <div
+              className="text-xs"
+              style={{ color: 'var(--color-text-tertiary)' }}
+            >
+              En. sanoja/keskus
+            </div>
             <div className="flex items-center gap-1">
               <input
                 type="number"
@@ -694,7 +721,12 @@ export function PuzzleEditor() {
                 style={inputStyle}
                 aria-label="Enemmän sanojen määrä vähintään"
               />
-              <span className="text-xs shrink-0" style={{ color: 'var(--color-text-tertiary)' }}>–</span>
+              <span
+                className="text-xs shrink-0"
+                style={{ color: 'var(--color-text-tertiary)' }}
+              >
+                –
+              </span>
               <input
                 type="number"
                 value={filters.max_words}
