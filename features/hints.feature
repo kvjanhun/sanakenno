@@ -56,6 +56,33 @@ Feature: Hint panels
     And the player reloads the page
     Then no tab should be active
 
+  # --- Pre-hint score tracking ---
+
+  Scenario: Pre-hint score is captured when the first hint is unlocked
+    Given the player has scored 15 points before any hints
+    When the player unlocks the "summary" hint
+    Then the pre-hint score should be 15
+
+  Scenario: Pre-hint score is not updated by subsequent hint unlocks
+    Given the player has scored 15 points before any hints
+    When the player unlocks the "summary" hint
+    And the player scores 5 more points
+    And the player unlocks the "letters" hint
+    Then the pre-hint score should still be 15
+
+  Scenario: Pre-hint score is 0 when the first hint is unlocked before scoring
+    When the player loads a fresh puzzle
+    And the player unlocks "summary"
+    Then the pre-hint score should be 0
+
+  Scenario: Display score before hints mirrors current score before any hints are used
+    Given the player has scored 10 points before any hints
+    Then the display score before hints should be 10
+
+  Scenario: Display score before hints shows 0 for old saves where hints were used without tracking
+    Given hints are already unlocked but no pre-hint score was recorded
+    Then the display score before hints should be 0
+
   # --- Share integration ---
 
   @e2e
@@ -63,3 +90,21 @@ Feature: Hint panels
     When the player unlocks "summary" and "pairs"
     And the player shares their result
     Then the share text should include hint icons for the unlocked hints
+
+  @e2e
+  Scenario: Share text includes pre-hint score in parentheses when hints are used
+    Given the player has scored 20 points before any hints
+    When the player unlocks the "summary" hint
+    And the player shares their result
+    Then the share score line should include "(20)"
+
+  @e2e
+  Scenario: Rank panel always shows score achieved without hints
+    Given the player has scored 20 points before any hints
+    When the player unlocks the "summary" hint
+    Then the rank panel should show "Ilman vihjeitä: 20 pistettä"
+
+  @e2e
+  Scenario: Rank panel shows current score before any hints are unlocked
+    Given the player has scored 7 points before any hints
+    Then the rank panel should show "Ilman vihjeitä: 7 pistettä"

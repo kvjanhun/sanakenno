@@ -54,6 +54,8 @@ interface PersistedState {
   hintsUnlocked: string[];
   startedAt: number;
   totalPausedMs: number;
+  /** Score at the moment the first hint was unlocked; null if no hints used. */
+  scoreBeforeHints: number | null;
 }
 
 /** Legacy persisted shape (pre-puzzle-number keying). */
@@ -81,6 +83,8 @@ export interface GameState {
   showRules: boolean;
   showAllFoundWords: boolean;
   hintsUnlocked: Set<string>;
+  /** Score captured when the first hint was unlocked; null if no hints used yet. */
+  scoreBeforeHints: number | null;
   celebration: CelebrationType;
   wordShake: boolean;
   wordRejected: boolean;
@@ -204,6 +208,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
   showRules: false,
   showAllFoundWords: false,
   hintsUnlocked: new Set<string>(),
+  scoreBeforeHints: null,
   celebration: null,
   wordShake: false,
   wordRejected: false,
@@ -264,6 +269,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
         currentWord: '',
         foundWords: new Set<string>(),
         score: 0,
+        scoreBeforeHints: null,
         message: '',
         fetchError: '',
         celebration: null,
@@ -423,6 +429,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
       hintsUnlocked,
       startedAt,
       totalPausedMs,
+      scoreBeforeHints,
     } = get();
     if (!puzzle) return;
     const data: PersistedState = {
@@ -431,6 +438,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
       hintsUnlocked: [...hintsUnlocked],
       startedAt,
       totalPausedMs,
+      scoreBeforeHints,
     };
     saveToStorage(storageKey(puzzle.puzzle_number), data);
   },
@@ -453,6 +461,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
           hintsUnlocked: legacy.hintsUnlocked,
           startedAt: legacy.startedAt,
           totalPausedMs: legacy.totalPausedMs,
+          scoreBeforeHints: null,
         } satisfies PersistedState);
         removeFromStorage(LEGACY_KEY);
       }
@@ -480,6 +489,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
       foundWords: new Set(validWords),
       score,
       hintsUnlocked: new Set(saved.hintsUnlocked ?? []),
+      scoreBeforeHints: saved.scoreBeforeHints ?? null,
       startedAt: saved.startedAt || Date.now(),
       totalPausedMs: saved.totalPausedMs ?? 0,
     });
@@ -505,15 +515,20 @@ export const useGameStore = create<GameState>()((set, get) => ({
 
   unlockHint: (id: string) => {
     set((s) => {
+      const isFirst = s.hintsUnlocked.size === 0;
       const next = new Set(s.hintsUnlocked);
       next.add(id);
-      return { hintsUnlocked: next };
+      return {
+        hintsUnlocked: next,
+        ...(isFirst ? { scoreBeforeHints: s.score } : {}),
+      };
     });
     get().saveState();
   },
 
   copyStatus: async () => {
-    const { puzzle, foundWords, score, hintsUnlocked } = get();
+    const { puzzle, foundWords, score, hintsUnlocked, scoreBeforeHints } =
+      get();
     if (!puzzle) return;
 
     const rank = get().rank();
@@ -522,10 +537,15 @@ export const useGameStore = create<GameState>()((set, get) => ({
       ? puzzle.max_score
       : Math.ceil(0.7 * puzzle.max_score);
 
+    const hintsWereUsed = hintsUnlocked.size > 0;
+    const scoreLine = hintsWereUsed
+      ? `${score}/${target} pistet\u00E4 (${scoreBeforeHints ?? 0})`
+      : `${score}/${target} pistet\u00E4`;
+
     const lines: string[] = [
       `Sanakenno \u2014 Kenno #${puzzle.puzzle_number + 1}`,
       `${rank} \u00B7 ${foundWords.size} sanaa`,
-      `${score}/${target} pistett\u00E4`,
+      scoreLine,
     ];
 
     // Hints line: only include if any hints unlocked
@@ -570,6 +590,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
       showRules: false,
       showAllFoundWords: false,
       hintsUnlocked: new Set<string>(),
+      scoreBeforeHints: null,
       celebration: null,
       wordShake: false,
       wordRejected: false,

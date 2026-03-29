@@ -48,4 +48,6 @@ export interface SanakennoWorld {
   achievementPosts: Array<Record<string, unknown>>;
   achievementSessionKeys: Set<string>;
   achievementResponses: Response[];
+  /* Pre-hint score */
+  scoreBeforeHints: number | null;
 }

@@ -50,6 +50,7 @@ const useHintsUnlocked = () => useGameStore((s) => s.hintsUnlocked);
 const usePressedHexIndex = () => useGameStore((s) => s.pressedHexIndex);
 const useStartedAt = () => useGameStore((s) => s.startedAt);
 const useTotalPausedMs = () => useGameStore((s) => s.totalPausedMs);
+const useScoreBeforeHints = () => useGameStore((s) => s.scoreBeforeHints);
 
 /* Stable action references — these don't change between renders */
 const actions = () => {
@@ -100,6 +101,11 @@ function App() {
   const pressedHexIndex = usePressedHexIndex();
   const startedAt = useStartedAt();
   const totalPausedMs = useTotalPausedMs();
+  const scoreBeforeHints = useScoreBeforeHints();
+  // Before any hints are unlocked the displayed value tracks current score.
+  // After first unlock it freezes. Old saves (hints exist but no capture) fall back to 0.
+  const displayScoreBeforeHints =
+    hintsUnlocked.size === 0 ? score : (scoreBeforeHints ?? 0);
 
   const {
     fetchPuzzle,
@@ -266,6 +272,7 @@ function App() {
                 onToggleRanks={() => setShowRanks(!showRanks)}
                 shareCopied={shareCopied}
                 onShare={handleShare}
+                scoreBeforeHints={displayScoreBeforeHints}
               />
             </div>
 

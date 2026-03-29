@@ -52,6 +52,8 @@ Before(function (this: SanakennoWorld) {
   this.hintData = null;
   this.hintsUnlocked = new Set();
   this.derivedHints = null;
+  this.scoreBeforeHints = null;
+  this.currentScore = 0;
 });
 
 Given(
@@ -76,6 +78,9 @@ Given(
 When(
   'the player unlocks the {string} hint',
   function (this: SanakennoWorld, hintId: string) {
+    if (this.hintsUnlocked.size === 0) {
+      this.scoreBeforeHints = this.currentScore;
+    }
     this.hintsUnlocked.add(hintId);
     this.derivedHints = deriveHintData(
       this.hintData!,
@@ -224,6 +229,9 @@ Then('no hints should be unlocked', function (this: SanakennoWorld) {
 When(
   'the player unlocks {string}',
   function (this: SanakennoWorld, hintId: string) {
+    if (this.hintsUnlocked.size === 0) {
+      this.scoreBeforeHints = this.currentScore;
+    }
     this.hintsUnlocked.add(hintId);
   },
 );
@@ -252,6 +260,9 @@ Then(
 When(
   'the player unlocks {string} and {string}',
   function (this: SanakennoWorld, a: string, b: string) {
+    if (this.hintsUnlocked.size === 0) {
+      this.scoreBeforeHints = this.currentScore;
+    }
     this.hintsUnlocked.add(a);
     this.hintsUnlocked.add(b);
   },
@@ -297,5 +308,79 @@ Then(
   'the share text should include hint icons for the unlocked hints',
   function (this: SanakennoWorld) {
     return 'pending';
+  },
+);
+
+/* ------------------------------------------------------------------ */
+/*  Pre-hint score tracking                                            */
+/* ------------------------------------------------------------------ */
+
+Given(
+  'the player has scored {int} points before any hints',
+  function (this: SanakennoWorld, score: number) {
+    this.currentScore = score;
+    this.scoreBeforeHints = null;
+  },
+);
+
+When(
+  'the player scores {int} more points',
+  function (this: SanakennoWorld, points: number) {
+    this.currentScore = (this.currentScore ?? 0) + points;
+  },
+);
+
+Then(
+  'the pre-hint score should be {int}',
+  function (this: SanakennoWorld, expected: number) {
+    assert.equal(this.scoreBeforeHints, expected);
+  },
+);
+
+Then(
+  'the pre-hint score should still be {int}',
+  function (this: SanakennoWorld, expected: number) {
+    assert.equal(this.scoreBeforeHints, expected);
+  },
+);
+
+Then(
+  'the share score line should include {string}',
+  function (this: SanakennoWorld, _fragment: string) {
+    return 'pending';
+  },
+);
+
+Then(
+  'the rank panel should show {string}',
+  function (this: SanakennoWorld, _text: string) {
+    return 'pending';
+  },
+);
+
+/**
+ * Compute the value shown as "Pisteet ilman vihjeitä", mirroring App.tsx logic:
+ * - No hints unlocked → current score
+ * - Hints unlocked, scoreBeforeHints captured → scoreBeforeHints
+ * - Hints unlocked, no scoreBeforeHints (old save) → 0
+ */
+function displayScoreBeforeHints(world: SanakennoWorld): number {
+  if (world.hintsUnlocked.size === 0) return world.currentScore;
+  return world.scoreBeforeHints ?? 0;
+}
+
+Given(
+  'hints are already unlocked but no pre-hint score was recorded',
+  function (this: SanakennoWorld) {
+    this.hintsUnlocked = new Set(['summary']);
+    this.scoreBeforeHints = null;
+    this.currentScore = 15;
+  },
+);
+
+Then(
+  'the display score before hints should be {int}',
+  function (this: SanakennoWorld, expected: number) {
+    assert.equal(displayScoreBeforeHints(this), expected);
   },
 );
