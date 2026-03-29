@@ -539,8 +539,8 @@ export const useGameStore = create<GameState>()((set, get) => ({
 
     const hintsWereUsed = hintsUnlocked.size > 0;
     const scoreLine = hintsWereUsed
-      ? `${score}/${target} pistet\u00E4 (${scoreBeforeHints ?? 0})`
-      : `${score}/${target} pistet\u00E4`;
+      ? `${score}/${target} pistett\u00E4 (${scoreBeforeHints ?? 0})`
+      : `${score}/${target} pistett\u00E4`;
 
     const lines: string[] = [
       `Sanakenno \u2014 Kenno #${puzzle.puzzle_number + 1}`,
