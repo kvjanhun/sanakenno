@@ -165,9 +165,17 @@ Feature: Admin tool
     When the admin filters combinations with min_pangrams=3 and max_pangrams=10
     Then every returned combination should have between 3 and 10 total pangrams
 
-  Scenario: Filter combinations by word count
+  Scenario: Filter combinations by word count lower bound
     When the admin filters by min best-case word count of 50
     Then every returned combination's max_word_count should be at least 50
+
+  Scenario: Filter combinations by word count upper bound
+    When the admin filters by max best-case word count of 55
+    Then every returned combination's max_word_count should be at most 55
+
+  Scenario: Filter combinations by worst-case word count range
+    When the admin filters by min worst-case word count of 25 and max worst-case word count of 29
+    Then every returned combination's min_word_count should be between 25 and 29
 
   Scenario: Filter by rotation membership
     When the admin filters for in_rotation=true

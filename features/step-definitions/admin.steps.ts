@@ -1103,6 +1103,59 @@ Then(
 );
 
 When(
+  'the admin filters by max best-case word count of {int}',
+  async function (this: AdminWorld, maxWords: number) {
+    this.response = await app.request(
+      `/api/admin/combinations?max_words=${maxWords}`,
+      {
+        method: 'GET',
+        headers: adminGet(this.sessionCookie),
+      },
+    );
+    this.responseJson = (await this.response.json()) as Record<string, unknown>;
+  },
+);
+
+Then(
+  "every returned combination's max_word_count should be at most {int}",
+  function (this: AdminWorld, maxWords: number) {
+    const combos = this.responseJson.combinations as Array<{
+      max_word_count: number;
+    }>;
+    for (const combo of combos) {
+      assert.ok(combo.max_word_count <= maxWords);
+    }
+  },
+);
+
+When(
+  'the admin filters by min worst-case word count of {int} and max worst-case word count of {int}',
+  async function (this: AdminWorld, minWordsMin: number, maxWordsMin: number) {
+    this.response = await app.request(
+      `/api/admin/combinations?min_words_min=${minWordsMin}&max_words_min=${maxWordsMin}`,
+      {
+        method: 'GET',
+        headers: adminGet(this.sessionCookie),
+      },
+    );
+    this.responseJson = (await this.response.json()) as Record<string, unknown>;
+  },
+);
+
+Then(
+  "every returned combination's min_word_count should be between {int} and {int}",
+  function (this: AdminWorld, minWordsMin: number, maxWordsMin: number) {
+    const combos = this.responseJson.combinations as Array<{
+      min_word_count: number;
+    }>;
+    for (const combo of combos) {
+      assert.ok(combo.min_word_count >= minWordsMin);
+      assert.ok(combo.min_word_count <= maxWordsMin);
+    }
+  },
+);
+
+When(
   'the admin filters for in_rotation=true',
   async function (this: AdminWorld) {
     this.response = await app.request(

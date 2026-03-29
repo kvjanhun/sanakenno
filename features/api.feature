@@ -1,5 +1,5 @@
 Feature: Puzzle API
-  The Express backend serves daily puzzles from pre-computed JSON data
+  The Hono backend serves daily puzzles from pre-computed JSON data
   and records player achievements.
 
   # --- GET /api/puzzle ---
