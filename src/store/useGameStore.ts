@@ -393,7 +393,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
 
     get().saveState();
 
-    // Rank change → celebration or toast
+    // Rank change → celebration + achievement POST
     if (newRank !== previousRank) {
       if (newRank === 'Täysi kenno') {
         set({ celebration: 'taysikenno' });
@@ -417,7 +417,10 @@ export const useGameStore = create<GameState>()((set, get) => ({
           session_id: state.sessionId || undefined,
         }),
       }).catch(() => {});
-    } else if (isPangram) {
+    }
+
+    // Always show points; add pangram chip if applicable
+    if (isPangram) {
       if (messageTimer !== null) clearTimeout(messageTimer);
       set({
         message: `+${pts}`,
