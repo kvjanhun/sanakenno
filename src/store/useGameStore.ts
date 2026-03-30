@@ -77,6 +77,8 @@ export interface GameState {
   score: number;
   message: string;
   messageType: MessageType;
+  secondaryMessage: string;
+  secondaryType: MessageType;
   loading: boolean;
   fetchError: string;
   showRanks: boolean;
@@ -202,6 +204,8 @@ export const useGameStore = create<GameState>()((set, get) => ({
   score: 0,
   message: '',
   messageType: 'ok',
+  secondaryMessage: '',
+  secondaryType: 'ok' as MessageType,
   loading: false,
   fetchError: '',
   showRanks: false,
@@ -395,9 +399,8 @@ export const useGameStore = create<GameState>()((set, get) => ({
         set({ celebration: 'taysikenno' });
       } else if (newRank === 'Ällistyttävä') {
         set({ celebration: 'allistyttava' });
-      } else {
-        get().showMessageAction(`Uusi taso: ${newRank}!`, 'special', 3000);
       }
+      // Rank advance shown via pill pulse animation — no toast needed
 
       // Fire-and-forget achievement POST
       const elapsed = Date.now() - state.startedAt - state.totalPausedMs;
@@ -415,7 +418,17 @@ export const useGameStore = create<GameState>()((set, get) => ({
         }),
       }).catch(() => {});
     } else if (isPangram) {
-      get().showMessageAction('Pangrammi!', 'special');
+      if (messageTimer !== null) clearTimeout(messageTimer);
+      set({
+        message: `+${pts}`,
+        messageType: 'ok',
+        secondaryMessage: 'Pangrammi!',
+        secondaryType: 'special',
+      });
+      messageTimer = setTimeout(
+        () => set({ message: '', secondaryMessage: '' }),
+        2000,
+      );
     } else {
       get().showMessageAction(`+${pts}`, 'ok');
     }
@@ -583,6 +596,8 @@ export const useGameStore = create<GameState>()((set, get) => ({
       score: 0,
       message: '',
       messageType: 'ok',
+      secondaryMessage: '',
+      secondaryType: 'ok' as MessageType,
       loading: false,
       fetchError: '',
       showRanks: false,

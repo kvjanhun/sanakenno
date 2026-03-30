@@ -39,6 +39,8 @@ const useFoundWords = () => useGameStore((s) => s.foundWords);
 const useOuterLetters = () => useGameStore((s) => s.outerLetters);
 const useMessage = () => useGameStore((s) => s.message);
 const useMessageType = () => useGameStore((s) => s.messageType);
+const useSecondaryMessage = () => useGameStore((s) => s.secondaryMessage);
+const useSecondaryType = () => useGameStore((s) => s.secondaryType);
 const useShowRules = () => useGameStore((s) => s.showRules);
 const useShowRanks = () => useGameStore((s) => s.showRanks);
 const useShowAllFoundWords = () => useGameStore((s) => s.showAllFoundWords);
@@ -90,6 +92,8 @@ function App() {
   const outerLetters = useOuterLetters();
   const message = useMessage();
   const messageType = useMessageType();
+  const secondaryMessage = useSecondaryMessage();
+  const secondaryType = useSecondaryType();
   const showRules = useShowRules();
   const showRanks = useShowRanks();
   const showAllFoundWords = useShowAllFoundWords();
@@ -296,7 +300,12 @@ function App() {
             {/* Message bar */}
             {!allFound && (
               <div className="mb-2">
-                <MessageBar message={message} type={messageType} />
+                <MessageBar
+                  message={message}
+                  type={messageType}
+                  secondaryMessage={secondaryMessage}
+                  secondaryType={secondaryType}
+                />
               </div>
             )}
 

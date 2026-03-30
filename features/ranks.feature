@@ -61,6 +61,6 @@ Feature: Rank progression
     Then a golden celebration should appear for 8 seconds
 
   @e2e
-  Scenario: Other rank transitions show a brief message
+  Scenario: Other rank transitions update the rank pill
     When the player reaches "Onnistuja" rank
-    Then the message "Uusi taso: Onnistuja!" should appear for 3 seconds
+    Then the rank pill should show "Onnistuja"

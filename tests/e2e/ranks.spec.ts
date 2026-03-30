@@ -105,9 +105,7 @@ test.describe('Rank celebrations', () => {
     await expect(dialog.getByText('Täysi kenno!')).toBeVisible();
   });
 
-  test('other rank transitions show a brief toast message', async ({
-    page,
-  }) => {
+  test('other rank transitions update the rank pill', async ({ page }) => {
     // Pre-seed: 7 pts (Nyt mennään!). Submit sanka (+5) → 12 pts → Onnistuja
     await loadGameWithState(page, {
       score: 7,
@@ -117,7 +115,7 @@ test.describe('Rank celebrations', () => {
     await page.keyboard.type('sanka');
     await page.keyboard.press('Enter');
 
-    await expect(page.getByText('Uusi taso: Onnistuja!')).toBeVisible({
+    await expect(page.getByRole('button', { name: 'Onnistuja' })).toBeVisible({
       timeout: 5000,
     });
   });
