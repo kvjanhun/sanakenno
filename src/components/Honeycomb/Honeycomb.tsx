@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from 'react';
+import { useMemo } from 'react';
 
 /** Props for the Honeycomb SVG letter grid component. */
 export interface HoneycombProps {
@@ -8,8 +8,6 @@ export interface HoneycombProps {
   outerLetters: string[];
   /** Index of the currently pressed hex, or null if none. */
   pressedHexIndex: number | null;
-  /** Increments each time a word is found correctly; triggers a ripple animation. */
-  rippleKey?: number;
   /** When true, pointer interactions are disabled (e.g. all words found). */
   disabled?: boolean;
   /** Called when a letter is pressed. */
@@ -80,7 +78,6 @@ export function Honeycomb({
   center,
   outerLetters,
   pressedHexIndex,
-  rippleKey = 0,
   disabled = false,
   onLetterPress,
   onHexDown,
@@ -90,34 +87,6 @@ export function Honeycomb({
     () => computeHexes(center, outerLetters),
     [center, outerLetters],
   );
-
-  // Ripple animation: expand a circle from the center hex on each correct word.
-  const [rippleRadius, setRippleRadius] = useState<number | null>(null);
-  const rippleRafRef = useRef<number | undefined>(undefined);
-  const mountedRef = useRef(false);
-
-  useEffect(() => {
-    // Skip ripple on initial mount (restoring saved state may have rippleKey > 0).
-    if (!mountedRef.current) {
-      mountedRef.current = true;
-      return;
-    }
-    if (rippleRafRef.current !== undefined)
-      cancelAnimationFrame(rippleRafRef.current);
-    const startTime = performance.now();
-    const duration = 500;
-    const step = (now: number) => {
-      const t = Math.min((now - startTime) / duration, 1);
-      const radius = 30 + t * 125; // expands from 30 to 155
-      setRippleRadius(t < 1 ? radius : null);
-      if (t < 1) rippleRafRef.current = requestAnimationFrame(step);
-    };
-    rippleRafRef.current = requestAnimationFrame(step);
-    return () => {
-      if (rippleRafRef.current !== undefined)
-        cancelAnimationFrame(rippleRafRef.current);
-    };
-  }, [rippleKey]);
 
   const ariaLabel = `Kirjainkenno: kirjaimet ${hexes.map((h) => h.letter.toUpperCase()).join(', ')}, keskuskirjain ${center.toUpperCase()}`;
 
@@ -129,12 +98,15 @@ export function Honeycomb({
       role="img"
       aria-label={ariaLabel}
       className="select-none"
-      style={{
-        touchAction: 'none',
-        filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.22))',
-      }}
+      style={{ touchAction: 'none' }}
       onTouchMove={(e) => e.preventDefault()}
     >
+      <defs>
+        <linearGradient id="hex-outer-grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" style={{ stopColor: 'var(--color-hex-hi)' }} />
+          <stop offset="100%" style={{ stopColor: 'var(--color-hex-lo)' }} />
+        </linearGradient>
+      </defs>
       {hexes.map((hex, i) => (
         <g
           key={i}
@@ -152,14 +124,14 @@ export function Honeycomb({
           onPointerLeave={disabled ? undefined : onHexUp}
         >
           <polygon
-            points={hexPoints(hex.x, hex.y, 47)}
+            points={hexPoints(hex.x, hex.y, 46)}
             style={{
               fill: hex.isCenter
                 ? 'var(--color-accent)'
-                : 'var(--color-bg-secondary)',
+                : 'url(#hex-outer-grad)',
               stroke: hex.isCenter
                 ? 'var(--color-accent)'
-                : 'var(--color-border)',
+                : 'var(--color-hex-stroke)',
               strokeWidth: '1.5',
               transform: pressedHexIndex === i ? 'scale(0.92)' : 'scale(1)',
               transformOrigin: `${hex.x}px ${hex.y}px`,
@@ -185,19 +157,6 @@ export function Honeycomb({
           </text>
         </g>
       ))}
-      {/* Expanding ring on each correct word */}
-      {rippleRadius !== null && (
-        <circle
-          cx={150}
-          cy={150}
-          r={rippleRadius}
-          fill="none"
-          stroke="var(--color-accent)"
-          strokeWidth={2}
-          opacity={(155 - rippleRadius) / 125}
-          aria-hidden="true"
-        />
-      )}
     </svg>
   );
 }
