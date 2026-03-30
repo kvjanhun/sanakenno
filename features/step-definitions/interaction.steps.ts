@@ -326,12 +326,9 @@ Given(
   },
 );
 
-Given(
-  'the rank is {string} with {int} words found',
-  function (this: SanakennoWorld, _rank: string, _words: number) {
-    return 'pending';
-  },
-);
+Given('the rank is {string}', function (this: SanakennoWorld, _rank: string) {
+  return 'pending';
+});
 
 Given(
   'hints {string} and {string} are unlocked',

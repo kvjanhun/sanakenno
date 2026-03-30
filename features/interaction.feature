@@ -146,13 +146,13 @@ Feature: Game interaction
 
   Scenario: Share text format
     Given the player has score 42 of max 120 on puzzle 5
-    And the rank is "Sanavalmis" with 28 words found
+    And the rank is "Sanavalmis"
     And hints "summary" and "pairs" are unlocked
     When the player taps the share button
     Then the clipboard text should match this format:
       """
       Sanakenno — Kenno #5
-      Sanavalmis · 28 sanaa
+      Sanavalmis
       42/120 pistettä
       Avut: 📊🔠
       sanakenno.fi

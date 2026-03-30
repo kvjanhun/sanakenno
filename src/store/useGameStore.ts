@@ -527,8 +527,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
   },
 
   copyStatus: async () => {
-    const { puzzle, foundWords, score, hintsUnlocked, scoreBeforeHints } =
-      get();
+    const { puzzle, score, hintsUnlocked, scoreBeforeHints } = get();
     if (!puzzle) return;
 
     const rank = get().rank();
@@ -544,7 +543,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
 
     const lines: string[] = [
       `Sanakenno \u2014 Kenno #${puzzle.puzzle_number + 1}`,
-      `${rank} \u00B7 ${foundWords.size} sanaa`,
+      rank,
       scoreLine,
     ];
 
