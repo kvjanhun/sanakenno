@@ -43,7 +43,7 @@ export function FoundWords({
   if (foundWords.length === 0) return null;
 
   const showToggle = foundWords.length > 6 || showAll;
-  const collapsed = recentWords.slice(-8);
+  const collapsed = recentWords.slice(-12);
 
   return (
     <section className="w-full">
@@ -90,27 +90,47 @@ export function FoundWords({
           ))}
         </div>
       ) : (
-        /* Collapsed: last 8 words as wrapping chips */
-        <div className="flex flex-wrap gap-1.5">
-          {collapsed.map((word) => (
-            <span
-              key={word}
-              className="font-[var(--font-mono)] text-sm px-2 py-0.5 rounded-full transition-colors duration-300"
-              style={{
-                backgroundColor:
-                  word === lastResubmittedWord
-                    ? 'var(--color-accent)'
-                    : 'var(--color-bg-secondary)',
-                color:
-                  word === lastResubmittedWord
-                    ? '#ffffff'
-                    : 'var(--color-text-primary)',
-                border: '1px solid var(--color-border)',
-              }}
-            >
-              {word}
-            </span>
-          ))}
+        /* Collapsed: single scrolling row of chips with right-side fade */
+        <div style={{ position: 'relative' }}>
+          <div
+            className="flex gap-1.5"
+            style={{ overflowX: 'hidden', flexWrap: 'nowrap' }}
+          >
+            {collapsed.map((word) => (
+              <span
+                key={word}
+                className="font-[var(--font-mono)] text-sm px-2 py-0.5 rounded-full transition-colors duration-300"
+                style={{
+                  flexShrink: 0,
+                  backgroundColor:
+                    word === lastResubmittedWord
+                      ? 'var(--color-accent)'
+                      : 'var(--color-bg-secondary)',
+                  color:
+                    word === lastResubmittedWord
+                      ? '#ffffff'
+                      : 'var(--color-text-primary)',
+                  border: '1px solid var(--color-border)',
+                }}
+              >
+                {word}
+              </span>
+            ))}
+          </div>
+          {/* Fade gradient — only visible when pills overflow */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              right: 0,
+              top: 0,
+              bottom: 0,
+              width: '3rem',
+              background:
+                'linear-gradient(to right, transparent, var(--color-bg-primary))',
+              pointerEvents: 'none',
+            }}
+          />
         </div>
       )}
     </section>
