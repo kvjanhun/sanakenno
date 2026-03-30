@@ -865,12 +865,12 @@ admin.get('/achievements', (c) => {
 
   const { dailyMap, totals } = groupByDay(rows, bySession);
 
-  // Fill missing days
-  const now = new Date();
-  const today = new Date(
-    now.toLocaleString('en-US', { timeZone: 'Europe/Helsinki' }),
-  );
-  today.setHours(0, 0, 0, 0);
+  // Fill missing days using Helsinki dates (must match groupByDay keys).
+  // Anchor at noon UTC to avoid DST edge cases when subtracting days.
+  const todayHki = new Date().toLocaleDateString('en-CA', {
+    timeZone: 'Europe/Helsinki',
+  });
+  const anchor = new Date(todayHki + 'T12:00:00Z');
 
   const daily: Array<{
     date: string;
@@ -879,7 +879,7 @@ admin.get('/achievements', (c) => {
   }> = [];
 
   for (let d = 0; d < days; d++) {
-    const date = new Date(today.getTime() - d * 86400000);
+    const date = new Date(anchor.getTime() - d * 86400000);
     const dateStr = date.toISOString().slice(0, 10);
     const counts =
       dailyMap.get(dateStr) || Object.fromEntries(RANKS.map((r) => [r, 0]));
