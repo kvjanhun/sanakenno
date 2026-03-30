@@ -35,7 +35,15 @@ const app = new Hono();
 
 // --- Middleware ---
 
-app.use('*', cors());
+app.use(
+  '*',
+  cors({
+    origin: 'https://sanakenno.fi',
+    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    allowHeaders: ['Content-Type', 'X-CSRF-Token'],
+    credentials: true,
+  }),
+);
 
 // Structured logging middleware
 app.use('*', async (c, next) => {
@@ -65,9 +73,8 @@ app.get('/api/health', (c) => {
     const db = getDb();
     db.prepare('SELECT 1').get();
     return c.json({ status: 'ok' });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Database unreachable';
-    return c.json({ status: 'error', message }, 503);
+  } catch {
+    return c.json({ status: 'error', message: 'Service unavailable' }, 503);
   }
 });
 

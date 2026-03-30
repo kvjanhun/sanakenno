@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { useHashRoute } from './hooks/useHashRoute.js';
+import { ErrorBoundary } from './components/ErrorBoundary.js';
 import App from './App';
 import { AdminLayout } from './components/admin/AdminLayout.js';
 import './styles/index.css';
@@ -25,6 +26,8 @@ function Root() {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Root />
+    <ErrorBoundary>
+      <Root />
+    </ErrorBoundary>
   </StrictMode>,
 );
