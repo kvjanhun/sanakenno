@@ -222,20 +222,19 @@ function App() {
       {/* Rules modal */}
       <RulesModal show={showRules} onClose={() => setShowRules(false)} />
 
-      {/* Main content */}
+      {/* Main content — full-height flex column so the bottom block stays anchored */}
       <div
         className="max-w-sm mx-auto"
         style={{
           touchAction: 'manipulation',
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100dvh',
+          boxSizing: 'border-box',
+          paddingTop: 'calc(env(safe-area-inset-top) + 3rem)',
           paddingBottom: 'calc(env(safe-area-inset-bottom) + 1rem)',
         }}
       >
-        {/* Spacer for fixed header */}
-        <div
-          style={{ height: 'calc(env(safe-area-inset-top) + 3rem)' }}
-          aria-hidden="true"
-        />
-
         {loading && (
           <div
             className="text-center py-16"
@@ -254,85 +253,94 @@ function App() {
 
         {!loading && !fetchError && puzzle && (
           <>
-            {/* Score + rank + share */}
-            <div
-              className="sticky z-10"
-              style={{
-                top: 'calc(env(safe-area-inset-top) + 3rem)',
-                backgroundColor: 'var(--color-bg-primary)',
-                paddingTop: '0.5rem',
-                paddingBottom: '0.25rem',
-              }}
-            >
-              <RankProgress
-                score={score}
-                maxScore={puzzle.max_score}
-                rank={rank}
-                showRanks={showRanks}
-                onToggleRanks={() => setShowRanks(!showRanks)}
-                shareCopied={shareCopied}
-                onShare={handleShare}
-                scoreBeforeHints={displayScoreBeforeHints}
-              />
-            </div>
-
-            {/* Hints */}
-            <HintPanels hintsUnlocked={hintsUnlocked} onUnlock={unlockHint} />
-
-            {/* Word input */}
-            <div className="mb-2">
-              <WordInput
-                currentWord={currentWord}
-                center={center}
-                allLetters={allLetters}
-                shake={wordShake}
-                allFound={allFound}
-                wordCount={puzzle.hint_data.word_count}
-              />
-            </div>
-
-            {/* Message bar */}
-            {!allFound && (
-              <div className="mb-2">
-                <MessageBar message={message} type={messageType} />
-              </div>
-            )}
-
-            {/* Honeycomb */}
-            <div
-              className="flex justify-center mb-3"
-              style={{ opacity: allFound ? 0.7 : 1 }}
-            >
-              <Honeycomb
-                center={center}
-                outerLetters={outerLetters}
-                pressedHexIndex={pressedHexIndex}
-                disabled={allFound}
-                onLetterPress={addLetter}
-                onHexDown={setPressedHexIndex}
-                onHexUp={() => setPressedHexIndex(null)}
-              />
-            </div>
-
-            {/* Controls */}
-            {!allFound && (
-              <div className="mb-3">
-                <GameControls
-                  onDelete={deleteLetter}
-                  onShuffle={shuffleLetters}
-                  onSubmit={() => submitWord()}
+            {/* Top section: rank + hints. Shrinks when space is tight. */}
+            <div style={{ flexShrink: 1, minHeight: 0 }}>
+              {/* Score + rank + share — sticky within the top section */}
+              <div
+                className="sticky z-10"
+                style={{
+                  top: 0,
+                  backgroundColor: 'var(--color-bg-primary)',
+                  paddingTop: '0.5rem',
+                  paddingBottom: '0.25rem',
+                }}
+              >
+                <RankProgress
+                  score={score}
+                  maxScore={puzzle.max_score}
+                  rank={rank}
+                  showRanks={showRanks}
+                  onToggleRanks={() => setShowRanks(!showRanks)}
+                  shareCopied={shareCopied}
+                  onShare={handleShare}
+                  scoreBeforeHints={displayScoreBeforeHints}
                 />
               </div>
-            )}
 
-            {/* Found words */}
-            <FoundWords
-              foundWords={sortedFoundWords}
-              recentWords={recentFoundWords}
-              showAll={showAllFoundWords}
-              onToggleShowAll={() => setShowAllFoundWords(!showAllFoundWords)}
-              lastResubmittedWord={lastResubmittedWord}
-            />
+              {/* Hints */}
+              <HintPanels hintsUnlocked={hintsUnlocked} onUnlock={unlockHint} />
+            </div>
+
+            {/* Spacer — absorbs remaining space, compresses as hints open */}
+            <div style={{ flex: 1 }} />
+
+            {/* Bottom block — anchored to the bottom, unaffected by hints */}
+            <div style={{ flexShrink: 0 }}>
+              {/* Word input */}
+              <div className="mb-2">
+                <WordInput
+                  currentWord={currentWord}
+                  center={center}
+                  allLetters={allLetters}
+                  shake={wordShake}
+                  allFound={allFound}
+                  wordCount={puzzle.hint_data.word_count}
+                />
+              </div>
+
+              {/* Message bar */}
+              {!allFound && (
+                <div className="mb-2">
+                  <MessageBar message={message} type={messageType} />
+                </div>
+              )}
+
+              {/* Honeycomb */}
+              <div
+                className="flex justify-center mb-3"
+                style={{ opacity: allFound ? 0.7 : 1 }}
+              >
+                <Honeycomb
+                  center={center}
+                  outerLetters={outerLetters}
+                  pressedHexIndex={pressedHexIndex}
+                  disabled={allFound}
+                  onLetterPress={addLetter}
+                  onHexDown={setPressedHexIndex}
+                  onHexUp={() => setPressedHexIndex(null)}
+                />
+              </div>
+
+              {/* Controls */}
+              {!allFound && (
+                <div className="mb-3">
+                  <GameControls
+                    onDelete={deleteLetter}
+                    onShuffle={shuffleLetters}
+                    onSubmit={() => submitWord()}
+                  />
+                </div>
+              )}
+
+              {/* Found words */}
+              <FoundWords
+                foundWords={sortedFoundWords}
+                recentWords={recentFoundWords}
+                showAll={showAllFoundWords}
+                onToggleShowAll={() => setShowAllFoundWords(!showAllFoundWords)}
+                lastResubmittedWord={lastResubmittedWord}
+              />
+            </div>
           </>
         )}
       </div>
