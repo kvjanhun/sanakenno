@@ -101,6 +101,12 @@ export function Honeycomb({
       style={{ touchAction: 'none' }}
       onTouchMove={(e) => e.preventDefault()}
     >
+      <defs>
+        <linearGradient id="hex-outer-grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" style={{ stopColor: 'var(--color-hex-hi)' }} />
+          <stop offset="100%" style={{ stopColor: 'var(--color-hex-lo)' }} />
+        </linearGradient>
+      </defs>
       {hexes.map((hex, i) => (
         <g
           key={i}
@@ -118,18 +124,19 @@ export function Honeycomb({
           onPointerLeave={disabled ? undefined : onHexUp}
         >
           <polygon
-            points={hexPoints(hex.x, hex.y, 47)}
+            points={hexPoints(hex.x, hex.y, 46)}
             style={{
               fill: hex.isCenter
                 ? 'var(--color-accent)'
-                : 'var(--color-bg-secondary)',
+                : 'url(#hex-outer-grad)',
               stroke: hex.isCenter
                 ? 'var(--color-accent)'
-                : 'var(--color-border)',
+                : 'var(--color-hex-stroke)',
               strokeWidth: '1.5',
               transform: pressedHexIndex === i ? 'scale(0.92)' : 'scale(1)',
               transformOrigin: `${hex.x}px ${hex.y}px`,
-              transition: 'transform 0.08s ease',
+              opacity: pressedHexIndex === i ? 0.78 : 1,
+              transition: 'transform 0.08s ease, opacity 0.08s ease',
             }}
           />
           <text
@@ -140,7 +147,7 @@ export function Honeycomb({
             style={{
               fill: hex.isCenter ? '#ffffff' : 'var(--color-text-primary)',
               fontSize: '24px',
-              fontWeight: hex.isCenter ? 500 : 400,
+              fontWeight: 600,
               fontFamily: 'var(--font-sans)',
               pointerEvents: 'none',
               userSelect: 'none',

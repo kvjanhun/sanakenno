@@ -90,3 +90,22 @@
   mask-composite: exclude;
   pointer-events: none;
 }
+
+@keyframes rankPulse {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.18);
+  }
+  70% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.rankPulse {
+  animation: rankPulse 0.4s ease-out;
+}

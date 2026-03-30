@@ -5,8 +5,9 @@
  * @module src/components/RankProgress
  */
 
-import { useRef, useEffect } from 'react';
-import { rankThresholds, progressToNextRank } from '../utils/scoring.js';
+import { useRef, useEffect, useState } from 'react';
+import { rankThresholds, progressToNextRank, RANKS } from '../utils/scoring.js';
+import styles from './animations.module.css';
 
 /** Props for {@link RankProgress}. */
 export interface RankProgressProps {
@@ -45,6 +46,37 @@ export function RankProgress({
   const progress = progressToNextRank(score, maxScore);
   const thresholds = rankThresholds(rank, maxScore);
 
+  // Animate score counter from previous value to new value.
+  const [displayScore, setDisplayScore] = useState(score);
+  const fromRef = useRef(score);
+  const rafRef = useRef<number | undefined>(undefined);
+
+  useEffect(() => {
+    const from = fromRef.current;
+    const to = score;
+    if (rafRef.current !== undefined) cancelAnimationFrame(rafRef.current);
+    if (from === to) return;
+    const duration = 300;
+    const startTime = performance.now();
+    const step = (now: number) => {
+      const t = Math.min((now - startTime) / duration, 1);
+      const eased = 1 - (1 - t) ** 3;
+      setDisplayScore(Math.round(from + (to - from) * eased));
+      if (t < 1) {
+        rafRef.current = requestAnimationFrame(step);
+      } else {
+        fromRef.current = to;
+      }
+    };
+    rafRef.current = requestAnimationFrame(step);
+    return () => {
+      if (rafRef.current !== undefined) cancelAnimationFrame(rafRef.current);
+    };
+  }, [score]);
+
+  // Rank threshold tick positions on the progress bar (as % of maxScore).
+  const ticks = RANKS.filter((r) => r.pct > 0 && r.pct < 100).map((r) => r.pct);
+
   useEffect(() => {
     if (!showRanks) return;
     function handlePointerDown(e: PointerEvent) {
@@ -64,9 +96,10 @@ export function RankProgress({
       {/* Rank + score + share */}
       <div className="flex items-center justify-between mb-2">
         <button
+          key={rank}
           type="button"
           onClick={onToggleRanks}
-          className="px-3 py-0.5 text-sm text-white rounded-full cursor-pointer border-none"
+          className={`px-3 py-0.5 text-sm text-white rounded-full cursor-pointer border-none ${styles.rankPulse}`}
           style={{ backgroundColor: 'var(--color-accent)', flexShrink: 0 }}
         >
           {rank}
@@ -76,7 +109,7 @@ export function RankProgress({
           className="text-base font-semibold"
           style={{ color: 'var(--color-text-primary)' }}
         >
-          {score} pistettä
+          {displayScore} pistettä
         </span>
 
         {/* Share button — popup anchored to this wrapper */}
@@ -118,10 +151,13 @@ export function RankProgress({
         </div>
       </div>
 
-      {/* Progress bar */}
+      {/* Progress bar with rank threshold tick marks */}
       <div
         className="h-2 w-full rounded-full overflow-hidden"
-        style={{ backgroundColor: 'var(--color-bg-secondary)' }}
+        style={{
+          backgroundColor: 'var(--color-bg-secondary)',
+          position: 'relative',
+        }}
         role="progressbar"
         aria-valuenow={score}
         aria-valuemin={0}
@@ -135,6 +171,21 @@ export function RankProgress({
             transition: 'width 0.5s ease',
           }}
         />
+        {ticks.map((pct) => (
+          <div
+            key={pct}
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              left: `${pct}%`,
+              top: 0,
+              bottom: 0,
+              width: '1px',
+              backgroundColor: 'var(--color-bg-primary)',
+              opacity: 0.6,
+            }}
+          />
+        ))}
       </div>
 
       {/* Expandable rank thresholds — floats over content below, does not affect layout */}

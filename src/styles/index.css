@@ -9,6 +9,9 @@
   --color-bg-primary: #ffffff;
   --color-bg-secondary: #f5f5f5;
   --color-border: #e0e0e0;
+  --color-hex-hi: #fbfbfb;
+  --color-hex-lo: #ececec;
+  --color-hex-stroke: #e0e0e0;
   --font-mono: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', monospace;
   --font-sans: 'Inter', 'Helvetica Neue', Arial, sans-serif;
 }
@@ -16,23 +19,31 @@
 /* Dark theme via system preference */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
+    --color-accent: #e05030;
     --color-text-primary: #f0f0f0;
     --color-text-secondary: #b0b0b0;
     --color-text-tertiary: #707070;
     --color-bg-primary: #1a1a1a;
     --color-bg-secondary: #252525;
     --color-border: #3a3a3a;
+    --color-hex-hi: #343434;
+    --color-hex-lo: #252525;
+    --color-hex-stroke: #3e3e3e;
   }
 }
 
 /* Dark theme via explicit attribute */
 [data-theme='dark'] {
+  --color-accent: #e05030;
   --color-text-primary: #f0f0f0;
   --color-text-secondary: #b0b0b0;
   --color-text-tertiary: #707070;
   --color-bg-primary: #1a1a1a;
   --color-bg-secondary: #252525;
   --color-border: #3a3a3a;
+  --color-hex-hi: #343434;
+  --color-hex-lo: #252525;
+  --color-hex-stroke: #3e3e3e;
 }
 
 body {
