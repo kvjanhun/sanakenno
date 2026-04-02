@@ -39,7 +39,7 @@ interface PlayStatus {
 export interface ArchiveModalProps {
   show: boolean;
   onClose: () => void;
-  onSelectPuzzle: (puzzleNumber: number, date: string) => void;
+  onSelectPuzzle: (puzzleNumber: number, date: string | null) => void;
   /** Currently loaded puzzle number (to highlight). */
   currentPuzzleNumber: number | null;
 }
@@ -173,7 +173,10 @@ export function ArchiveModal({
                       : 'none',
                   }}
                   onClick={() =>
-                    onSelectPuzzle(entry.puzzle_number, entry.date)
+                    onSelectPuzzle(
+                      entry.puzzle_number,
+                      entry.is_today ? null : entry.date,
+                    )
                   }
                 >
                   {/* Date + puzzle number */}

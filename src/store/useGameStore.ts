@@ -137,7 +137,10 @@ export interface GameState {
   setCelebration: (v: CelebrationType) => void;
   setShowArchive: (v: boolean) => void;
   setShowStats: (v: boolean) => void;
-  loadArchivePuzzle: (puzzleNumber: number, date: string) => Promise<void>;
+  loadArchivePuzzle: (
+    puzzleNumber: number,
+    date: string | null,
+  ) => Promise<void>;
   returnToToday: () => Promise<void>;
   reset: () => void;
 }
@@ -628,9 +631,9 @@ export const useGameStore = create<GameState>()((set, get) => ({
   setShowArchive: (v: boolean) => set({ showArchive: v }),
   setShowStats: (v: boolean) => set({ showStats: v }),
 
-  loadArchivePuzzle: async (puzzleNumber: number, date: string) => {
+  loadArchivePuzzle: async (puzzleNumber: number, date: string | null) => {
     set({ showArchive: false, viewingPuzzleDate: date });
-    await get().fetchPuzzle(puzzleNumber);
+    await get().fetchPuzzle(date ? puzzleNumber : undefined);
   },
 
   returnToToday: async () => {
