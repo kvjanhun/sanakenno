@@ -195,7 +195,7 @@ function App() {
           paddingTop: 'env(safe-area-inset-top)',
         }}
       >
-        <div className="max-w-sm mx-auto px-6 h-12 flex justify-between items-center">
+        <div className="px-4 h-12 flex justify-between items-center">
           <div className="flex items-center gap-1">
             <button
               type="button"
@@ -228,6 +228,17 @@ function App() {
                     { day: 'numeric', month: 'numeric' },
                   )}
                 </span>
+                {puzzle && (
+                  <span
+                    style={{
+                      color: 'var(--color-text-tertiary)',
+                      fontWeight: 'normal',
+                    }}
+                  >
+                    {' '}
+                    — #{puzzle.puzzle_number + 1}
+                  </span>
+                )}
                 <button
                   type="button"
                   onClick={() => returnToToday()}
