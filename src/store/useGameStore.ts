@@ -436,7 +436,10 @@ export const useGameStore = create<GameState>()((set, get) => ({
           elapsed_ms: elapsed,
           session_id: state.sessionId || undefined,
         }),
-      }).catch(() => {});
+      }).catch((err) => {
+        // eslint-disable-next-line no-console
+        console.warn('Achievement POST failed:', err);
+      });
     }
 
     // Record stats locally (on every accepted word, not just rank changes)

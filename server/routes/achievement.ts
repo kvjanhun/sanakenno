@@ -140,21 +140,32 @@ achievement.post('/', rateLimitMiddleware, async (c) => {
     return c.json({ error: 'elapsed_ms must be a non-negative integer' }, 400);
   }
 
-  const db = getDb();
-  const stmt = db.prepare(`
-    INSERT INTO achievements (puzzle_number, rank, score, max_score, words_found, elapsed_ms, session_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `);
+  try {
+    const db = getDb();
+    const stmt = db.prepare(`
+      INSERT INTO achievements (puzzle_number, rank, score, max_score, words_found, elapsed_ms, session_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
 
-  stmt.run(
-    puzzle_number,
-    rank,
-    score,
-    max_score,
-    words_found,
-    elapsed_ms ?? null,
-    session_id ?? null,
-  );
+    stmt.run(
+      puzzle_number,
+      rank,
+      score,
+      max_score,
+      words_found,
+      elapsed_ms ?? null,
+      session_id ?? null,
+    );
+  } catch (err) {
+    console.error(
+      JSON.stringify({
+        level: 'error',
+        message: 'Failed to record achievement',
+        error: err instanceof Error ? err.message : String(err),
+      }),
+    );
+    return c.json({ error: 'Failed to record achievement' }, 500);
+  }
 
   return c.json({ status: 'recorded' }, 201);
 });

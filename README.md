@@ -55,6 +55,7 @@ All behaviour is defined in Gherkin specs under `features/`. The BDD suite runs 
 | [archive](features/archive.feature) | 7-day puzzle archive, replay past puzzles |
 | [definitions](features/definitions.feature) | Word definitions via Kotus dictionary links |
 | [stats](features/stats.feature) | Player statistics, streaks, rank distribution |
+| [server-errors](features/server-errors.feature) | API error responses, structured error logging |
 
 ## Deployment
 

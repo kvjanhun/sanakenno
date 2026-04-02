@@ -30,11 +30,14 @@ const puzzle = new Hono();
 
 /**
  * Build the standard puzzle response shape.
+ * Returns null if no puzzles exist or the slot cannot be resolved.
  */
-function buildPuzzleResponse(slot: number): PuzzleResponse {
+function buildPuzzleResponse(slot: number): PuzzleResponse | null {
   const totalPuzzles = getTotalPuzzles();
+  if (totalPuzzles === 0) return null;
   const wrappedSlot = ((slot % totalPuzzles) + totalPuzzles) % totalPuzzles;
-  const data = getPuzzleBySlot(wrappedSlot)!;
+  const data = getPuzzleBySlot(wrappedSlot);
+  if (!data) return null;
 
   return {
     center: data.center,
@@ -58,7 +61,9 @@ puzzle.get('/', (c) => {
     now.toLocaleString('en-US', { timeZone: 'Europe/Helsinki' }),
   );
   const slot = getPuzzleForDate(helsinki);
-  return c.json(buildPuzzleResponse(slot));
+  const response = buildPuzzleResponse(slot);
+  if (!response) return c.json({ error: 'Puzzle not found' }, 404);
+  return c.json(response);
 });
 
 /**
@@ -72,7 +77,9 @@ puzzle.get('/:number', (c) => {
     return c.json({ error: 'Invalid puzzle number' }, 400);
   }
 
-  return c.json(buildPuzzleResponse(number));
+  const response = buildPuzzleResponse(number);
+  if (!response) return c.json({ error: 'Puzzle not found' }, 404);
+  return c.json(response);
 });
 
 export default puzzle;

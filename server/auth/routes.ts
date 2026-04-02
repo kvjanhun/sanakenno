@@ -133,6 +133,14 @@ auth.post('/login', loginRateLimit, async (c) => {
   }
 
   if (!valid || !admin) {
+    console.log(
+      JSON.stringify({
+        level: 'warn',
+        message: 'Failed login attempt',
+        username,
+        ip: getClientIp(c),
+      }),
+    );
     return c.json({ error: 'Virheelliset tunnukset' }, 401);
   }
 

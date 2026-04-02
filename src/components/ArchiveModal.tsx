@@ -80,16 +80,17 @@ export function ArchiveModal({
 }: ArchiveModalProps): React.JSX.Element | null {
   const [entries, setEntries] = useState<ArchiveEntry[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
 
   const fetchArchive = useCallback(async () => {
     setLoading(true);
+    setError(false);
     try {
       const res = await fetch(`${API_BASE}/api/archive`);
-      if (res.ok) {
-        setEntries(await res.json());
-      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setEntries(await res.json());
     } catch {
-      // Silently fail — archive is non-critical
+      setError(true);
     }
     setLoading(false);
   }, []);
@@ -149,6 +150,13 @@ export function ArchiveModal({
             style={{ color: 'var(--color-text-tertiary)' }}
           >
             Ladataan...
+          </div>
+        ) : error ? (
+          <div
+            className="text-sm py-4 text-center"
+            style={{ color: 'var(--color-text-tertiary)' }}
+          >
+            Arkiston lataus epäonnistui.
           </div>
         ) : (
           <div className="space-y-1">

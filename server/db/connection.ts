@@ -61,16 +61,27 @@ export function initDb(options: DbOptions = {}): BetterSqlite3.Database {
 
   const { inMemory = false, dbPath } = options;
 
-  if (inMemory) {
-    _db = new Database(':memory:');
-  } else {
-    const dataDir = resolveDataDir();
-    mkdirSync(dataDir, { recursive: true });
-    const resolvedPath = dbPath || join(dataDir, 'sanakenno.db');
-    _db = new Database(resolvedPath);
-  }
+  try {
+    if (inMemory) {
+      _db = new Database(':memory:');
+    } else {
+      const dataDir = resolveDataDir();
+      mkdirSync(dataDir, { recursive: true });
+      const resolvedPath = dbPath || join(dataDir, 'sanakenno.db');
+      _db = new Database(resolvedPath);
+    }
 
-  applySchema(_db);
+    applySchema(_db);
+  } catch (err) {
+    console.error(
+      JSON.stringify({
+        level: 'error',
+        message: 'Database initialization failed',
+        error: err instanceof Error ? err.message : String(err),
+      }),
+    );
+    throw err;
+  }
   return _db;
 }
 

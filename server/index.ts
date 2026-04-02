@@ -35,6 +35,20 @@ import {
 
 const app = new Hono();
 
+// --- Global error handler ---
+
+app.onError((err, c) => {
+  const logEntry = {
+    level: 'error',
+    method: c.req.method,
+    path: c.req.path,
+    error: err.message,
+    stack: process.env.NODE_ENV !== 'production' ? err.stack : undefined,
+  };
+  console.error(JSON.stringify(logEntry));
+  return c.json({ error: 'Internal server error' }, 500);
+});
+
 // --- Middleware ---
 
 app.use(
@@ -75,7 +89,14 @@ app.get('/api/health', (c) => {
     const db = getDb();
     db.prepare('SELECT 1').get();
     return c.json({ status: 'ok' });
-  } catch {
+  } catch (err) {
+    console.error(
+      JSON.stringify({
+        level: 'error',
+        message: 'Health check failed',
+        error: err instanceof Error ? err.message : String(err),
+      }),
+    );
     return c.json({ status: 'error', message: 'Service unavailable' }, 503);
   }
 });
