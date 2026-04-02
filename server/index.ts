@@ -8,6 +8,7 @@
  *   GET  /api/health              - Health check with DB reachability
  *   GET  /api/puzzle              - Today's puzzle
  *   GET  /api/puzzle/:number      - Specific puzzle by slot number
+ *   GET  /api/archive             - Last 7 days of puzzle metadata
  *   POST /api/achievement         - Record player achievement
  *   POST /api/auth/login          - Admin login
  *   POST /api/auth/logout         - Admin logout
@@ -22,6 +23,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { getDb } from './db/connection.js';
 import puzzleRoutes from './routes/puzzle.js';
+import archiveRoutes from './routes/archive.js';
 import achievementRoutes from './routes/achievement.js';
 import authRoutes from './auth/routes.js';
 import adminRoutes from './routes/admin.js';
@@ -91,6 +93,7 @@ app.use('/api/admin/*', requireCsrf);
 // --- Route mounting ---
 
 app.route('/api/puzzle', puzzleRoutes);
+app.route('/api/archive', archiveRoutes);
 app.route('/api/achievement', achievementRoutes);
 app.route('/api/auth', authRoutes);
 app.route('/api/admin', adminRoutes);

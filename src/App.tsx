@@ -25,6 +25,9 @@ import { Celebration } from './components/Celebration.js';
 import { MessageBar } from './components/MessageBar.js';
 import { GameControls } from './components/GameControls.js';
 import { HintPanels } from './components/HintPanels.js';
+import { ArchiveModal } from './components/ArchiveModal.js';
+import { StatsModal } from './components/StatsModal.js';
+import { CalendarIcon, StatsIcon } from './components/icons.js';
 
 /* ------------------------------------------------------------------ */
 /*  Zustand selectors — subscribe to individual slices of state        */
@@ -53,6 +56,9 @@ const usePressedHexIndex = () => useGameStore((s) => s.pressedHexIndex);
 const useStartedAt = () => useGameStore((s) => s.startedAt);
 const useTotalPausedMs = () => useGameStore((s) => s.totalPausedMs);
 const useScoreBeforeHints = () => useGameStore((s) => s.scoreBeforeHints);
+const useShowArchive = () => useGameStore((s) => s.showArchive);
+const useShowStats = () => useGameStore((s) => s.showStats);
+const useViewingPuzzleDate = () => useGameStore((s) => s.viewingPuzzleDate);
 
 /* Stable action references — these don't change between renders */
 const actions = () => {
@@ -106,6 +112,9 @@ function App() {
   const startedAt = useStartedAt();
   const totalPausedMs = useTotalPausedMs();
   const scoreBeforeHints = useScoreBeforeHints();
+  const showArchive = useShowArchive();
+  const showStats = useShowStats();
+  const viewingPuzzleDate = useViewingPuzzleDate();
   // Before any hints are unlocked the displayed value tracks current score.
   // After first unlock it freezes. Old saves (hints exist but no capture) fall back to 0.
   const displayScoreBeforeHints =
@@ -144,11 +153,15 @@ function App() {
 
   useMidnightRollover();
 
+  const { setShowArchive, setShowStats, loadArchivePuzzle, returnToToday } =
+    useGameStore.getState();
+
   // Keyboard handler — uses stable action refs, no dependency on store object
   const handleEscape = useCallback(() => {
-    const { showRules: isOpen, setShowRules: setRules } =
-      useGameStore.getState();
-    if (isOpen) setRules(false);
+    const state = useGameStore.getState();
+    if (state.showArchive) state.setShowArchive(false);
+    else if (state.showStats) state.setShowStats(false);
+    else if (state.showRules) state.setShowRules(false);
   }, []);
 
   useKeyboard({
@@ -156,7 +169,7 @@ function App() {
     onBackspace: deleteLetter,
     onEnter: () => submitWord(),
     onEscape: handleEscape,
-    enabled: !showRules && !!puzzle,
+    enabled: !showRules && !showArchive && !showStats && !!puzzle,
   });
 
   // Derived values
@@ -183,29 +196,62 @@ function App() {
         }}
       >
         <div className="max-w-sm mx-auto px-6 h-12 flex justify-between items-center">
-          {/* Spacer to balance the right-side buttons */}
-          <div
-            className="flex items-center gap-1"
-            style={{ visibility: 'hidden' }}
-          >
-            <span className="p-2 text-lg">?</span>
-            <span style={{ width: 20 }} />
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setShowArchive(true)}
+              className="p-2 rounded-lg bg-transparent border-none cursor-pointer"
+              style={{ color: 'var(--color-text-primary)' }}
+              aria-label="Arkisto"
+            >
+              <CalendarIcon />
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowStats(true)}
+              className="p-2 rounded-lg bg-transparent border-none cursor-pointer"
+              style={{ color: 'var(--color-text-primary)' }}
+              aria-label="Tilastot"
+            >
+              <StatsIcon />
+            </button>
           </div>
           <h1
             className="text-lg font-semibold"
             style={{ color: 'var(--color-text-primary)' }}
           >
-            Sanakenno
-            {puzzle && (
-              <span
-                style={{
-                  color: 'var(--color-text-tertiary)',
-                  fontWeight: 'normal',
-                }}
-              >
-                {' '}
-                — #{puzzle.puzzle_number + 1}
-              </span>
+            {viewingPuzzleDate ? (
+              <>
+                <span>
+                  {new Date(viewingPuzzleDate + 'T12:00:00').toLocaleDateString(
+                    'fi-FI',
+                    { day: 'numeric', month: 'numeric' },
+                  )}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => returnToToday()}
+                  className="ml-2 text-sm font-normal bg-transparent border-none cursor-pointer"
+                  style={{ color: 'var(--color-accent)' }}
+                >
+                  Tänään →
+                </button>
+              </>
+            ) : (
+              <>
+                Sanakenno
+                {puzzle && (
+                  <span
+                    style={{
+                      color: 'var(--color-text-tertiary)',
+                      fontWeight: 'normal',
+                    }}
+                  >
+                    {' '}
+                    — #{puzzle.puzzle_number + 1}
+                  </span>
+                )}
+              </>
             )}
           </h1>
           <div className="flex items-center gap-1">
@@ -225,6 +271,13 @@ function App() {
 
       {/* Rules modal */}
       <RulesModal show={showRules} onClose={() => setShowRules(false)} />
+      <ArchiveModal
+        show={showArchive}
+        onClose={() => setShowArchive(false)}
+        onSelectPuzzle={loadArchivePuzzle}
+        currentPuzzleNumber={puzzle?.puzzle_number ?? null}
+      />
+      <StatsModal show={showStats} onClose={() => setShowStats(false)} />
 
       {/* Main content */}
       <div

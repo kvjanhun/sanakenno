@@ -8,6 +8,7 @@
 
 import { useMemo } from 'react';
 import { toColumns } from '../utils/scoring.js';
+import { buildKotusUrl } from '../utils/kotus.js';
 
 /** Props for {@link FoundWords}. */
 export interface FoundWordsProps {
@@ -83,7 +84,24 @@ export function FoundWords({
                         : 'var(--color-text-primary)',
                   }}
                 >
-                  {word}
+                  <a
+                    href={buildKotusUrl(word)}
+                    target="_blank"
+                    rel="noopener"
+                    title={`Katso "${word}" sanakirjasta`}
+                    style={{
+                      color: 'inherit',
+                      textDecoration: 'none',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.textDecoration = 'underline';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.textDecoration = 'none';
+                    }}
+                  >
+                    {word}
+                  </a>
                 </li>
               ))}
             </ul>

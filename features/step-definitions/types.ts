@@ -50,4 +50,16 @@ export interface SanakennoWorld {
   achievementResponses: Response[];
   /* Pre-hint score */
   scoreBeforeHints: number | null;
+  /* Word definitions */
+  kotusUrl: string;
+  /* Player stats */
+  playerStats: import('../../src/utils/stats.js').PlayerStats;
+  /* Archive */
+  archiveEntries: Array<{
+    date: string;
+    puzzle_number: number;
+    letters: string[];
+    center: string;
+    is_today: boolean;
+  }>;
 }

@@ -19,6 +19,12 @@ import {
   loadFromStorage,
   removeFromStorage,
 } from '../utils/storage.js';
+import {
+  updateStatsRecord,
+  emptyStats,
+  STATS_STORAGE_KEY,
+} from '../utils/stats.js';
+import type { PlayerStats } from '../utils/stats.js';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -96,6 +102,10 @@ export interface GameState {
   startedAt: number;
   totalPausedMs: number;
   sessionId: string;
+  showArchive: boolean;
+  showStats: boolean;
+  /** Helsinki ISO date string when viewing an archive puzzle; null = today. */
+  viewingPuzzleDate: string | null;
 
   /* --- Derived helpers (synchronous) --- */
   center: () => string;
@@ -125,6 +135,10 @@ export interface GameState {
   copyStatus: () => Promise<void>;
   setPressedHexIndex: (i: number | null) => void;
   setCelebration: (v: CelebrationType) => void;
+  setShowArchive: (v: boolean) => void;
+  setShowStats: (v: boolean) => void;
+  loadArchivePuzzle: (puzzleNumber: number, date: string) => Promise<void>;
+  returnToToday: () => Promise<void>;
   reset: () => void;
 }
 
@@ -222,6 +236,9 @@ export const useGameStore = create<GameState>()((set, get) => ({
   startedAt: 0,
   totalPausedMs: 0,
   sessionId: '',
+  showArchive: false,
+  showStats: false,
+  viewingPuzzleDate: null,
 
   /* --- Derived helpers --- */
 
@@ -419,6 +436,28 @@ export const useGameStore = create<GameState>()((set, get) => ({
       }).catch(() => {});
     }
 
+    // Record stats locally (on every accepted word, not just rank changes)
+    {
+      const elapsed = Date.now() - state.startedAt - state.totalPausedMs;
+      const helsinkiDate = new Date(
+        new Date().toLocaleString('en-US', { timeZone: 'Europe/Helsinki' }),
+      );
+      const dateStr = `${helsinkiDate.getFullYear()}-${String(helsinkiDate.getMonth() + 1).padStart(2, '0')}-${String(helsinkiDate.getDate()).padStart(2, '0')}`;
+      const existing =
+        loadFromStorage<PlayerStats>(STATS_STORAGE_KEY) ?? emptyStats();
+      const updated = updateStatsRecord(existing, {
+        puzzle_number: puzzle.puzzle_number,
+        date: get().viewingPuzzleDate ?? dateStr,
+        best_rank: newRank,
+        best_score: newScore,
+        max_score: puzzle.max_score,
+        words_found: newFoundWords.size,
+        hints_used: state.hintsUnlocked.size,
+        elapsed_ms: elapsed,
+      });
+      saveToStorage(STATS_STORAGE_KEY, updated);
+    }
+
     // Always show points; add pangram chip if applicable
     if (isPangram) {
       if (messageTimer !== null) clearTimeout(messageTimer);
@@ -585,6 +624,19 @@ export const useGameStore = create<GameState>()((set, get) => ({
 
   setPressedHexIndex: (i: number | null) => set({ pressedHexIndex: i }),
   setCelebration: (v: CelebrationType) => set({ celebration: v }),
+
+  setShowArchive: (v: boolean) => set({ showArchive: v }),
+  setShowStats: (v: boolean) => set({ showStats: v }),
+
+  loadArchivePuzzle: async (puzzleNumber: number, date: string) => {
+    set({ showArchive: false, viewingPuzzleDate: date });
+    await get().fetchPuzzle(puzzleNumber);
+  },
+
+  returnToToday: async () => {
+    set({ viewingPuzzleDate: null });
+    await get().fetchPuzzle();
+  },
 
   reset: () => {
     if (messageTimer !== null) {

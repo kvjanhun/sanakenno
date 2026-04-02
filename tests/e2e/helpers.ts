@@ -81,6 +81,59 @@ export async function mockPuzzleApi(page: Page) {
   return puzzle;
 }
 
+/** Build a deterministic mock archive response (7 days). */
+export function createMockArchive() {
+  const today = new Date();
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split('T')[0];
+    return {
+      date: dateStr,
+      puzzle_number: i, // 0 = today, 1 = yesterday, etc.
+      letters: ['a', 'e', 'k', 'l', 'n', 's', 't'],
+      center: 'a',
+      is_today: i === 0,
+    };
+  });
+}
+
+/**
+ * Intercept the archive API with mock data.
+ * Must be called BEFORE page.goto().
+ */
+export async function mockArchiveApi(page: Page) {
+  const archive = createMockArchive();
+
+  await page.route('**/api/archive', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(archive),
+    });
+  });
+
+  // Also mock puzzle/:number for archive puzzle loads
+  await page.route('**/api/puzzle/*', async (route) => {
+    const url = route.request().url();
+    const match = url.match(/\/api\/puzzle\/(\d+)/);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      const puzzle = createMockPuzzle();
+      puzzle.puzzle_number = num;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(puzzle),
+      });
+    } else {
+      await route.continue();
+    }
+  });
+
+  return archive;
+}
+
 /** Set up mocks, navigate to the app, and wait for the honeycomb to render. */
 export async function loadGame(page: Page) {
   const puzzle = await mockPuzzleApi(page);
