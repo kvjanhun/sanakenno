@@ -52,6 +52,9 @@ All behaviour is defined in Gherkin specs under `features/`. The BDD suite runs 
 | [infrastructure](features/infrastructure.feature) | Docker, nginx, health checks |
 | [auth](features/auth.feature) | Admin authentication, sessions, CSRF |
 | [admin](features/admin.feature) | Puzzle CRUD, blocked words, schedule |
+| [archive](features/archive.feature) | 7-day puzzle archive, replay past puzzles |
+| [definitions](features/definitions.feature) | Word definitions via Kotus dictionary links |
+| [stats](features/stats.feature) | Player statistics, streaks, rank distribution |
 
 ## Deployment
 

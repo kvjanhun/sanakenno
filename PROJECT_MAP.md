@@ -30,12 +30,17 @@ Sanakenno is a standalone word-puzzle game built with a React frontend and a Hon
 - `store/useGameStore.ts`: **Source of Truth** for game state.
 - `hooks/useMidnightRollover.ts`: Manages the transition between daily puzzles.
 - `utils/scoring.ts`: Pure logic for Finnish word scoring and pangram detection.
+- `utils/stats.ts`: Pure stat computation (streaks, rank distribution, completion).
+- `utils/kotus.ts`: Kotus dictionary URL builder for word definition links.
 - `components/Honeycomb/`: The visual heart of the game.
+- `components/ArchiveModal.tsx`: 7-day puzzle archive browser.
+- `components/StatsModal.tsx`: Player statistics and history display.
 
 ### Backend (`server/`)
 
 - `index.ts`: API entry point and middleware configuration.
 - `puzzle-engine.ts`: **Core Logic** for puzzle rotation and hint generation.
+- `routes/archive.ts`: 7-day puzzle metadata endpoint for the archive modal.
 - `db/schema.sql`: Database structure (Puzzles, Stats, Admin).
 
 ### Testing (`features/` & `tests/`)

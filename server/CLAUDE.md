@@ -4,7 +4,7 @@
 ```
 server/
   index.ts          entry point — mounts all routes, middleware
-  routes/           puzzle, achievement, admin route files
+  routes/           puzzle, achievement, admin, archive route files
   auth/             session handling and auth routes
   db/               SQLite connection and migrations
   puzzle-engine.ts  pure puzzle logic (no I/O)
