@@ -51,11 +51,12 @@ test.describe('Archive', () => {
     // Modal should close
     await expect(page.getByText('Arkisto')).not.toBeVisible();
 
-    // Header should show "Tänään" link (indicating archive mode)
-    await expect(page.getByText('Tänään →')).toBeVisible();
+    // Header should show back arrow (indicating archive mode)
+    const backBtn = page.locator('button[aria-label="Takaisin tähän päivään"]');
+    await expect(backBtn).toBeVisible();
   });
 
-  test('"Tänään" link returns to today\'s puzzle', async ({ page }) => {
+  test("back arrow returns to today's puzzle", async ({ page }) => {
     await mockArchiveApi(page);
     await loadGame(page);
 
@@ -64,12 +65,11 @@ test.describe('Archive', () => {
     const entries = page.locator('button:has-text("Kenno #")');
     await entries.nth(1).click();
 
-    // Now click "Tänään" to return
-    await page.getByText('Tänään →').click();
+    // Now click back arrow to return
+    await page.locator('button[aria-label="Takaisin tähän päivään"]').click();
 
     // Should return to normal title
     await expect(page.getByText('Sanakenno')).toBeVisible();
-    await expect(page.getByText('Tänään →')).not.toBeVisible();
   });
 
   test('archive modal closes on Escape', async ({ page }) => {

@@ -195,12 +195,12 @@ function App() {
           paddingTop: 'env(safe-area-inset-top)',
         }}
       >
-        <div className="max-w-sm mx-auto px-2 h-12 flex justify-between items-center">
-          <div className="flex items-center gap-1">
+        <div className="max-w-sm mx-auto h-12 flex justify-between items-center">
+          <div className="flex items-center">
             <button
               type="button"
               onClick={() => setShowArchive(true)}
-              className="p-2 rounded-lg bg-transparent border-none cursor-pointer"
+              className="py-2 pr-2 rounded-lg bg-transparent border-none cursor-pointer"
               style={{ color: 'var(--color-text-primary)' }}
               aria-label="Arkisto"
             >
@@ -222,6 +222,19 @@ function App() {
           >
             {viewingPuzzleDate ? (
               <>
+                <button
+                  type="button"
+                  onClick={() => returnToToday()}
+                  className="bg-transparent border-none cursor-pointer"
+                  style={{
+                    color: 'var(--color-accent)',
+                    fontSize: '1.1em',
+                    padding: '0 0.25rem',
+                  }}
+                  aria-label="Takaisin tähän päivään"
+                >
+                  ←
+                </button>
                 <span>
                   {new Date(viewingPuzzleDate + 'T12:00:00').toLocaleDateString(
                     'fi-FI',
@@ -239,14 +252,6 @@ function App() {
                     — #{puzzle.puzzle_number + 1}
                   </span>
                 )}
-                <button
-                  type="button"
-                  onClick={() => returnToToday()}
-                  className="ml-2 text-sm font-normal bg-transparent border-none cursor-pointer"
-                  style={{ color: 'var(--color-accent)' }}
-                >
-                  Tänään →
-                </button>
               </>
             ) : (
               <>
@@ -265,7 +270,7 @@ function App() {
               </>
             )}
           </h1>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center">
             <button
               type="button"
               onClick={() => setShowRules(true)}

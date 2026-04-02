@@ -50,9 +50,9 @@ Feature: 7-day puzzle archive
     Then the header should show the archive puzzle's date
 
   @e2e
-  Scenario: "Tänään" link returns to today's puzzle
+  Scenario: Back arrow returns to today's puzzle
     Given the player is viewing an archive puzzle
-    When the player clicks "Tänään"
+    When the player clicks the back arrow
     Then today's puzzle should load
 
   @e2e
