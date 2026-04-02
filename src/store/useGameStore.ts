@@ -557,7 +557,12 @@ export const useGameStore = create<GameState>()((set, get) => ({
     if (messageTimer !== null) clearTimeout(messageTimer);
     set({ message: msg, messageType: type });
     messageTimer = setTimeout(() => {
-      const cleared: Partial<GameState> = { message: '', messageType: 'ok' };
+      const cleared: Partial<GameState> = {
+        message: '',
+        messageType: 'ok',
+        secondaryMessage: '',
+        secondaryType: 'ok' as MessageType,
+      };
       if (get().wordRejected) {
         cleared.currentWord = '';
         cleared.wordRejected = false;
