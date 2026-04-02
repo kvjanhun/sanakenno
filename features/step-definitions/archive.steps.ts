@@ -4,9 +4,17 @@
  * Tests the /api/archive endpoint via Hono's app.request().
  */
 
-import { When, Then, Before } from '@cucumber/cucumber';
+import {
+  When,
+  Then,
+  Before,
+  After,
+  type ITestCaseHookParameter,
+} from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
 import app from '../../server/index.js';
+import { getDb, closeDb, setDb } from '../../server/db/connection.js';
+import { setWordlist, invalidateAll } from '../../server/puzzle-engine.js';
 import type { SanakennoWorld } from './types.js';
 
 interface ArchiveEntry {
@@ -17,8 +25,48 @@ interface ArchiveEntry {
   is_today: boolean;
 }
 
-Before(function (this: SanakennoWorld) {
+Before(function (this: SanakennoWorld, scenario: ITestCaseHookParameter) {
+  if (!scenario.gherkinDocument?.uri?.includes('archive.feature')) return;
+
+  closeDb();
+  setDb(null);
+  const db = getDb({ inMemory: true });
+  invalidateAll();
   this.archiveEntries = [];
+
+  for (let i = 0; i < 41; i++) {
+    db.prepare(
+      'INSERT OR REPLACE INTO puzzles (slot, letters, center) VALUES (?, ?, ?)',
+    ).run(i, 'a,e,k,l,n,s,t', 'a');
+  }
+  db.prepare(
+    "INSERT OR REPLACE INTO config (key, value) VALUES ('rotation_epoch', '2026-02-24')",
+  ).run();
+
+  setWordlist(
+    new Set([
+      'kala',
+      'sanka',
+      'taka',
+      'kana',
+      'lakana',
+      'kanat',
+      'kaste',
+      'alat',
+      'alka',
+      'saat',
+      'alas',
+      'akat',
+    ]),
+  );
+});
+
+After(function (scenario: ITestCaseHookParameter) {
+  if (!scenario.gherkinDocument?.uri?.includes('archive.feature')) return;
+
+  invalidateAll();
+  closeDb();
+  setDb(null);
 });
 
 When(
