@@ -2,10 +2,14 @@
 # Monitors Sanakenno Docker logs for error spikes.
 # Alerts via Telegram if error count exceeds threshold in the last 5 minutes.
 #
+# Requires TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in environment
+# or in the ALERT_ENV_FILE (default: ~/.config/site-alerts.env).
+#
 # Install: cron every 5 minutes
-#   */5 * * * * /home/kvjanhun/scripts/error-spike-alert.sh
+#   */5 * * * * /path/to/error-spike-alert.sh
 
-source /home/kvjanhun/.config/site-alerts.env
+ALERT_ENV_FILE="${ALERT_ENV_FILE:-$HOME/.config/site-alerts.env}"
+[ -f "$ALERT_ENV_FILE" ] && source "$ALERT_ENV_FILE"
 
 CONTAINER="sanakenno"
 SITE="sanakenno.fi"

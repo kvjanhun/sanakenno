@@ -12,7 +12,8 @@ Monitoring and deployment scripts for Sanakenno infrastructure.
 
 ## Setup
 
-All scripts source Telegram credentials from `/home/kvjanhun/.config/site-alerts.env`:
+All scripts read Telegram credentials from `~/.config/site-alerts.env` by default
+(override with `ALERT_ENV_FILE`):
 ```
 TELEGRAM_BOT_TOKEN=...
 TELEGRAM_CHAT_ID=...
@@ -22,16 +23,16 @@ TELEGRAM_CHAT_ID=...
 
 ```bash
 # Copy scripts to server
-cp server/scripts/*.sh /home/kvjanhun/scripts/
+cp server/scripts/*.sh ~/scripts/
 
 # Add to crontab
 crontab -e
 ```
 
 ```cron
-*/5 * * * * /home/kvjanhun/scripts/health-alert.sh
-0 9 * * * /home/kvjanhun/scripts/puzzle-rotation-alert.sh
-*/5 * * * * /home/kvjanhun/scripts/error-spike-alert.sh
+*/5 * * * * ~/scripts/health-alert.sh
+0 9 * * * ~/scripts/puzzle-rotation-alert.sh
+*/5 * * * * ~/scripts/error-spike-alert.sh
 ```
 
-The health-alert.sh replaces the existing single-site check from web_kontissa.
+The health-alert.sh replaces the existing single-site check.

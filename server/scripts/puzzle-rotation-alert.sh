@@ -2,13 +2,18 @@
 # Alerts when Sanakenno puzzle rotation is about to restart from #1.
 # Sends Telegram notification at 7 days and 1 day remaining.
 #
+# Requires TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in environment
+# or in the ALERT_ENV_FILE (default: ~/.config/site-alerts.env).
+#
 # Install: daily cron at 09:00 Helsinki time
-#   0 9 * * * /home/kvjanhun/scripts/puzzle-rotation-alert.sh
+#   0 9 * * * /path/to/puzzle-rotation-alert.sh
 
-source /home/kvjanhun/.config/site-alerts.env
+ALERT_ENV_FILE="${ALERT_ENV_FILE:-$HOME/.config/site-alerts.env}"
+[ -f "$ALERT_ENV_FILE" ] && source "$ALERT_ENV_FILE"
 
-HEALTH_URL="http://localhost:8081/api/health"
-PUZZLE_URL="http://localhost:8081/api/puzzle"
+SANAKENNO_PORT="${SANAKENNO_PORT:-8081}"
+HEALTH_URL="http://localhost:${SANAKENNO_PORT}/api/health"
+PUZZLE_URL="http://localhost:${SANAKENNO_PORT}/api/puzzle"
 
 send_telegram() {
   curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
@@ -37,25 +42,11 @@ if [ -z "$TOTAL" ] || [ "$TOTAL" = "null" ] || [ -z "$CURRENT" ] || [ "$CURRENT"
   exit 0
 fi
 
-# Puzzle numbers are 0-indexed. The rotation cycles through 0..TOTAL-1.
-# Days until wrap = how many unique puzzles remain before we've seen all TOTAL.
-# Since puzzles advance by 1 each day, days remaining = TOTAL - days_since_slot_0_was_last_seen.
-# Simpler: the rotation restarts after TOTAL days from epoch. We need days until
-# the current cycle completes.
-#
-# current slot = (START_INDEX + days_since_epoch) % TOTAL
-# We want: days_until = TOTAL - (days_since_epoch % TOTAL)
-# But we don't have days_since_epoch directly. We can compute it from CURRENT:
-#   CURRENT = (1 + days_since_epoch) % TOTAL  (START_INDEX=1)
-#   days_since_epoch % TOTAL = (CURRENT - 1 + TOTAL) % TOTAL
-#   days_until_wrap = TOTAL - (CURRENT - 1 + TOTAL) % TOTAL
-# When CURRENT=0, that gives TOTAL - (TOTAL-1) = 1 (last puzzle before wrap)
-# When CURRENT=1, that gives TOTAL - 0 = TOTAL (just wrapped, full cycle ahead)
-
+# current slot = (START_INDEX + days_since_epoch) % TOTAL  (START_INDEX=1)
+# days_until_wrap = TOTAL - (CURRENT - 1 + TOTAL) % TOTAL
 DAYS_INTO_CYCLE=$(( (CURRENT - 1 + TOTAL) % TOTAL ))
 DAYS_REMAINING=$(( TOTAL - DAYS_INTO_CYCLE ))
 
-# Alert thresholds
 if [ "$DAYS_REMAINING" -eq 7 ]; then
   send_telegram "📅 <b>Sanakenno: 7 päivää jäljellä</b>
 Kennoja yhteensä: ${TOTAL}

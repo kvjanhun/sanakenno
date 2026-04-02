@@ -3,10 +3,14 @@
 # Checks Docker container health status and sends Telegram alerts
 # on state transitions (healthy -> unhealthy and back).
 #
+# Requires TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in environment
+# or in the ALERT_ENV_FILE (default: ~/.config/site-alerts.env).
+#
 # Install: cron every 5 minutes
-#   */5 * * * * /home/kvjanhun/scripts/health-alert.sh
+#   */5 * * * * /path/to/health-alert.sh
 
-source /home/kvjanhun/.config/site-alerts.env
+ALERT_ENV_FILE="${ALERT_ENV_FILE:-$HOME/.config/site-alerts.env}"
+[ -f "$ALERT_ENV_FILE" ] && source "$ALERT_ENV_FILE"
 
 send_telegram() {
   curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
