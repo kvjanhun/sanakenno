@@ -195,7 +195,7 @@ function App() {
           paddingTop: 'env(safe-area-inset-top)',
         }}
       >
-        <div className="px-4 h-12 flex justify-between items-center">
+        <div className="max-w-sm mx-auto px-2 h-12 flex justify-between items-center">
           <div className="flex items-center gap-1">
             <button
               type="button"
