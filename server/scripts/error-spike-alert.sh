@@ -13,7 +13,7 @@ ALERT_ENV_FILE="${ALERT_ENV_FILE:-$HOME/.config/site-alerts.env}"
 
 CONTAINER="sanakenno"
 SITE="sanakenno.fi"
-THRESHOLD=5
+THRESHOLD="${THRESHOLD:-5}"
 FLAG_FILE="/tmp/${CONTAINER}-error-spike.flag"
 WINDOW="5m"
 
