@@ -24,13 +24,14 @@ send_telegram() {
     -d "parse_mode=HTML" > /dev/null 2>&1
 }
 
-# Count error-level log entries in the last 5 minutes
-ERROR_COUNT=$(docker logs --since "$WINDOW" "$CONTAINER" 2>&1 | grep -c '"level":"error"')
+# Count server errors: explicit error-level logs OR 5xx status codes in request logs
+RECENT_LOGS=$(docker logs --since "$WINDOW" "$CONTAINER" 2>&1)
+ERROR_COUNT=$(echo "$RECENT_LOGS" | grep -cE '"level":"error"|"status":5[0-9]{2}')
 
 if [ "$ERROR_COUNT" -ge "$THRESHOLD" ]; then
   if [ ! -f "$FLAG_FILE" ]; then
     # Get sample errors for context
-    SAMPLE=$(docker logs --since "$WINDOW" "$CONTAINER" 2>&1 | grep '"level":"error"' | tail -3 | while read -r line; do
+    SAMPLE=$(echo "$RECENT_LOGS" | grep -E '"level":"error"|"status":5[0-9]{2}' | tail -3 | while read -r line; do
       MSG=$(echo "$line" | jq -r '.message // .error // "unknown"' 2>/dev/null)
       PATH_VAL=$(echo "$line" | jq -r '.path // ""' 2>/dev/null)
       echo "  • ${PATH_VAL}: ${MSG}"
