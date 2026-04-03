@@ -112,15 +112,8 @@ describe('rankForScore', () => {
 });
 
 describe('rankThresholds', () => {
-  it('hides "Täysi kenno" when not at that rank', () => {
+  it('always shows "Täysi kenno" in the rank list', () => {
     const thresholds = rankThresholds('Hyvä alku', 100);
-    expect(
-      thresholds.find((t: RankThreshold) => t.name === 'Täysi kenno'),
-    ).toBeUndefined();
-  });
-
-  it('shows "Täysi kenno" when at that rank', () => {
-    const thresholds = rankThresholds('Täysi kenno', 100);
     expect(
       thresholds.find((t: RankThreshold) => t.name === 'Täysi kenno'),
     ).toBeDefined();

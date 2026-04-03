@@ -65,16 +65,12 @@ export function rankForScore(score: number, maxScore: number): string {
   return RANKS[RANKS.length - 1].name;
 }
 
-/** Compute point thresholds for all visible ranks. Hides "Täysi kenno" unless reached. */
+/** Compute point thresholds for all ranks. */
 export function rankThresholds(
   currentRank: string,
   maxScore: number,
 ): RankThreshold[] {
-  const visible =
-    currentRank === 'Täysi kenno'
-      ? RANKS
-      : RANKS.filter((r) => r.name !== 'Täysi kenno');
-  return [...visible].reverse().map((r) => ({
+  return [...RANKS].reverse().map((r) => ({
     name: r.name,
     points: Math.ceil((r.pct / 100) * maxScore),
     isCurrent: currentRank === r.name,

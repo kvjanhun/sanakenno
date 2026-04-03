@@ -597,20 +597,24 @@ export const useGameStore = create<GameState>()((set, get) => ({
     if (!puzzle) return;
 
     const rank = get().rank();
-    const isTaysiKenno = rank === 'Täysi kenno';
-    const target = isTaysiKenno
-      ? puzzle.max_score
-      : Math.ceil(0.7 * puzzle.max_score);
+    const hasTrophy =
+      rank === '\u00C4llistytt\u00E4v\u00E4' || rank === 'T\u00E4ysi kenno';
+    const rankPrefix = hasTrophy ? '\u{1F3C6} ' : '';
 
+    // Score line: rank · score/max (scoreBeforeHints)
     const hintsWereUsed = hintsUnlocked.size > 0;
-    const scoreLine = hintsWereUsed
-      ? `${score}/${target} pistett\u00E4 (${scoreBeforeHints ?? 0})`
-      : `${score}/${target} pistett\u00E4`;
+    const scorePart = hintsWereUsed
+      ? `${score}/${puzzle.max_score} (${scoreBeforeHints ?? 0})`
+      : `${score}/${puzzle.max_score}`;
+
+    // Progress bar: 10 blocks proportional to score/max_score
+    const filled = Math.round((score / puzzle.max_score) * 10);
+    const bar = '\u{1F7E7}'.repeat(filled) + '\u2B1B'.repeat(10 - filled);
 
     const lines: string[] = [
       `Sanakenno \u2014 Kenno #${puzzle.puzzle_number + 1}`,
-      rank,
-      scoreLine,
+      `${rankPrefix}${rank} \u00B7 ${scorePart}`,
+      bar,
     ];
 
     // Hints line: only include if any hints unlocked

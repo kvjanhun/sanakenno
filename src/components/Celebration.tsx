@@ -52,7 +52,7 @@ export function Celebration({
       : {
           title: 'Ällistyttävä!',
           description: 'Huikea suoritus! Olet saavuttanut huipputason.',
-          target: Math.ceil(0.7 * maxScore),
+          target: maxScore,
           closeLabel: 'Jatka pelaamista',
           cardClass: styles.celebrationCard,
         };

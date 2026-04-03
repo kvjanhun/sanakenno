@@ -40,12 +40,8 @@ Feature: Rank progression
 
   # --- Rank threshold visibility ---
 
-  Scenario: Täysi kenno rank is hidden until achieved
+  Scenario: Täysi kenno is always visible in the rank list
     When the player's rank is "Ällistyttävä"
-    Then the rank list should not show "Täysi kenno"
-
-  Scenario: Täysi kenno is visible once achieved
-    When the player's rank is "Täysi kenno"
     Then the rank list should show "Täysi kenno"
 
   # --- Celebrations ---
