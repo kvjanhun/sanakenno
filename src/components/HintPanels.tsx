@@ -273,7 +273,7 @@ export function HintPanels({
             color: 'var(--color-text-primary)',
             fontWeight: 500,
             flexShrink: 0,
-            margin: '0 6px',
+            marginRight: '6px',
           }}
         >
           Avut
@@ -318,7 +318,7 @@ export function HintPanels({
           })}
         </div>
         {/* Unlock status bars */}
-        <div className="flex gap-1" style={{ marginLeft: 'auto' }}>
+        <div className="flex gap-1">
           {VISIBLE_PANELS.map((panel) => (
             <div
               key={panel.id}

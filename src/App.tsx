@@ -209,7 +209,7 @@ function App() {
             <button
               type="button"
               onClick={() => setShowStats(true)}
-              className="p-2 rounded-lg bg-transparent border-none cursor-pointer"
+              className="py-2 pr-2 pl-1 rounded-lg bg-transparent border-none cursor-pointer"
               style={{ color: 'var(--color-text-primary)' }}
               aria-label="Tilastot"
             >

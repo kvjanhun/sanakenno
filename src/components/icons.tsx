@@ -178,15 +178,14 @@ export function StatsIcon(): React.JSX.Element {
       width="20"
       height="20"
       viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="4"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      fill="currentColor"
     >
-      <line x1="18" y1="20" x2="18" y2="10" />
-      <line x1="12" y1="20" x2="12" y2="4" />
-      <line x1="6" y1="20" x2="6" y2="14" />
+      {/* Left bar — short */}
+      <path d="M3.5 15H5.5Q7 15 7 16.5V22H2V16.5Q2 15 3.5 15Z" />
+      {/* Center bar — tall */}
+      <path d="M11 4H13Q14.5 4 14.5 5.5V22H9.5V5.5Q9.5 4 11 4Z" />
+      {/* Right bar — medium */}
+      <path d="M18.5 9H20.5Q22 9 22 10.5V22H17V10.5Q17 9 18.5 9Z" />
     </svg>
   );
 }
