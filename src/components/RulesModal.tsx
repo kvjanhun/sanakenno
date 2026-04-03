@@ -71,7 +71,14 @@ export function RulesModal({
         aria-modal="true"
         aria-labelledby="rules-modal-title"
       >
-        <div className="flex justify-end mb-1">
+        <div className="flex justify-between items-center mb-1">
+          <h2
+            id="rules-modal-title"
+            className="text-lg font-semibold"
+            style={{ color: 'var(--color-text-primary)' }}
+          >
+            Pelin säännöt
+          </h2>
           <button
             onClick={onClose}
             className="p-1 rounded text-xl leading-none bg-transparent border-none cursor-pointer"
@@ -81,31 +88,22 @@ export function RulesModal({
             ✕
           </button>
         </div>
-        <div className="flex justify-between items-baseline mb-3">
-          <h2
-            id="rules-modal-title"
-            className="text-lg font-semibold"
-            style={{ color: 'var(--color-text-primary)' }}
+        <div
+          className="text-xs mb-3 text-right"
+          style={{ color: 'var(--color-text-tertiary)' }}
+        >
+          Seuraava kenno:{' '}
+          <span
+            className="font-bold"
+            style={{
+              color:
+                msRemaining < 30 * 60 * 1000
+                  ? 'var(--color-accent)'
+                  : 'var(--color-text-primary)',
+            }}
           >
-            Pelin säännöt
-          </h2>
-          <div
-            className="text-xs"
-            style={{ color: 'var(--color-text-tertiary)' }}
-          >
-            Seuraava kenno:{' '}
-            <span
-              className="font-bold"
-              style={{
-                color:
-                  msRemaining < 30 * 60 * 1000
-                    ? 'var(--color-accent)'
-                    : 'var(--color-text-primary)',
-              }}
-            >
-              {timeRemaining}
-            </span>
-          </div>
+            {timeRemaining}
+          </span>
         </div>
 
         <div
@@ -122,22 +120,22 @@ export function RulesModal({
               className="font-medium mb-1"
               style={{ color: 'var(--color-text-primary)' }}
             >
-              Hyväksyttävien sanojen täytyy:
+              Hyväksyttävien sanojen täytyy
             </p>
             <ul className="space-y-1 list-none pl-0">
               <li>
-                ✦ Sisältää{' '}
+                • Sisältää{' '}
                 <span style={{ color: 'var(--color-accent)' }}>
                   oranssi keskikirjain
                 </span>
               </li>
-              <li>✦ Olla vähintään 4 kirjaimen pituisia</li>
+              <li>• Olla vähintään 4 kirjaimen pituisia</li>
               <li>
-                ✦ Koostua vain annetuista kirjaimista — samaa kirjainta voi
+                • Koostua vain annetuista kirjaimista — samaa kirjainta voi
                 käyttää useasti
               </li>
               <li>
-                ✦ Löytyä Kotuksen sanalistasta (
+                • Löytyä Kotuksen sanalistasta (
                 <a
                   href="https://kotus.fi/sanakirjat/kielitoimiston-sanakirja/nykysuomen-sana-aineistot/nykysuomen-sanalista"
                   target="_blank"
@@ -159,12 +157,12 @@ export function RulesModal({
               className="font-medium mb-1"
               style={{ color: 'var(--color-text-primary)' }}
             >
-              Pisteytys:
+              Pisteytys
             </p>
             <ul className="space-y-1 list-none pl-0">
-              <li>✦ 4-kirjaiminen sana: 1 piste</li>
-              <li>✦ Pidempi sana: pisteitä sanan pituuden verran</li>
-              <li>✦ Pangrammi: +7 lisäpistettä</li>
+              <li>• 4-kirjaiminen sana: 1 piste</li>
+              <li>• Pidempi sana: pisteitä sanan pituuden verran</li>
+              <li>• Pangrammi: +7 lisäpistettä</li>
               <li style={{ color: 'var(--color-text-tertiary)' }}>
                 Sana on pangrammi sen sisältäessä kaikki 7 kirjainta.
               </li>
@@ -179,9 +177,9 @@ export function RulesModal({
               Avut:
             </p>
             <ul className="space-y-1 list-none pl-0">
-              <li>✦ Yleiskuva: mm. sanojen ja pangrammien määrä</li>
-              <li>✦ Pituudet: jäljellä olevien sanojen pituusjakauma</li>
-              <li>✦ Alkuparit: sanojen ensimmäiset 2 kirjainta</li>
+              <li>• Yleiskuva: mm. sanojen ja pangrammien määrä</li>
+              <li>• Pituudet: jäljellä olevien sanojen pituusjakauma</li>
+              <li>• Alkuparit: sanojen ensimmäiset 2 kirjainta</li>
             </ul>
           </div>
 
@@ -190,7 +188,7 @@ export function RulesModal({
               className="font-medium mb-1"
               style={{ color: 'var(--color-text-primary)' }}
             >
-              Yhdyssanat:
+              Yhdyssanat
             </p>
             <p>Sanalista sisältää myös yhdyssanoja.</p>
             <p>
