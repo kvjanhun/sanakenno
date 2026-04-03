@@ -256,15 +256,16 @@ function App() {
             ) : (
               <>
                 Sanakenno
+                <span style={{ fontWeight: 400 }}> —</span>
                 {puzzle && (
                   <span
                     style={{
-                      color: 'var(--color-text-tertiary)',
-                      fontWeight: 'normal',
+                      color: 'var(--color-accent)',
+                      fontWeight: '400',
                     }}
                   >
                     {' '}
-                    — #{puzzle.puzzle_number + 1}
+                    #{puzzle.puzzle_number + 1}
                   </span>
                 )}
               </>
@@ -275,7 +276,11 @@ function App() {
               type="button"
               onClick={() => setShowRules(true)}
               className="p-2 rounded-lg text-lg bg-transparent border-none cursor-pointer"
-              style={{ color: 'var(--color-text-primary)' }}
+              style={{
+                color: 'var(--color-text-primary)',
+                fontWeight: '500',
+                fontSize: '1.3em',
+              }}
               aria-label="Säännöt"
             >
               ?
