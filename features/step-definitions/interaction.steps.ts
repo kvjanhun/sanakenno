@@ -204,6 +204,13 @@ Given(
   },
 );
 
+Given(
+  'the player has found at least {int} word',
+  function (this: SanakennoWorld, _count: number) {
+    return 'pending';
+  },
+);
+
 Then(
   'the {int} most recently found should be visible',
   function (this: SanakennoWorld, _count: number) {
@@ -301,7 +308,7 @@ When('the player taps the share button', function (this: SanakennoWorld) {
 });
 
 Then(
-  'the clipboard should contain the puzzle number, rank, score, and hints activated',
+  'the clipboard should contain the puzzle number, rank, score, progress bar, and hints',
   function (this: SanakennoWorld) {
     return 'pending';
   },
@@ -337,6 +344,13 @@ Given(
   },
 );
 
+Given(
+  'score before hints is {int}',
+  function (this: SanakennoWorld, _score: number) {
+    return 'pending';
+  },
+);
+
 Then(
   'the clipboard text should match this format:',
   function (this: SanakennoWorld, _docString: string) {
@@ -344,14 +358,18 @@ Then(
   },
 );
 
+Given('no hints are unlocked', function (this: SanakennoWorld) {
+  return 'pending';
+});
+
 Then(
-  'each unlocked hint should map to its icon: summary=📊, letters=🔤, distribution=📏, pairs=🔠',
-  function (this: SanakennoWorld) {
+  'the share text rank line should start with {string}',
+  function (this: SanakennoWorld, _prefix: string) {
     return 'pending';
   },
 );
 
-Given('no hints are unlocked', function (this: SanakennoWorld) {
+When('the player shares their result', function (this: SanakennoWorld) {
   return 'pending';
 });
 

@@ -111,10 +111,14 @@ Feature: Game interaction
 
   # --- Found words display ---
 
-  Scenario: Last 6 found words are visible
+  Scenario: Last 8 found words are visible
     Given the player has found 10 words
-    Then the 6 most recently found should be visible
+    Then the 8 most recently found should be visible
     And an expand button should be available
+
+  Scenario: Expand button is available after first found word
+    Given the player has found at least 1 word
+    Then an expand button should be available
 
   Scenario: Expanding shows all found words alphabetically
     Given the player has found 10 words
@@ -141,23 +145,28 @@ Feature: Game interaction
   Scenario: Share copies result to clipboard
     Given the player has score 42 on puzzle 5 with rank "Sanavalmis"
     When the player taps the share button
-    Then the clipboard should contain the puzzle number, rank, score, and hints activated
+    Then the clipboard should contain the puzzle number, rank, score, progress bar, and hints
     And a "Kopioitu!" popup should appear below the share button without shifting layout
 
-  Scenario: Share text format
+  Scenario: Share text format with hints
     Given the player has score 42 of max 120 on puzzle 5
     And the rank is "Sanavalmis"
     And hints "summary" and "pairs" are unlocked
+    And score before hints is 10
     When the player taps the share button
     Then the clipboard text should match this format:
       """
       Sanakenno — Kenno #5
-      Sanavalmis
-      42/120 pistettä
+      Sanavalmis · 42/120 (10)
+      🟧🟧🟧🟧⬛⬛⬛⬛⬛⬛
       Avut: 📊🔠
       sanakenno.fi
       """
-    And each unlocked hint should map to its icon: summary=📊, letters=🔤, distribution=📏, pairs=🔠
+
+  Scenario: Share text shows trophy for Ällistyttävä and above
+    Given the rank is "Ällistyttävä"
+    When the player taps the share button
+    Then the share text rank line should start with "🏆"
 
   Scenario: Share text with no hints unlocked omits the hint line
     Given no hints are unlocked

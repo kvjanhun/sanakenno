@@ -43,8 +43,8 @@ export function FoundWords({
 
   if (foundWords.length === 0) return null;
 
-  const showToggle = foundWords.length > 6 || showAll;
-  const collapsed = recentWords.slice(-12);
+  const showToggle = foundWords.length >= 1;
+  const collapsed = recentWords.slice(-8);
 
   return (
     <section className="w-full">
@@ -108,47 +108,41 @@ export function FoundWords({
           ))}
         </div>
       ) : (
-        /* Collapsed: single scrolling row of chips with right-side fade */
-        <div style={{ position: 'relative' }}>
+        /* Collapsed: single row of chips, fading at right edge */
+        <div
+          style={{
+            overflow: 'hidden',
+            maskImage:
+              'linear-gradient(to right, black calc(100% - 5rem), transparent)',
+            WebkitMaskImage:
+              'linear-gradient(to right, black calc(100% - 5rem), transparent)',
+          }}
+        >
           <div
             className="flex gap-1.5"
-            style={{ overflowX: 'hidden', flexWrap: 'nowrap' }}
+            style={{ flexWrap: 'nowrap', width: 'max-content' }}
           >
-            {collapsed.map((word) => (
-              <span
-                key={word}
-                className="font-[var(--font-mono)] text-sm px-2 py-0.5 rounded-full transition-colors duration-300"
-                style={{
-                  flexShrink: 0,
-                  backgroundColor:
-                    word === lastResubmittedWord
-                      ? 'var(--color-accent)'
-                      : 'var(--color-bg-secondary)',
-                  color:
-                    word === lastResubmittedWord
-                      ? '#ffffff'
-                      : 'var(--color-text-primary)',
-                  border: '1px solid var(--color-border)',
-                }}
-              >
-                {word}
-              </span>
-            ))}
+          {collapsed.map((word) => (
+            <span
+              key={word}
+              className="font-[var(--font-mono)] text-sm px-2 py-0.5 rounded-full transition-colors duration-300"
+              style={{
+                flexShrink: 0,
+                backgroundColor:
+                  word === lastResubmittedWord
+                    ? 'var(--color-accent)'
+                    : 'var(--color-bg-secondary)',
+                color:
+                  word === lastResubmittedWord
+                    ? '#ffffff'
+                    : 'var(--color-text-primary)',
+                border: '1px solid var(--color-border)',
+              }}
+            >
+              {word}
+            </span>
+          ))}
           </div>
-          {/* Fade gradient — only visible when pills overflow */}
-          <div
-            aria-hidden="true"
-            style={{
-              position: 'absolute',
-              right: 0,
-              top: 0,
-              bottom: 0,
-              width: '3rem',
-              background:
-                'linear-gradient(to right, transparent, var(--color-bg-primary))',
-              pointerEvents: 'none',
-            }}
-          />
         </div>
       )}
     </section>
