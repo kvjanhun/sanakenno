@@ -122,26 +122,26 @@ export function FoundWords({
             className="flex gap-1.5"
             style={{ flexWrap: 'nowrap', width: 'max-content' }}
           >
-          {collapsed.map((word) => (
-            <span
-              key={word}
-              className="font-[var(--font-mono)] text-sm px-2 py-0.5 rounded-full transition-colors duration-300"
-              style={{
-                flexShrink: 0,
-                backgroundColor:
-                  word === lastResubmittedWord
-                    ? 'var(--color-accent)'
-                    : 'var(--color-bg-secondary)',
-                color:
-                  word === lastResubmittedWord
-                    ? '#ffffff'
-                    : 'var(--color-text-primary)',
-                border: '1px solid var(--color-border)',
-              }}
-            >
-              {word}
-            </span>
-          ))}
+            {collapsed.map((word) => (
+              <span
+                key={word}
+                className="font-[var(--font-mono)] text-sm px-2 py-0.5 rounded-full transition-colors duration-300"
+                style={{
+                  flexShrink: 0,
+                  backgroundColor:
+                    word === lastResubmittedWord
+                      ? 'var(--color-accent)'
+                      : 'var(--color-bg-secondary)',
+                  color:
+                    word === lastResubmittedWord
+                      ? '#ffffff'
+                      : 'var(--color-text-primary)',
+                  border: '1px solid var(--color-border)',
+                }}
+              >
+                {word}
+              </span>
+            ))}
           </div>
         </div>
       )}
