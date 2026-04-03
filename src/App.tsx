@@ -354,10 +354,8 @@ function App() {
               />
             </div>
 
-            {/* Hints — always reserves the full open height so the grid never moves */}
-            <div style={{ minHeight: '8.5rem' }}>
-              <HintPanels hintsUnlocked={hintsUnlocked} onUnlock={unlockHint} />
-            </div>
+            {/* Hints — overlay panel floats over content, no height reservation needed */}
+            <HintPanels hintsUnlocked={hintsUnlocked} onUnlock={unlockHint} />
 
             {/* Word input */}
             <div className="mb-2">

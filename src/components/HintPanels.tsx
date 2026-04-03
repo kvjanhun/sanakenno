@@ -1,9 +1,9 @@
 /**
- * Hint section with tab-based navigation.
+ * Hint section with pill-button navigation and overlay content panel.
  *
  * Three visible tabs: Yleiskuva, Pituudet, Alkuparit.
- * Clicking a tab opens its content box below; clicking the active tab closes it.
- * Locked hints show a centered unlock button inside the content box.
+ * Clicking a tab opens its content as an absolute overlay; clicking the active
+ * tab closes it. Locked hints show a centered unlock button inside the panel.
  *
  * The "letters" panel (Alkukirjaimet) is kept in the content registry
  * but intentionally not shown in the tab row.
@@ -242,7 +242,9 @@ const PANEL_CONTENT: Record<
 /* ------------------------------------------------------------------ */
 
 /**
- * Tab-based hint section. Three full-width tabs; clicking opens/closes the panel below.
+ * Pill-button hint section with in-flow content panel.
+ * Three compact pill buttons; clicking opens/closes the panel below.
+ * The content area always reserves its height so layout never shifts.
  * Locked panels show an unlock button instead of content.
  */
 export function HintPanels({
@@ -261,91 +263,120 @@ export function HintPanels({
   const ContentComponent = activeTab ? PANEL_CONTENT[activeTab] : null;
   const activeIsUnlocked = activeTab ? hintsUnlocked.has(activeTab) : false;
 
-  // Round the top corners of the content box that are not covered by the active tab.
-  const activeIdx = VISIBLE_PANELS.findIndex((p) => p.id === activeTab);
-  const contentRadius =
-    activeIdx === 0
-      ? '0 6px 6px 6px'
-      : activeIdx === VISIBLE_PANELS.length - 1
-        ? '6px 0 6px 6px'
-        : '6px';
-
-  function tabStyle(isActive: boolean): React.CSSProperties {
-    return {
-      flex: 1,
-      padding: '5px 8px',
-      fontWeight: isActive ? 600 : 400,
-      color: isActive
-        ? 'var(--color-text-primary)'
-        : 'var(--color-text-secondary)',
-      background: isActive ? 'var(--color-bg-secondary)' : 'transparent',
-      border: '1px solid',
-      borderColor: isActive ? 'var(--color-border)' : 'transparent',
-      borderBottomColor: isActive ? 'var(--color-bg-secondary)' : 'transparent',
-      borderRadius: '6px 6px 0 0',
-      cursor: 'pointer',
-      position: 'relative',
-      top: '1px',
-      zIndex: isActive ? 1 : 0,
-    };
-  }
-
   return (
-    <div className="mb-2">
-      {/* Tab row — tabs share full width; active tab shifted 1px down to merge with content border */}
-      <div className="flex items-center" style={{ position: 'relative' }}>
+    <div style={{ marginBottom: '1rem' }}>
+      {/* Segmented control row */}
+      <div className="flex items-center gap-2" style={{ padding: '4px 0' }}>
         <span
-          className="text-sm font-medium mr-10 pl-1"
-          style={{ color: 'var(--color-text-primary)', flexShrink: 0 }}
-        >
-          Avut:
-        </span>
-        {VISIBLE_PANELS.map((panel) => (
-          <button
-            key={panel.id}
-            type="button"
-            onClick={() => handleTabClick(panel.id)}
-            className="text-sm"
-            style={tabStyle(activeTab === panel.id)}
-          >
-            {panel.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Content box — visible only when a tab is selected */}
-      {activeTab && (
-        <div
-          className="p-3 text-sm"
+          className="text-sm"
           style={{
-            background: 'var(--color-bg-secondary)',
-            border: '1px solid var(--color-border)',
-            borderRadius: contentRadius,
-            position: 'relative',
-            zIndex: 0,
-            height: '6.5rem',
-            overflowY: 'auto',
-            display: 'flex',
-            alignItems: 'center',
-            fontFamily: 'var(--font-sans)',
+            color: 'var(--color-text-primary)',
+            fontWeight: 500,
+            flexShrink: 0,
+            margin: '0 6px',
           }}
         >
-          {activeIsUnlocked && ContentComponent ? (
-            <ContentComponent data={hintData} />
-          ) : (
-            <div className="flex flex-1 items-center justify-center">
+          Avut
+        </span>
+        <div
+          className="flex"
+          style={{
+            flex: 1,
+            background: 'var(--color-bg-secondary)',
+            borderRadius: '9px',
+            padding: '3px',
+            gap: '2px',
+          }}
+        >
+          {VISIBLE_PANELS.map((panel) => {
+            const isActive = activeTab === panel.id;
+            return (
               <button
+                key={panel.id}
                 type="button"
-                className="px-4 py-1.5 rounded-lg border-none cursor-pointer text-sm font-medium"
-                style={{ background: 'var(--color-accent)', color: 'white' }}
-                onClick={() => onUnlock(activeTab)}
+                onClick={() => handleTabClick(panel.id)}
+                className="text-sm"
+                style={{
+                  flex: 1,
+                  padding: '6px 14px',
+                  borderRadius: '7px',
+                  border: 'none',
+                  background: isActive
+                    ? 'var(--color-bg-primary)'
+                    : 'transparent',
+                  boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                  color: isActive
+                    ? 'var(--color-text-primary)'
+                    : 'var(--color-text-secondary)',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
               >
-                Aktivoi apu
+                {panel.label}
               </button>
-            </div>
-          )}
+            );
+          })}
         </div>
-      )}
+        {/* Unlock status bars */}
+        <div className="flex gap-1" style={{ marginLeft: 'auto' }}>
+          {VISIBLE_PANELS.map((panel) => (
+            <div
+              key={panel.id}
+              style={{
+                width: '4px',
+                height: '14px',
+                borderRadius: '2px',
+                background: hintsUnlocked.has(panel.id)
+                  ? 'var(--color-accent)'
+                  : 'var(--color-border)',
+                transition: 'background 0.2s ease',
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Content area — always takes its height to prevent layout shift */}
+      <div
+        className="text-sm"
+        style={{
+          height: '6.5rem',
+          overflowY: 'auto',
+          fontFamily: 'var(--font-sans)',
+        }}
+      >
+        {activeTab && (
+          <div
+            className="p-3"
+            style={{
+              height: '100%',
+              background: 'var(--color-bg-secondary)',
+              border: '1px solid var(--color-border)',
+              borderRadius: '10px',
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            {activeIsUnlocked && ContentComponent ? (
+              <ContentComponent data={hintData} />
+            ) : (
+              <div className="flex flex-1 items-center justify-center">
+                <button
+                  type="button"
+                  className="px-4 py-1.5 rounded-lg border-none cursor-pointer text-sm font-medium"
+                  style={{
+                    background: 'var(--color-accent)',
+                    color: 'white',
+                  }}
+                  onClick={() => onUnlock(activeTab)}
+                >
+                  Aktivoi apu
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
