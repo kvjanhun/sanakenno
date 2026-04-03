@@ -25,7 +25,7 @@ export interface RankProgressProps {
   shareCopied: boolean;
   /** Share button click handler. */
   onShare: () => void;
-  /** Score to display as "Pisteet ilman vihjeitä". Mirrors current score until first hint is unlocked. */
+  /** Score to display as "Pisteet ilman apuja". Mirrors current score until first hint is unlocked. */
   scoreBeforeHints: number;
 }
 
@@ -213,7 +213,7 @@ export function RankProgress({
               textAlign: 'center',
             }}
           >
-            Ilman vihjeitä: {scoreBeforeHints} pistettä
+            Ilman apuja: {scoreBeforeHints} pistettä
           </div>
         </div>
       )}

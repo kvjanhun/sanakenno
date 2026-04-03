@@ -359,7 +359,7 @@ Then(
 );
 
 /**
- * Compute the value shown as "Pisteet ilman vihjeitä", mirroring App.tsx logic:
+ * Compute the value shown as "Pisteet ilman apuja", mirroring App.tsx logic:
  * - No hints unlocked → current score
  * - Hints unlocked, scoreBeforeHints captured → scoreBeforeHints
  * - Hints unlocked, no scoreBeforeHints (old save) → 0

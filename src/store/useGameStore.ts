@@ -601,19 +601,13 @@ export const useGameStore = create<GameState>()((set, get) => ({
       rank === '\u00C4llistytt\u00E4v\u00E4' || rank === 'T\u00E4ysi kenno';
     const rankPrefix = hasTrophy ? '\u{1F3C6} ' : '';
 
-    // Score line: rank · score/max (scoreBeforeHints)
-    const hintsWereUsed = hintsUnlocked.size > 0;
-    const scorePart = hintsWereUsed
-      ? `${score}/${puzzle.max_score} (${scoreBeforeHints ?? 0})`
-      : `${score}/${puzzle.max_score}`;
-
     // Progress bar: 10 blocks proportional to score/max_score
     const filled = Math.round((score / puzzle.max_score) * 10);
     const bar = '\u{1F7E7}'.repeat(filled) + '\u2B1B'.repeat(10 - filled);
 
     const lines: string[] = [
       `Sanakenno \u2014 Kenno #${puzzle.puzzle_number + 1}`,
-      `${rankPrefix}${rank} \u00B7 ${scorePart}`,
+      `${rankPrefix}${rank} \u00B7 ${score}/${puzzle.max_score}`,
       bar,
     ];
 
@@ -622,7 +616,8 @@ export const useGameStore = create<GameState>()((set, get) => ({
       (id) => HINT_ICONS[id],
     );
     if (unlockedIcons.length > 0) {
-      lines.push(`Avut: ${unlockedIcons.join('')}`);
+      const beforeHints = scoreBeforeHints ?? 0;
+      lines.push(`Avut: ${unlockedIcons.join('')} (${beforeHints} p. ilman)`);
     }
 
     lines.push('sanakenno.fi');

@@ -102,9 +102,9 @@ Feature: Hint panels
   Scenario: Rank panel always shows score achieved without hints
     Given the player has scored 20 points before any hints
     When the player unlocks the "summary" hint
-    Then the rank panel should show "Ilman vihjeitä: 20 pistettä"
+    Then the rank panel should show "Ilman apuja: 20 pistettä"
 
   @e2e
   Scenario: Rank panel shows current score before any hints are unlocked
     Given the player has scored 7 points before any hints
-    Then the rank panel should show "Ilman vihjeitä: 7 pistettä"
+    Then the rank panel should show "Ilman apuja: 7 pistettä"
