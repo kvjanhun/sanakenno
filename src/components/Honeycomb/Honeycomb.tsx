@@ -115,7 +115,10 @@ export function Honeycomb({
           onPointerDown={
             disabled
               ? undefined
-              : () => {
+              : (e) => {
+                  // Release implicit pointer capture so concurrent touches
+                  // on other hexes fire on their own target elements.
+                  (e.target as Element).releasePointerCapture(e.pointerId);
                   onHexDown(i);
                   onLetterPress(hex.letter);
                 }
