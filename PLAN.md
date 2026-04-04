@@ -2,217 +2,401 @@
 
 ## Context
 
-Sanakenno is a Finnish word puzzle game currently running as a React 19 web app (PWA). The goal is to build truly native iOS and Android apps using React Native — not a WebView wrapper. This is a learning project: architecture should be clean and idiomatic, prioritizing doing things "right." Development will be AI-agent driven.
+Sanakenno is a Finnish word puzzle game currently running as a React 19 web app with PWA support. The goal is to build truly native iOS and Android apps using React Native, not a WebView wrapper.
 
-The backend (Hono + SQLite) stays as-is. The same API serves all clients.
+This project should also serve as a showcase of engineering skill and as a learning project for React Native and mobile development. The architecture should be clean and idiomatic, but should not chase purity at the cost of unnecessary churn.
+
+The backend stays as-is for now: Hono + SQLite serving the same API to all clients.
+
+For the first mobile version, progress remains device-local. Cross-device identity, sync, and user accounts are explicitly out of scope for this migration and can be added later as a separate capability.
 
 ---
 
 ## Architecture Decisions
 
-### Expo with Continuous Native Generation (CNG)
-Use **Expo SDK 53+** with CNG (`npx expo prebuild`). This gives full native control without manually maintaining Xcode/Gradle projects. Expo supports all needed native modules: `expo-crypto`, `expo-haptics`, `react-native-svg`, `react-native-reanimated`. For AI-agent driven development, Expo's tooling and error messages are dramatically better than bare RN.
+### Expo With Continuous Native Generation
+Use Expo SDK 53+ with Continuous Native Generation via `npx expo prebuild`.
 
-### Mono-repo with Shared Package
-Convert to a **pnpm workspace mono-repo**:
+Reasons:
+- It is the most practical modern path for an Expo-first React Native app that still needs real native capabilities.
+- It keeps the developer experience strong while leaving a path to native configuration when needed.
+- It supports the native modules this app is likely to need, including crypto, haptics, SVG rendering, safe area handling, and Reanimated.
+- It fits the goal of early simulator and real-device testing.
+
+### pnpm Workspace Mono-repo
+Convert the repo to a pnpm workspace mono-repo.
+
 ```
 sanakenno/
   packages/
-    shared/          # Pure logic, types, constants
-    web/             # Current React web app (moved here)
-    mobile/          # New Expo React Native app
-  features/          # BDD specs (stays at root)
-  server/            # API server (stays at root)
+    shared/          # Shared domain logic, types, platform interfaces
+    web/             # Current web app after migration
+    mobile/          # Expo React Native app
+  features/          # BDD specs at repo root
+  server/            # API server at repo root
   pnpm-workspace.yaml
 ```
-The web app keeps working throughout migration. Shared logic is never duplicated.
 
-**`packages/shared` contains:**
-- `scoring.ts`, `stats.ts`, `hint-data.ts`, `kotus.ts` (pure functions, verbatim)
-- All shared TypeScript types (`Puzzle`, `HintData`, `PlayerStats`, `StatsRecord`, rank types, etc.)
-- Constants (`RANKS`, `HINT_ICONS`, `HINT_ORDER`)
+Why use packages:
+- The shared boundary becomes explicit instead of being an informal set of copied files.
+- Web and mobile both depend on the same shared module.
+- It is a better showcase architecture for a multi-client codebase.
+- It reduces accidental coupling between web and mobile code.
 
-**Not shared** (platform-dependent): `storage.ts`, `hash.ts`, the Zustand store itself, all UI components.
+Why use pnpm:
+- It is a practical and common choice for multi-package repositories.
+- It handles workspace dependencies cleanly.
+- It makes the repository structure look intentional and idiomatic for a multi-app codebase.
 
-### Keep Zustand with Dependency Injection
-Zustand works identically in RN. Same selective subscription pattern. The store is ~95% identical between web and mobile — only 3 platform API swaps (storage, crypto, share).
+### Shared Domain, Not Shared UI
+The goal is to share domain logic and types, not UI components.
 
-To keep the store truly platform-agnostic, use **dependency injection**: the store factory receives platform adapters (storage, crypto, share) as arguments rather than importing them directly. This prevents the web app from accidentally pulling in mobile-only libraries and vice versa.
+This is a native-first rewrite for mobile. iOS and Android UI should be designed as native apps, not as the web app translated into React Native components.
 
-```typescript
-// packages/shared/src/createGameStore.ts
-export function createGameStore(adapters: PlatformAdapters) { ... }
+`packages/shared` should contain:
+- Pure game logic: scoring, hint derivation, stats math, rank thresholds, word utilities
+- Shared TypeScript types
+- Shared constants
+- API client and shared data mapping logic where useful
+- Platform interfaces and adapter contracts
 
-// packages/web/src/store.ts
-import { createGameStore } from '@sanakenno/shared';
-export const useGameStore = createGameStore({ storage: webStorage, crypto: webCrypto, share: webShare });
+`packages/shared` should not contain:
+- Web UI
+- React Native UI
+- Navigation components
+- Theme implementation details
+- Platform-specific lifecycle code
 
-// packages/mobile/src/store.ts
-import { createGameStore } from '@sanakenno/shared';
-export const useGameStore = createGameStore({ storage: mmkvStorage, crypto: expoCrypto, share: nativeShare });
-```
+### Shared Store Logic Only Where It Actually Helps
+Do not assume the entire Zustand store should be shared.
 
-This moves the store logic itself into `packages/shared` — the only platform-specific code per app is the thin adapter wiring.
+The current store mixes domain state with UI state and platform behavior. The better target is:
+- Share domain logic and pure state transitions where useful
+- Keep platform-specific UI state in the platform app
+- Keep platform services behind interfaces
 
-### Hexagon Grid: react-native-svg
-Direct port of current SVG approach. 7 polygons + 7 text elements is trivially light. `<svg>` → `<Svg>`, `<polygon>` → `<Polygon>`. Touch moves from `onPointerDown` to `Pressable` with `onPressIn`/`onPressOut`. Press animations via Reanimated (UI thread, smoother than CSS).
+Likely shareable:
+- Puzzle loading orchestration
+- Word submission rules
+- Score calculation and rank derivation
+- Persistence payload shapes
+- Share text formatting
 
-### Navigation: Expo Router + Bottom Sheet Modals
-Use **Expo Router** (file-based routing built on React Navigation) + `@gorhom/bottom-sheet` for modals. Expo Router is the 2026 Expo standard — it provides file-based routing, built-in deep linking, and typed routes out of the box. The game is single-screen; Archive, Stats, Rules become bottom sheets or presented modals. Celebration is an overlay animation.
+Likely platform-specific:
+- Modal visibility and presentation state
+- Theme state and appearance integration
+- Press and gesture state
+- App lifecycle integration
+- Navigation state
 
-### Platform-Specific UI (80/20 split)
-~80% shared component code. Platform splits via `Platform.select()` and `.ios.tsx`/`.android.tsx` file extensions for:
-- iOS: SF Pro font, translucent sheet presentations, iOS haptic patterns
-- Android: Roboto, Material Design 3 styling, Android haptic patterns, edge-to-edge
+### Platform Services Boundary
+Introduce explicit platform services instead of letting browser or native APIs leak into domain code.
 
-Liquid Glass (iOS 26) has no RN API yet. Design for it (translucent backgrounds, whitespace, vibrancy via `react-native-blur`) and adopt native APIs when available.
+At minimum:
+- `storage`
+- `crypto`
+- `share`
+- `config`
+- `clock`
+- `lifecycle`
+
+This matters because the current web app relies on browser-specific behavior such as `localStorage`, `crypto.subtle`, `crypto.randomUUID()`, clipboard APIs, `window.location.reload()`, document visibility, and Vite env access.
+
+### Navigation Is Foundational, Not Optional
+Use Expo Router from the beginning.
+
+The motivation is not just that Expo Router is standard in modern Expo. The real reason is that the mobile app is intended to be a native rethink of the product structure. Archive, achievements, rules, stats, and similar sections are not web overlays in a mobile frame; they are part of the app's information architecture.
+
+Using a router from the start gives:
+- A clean route model for a native app structure
+- Better handling of modal, sheet, stack, and detail flows
+- Typed route definitions and deep-linking support
+- A clearer foundation for future account and auth flows
+
+### Mobile UI Direction
+The mobile app should be designed as a native iOS app first, with Android parity added deliberately afterward.
+
+That means:
+- Navigation, screen structure, and modal presentation are designed for native use
+- Components like rules, stats, archive, and achievements are rethought instead of ported mechanically
+- Shared UI is not a goal by itself
+- Android should still feel native on Android, but iOS can be the primary design reference during early phases
+
+### Hexagon Grid
+Use `react-native-svg` for the honeycomb.
+
+The visual structure is a good candidate for conceptual reuse, but the implementation should be treated as a native component rewrite. Pointer events, CSS transforms, and browser touch hacks should not be carried over mechanically.
+
+Press feedback and animation should use Reanimated.
+
+### Sharing
+Treat native share and clipboard copy as separate capabilities.
+
+Initial plan:
+- Use the React Native Share API for plain text status sharing
+- Add clipboard copy only if it still improves the mobile UX
+- Do not use `expo-sharing` as the primary plain-text share mechanism
 
 ---
 
 ## Git Strategy
 
+Keep `main` stable and merge small increments early where practical.
+
 ```
-main                          # Production web app — never broken
-  └── feat/monorepo-setup     # Phase 0: restructure → merge to main early
-  └── feat/mobile             # Phases 1-5: all mobile work
-        ├── feat/mobile-grid       # Sub-branches for parallel work
-        ├── feat/mobile-store
-        └── etc.
+main
+  ├── feat/shared-extraction
+  ├── feat/workspace-setup
+  ├── feat/mobile-foundation
+  ├── feat/mobile-navigation
+  ├── feat/mobile-game-loop
+  └── ...
 ```
 
-- `main` always deploys the web app
-- `feat/monorepo-setup` merges to `main` once verified (repo restructure, no behavior change)
-- `feat/mobile` is the long-lived mobile branch; sub-branches merge into it
-- TestFlight builds from `feat/mobile` via EAS Build
-- Once feature-complete, `feat/mobile` merges to `main`
+Guidelines:
+- `main` should remain in a deployable state for the web app
+- Prefer short-lived feature branches over one very long-lived mobile branch
+- Merge structural work as soon as it is validated
+- Merge mobile-safe incremental work to `main` when it does not destabilize the web app
+- Keep native app milestones visible via branches and tags, not just one giant integration branch
 
 ---
 
 ## Key Dependencies
 
-| Package | Purpose | Replaces |
-|---|---|---|
-| `expo` (~53) | Framework + build | Vite |
-| `expo-crypto` | SHA-256 hashing | `crypto.subtle` |
-| `react-native-mmkv` | Sync key-value storage | `localStorage` |
-| `zustand` (^5) | State management | Same |
-| `react-native-svg` | Hexagons + icons | Browser SVG |
-| `react-native-reanimated` (~3) | UI-thread animations | CSS transitions |
-| `react-native-gesture-handler` | Native gestures | Pointer events |
-| `expo-router` | File-based routing + deep linking | Hash routing |
-| `@gorhom/bottom-sheet` | Bottom sheet modals | CSS overlay modals |
-| `react-native-safe-area-context` | Safe area insets | `env(safe-area-inset-*)` |
-| `expo-haptics` | Haptic feedback | New capability |
-| `expo-sharing` | Native share sheet | `navigator.clipboard` |
+| Package | Purpose |
+|---|---|
+| `expo` | React Native app framework |
+| `expo-router` | File-based native routing |
+| `react-native-svg` | Honeycomb and custom vector UI |
+| `react-native-reanimated` | Native-feeling motion and press feedback |
+| `react-native-gesture-handler` | Native gesture support |
+| `react-native-safe-area-context` | Safe area handling |
+| `expo-haptics` | Native haptics |
+| `react-native-mmkv` | Fast device-local persistence |
+| `zustand` | State management |
+| `pnpm` workspaces | Multi-package repo management |
+
+Additional likely dependency:
+- A UUID solution for device-local identity if needed, instead of assuming web `crypto.randomUUID()` behavior maps directly.
 
 ---
 
 ## Phased Implementation
 
-### Phase 0: Mono-repo Restructure
-**Goal**: pnpm workspace without changing web app behavior.
+### Phase 0: Extract Shared Domain In-Place
+**Goal**: find and validate the real shared boundary before restructuring the repository.
 
-This is the riskiest structural change — relative path breaks are the main hazard. Split into 3 small, independently verifiable PRs:
+This phase happens before workspace restructuring. The purpose is to reduce uncertainty first.
 
-**PR 0a — Extract shared package:**
-1. Create `pnpm-workspace.yaml` and `packages/shared/` with its own `package.json` + `tsconfig.json`
-2. Copy pure utils and types to `packages/shared/src/`
-3. Update web app imports to `@sanakenno/shared`
-4. Verify: typecheck, lint, unit, BDD, build all pass
-5. Merge to `main`
+Why this comes first:
+- The biggest risk is not folder layout. It is incorrectly guessing what can actually be shared between web and mobile.
+- Extracting shared logic first gives a concrete architecture to organize around.
+- It avoids paying the cost of a large repo move before the shared boundary is proven.
+- It keeps the web app stable while the portable domain layer is carved out.
 
-**PR 0b — Move web app to `packages/web/`:**
-1. Move `src/`, `index.html`, `vite.config.js`, web-specific configs into `packages/web/`
-2. Update all relative paths (Vite aliases, tsconfig paths, test configs)
-3. Verify: full test suite + Vite dev server + production build all work
-4. Merge to `main`
+Tasks:
+1. Extract pure domain logic from the current web app into clearly separated modules
+2. Identify and isolate browser-only assumptions
+3. Define platform service interfaces for storage, crypto, share, config, clock, and lifecycle
+4. Refactor the web app to consume those abstractions without changing behavior
+5. Keep tests green throughout
 
-**PR 0c — Store dependency injection:**
-1. Extract `createGameStore` factory into `packages/shared/` with `PlatformAdapters` interface
-2. Web app provides its adapters (localStorage, crypto.subtle, clipboard)
-3. Verify: all tests pass, no behavior change
-4. Merge to `main`
+Expected output of Phase 0:
+- A clear list of what belongs in `packages/shared`
+- A clear list of what must stay platform-specific
+- A web app already using the future architecture in-place
 
-### Phase 1: Mobile Scaffold
-**Goal**: Expo app that fetches puzzle and displays letters as text.
-1. `npx create-expo-app packages/mobile`
-2. Create platform adapters: `storage.ts` (MMKV), `hash.ts` (expo-crypto)
-3. Port Zustand store (swap 3 platform APIs)
-4. Minimal `App.tsx` showing puzzle data + score
+### Phase 1: Workspace Restructure
+**Goal**: move to a pnpm workspace after the shared boundary is proven.
 
-### Phase 2: Core Game Loop
-**Goal**: Tap letters → build words → submit → score.
-- **2a**: Port Honeycomb (react-native-svg + Reanimated press animations + haptics)
-- **2b**: Port WordInput + GameControls + MessageBar (can parallelize with 2a)
-- **2c**: Wire store to all components, test full game loop
+Split into small PRs:
 
-### Phase 3: Persistence + Timer + Midnight
-**Goal**: State survives restart. Timer works with AppState. New puzzle at midnight.
-- **3a**: Verify MMKV persistence (save/load/restore)
-- **3b**: Port `useGameTimer` (AppState instead of visibility/blur events)
-- **3c**: Port `useMidnightRollover` (state reset instead of page reload)
+**PR 1a - Workspace and shared package setup**
+1. Add `pnpm-workspace.yaml`
+2. Create `packages/shared/` with package metadata and TS config
+3. Move already-extracted domain code into `packages/shared`
+4. Update the web app to consume the shared package
+5. Verify typecheck, lint, unit, BDD, and build
 
-### Phase 4: Full UI + Modals
-**Goal**: Feature parity with web app.
-- **4a**: Theme system (React Context providing design tokens, `useTheme()` hook)
-- **4b**: Header bar + navigation shell (SafeAreaView, icons via react-native-svg)
-- **4c**: RankProgress (animated score counter via Reanimated, share via native sheet)
-- **4d**: Modals — Rules, Archive, Stats as bottom sheets; Celebration as overlay
-- **4e**: HintPanels (segmented control + panel) + FoundWords (ScrollView + FlatList)
+**PR 1b - Move web app into `packages/web/`**
+1. Move the current web app into `packages/web/`
+2. Update config, build, and test paths
+3. Verify local dev, typecheck, lint, unit, BDD, and production build
 
-### Phase 5: Native Polish (iOS)
-**Goal**: Feels like a native iOS app, not a web port.
-1. Haptics at all touch points (hex tap, submit success/error, rank change)
-2. Animation audit — springs, timing curves, 120fps verification
-3. iOS-specific: Dynamic Type, proper status bar, translucent modals
-4. App icon + splash screen
-5. Performance profiling on real device
+**PR 1c - Prepare the mobile package**
+1. Create `packages/mobile/` as an Expo app
+2. Wire the workspace so web and mobile can consume `packages/shared`
+3. Verify a minimal mobile app starts successfully
 
-### Phase 6: Android + Release
-**Goal**: Android parity and store submissions.
-1. `npx expo prebuild --platform android`
-2. Platform fixes (shadows → elevation, font rendering, status bar)
-3. Material Design 3 adjustments (segmented buttons, bottom sheets, share intent)
-4. EAS Build for both platforms
-5. TestFlight (iOS) + internal testing (Android)
+### Phase 2: Mobile Foundation
+**Goal**: get a real native app running early on simulator and device.
+
+Tasks:
+1. Set up Expo app foundation, native dev build flow, and routing scaffold
+2. Define mobile platform adapters for storage, crypto, share, config, clock, and lifecycle
+3. Create the initial navigation structure using Expo Router
+4. Fetch puzzle data and render a minimal playable screen shell
+5. Validate on iOS simulator and a real iPhone as early as possible
+
+This phase should produce a running native app quickly. The goal is not visual parity. The goal is proving that the shared domain and native foundation actually work on device.
+
+### Phase 3: Core Gameplay
+**Goal**: native letter entry, word building, submission, scoring, and persistence.
+
+Tasks:
+1. Implement the honeycomb as a native React Native component using `react-native-svg`
+2. Design native input interaction instead of porting browser keyboard assumptions directly
+3. Wire the gameplay flow to shared domain logic
+4. Persist game state locally using MMKV
+5. Validate the full loop on simulator and device
+
+Notes:
+- Do not assume the web keyboard model maps directly to mobile
+- Press feedback, animations, and haptics belong here, not as late polish only
+
+### Phase 4: Lifecycle and Daily Puzzle Behavior
+**Goal**: native handling of timer, app backgrounding, and puzzle rollover.
+
+Tasks:
+1. Implement lifecycle handling with app-state-aware services
+2. Rework timer logic around native lifecycle semantics
+3. Rework midnight rollover around native state refresh semantics instead of page reload
+4. Validate persistence, restoration, and day changes through manual and automated tests
+
+This phase is separate because the current web behavior depends heavily on browser visibility and reload behavior.
+
+### Phase 5: Native Navigation and App Structure
+**Goal**: implement the native app's actual information architecture.
+
+Tasks:
+1. Finalize route structure for gameplay, archive, achievements, rules, stats, and related flows
+2. Implement the chosen modal, sheet, and stack presentation patterns
+3. Build the app shell, menus, and structural screens in a native style
+4. Ensure the route model matches the long-term direction of the app
+
+This phase is intentionally not framed as porting web modals. The mobile app should have its own UI structure.
+
+### Phase 6: Feature Parity Through Native Components
+**Goal**: bring over the product capabilities while designing native UI per platform.
+
+Likely workstreams:
+- Archive
+- Stats
+- Achievements
+- Rules and help
+- Rank progress and sharing
+- Hint surfaces
+- Found words and progress review
+
+Each should be treated as a native feature implementation backed by shared logic where appropriate.
+
+### Phase 7: Native Polish and Android Parity
+**Goal**: make the app feel intentional and native on both platforms.
+
+Tasks:
+1. Refine motion, haptics, typography, spacing, and transitions
+2. Do iOS-specific presentation polish first
+3. Add Android-specific adjustments deliberately rather than inheriting iOS decisions blindly
+4. Profile performance on simulator and real devices
+5. Finalize assets, icons, and launch experience
+
+### Phase 8: Release Preparation
+**Goal**: prepare builds for distribution once the app is solid.
+
+Tasks:
+1. Validate production builds for iOS and Android
+2. Prepare EAS Build configuration
+3. Run release-quality smoke testing
+4. Prepare TestFlight and Android internal testing
+5. Document release and maintenance workflow
 
 ---
 
 ## Testing Strategy
 
+Keep the test strategy strong, but do not start by expanding into full multi-platform E2E coverage.
+
+### Core Principles
+- Keep Vitest as the primary unit test runner
+- Keep feature files as the behavioral source of truth
+- Split shared behavior from platform-specific behavior explicitly
+- Focus on high-confidence unit, API, and feature logic coverage first
+- Add heavier end-to-end coverage only if the lighter layers prove insufficient
+
+### Planned Layers
+
 | Layer | Tool | Scope |
 |---|---|---|
-| Unit | Jest | `packages/shared` pure functions (port from Vitest) |
-| BDD | Cucumber | Logic step definitions run against shared package |
-| Component | `@testing-library/react-native` | Individual RN components |
-| E2E | Maestro | Full app flows on simulator/device (YAML-based, AI-friendly) |
+| Unit | Vitest | Shared domain logic in `packages/shared` |
+| API | Vitest | Server routes and contract behavior |
+| Feature / BDD | Cucumber | Shared feature logic plus platform-tagged scenarios |
+| Component / Integration | React Testing Library variants as needed | Targeted web/mobile interaction coverage |
 
-BDD feature files remain the source of truth. Web-specific steps (e.g., "reloads the page") map to native equivalents ("resets state and re-fetches puzzle").
+### BDD Restructure
+Feature files remain the source of truth, but they should be reorganized conceptually into:
+- Shared scenarios
+- Web-only scenarios
+- Mobile-only scenarios
+
+Examples:
+- word scores correctly is shared behavior
+- player reloads the page is web-only behavior
+- timer reacts to app backgrounding is mobile-only behavior
+- PWA install and service worker scenarios remain web-only
+
+### E2E Position
+Do not make broad E2E coverage a gate for the initial mobile migration.
+
+Possible later additions:
+- Keep existing web E2E where it is valuable
+- Add mobile E2E only when there is a clear return on maintenance cost
 
 ---
 
-## Critical Files to Study/Port
+## Critical Refactor Targets
 
-| File | Lines | Role | Migration Notes |
-|---|---|---|---|
-| `src/store/useGameStore.ts` | ~684 | Central store | Extract to shared as `createGameStore` factory with DI for platform adapters |
-| `src/components/Honeycomb/Honeycomb.tsx` | ~179 | Hex grid | SVG tags capitalize; touch → Pressable; CSS → Reanimated |
-| `src/utils/storage.ts` | ~52 | Storage adapter | Replace localStorage with MMKV (same sync API) |
-| `src/hooks/useGameTimer.ts` | ~117 | Play timer | AppState replaces visibility/blur events |
-| `src/styles/index.css` | ~75 | Design tokens | Become a theme context with token objects |
-| `src/components/RankProgress.tsx` | ~260 | Score/rank UI | rAF counter → Reanimated; progress bar → animated width |
-| `src/components/HintPanels.tsx` | ~360 | Hint tabs | Segmented control → custom Reanimated component |
+The main goal is not to port files blindly. It is to extract the right boundaries.
+
+### Highest Priority
+- `src/store/useGameStore.ts`: separate domain logic from UI and platform assumptions
+- `src/hooks/useGameTimer.ts`: replace browser lifecycle assumptions with lifecycle abstraction
+- `src/hooks/useMidnightRollover.ts`: replace page reload semantics with native refresh semantics
+- `src/hooks/useKeyboard.ts`: replace browser keydown assumptions with native input design
+- `src/utils/storage.ts`: move behind storage service interface
+- `src/utils/hash.ts`: move behind crypto service interface
+
+### High Priority UI Rewrites
+- `src/components/Honeycomb/Honeycomb.tsx`
+- `src/components/RankProgress.tsx`
+- `src/components/HintPanels.tsx`
+- `src/components/ArchiveModal.tsx`
+- `src/components/StatsModal.tsx`
+- `src/components/ThemeToggle.tsx`
+
+### Good Shared Candidates
+- `src/utils/scoring.ts`
+- `src/utils/hint-data.ts`
+- `src/utils/stats.ts`
+- `src/utils/kotus.ts`
 
 ---
 
 ## Agent Task Sizing
 
-Each phase is broken into tasks sized for one AI agent session (~30-60 min):
+Keep tasks small enough to be verifiable in one focused session.
 
-- **Phase 0**: 1 agent, 3 small PRs (shared extraction → web move → store DI)
-- **Phase 1**: 1 agent, 4 sequential tasks
-- **Phase 2**: 2 agents in parallel (grid + input), then 1 agent to wire
-- **Phase 3**: 1 agent, 3 sequential tasks
-- **Phase 4**: 2 agents in parallel (theme+header + rank+share), then sequential for modals
-- **Phase 5**: 1 agent, sequential polish tasks
-- **Phase 6**: 1 agent, sequential Android tasks
+- Phase 0: small refactors with no behavior change
+- Phase 1: small structural PRs with full verification
+- Phase 2: early mobile foundation with rapid device validation
+- Phase 3 onward: feature slices that can be tested independently
+
+Preferred slice size:
+- one boundary extraction
+- one platform service
+- one navigation flow
+- one gameplay capability
+- one native screen family
+
+This project is better served by many small, defensible steps than by large speculative rewrites.
+
