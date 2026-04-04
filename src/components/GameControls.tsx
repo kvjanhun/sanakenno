@@ -9,8 +9,12 @@
 
 import type { PointerEvent } from 'react';
 
-/** Prevent default to avoid stealing focus from game input area. */
-const prevent = (e: PointerEvent): void => e.preventDefault();
+/** Prevent default and release implicit pointer capture so concurrent
+ *  touches on other elements fire on their correct targets. */
+const prepare = (e: PointerEvent): void => {
+  e.preventDefault();
+  (e.target as Element).releasePointerCapture(e.pointerId);
+};
 
 /** Props for {@link GameControls}. */
 export interface GameControlsProps {
@@ -32,13 +36,13 @@ export function GameControls({
 }: GameControlsProps): React.JSX.Element {
   return (
     <div
-      className="flex items-center justify-center gap-3 select-none"
+      className="flex items-center justify-center gap-3"
       style={{ touchAction: 'none' }}
     >
       <button
         type="button"
         onPointerDown={(e) => {
-          prevent(e);
+          prepare(e);
           onDelete();
         }}
         className="px-4 py-2 rounded-lg font-normal cursor-pointer border-none"
@@ -52,7 +56,7 @@ export function GameControls({
       <button
         type="button"
         onPointerDown={(e) => {
-          prevent(e);
+          prepare(e);
           onShuffle();
         }}
         className="px-4 py-2 rounded-lg font-normal cursor-pointer border-none"
@@ -66,7 +70,7 @@ export function GameControls({
       <button
         type="button"
         onPointerDown={(e) => {
-          prevent(e);
+          prepare(e);
           onSubmit();
         }}
         className="px-4 py-2 rounded-lg font-normal cursor-pointer border-none text-white"

@@ -97,7 +97,6 @@ export function Honeycomb({
       height="264"
       role="img"
       aria-label={ariaLabel}
-      className="select-none"
       style={{ touchAction: 'none' }}
       onTouchMove={(e) => e.preventDefault()}
     >
@@ -153,7 +152,6 @@ export function Honeycomb({
               fontWeight: 600,
               fontFamily: 'var(--font-sans)',
               pointerEvents: 'none',
-              userSelect: 'none',
             }}
           >
             {hex.letter.toUpperCase()}

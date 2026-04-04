@@ -54,6 +54,9 @@ body {
   padding: 0;
   /* Prevent iOS double-tap zoom in standalone mode */
   -webkit-text-size-adjust: 100%;
+  /* Disable text selection app-wide — not useful in a game UI */
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* Prevent double-tap zoom on interactive elements */
