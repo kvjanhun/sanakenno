@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 /** Props for the Honeycomb SVG letter grid component. */
 export interface HoneycombProps {
@@ -90,15 +90,30 @@ export function Honeycomb({
 
   const ariaLabel = `Kirjainkenno: kirjaimet ${hexes.map((h) => h.letter.toUpperCase()).join(', ')}, keskuskirjain ${center.toUpperCase()}`;
 
+  // Native non-passive touch listener to suppress iOS magnifier loupe.
+  // React registers touch handlers as passive, so preventDefault() is ignored.
+  const svgRef = useRef<SVGSVGElement>(null);
+  const preventTouch = useCallback((e: TouchEvent) => e.preventDefault(), []);
+  useEffect(() => {
+    const el = svgRef.current;
+    if (!el) return;
+    el.addEventListener('touchstart', preventTouch, { passive: false });
+    el.addEventListener('touchmove', preventTouch, { passive: false });
+    return () => {
+      el.removeEventListener('touchstart', preventTouch);
+      el.removeEventListener('touchmove', preventTouch);
+    };
+  }, [preventTouch]);
+
   return (
     <svg
+      ref={svgRef}
       viewBox="18 18 264 264"
       width="264"
       height="264"
       role="img"
       aria-label={ariaLabel}
       style={{ touchAction: 'none' }}
-      onTouchMove={(e) => e.preventDefault()}
     >
       <defs>
         <linearGradient id="hex-outer-grad" x1="0" y1="0" x2="0" y2="1">

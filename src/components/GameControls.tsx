@@ -7,7 +7,7 @@
  * @module src/components/GameControls
  */
 
-import type { PointerEvent } from 'react';
+import { useCallback, useEffect, useRef, type PointerEvent } from 'react';
 
 /** Prevent default and release implicit pointer capture so concurrent
  *  touches on other elements fire on their correct targets. */
@@ -34,8 +34,19 @@ export function GameControls({
   onShuffle,
   onSubmit,
 }: GameControlsProps): React.JSX.Element {
+  // Native non-passive touch listener to suppress iOS magnifier loupe.
+  const ref = useRef<HTMLDivElement>(null);
+  const preventTouch = useCallback((e: TouchEvent) => e.preventDefault(), []);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.addEventListener('touchstart', preventTouch, { passive: false });
+    return () => el.removeEventListener('touchstart', preventTouch);
+  }, [preventTouch]);
+
   return (
     <div
+      ref={ref}
       className="flex items-center justify-center gap-3"
       style={{ touchAction: 'none' }}
     >
