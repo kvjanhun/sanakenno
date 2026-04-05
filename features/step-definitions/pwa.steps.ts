@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 import type { SanakennoWorld } from './types.js';
 
 /** Path to the built manifest (only available after `npm run build`). */
-const DIST_DIR = resolve(process.cwd(), 'dist');
+const DIST_DIR = resolve(process.cwd(), 'packages/web/dist');
 
 When('the browser loads the page', function (this: SanakennoWorld) {
   // Check that the manifest exists in the build output.

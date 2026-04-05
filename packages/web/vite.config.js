@@ -74,11 +74,4 @@ export default defineConfig(() => ({
       '/api': 'http://localhost:3001',
     },
   },
-  test: {
-    environment: 'jsdom',
-    setupFiles: ['./tests/setup.ts'],
-    globals: true,
-    passWithNoTests: true,
-    exclude: ['node_modules', '.claude', 'tests/e2e'],
-  },
 }));

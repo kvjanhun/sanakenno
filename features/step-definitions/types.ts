@@ -43,7 +43,7 @@ export interface SanakennoWorld {
     by_pair: Record<string, number>;
   } | null;
   hintsUnlocked: Set<string>;
-  derivedHints: import('../../src/utils/hint-data.js').DerivedHintData | null;
+  derivedHints: import('@sanakenno/shared').DerivedHintData | null;
   /* Phase 4: Achievements */
   achievementPosts: Array<Record<string, unknown>>;
   achievementSessionKeys: Set<string>;
@@ -53,7 +53,7 @@ export interface SanakennoWorld {
   /* Word definitions */
   kotusUrl: string;
   /* Player stats */
-  playerStats: import('../../src/utils/stats.js').PlayerStats;
+  playerStats: import('@sanakenno/shared').PlayerStats;
   /* Archive */
   archiveEntries: Array<{
     date: string;

@@ -8,7 +8,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   msUntilMidnight,
   getHelsinkiDateString,
-} from '../src/hooks/useMidnightRollover.js';
+} from '../packages/web/src/hooks/useMidnightRollover.js';
 
 describe('msUntilMidnight', () => {
   beforeEach(() => {

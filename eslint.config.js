@@ -37,8 +37,8 @@ export default tseslint.config(
       'playwright.config.*',
       'scripts/**/*',
       'server/**/*',
-      'src/platform/web.*',
-      'src/dev.*',
+      'packages/web/src/platform/web.*',
+      'packages/web/src/dev.*',
     ],
     languageOptions: {
       globals: {

@@ -2,30 +2,42 @@
 FROM node:22-alpine AS build
 
 RUN apk add --no-cache python3 make g++
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-RUN npm ci
+# Copy workspace config and all package.json files first for layer caching
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY packages/shared/package.json packages/shared/
+COPY packages/web/package.json packages/web/
+
+RUN pnpm install --frozen-lockfile
 
 COPY . .
-RUN npm run build
+RUN pnpm --filter @sanakenno/web build
 
 # --- Runtime stage ---
 FROM node:22-alpine AS runtime
 
 RUN apk add --no-cache python3 make g++ tzdata
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
 RUN addgroup -S sanakenno && adduser -S sanakenno -G sanakenno
 
 WORKDIR /app
 
-# Copy production dependencies (argon2 needs native compilation)
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev && npm cache clean --force && apk del python3 make g++
+# Copy workspace config and root + server package.json for production deps
+COPY pnpm-workspace.yaml package.json ./
+COPY packages/shared/package.json packages/shared/
+COPY packages/web/package.json packages/web/
+
+RUN pnpm install --frozen-lockfile --prod && apk del python3 make g++
 
 # Copy built frontend
-COPY --from=build /app/dist ./dist
+COPY --from=build /app/packages/web/dist ./dist
+
+# Copy shared package source (needed at runtime for server imports)
+COPY packages/shared ./packages/shared
 
 # Copy server source and admin scripts (executed via tsx at runtime)
 COPY server ./server
