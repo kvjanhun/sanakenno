@@ -1,0 +1,137 @@
+import { View, Text, StyleSheet } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withTiming,
+  withRepeat,
+} from 'react-native-reanimated';
+import { useEffect, useRef, useMemo } from 'react';
+import type { Theme } from '../theme';
+
+interface WordInputProps {
+  currentWord: string;
+  wordRejected: boolean;
+  center: string;
+  allLetters: Set<string>;
+  theme: Theme;
+}
+
+type CharColor = 'accent' | 'primary' | 'tertiary';
+
+function colorizeWord(
+  word: string,
+  center: string,
+  allLetters: Set<string>,
+): { char: string; color: CharColor }[] {
+  return [...word].map((ch) => {
+    const lower = ch.toLowerCase();
+    if (lower === center) return { char: ch, color: 'accent' };
+    if (allLetters.has(lower)) return { char: ch, color: 'primary' };
+    return { char: ch, color: 'tertiary' };
+  });
+}
+
+function BlinkingCursor({ color }: { color: string }) {
+  const opacity = useSharedValue(1);
+
+  useEffect(() => {
+    opacity.value = withRepeat(
+      withSequence(
+        withTiming(0, { duration: 400 }),
+        withTiming(1, { duration: 400 }),
+      ),
+      -1,
+      false,
+    );
+  }, [opacity]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }));
+
+  return (
+    <Animated.View style={animatedStyle}>
+      <Text style={[styles.cursor, { color }]}>|</Text>
+    </Animated.View>
+  );
+}
+
+export function WordInput({
+  currentWord,
+  wordRejected,
+  center,
+  allLetters,
+  theme,
+}: WordInputProps) {
+  const shakeX = useSharedValue(0);
+  const prevRejected = useRef(false);
+
+  useEffect(() => {
+    if (wordRejected && !prevRejected.current) {
+      shakeX.value = withSequence(
+        withTiming(-8, { duration: 50 }),
+        withTiming(8, { duration: 50 }),
+        withTiming(-6, { duration: 50 }),
+        withTiming(6, { duration: 50 }),
+        withTiming(0, { duration: 50 }),
+      );
+    }
+    prevRejected.current = wordRejected;
+  }, [wordRejected, shakeX]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: shakeX.value }],
+  }));
+
+  const colorMap: Record<CharColor, string> = {
+    accent: theme.accent,
+    primary: theme.textPrimary,
+    tertiary: theme.textTertiary,
+  };
+
+  const chars = useMemo(
+    () => (currentWord ? colorizeWord(currentWord, center, allLetters) : null),
+    [currentWord, center, allLetters],
+  );
+
+  return (
+    <Animated.View style={[styles.container, animatedStyle]}>
+      {chars ? (
+        <View style={styles.charRow}>
+          {chars.map((c, i) => (
+            <Text
+              key={i}
+              style={[styles.char, { color: colorMap[c.color] }]}
+            >
+              {c.char.toUpperCase()}
+            </Text>
+          ))}
+        </View>
+      ) : (
+        <BlinkingCursor color={theme.textTertiary} />
+      )}
+    </Animated.View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    minHeight: 48,
+  },
+  charRow: {
+    flexDirection: 'row',
+  },
+  char: {
+    fontSize: 26,
+    fontWeight: '600',
+    marginHorizontal: 1,
+  },
+  cursor: {
+    fontSize: 26,
+    fontWeight: '300',
+  },
+});

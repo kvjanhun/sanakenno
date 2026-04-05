@@ -1,6 +1,12 @@
 import { useCallback, useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
-import Svg, { Polygon, Text as SvgText } from 'react-native-svg';
+import Svg, {
+  Defs,
+  LinearGradient,
+  Stop,
+  Polygon,
+  Text as SvgText,
+} from 'react-native-svg';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -61,16 +67,23 @@ function computeHexes(center: string, outerLetters: string[]): HexCell[] {
 /** Individual hex cell with press animation via Reanimated. */
 function HexButton({
   hex,
+  index,
   onPress,
-  fillColor,
+  fillHi,
+  fillLo,
+  strokeColor,
   textColor,
 }: {
   hex: HexCell;
+  index: number;
   onPress: (letter: string) => void;
-  fillColor: string;
+  fillHi: string;
+  fillLo: string;
+  strokeColor: string;
   textColor: string;
 }) {
   const scale = useSharedValue(1);
+  const gradId = `hex-grad-${index}`;
 
   const handlePress = useCallback(() => {
     onPress(hex.letter);
@@ -80,7 +93,7 @@ function HexButton({
   const tap = Gesture.Tap()
     .onBegin(() => {
       'worklet';
-      scale.value = withSpring(0.88, { damping: 15, stiffness: 400 });
+      scale.value = withSpring(0.92, { damping: 15, stiffness: 400 });
     })
     .onFinalize(() => {
       'worklet';
@@ -94,6 +107,9 @@ function HexButton({
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
+
+  const isSolid = fillHi === fillLo;
+  const fill = isSolid ? fillHi : `url(#${gradId})`;
 
   return (
     <GestureDetector gesture={tap}>
@@ -110,7 +126,20 @@ function HexButton({
         ]}
       >
         <Svg width={HEX_R * 2} height={HEX_R * 2} viewBox="0 0 92 92">
-          <Polygon points={hexPoints(46, 46, HEX_R)} fill={fillColor} />
+          {!isSolid && (
+            <Defs>
+              <LinearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+                <Stop offset="0%" stopColor={fillHi} />
+                <Stop offset="100%" stopColor={fillLo} />
+              </LinearGradient>
+            </Defs>
+          )}
+          <Polygon
+            points={hexPoints(46, 46, HEX_R)}
+            fill={fill}
+            stroke={strokeColor}
+            strokeWidth={1.5}
+          />
           <SvgText
             x="46"
             y="46"
@@ -145,8 +174,11 @@ export function Honeycomb({
         <HexButton
           key={i}
           hex={hex}
+          index={i}
           onPress={onLetterPress}
-          fillColor={hex.isCenter ? theme.accent : theme.hexHi}
+          fillHi={hex.isCenter ? theme.accent : theme.hexHi}
+          fillLo={hex.isCenter ? theme.accent : theme.hexLo}
+          strokeColor={hex.isCenter ? theme.accent : theme.hexStroke}
           textColor={hex.isCenter ? theme.hexCenterText : theme.textPrimary}
         />
       ))}

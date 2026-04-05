@@ -140,7 +140,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
     }
 
     // Invalid letters
-    const validLetters = new Set(puzzle.letters);
+    const validLetters = new Set([...puzzle.letters, puzzle.center]);
     for (const ch of normalized) {
       if (!validLetters.has(ch)) {
         showError('Käytä vain annettuja kirjaimia!');
