@@ -7,8 +7,7 @@
  */
 
 import { useMemo } from 'react';
-import { toColumns } from '../utils/scoring.js';
-import { buildKotusUrl } from '../utils/kotus.js';
+import { toColumns, buildKotusUrl } from '@sanakenno/shared';
 
 /** Props for {@link FoundWords}. */
 export interface FoundWordsProps {

@@ -11,7 +11,7 @@ import {
   rankForScore,
   rankThresholds,
   progressToNextRank,
-} from '../../src/utils/scoring.js';
+} from '@sanakenno/shared';
 import type { SanakennoWorld } from './types.js';
 
 Given(

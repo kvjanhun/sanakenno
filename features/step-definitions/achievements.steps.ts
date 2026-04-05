@@ -7,7 +7,7 @@
 
 import { Given, When, Then, Before } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
-import { rankForScore } from '../../src/utils/scoring.js';
+import { rankForScore } from '@sanakenno/shared';
 import app from '../../server/index.js';
 import type { SanakennoWorld } from './types.js';
 

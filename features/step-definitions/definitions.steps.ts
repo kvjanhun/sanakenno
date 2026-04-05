@@ -6,7 +6,7 @@
 
 import { Given, Then } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
-import { buildKotusUrl } from '../../src/utils/kotus.js';
+import { buildKotusUrl } from '@sanakenno/shared';
 import type { SanakennoWorld } from './types.js';
 
 Given(

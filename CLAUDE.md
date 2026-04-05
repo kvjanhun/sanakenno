@@ -26,14 +26,18 @@ Feature files in `features/` are the source of truth for behaviour.
 - All checks must pass before committing to `main`: typecheck → lint → unit → BDD → E2E → build.
 - Never commit broken code to `main`; use a feature branch for incomplete work.
 
+## Workspace
+pnpm mono-repo with `packages/shared` (pure domain logic, types, platform interfaces).
+Shared code is imported as `@sanakenno/shared`.
+
 ## Commands
 ```
-npm install            install dependencies
-npm run dev            start dev server + API (localhost:5173 → proxy :3001)
-npm run typecheck      tsc --noEmit
-npm run lint           eslint + prettier check
-npm run test:unit      vitest
-npm run test:bdd       cucumber.js
-npx playwright test    E2E tests (requires dev server running)
-npm run build          production build → dist/
+pnpm install           install dependencies
+pnpm run dev           start dev server + API (localhost:5173 → proxy :3001)
+pnpm run typecheck     tsc --noEmit
+pnpm run lint          eslint + prettier check
+pnpm run test:unit     vitest
+pnpm run test:bdd      cucumber.js
+pnpm exec playwright test    E2E tests (requires dev server running)
+pnpm run build         production build → dist/
 ```

@@ -7,8 +7,8 @@
 
 import { Given, When, Then, Before } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
-import { deriveHintData } from '../../src/utils/hint-data.js';
-import type { HintData } from '../../src/utils/hint-data.js';
+import { deriveHintData } from '@sanakenno/shared';
+import type { HintData } from '@sanakenno/shared';
 import type { SanakennoWorld } from './types.js';
 
 /** Build a realistic hint_data fixture for 50 words, 3 pangrams. */

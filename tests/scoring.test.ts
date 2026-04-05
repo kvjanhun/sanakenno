@@ -15,7 +15,7 @@ import {
   toColumns,
   type RankThreshold,
   type ColorizedChar,
-} from '../src/utils/scoring.js';
+} from '@sanakenno/shared';
 
 describe('scoreWord', () => {
   const letters: Set<string> = new Set(['a', 'e', 'i', 'k', 'l', 't', 'v']);

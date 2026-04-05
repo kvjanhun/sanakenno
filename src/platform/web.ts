@@ -9,7 +9,7 @@ import type {
   CryptoService,
   ShareService,
   ConfigService,
-} from './types.js';
+} from '@sanakenno/shared';
 
 export const webStorage: StorageService = {
   save<T>(key: string, data: T): void {

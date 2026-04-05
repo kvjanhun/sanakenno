@@ -21,4 +21,4 @@ export type {
   ShareService,
   ConfigService,
   PlatformServices,
-} from './types.js';
+} from '@sanakenno/shared';

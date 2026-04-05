@@ -10,7 +10,7 @@
 
 import { useMemo } from 'react';
 import { useGameStore } from '../store/useGameStore.js';
-import { deriveHintData } from '../utils/hint-data.js';
+import { deriveHintData } from '@sanakenno/shared';
 
 // Re-export types and pure function for consumers
 export type {
@@ -20,8 +20,8 @@ export type {
   LengthEntry,
   PairEntry,
   PangramStats,
-} from '../utils/hint-data.js';
-export { deriveHintData } from '../utils/hint-data.js';
+} from '@sanakenno/shared';
+export { deriveHintData } from '@sanakenno/shared';
 
 /**
  * React hook that subscribes to the Zustand store and returns

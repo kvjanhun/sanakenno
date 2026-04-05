@@ -9,15 +9,15 @@
  */
 
 import { useState, useEffect } from 'react';
-import { RANKS } from '../utils/scoring.js';
 import {
+  RANKS,
   computeStreak,
   computeRankDistribution,
   computeAverageCompletion,
   emptyStats,
   STATS_STORAGE_KEY,
-} from '../utils/stats.js';
-import type { PlayerStats } from '../utils/stats.js';
+} from '@sanakenno/shared';
+import type { PlayerStats } from '@sanakenno/shared';
 import { loadFromStorage } from '../utils/storage.js';
 
 /** Rank display colors, ordered from lowest to highest. */

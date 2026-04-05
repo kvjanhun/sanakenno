@@ -6,7 +6,7 @@
  * @module src/components/WordInput
  */
 
-import { colorizeWord } from '../utils/scoring.js';
+import { colorizeWord } from '@sanakenno/shared';
 import styles from './animations.module.css';
 
 /** Props for {@link WordInput}. */

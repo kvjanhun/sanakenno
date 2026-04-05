@@ -6,7 +6,7 @@
  */
 
 import { useRef, useEffect, useState } from 'react';
-import { rankThresholds, progressToNextRank } from '../utils/scoring.js';
+import { rankThresholds, progressToNextRank } from '@sanakenno/shared';
 import styles from './animations.module.css';
 
 /** Props for {@link RankProgress}. */

@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { deriveHintData, type HintData } from '../src/utils/hint-data.js';
+import { deriveHintData, type HintData } from '@sanakenno/shared';
 
 const ALL_LETTERS = new Set(['a', 'e', 'k', 'l', 'n', 's', 't']);
 

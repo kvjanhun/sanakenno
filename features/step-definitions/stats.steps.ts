@@ -12,8 +12,8 @@ import {
   computeStreak,
   computeRankDistribution,
   computeAverageCompletion,
-} from '../../src/utils/stats.js';
-import type { StatsRecord } from '../../src/utils/stats.js';
+} from '@sanakenno/shared';
+import type { StatsRecord } from '@sanakenno/shared';
 import type { SanakennoWorld } from './types.js';
 
 Before(function (this: SanakennoWorld) {

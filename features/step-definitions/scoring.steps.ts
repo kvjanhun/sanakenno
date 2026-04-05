@@ -7,7 +7,7 @@
 
 import { Given, When, Then, Before } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
-import { scoreWord, recalcScore } from '../../src/utils/scoring.js';
+import { scoreWord, recalcScore } from '@sanakenno/shared';
 import { validateWord } from '../support/validation.js';
 import type { SanakennoWorld } from './types.js';
 

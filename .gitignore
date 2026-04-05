@@ -13,3 +13,4 @@ reports/
 test-results/
 playwright-report/
 .vscode/
+package-lock.json

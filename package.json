@@ -4,9 +4,9 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "npx tsx watch server/index.ts & vite --open",
+    "dev": "tsx watch server/index.ts & vite --open",
     "dev:client": "vite",
-    "dev:server": "npx tsx watch server/index.ts",
+    "dev:server": "tsx watch server/index.ts",
     "build": "vite build",
     "preview": "vite preview",
     "test:unit": "vitest run",
@@ -15,16 +15,24 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
-    "create-admin": "npx tsx scripts/create-admin.ts"
+    "create-admin": "tsx scripts/create-admin.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.8",
+    "@sanakenno/shared": "workspace:*",
     "argon2": "^0.44.0",
     "better-sqlite3": "^12.8.0",
     "hono": "^4.7.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "zustand": "^5.0.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "argon2",
+      "better-sqlite3",
+      "esbuild"
+    ]
   },
   "devDependencies": {
     "@cucumber/cucumber": "^12.7.0",

@@ -8,7 +8,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { rankForScore } from '../utils/scoring.js';
+import { rankForScore } from '@sanakenno/shared';
 import { loadFromStorage } from '../utils/storage.js';
 
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');

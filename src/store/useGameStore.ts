@@ -13,26 +13,23 @@ import { storage, crypto, share, config } from '../platform/index.js';
 
 const API_BASE = config.apiBase;
 
+import {
+  scoreWord,
+  recalcScore,
+  rankForScore,
+  updateStatsRecord,
+  emptyStats,
+  STATS_STORAGE_KEY,
+} from '@sanakenno/shared';
+import type { HintData, PlayerStats } from '@sanakenno/shared';
+export type { HintData } from '@sanakenno/shared';
+
 import { hashWord } from '../utils/hash.js';
-import { scoreWord, recalcScore, rankForScore } from '../utils/scoring.js';
 import {
   saveToStorage,
   loadFromStorage,
   removeFromStorage,
 } from '../utils/storage.js';
-import {
-  updateStatsRecord,
-  emptyStats,
-  STATS_STORAGE_KEY,
-} from '../utils/stats.js';
-import type { PlayerStats } from '../utils/stats.js';
-
-/* ------------------------------------------------------------------ */
-/*  Types                                                              */
-/* ------------------------------------------------------------------ */
-
-import type { HintData } from '../utils/hint-data.js';
-export type { HintData } from '../utils/hint-data.js';
 
 /** Shape of the puzzle payload from GET /api/puzzle. */
 export interface Puzzle {
