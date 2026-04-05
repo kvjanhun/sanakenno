@@ -1,7 +1,15 @@
 import { create } from 'zustand';
 import { config, crypto, storage } from '../platform';
-import { scoreWord, rankForScore } from '@sanakenno/shared';
-import type { HintData } from '@sanakenno/shared';
+import {
+  scoreWord,
+  rankForScore,
+  STATS_STORAGE_KEY,
+  updateStatsRecord,
+  emptyStats,
+} from '@sanakenno/shared';
+import type { HintData, PlayerStats } from '@sanakenno/shared';
+
+export type CelebrationType = 'allistyttava' | 'taysikenno' | null;
 
 /** Shape of the puzzle payload from GET /api/puzzle. */
 export interface Puzzle {
@@ -29,6 +37,10 @@ interface GameState {
   wordRejected: boolean;
   startedAt: number | null;
   totalPausedMs: number;
+  hintsUnlocked: Set<string>;
+  scoreBeforeHints: number | null;
+  celebration: CelebrationType;
+  postedRanks: Set<string>;
 
   fetchPuzzle: (overrideNumber?: number) => Promise<void>;
   addLetter: (letter: string) => void;
@@ -37,6 +49,8 @@ interface GameState {
   submitWord: () => Promise<void>;
   shuffleLetters: () => void;
   saveState: () => void;
+  unlockHint: (id: string) => void;
+  setCelebration: (value: CelebrationType) => void;
 }
 
 /** Persistence key for a given puzzle number. */
@@ -57,6 +71,10 @@ export const useGameStore = create<GameState>()((set, get) => ({
   wordRejected: false,
   startedAt: null,
   totalPausedMs: 0,
+  hintsUnlocked: new Set<string>(),
+  scoreBeforeHints: null,
+  celebration: null,
+  postedRanks: new Set<string>(),
 
   fetchPuzzle: async (overrideNumber?: number) => {
     set({ loading: true, fetchError: '' });
@@ -82,6 +100,10 @@ export const useGameStore = create<GameState>()((set, get) => ({
         wordRejected: false,
         startedAt: Date.now(),
         totalPausedMs: 0,
+        hintsUnlocked: new Set<string>(),
+        scoreBeforeHints: null,
+        celebration: null,
+        postedRanks: new Set<string>(),
       });
 
       // Restore persisted state
@@ -90,6 +112,8 @@ export const useGameStore = create<GameState>()((set, get) => ({
         score: number;
         startedAt?: number;
         totalPausedMs?: number;
+        hintsUnlocked?: string[];
+        scoreBeforeHints?: number | null;
       }>(stateKey(data.puzzle_number));
       if (saved) {
         set({
@@ -97,6 +121,8 @@ export const useGameStore = create<GameState>()((set, get) => ({
           score: saved.score,
           startedAt: saved.startedAt ?? Date.now(),
           totalPausedMs: saved.totalPausedMs ?? 0,
+          hintsUnlocked: new Set(saved.hintsUnlocked ?? []),
+          scoreBeforeHints: saved.scoreBeforeHints ?? null,
         });
       }
     } catch (err: unknown) {
@@ -203,12 +229,72 @@ export const useGameStore = create<GameState>()((set, get) => ({
       messageType: msgType,
     });
 
+    // Trigger celebration on special ranks
+    if (newRank !== previousRank) {
+      if (newRank === 'Täysi kenno') {
+        set({ celebration: 'taysikenno' });
+      } else if (newRank === 'Ällistyttävä') {
+        set({ celebration: 'allistyttava' });
+      }
+
+      // Fire-and-forget achievement POST (session-deduped)
+      const dedupeKey = `${puzzle.puzzle_number}:${newRank}`;
+      const { postedRanks } = get();
+      if (!postedRanks.has(dedupeKey)) {
+        postedRanks.add(dedupeKey);
+        set({ postedRanks: new Set(postedRanks) });
+        const elapsed =
+          state.startedAt != null
+            ? Date.now() - state.startedAt - state.totalPausedMs
+            : 0;
+        fetch(`${config.apiBase}/api/achievement`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            puzzle_number: puzzle.puzzle_number,
+            rank: newRank,
+            score: newScore,
+            max_score: puzzle.max_score,
+            words_found: newFoundWords.size,
+            elapsed_ms: elapsed,
+          }),
+        }).catch(() => {});
+      }
+    }
+
+    // Update player stats on rank change
+    if (newRank !== previousRank) {
+      const elapsed =
+        state.startedAt != null
+          ? Date.now() - state.startedAt - state.totalPausedMs
+          : 0;
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('en-CA', {
+        timeZone: 'Europe/Helsinki',
+      });
+      const existing =
+        storage.load<PlayerStats>(STATS_STORAGE_KEY) ?? emptyStats();
+      const updated = updateStatsRecord(existing, {
+        puzzle_number: puzzle.puzzle_number,
+        date: dateStr,
+        best_rank: newRank,
+        best_score: newScore,
+        max_score: puzzle.max_score,
+        words_found: newFoundWords.size,
+        hints_used: state.hintsUnlocked.size,
+        elapsed_ms: elapsed,
+      });
+      storage.save(STATS_STORAGE_KEY, updated);
+    }
+
     // Persist state
     storage.save(stateKey(puzzle.puzzle_number), {
       foundWords: [...newFoundWords],
       score: newScore,
       startedAt: state.startedAt,
       totalPausedMs: state.totalPausedMs,
+      hintsUnlocked: [...state.hintsUnlocked],
+      scoreBeforeHints: state.scoreBeforeHints,
     });
   },
 
@@ -224,13 +310,52 @@ export const useGameStore = create<GameState>()((set, get) => ({
   },
 
   saveState: () => {
-    const { puzzle, foundWords, score, startedAt, totalPausedMs } = get();
+    const {
+      puzzle,
+      foundWords,
+      score,
+      startedAt,
+      totalPausedMs,
+      hintsUnlocked,
+      scoreBeforeHints,
+    } = get();
     if (!puzzle) return;
     storage.save(stateKey(puzzle.puzzle_number), {
       foundWords: [...foundWords],
       score,
       startedAt,
       totalPausedMs,
+      hintsUnlocked: [...hintsUnlocked],
+      scoreBeforeHints,
     });
+  },
+
+  unlockHint: (id: string) => {
+    const { hintsUnlocked, scoreBeforeHints, score, puzzle } = get();
+    if (hintsUnlocked.has(id)) return;
+    const newUnlocked = new Set(hintsUnlocked);
+    newUnlocked.add(id);
+    const updates: Partial<GameState> = { hintsUnlocked: newUnlocked };
+    // Capture score before first hint
+    if (scoreBeforeHints === null) {
+      updates.scoreBeforeHints = score;
+    }
+    set(updates);
+    // Persist immediately
+    if (puzzle) {
+      const state = get();
+      storage.save(stateKey(puzzle.puzzle_number), {
+        foundWords: [...state.foundWords],
+        score: state.score,
+        startedAt: state.startedAt,
+        totalPausedMs: state.totalPausedMs,
+        hintsUnlocked: [...state.hintsUnlocked],
+        scoreBeforeHints: state.scoreBeforeHints,
+      });
+    }
+  },
+
+  setCelebration: (value: CelebrationType) => {
+    set({ celebration: value });
   },
 }));

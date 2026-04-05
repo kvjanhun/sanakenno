@@ -100,10 +100,7 @@ export function WordInput({
       {chars ? (
         <View style={styles.charRow}>
           {chars.map((c, i) => (
-            <Text
-              key={i}
-              style={[styles.char, { color: colorMap[c.color] }]}
-            >
+            <Text key={i} style={[styles.char, { color: colorMap[c.color] }]}>
               {c.char.toUpperCase()}
             </Text>
           ))}

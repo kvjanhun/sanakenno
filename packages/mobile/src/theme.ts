@@ -5,6 +5,7 @@
  */
 
 import { useColorScheme } from 'react-native';
+import { useSettingsStore } from './store/useSettingsStore';
 
 export interface Theme {
   accent: string;
@@ -50,6 +51,8 @@ const dark: Theme = {
 };
 
 export function useTheme(): Theme {
-  const scheme = useColorScheme();
+  const systemScheme = useColorScheme();
+  const pref = useSettingsStore((s) => s.themePreference);
+  const scheme = pref === 'system' ? systemScheme : pref;
   return scheme === 'dark' ? dark : light;
 }

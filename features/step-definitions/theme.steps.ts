@@ -1,8 +1,7 @@
 /**
  * BDD step definitions for theme.feature.
  *
- * All scenarios require DOM access (data-theme attribute, localStorage) —
- * marked pending until E2E infrastructure is available.
+ * All scenarios are @e2e (require DOM / device access) — returned as pending.
  */
 
 import { Given, When, Then } from '@cucumber/cucumber';
@@ -23,23 +22,33 @@ Given('the current theme is light', function (this: SanakennoWorld) {
   return 'pending';
 });
 
-When(
-  'the player taps the theme toggle button',
-  function (this: SanakennoWorld) {
-    return 'pending';
-  },
-);
+Given('the current theme is dark', function (this: SanakennoWorld) {
+  return 'pending';
+});
+
+When('the player selects dark theme', function (this: SanakennoWorld) {
+  return 'pending';
+});
+
+When('the player selects light theme', function (this: SanakennoWorld) {
+  return 'pending';
+});
+
+When('the player selects system theme', function (this: SanakennoWorld) {
+  return 'pending';
+});
 
 Then('the theme should change to dark', function (this: SanakennoWorld) {
   return 'pending';
 });
 
-Then(
-  'the theme preference should be saved in localStorage',
-  function (this: SanakennoWorld) {
-    return 'pending';
-  },
-);
+Then('the theme should change to light', function (this: SanakennoWorld) {
+  return 'pending';
+});
+
+Then('the theme preference should be saved', function (this: SanakennoWorld) {
+  return 'pending';
+});
 
 Given('the player has set the theme to dark', function (this: SanakennoWorld) {
   return 'pending';

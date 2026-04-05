@@ -1,10 +1,12 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
+  withTiming,
 } from 'react-native-reanimated';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { rankThresholds } from '@sanakenno/shared';
 import type { Theme } from '../theme';
 
 interface RankProgressProps {
@@ -12,7 +14,8 @@ interface RankProgressProps {
   progress: number;
   score: number;
   maxScore: number;
-  foundCount: number;
+  scoreBeforeHints: number | null;
+  hintsUsed: boolean;
   theme: Theme;
 }
 
@@ -21,10 +24,15 @@ export function RankProgress({
   progress,
   score,
   maxScore,
-  foundCount,
+  scoreBeforeHints,
+  hintsUsed,
   theme,
 }: RankProgressProps) {
   const animatedProgress = useSharedValue(0);
+  const [expanded, setExpanded] = useState(false);
+  const panelHeight = useSharedValue(0);
+
+  const thresholds = rankThresholds(rankLabel, maxScore);
 
   useEffect(() => {
     animatedProgress.value = withSpring(progress, {
@@ -33,16 +41,34 @@ export function RankProgress({
     });
   }, [progress, animatedProgress]);
 
+  useEffect(() => {
+    // Each row ~44px + 8px gap, padding 12 top/bottom, footer ~40px
+    const rows = thresholds.length;
+    const footerH = hintsUsed ? 40 : 0;
+    const target = expanded ? rows * 52 + 24 + footerH : 0;
+    panelHeight.value = withTiming(target, { duration: 250 });
+  }, [expanded, thresholds.length, hintsUsed, panelHeight]);
+
   const fillStyle = useAnimatedStyle(() => ({
     width: `${animatedProgress.value}%`,
+  }));
+
+  const panelStyle = useAnimatedStyle(() => ({
+    height: panelHeight.value,
+    opacity: panelHeight.value > 0 ? 1 : 0,
   }));
 
   return (
     <View style={styles.container}>
       <View style={styles.row}>
-        <View style={[styles.rankPill, { backgroundColor: theme.accent }]}>
-          <Text style={styles.rankText}>{rankLabel}</Text>
-        </View>
+        <Pressable
+          onPress={() => setExpanded((v) => !v)}
+          style={[styles.rankPill, { backgroundColor: theme.accent }]}
+        >
+          <Text style={styles.rankText}>
+            {rankLabel} {expanded ? '▲' : '▼'}
+          </Text>
+        </Pressable>
         <Text style={[styles.score, { color: theme.textPrimary }]}>
           {score} pistettä
         </Text>
@@ -58,6 +84,51 @@ export function RankProgress({
           ]}
         />
       </View>
+
+      <Animated.View style={[styles.panel, panelStyle]}>
+        {thresholds.map((item) => (
+          <View
+            key={item.name}
+            style={[
+              styles.thresholdRow,
+              {
+                backgroundColor: item.isCurrent
+                  ? theme.accent + '18'
+                  : 'transparent',
+                borderColor: item.isCurrent ? theme.accent : theme.border,
+                borderWidth: item.isCurrent ? 2 : 1,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.thresholdName,
+                {
+                  color: item.isCurrent ? theme.accent : theme.textPrimary,
+                  fontWeight: item.isCurrent ? '700' : '400',
+                },
+              ]}
+            >
+              {item.name}
+            </Text>
+            <Text
+              style={[
+                styles.thresholdPoints,
+                {
+                  color: item.isCurrent ? theme.accent : theme.textSecondary,
+                },
+              ]}
+            >
+              {item.points} p
+            </Text>
+          </View>
+        ))}
+        {hintsUsed && scoreBeforeHints !== null && (
+          <Text style={[styles.footer, { color: theme.textSecondary }]}>
+            Ilman apuja: {scoreBeforeHints} pistettä
+          </Text>
+        )}
+      </Animated.View>
     </View>
   );
 }
@@ -96,5 +167,30 @@ const styles = StyleSheet.create({
   progressFill: {
     height: '100%',
     borderRadius: 4,
+  },
+  panel: {
+    overflow: 'hidden',
+    gap: 8,
+    paddingTop: 12,
+  },
+  thresholdRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  thresholdName: {
+    fontSize: 16,
+  },
+  thresholdPoints: {
+    fontSize: 15,
+  },
+  footer: {
+    textAlign: 'center',
+    marginTop: 4,
+    fontSize: 14,
+    fontStyle: 'italic',
   },
 });

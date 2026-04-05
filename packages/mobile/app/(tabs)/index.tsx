@@ -2,17 +2,20 @@ import { useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { useGameStore } from '../src/store/useGameStore';
-import { Honeycomb } from '../src/components/Honeycomb';
-import { MessageBar } from '../src/components/MessageBar';
-import { WordInput } from '../src/components/WordInput';
-import { GameControls } from '../src/components/GameControls';
-import { RankProgress } from '../src/components/RankProgress';
-import { FoundWords } from '../src/components/FoundWords';
-import { useGameTimer } from '../src/hooks/useGameTimer';
-import { useMidnightRollover } from '../src/hooks/useMidnightRollover';
+import { useGameStore } from '../../src/store/useGameStore';
+import { Honeycomb } from '../../src/components/Honeycomb';
+import { MessageBar } from '../../src/components/MessageBar';
+import { WordInput } from '../../src/components/WordInput';
+import { GameControls } from '../../src/components/GameControls';
+import { RankProgress } from '../../src/components/RankProgress';
+import { FoundWords } from '../../src/components/FoundWords';
+import { HintPanel } from '../../src/components/HintPanel';
+import { Celebration } from '../../src/components/Celebration';
+import { useGameTimer } from '../../src/hooks/useGameTimer';
+import { useMidnightRollover } from '../../src/hooks/useMidnightRollover';
 import { rankForScore, progressToNextRank } from '@sanakenno/shared';
-import { useTheme } from '../src/theme';
+import { useTheme } from '../../src/theme';
+import { share } from '../../src/platform';
 
 export default function GameScreen() {
   const theme = useTheme();
@@ -38,6 +41,11 @@ export default function GameScreen() {
   const deleteLetter = useGameStore((s) => s.deleteLetter);
   const submitWord = useGameStore((s) => s.submitWord);
   const shuffleLetters = useGameStore((s) => s.shuffleLetters);
+  const hintsUnlocked = useGameStore((s) => s.hintsUnlocked);
+  const scoreBeforeHints = useGameStore((s) => s.scoreBeforeHints);
+  const unlockHint = useGameStore((s) => s.unlockHint);
+  const celebration = useGameStore((s) => s.celebration);
+  const setCelebration = useGameStore((s) => s.setCelebration);
 
   useEffect(() => {
     fetchPuzzle();
@@ -84,15 +92,23 @@ export default function GameScreen() {
           progress={progress}
           score={score}
           maxScore={puzzle.max_score}
-          foundCount={foundWords.size}
+          scoreBeforeHints={scoreBeforeHints}
+          hintsUsed={hintsUnlocked.size > 0}
           theme={theme}
         />
 
-        <MessageBar
-          message={message}
-          messageType={messageType}
-          theme={theme}
-        />
+        {puzzle.hint_data && (
+          <HintPanel
+            hintData={puzzle.hint_data}
+            foundWords={foundWords}
+            allLetters={allLetters}
+            hintsUnlocked={hintsUnlocked}
+            onUnlock={unlockHint}
+            theme={theme}
+          />
+        )}
+
+        <MessageBar message={message} messageType={messageType} theme={theme} />
 
         <WordInput
           currentWord={currentWord}
@@ -117,6 +133,20 @@ export default function GameScreen() {
         />
 
         <FoundWords foundWords={foundWords} theme={theme} />
+
+        <Celebration
+          celebration={celebration}
+          score={score}
+          onDismiss={() => setCelebration(null)}
+          onShare={() => {
+            const text =
+              celebration === 'taysikenno'
+                ? `Sanakenno: Täysi kenno! ${score} pistettä 🏆`
+                : `Sanakenno: Ällistyttävä! ${score} pistettä ⭐`;
+            share.copyToClipboard(text);
+          }}
+          theme={theme}
+        />
       </SafeAreaView>
     </GestureHandlerRootView>
   );

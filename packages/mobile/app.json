@@ -25,7 +25,7 @@
       },
       "edgeToEdgeEnabled": true
     },
-    "plugins": ["expo-router", "expo-font"],
+    "plugins": ["expo-router", "expo-font", "react-native-bottom-tabs"],
     "experiments": {
       "typedRoutes": true
     }

@@ -41,14 +41,11 @@ export function useGameTimer(): GameTimerApi {
     backgroundAt.current = null;
   }, []);
 
-  const restore = useCallback(
-    (saved: number | null, paused: number): void => {
-      startedAt.current = saved;
-      totalPausedMs.current = paused;
-      backgroundAt.current = null;
-    },
-    [],
-  );
+  const restore = useCallback((saved: number | null, paused: number): void => {
+    startedAt.current = saved;
+    totalPausedMs.current = paused;
+    backgroundAt.current = null;
+  }, []);
 
   useEffect(() => {
     const handleAppState = (nextState: AppStateStatus) => {
