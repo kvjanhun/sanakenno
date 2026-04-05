@@ -50,6 +50,14 @@ export default tseslint.config(
     },
   },
   {
-    ignores: ['**/dist/', 'node_modules/', 'coverage/', 'reports/', '.claude/'],
+    ignores: [
+      '**/dist/',
+      'node_modules/',
+      'coverage/',
+      'reports/',
+      '.claude/',
+      '.expo/',
+      'packages/mobile/metro.config.js',
+    ],
   },
 );

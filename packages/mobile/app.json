@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "Sanakenno",
+    "slug": "sanakenno",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "sanakenno",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#3A3A3A"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "fi.sanakenno.app"
+    },
+    "android": {
+      "package": "fi.sanakenno.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#3A3A3A"
+      },
+      "edgeToEdgeEnabled": true
+    },
+    "plugins": ["expo-router", "expo-font"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

@@ -13,7 +13,7 @@
     "test:unit": "vitest run",
     "test:bdd": "cucumber-js",
     "test:e2e": "playwright test",
-    "typecheck": "tsc --noEmit && pnpm --filter @sanakenno/web typecheck",
+    "typecheck": "tsc --noEmit && pnpm --filter @sanakenno/web typecheck && pnpm --filter @sanakenno/mobile typecheck",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
     "create-admin": "tsx scripts/create-admin.ts"

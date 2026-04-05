@@ -8,9 +8,12 @@ dist/
 server/data/kotus_words.txt
 .DS_Store
 .vite/
+.expo/
 coverage/
 reports/
 test-results/
 playwright-report/
 .vscode/
 package-lock.json
+ios/
+android/
