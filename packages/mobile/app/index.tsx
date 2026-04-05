@@ -7,8 +7,10 @@ import {
   Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useGameStore } from '../src/store/useGameStore';
-import { rankForScore } from '@sanakenno/shared';
+import { Honeycomb } from '../src/components/Honeycomb';
+import { rankForScore, progressToNextRank } from '@sanakenno/shared';
 
 export default function GameScreen() {
   const puzzle = useGameStore((s) => s.puzzle);
@@ -17,10 +19,14 @@ export default function GameScreen() {
   const score = useGameStore((s) => s.score);
   const currentWord = useGameStore((s) => s.currentWord);
   const outerLetters = useGameStore((s) => s.outerLetters);
+  const foundWords = useGameStore((s) => s.foundWords);
+  const message = useGameStore((s) => s.message);
+  const messageType = useGameStore((s) => s.messageType);
   const fetchPuzzle = useGameStore((s) => s.fetchPuzzle);
   const addLetter = useGameStore((s) => s.addLetter);
   const deleteLetter = useGameStore((s) => s.deleteLetter);
-  const clearWord = useGameStore((s) => s.clearWord);
+  const submitWord = useGameStore((s) => s.submitWord);
+  const shuffleLetters = useGameStore((s) => s.shuffleLetters);
 
   useEffect(() => {
     fetchPuzzle();
@@ -41,60 +47,76 @@ export default function GameScreen() {
   }
 
   const rankLabel = rankForScore(score, puzzle.max_score);
+  const progress = progressToNextRank(score, puzzle.max_score);
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Score and rank */}
-      <View style={styles.header}>
-        <Text style={styles.rank}>{rankLabel}</Text>
-        <Text style={styles.score}>
-          {score} / {puzzle.max_score}
-        </Text>
-      </View>
-
-      {/* Current word */}
-      <View style={styles.wordRow}>
-        <Text style={styles.currentWord}>{currentWord || '\u00A0'}</Text>
-      </View>
-
-      {/* Letter grid — center + outer */}
-      <View style={styles.letters}>
-        {outerLetters.map((letter, i) => (
-          <Pressable
-            key={`outer-${i}`}
-            style={styles.letterButton}
-            onPress={() => addLetter(letter)}
-          >
-            <Text style={styles.letterText}>{letter}</Text>
-          </Pressable>
-        ))}
-        <Pressable
-          style={[styles.letterButton, styles.centerButton]}
-          onPress={() => addLetter(puzzle.center)}
-        >
-          <Text style={[styles.letterText, styles.centerText]}>
-            {puzzle.center}
+    <GestureHandlerRootView style={styles.flex}>
+      <SafeAreaView style={styles.container}>
+        {/* Rank and score */}
+        <View style={styles.header}>
+          <Text style={styles.rank}>{rankLabel}</Text>
+          <View style={styles.progressTrack}>
+            <View style={[styles.progressFill, { width: `${progress}%` }]} />
+          </View>
+          <Text style={styles.score}>
+            {score} / {puzzle.max_score} · {foundWords.size} sanaa
           </Text>
-        </Pressable>
-      </View>
+        </View>
 
-      {/* Controls */}
-      <View style={styles.controls}>
-        <Pressable style={styles.controlButton} onPress={deleteLetter}>
-          <Text style={styles.controlText}>Poista</Text>
-        </Pressable>
-        <Pressable style={styles.controlButton} onPress={clearWord}>
-          <Text style={styles.controlText}>Tyhjennä</Text>
-        </Pressable>
-      </View>
+        {/* Message bar */}
+        {message ? (
+          <View style={styles.messageBar}>
+            <Text
+              style={[
+                styles.messageText,
+                messageType === 'error' && styles.messageError,
+                messageType === 'special' && styles.messageSpecial,
+              ]}
+            >
+              {message}
+            </Text>
+          </View>
+        ) : null}
 
-      {/* Puzzle info */}
-      <Text style={styles.puzzleInfo}>Peli #{puzzle.puzzle_number}</Text>
-    </SafeAreaView>
+        {/* Current word */}
+        <View style={styles.wordRow}>
+          <Text style={styles.currentWord}>{currentWord || '\u00A0'}</Text>
+        </View>
+
+        {/* Honeycomb */}
+        <Honeycomb
+          center={puzzle.center}
+          outerLetters={outerLetters}
+          onLetterPress={addLetter}
+        />
+
+        {/* Controls */}
+        <View style={styles.controls}>
+          <Pressable style={styles.controlButton} onPress={deleteLetter}>
+            <Text style={styles.controlText}>Poista</Text>
+          </Pressable>
+          <Pressable style={styles.controlButton} onPress={shuffleLetters}>
+            <Text style={styles.controlText}>Sekoita</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.controlButton, styles.submitButton]}
+            onPress={submitWord}
+          >
+            <Text style={[styles.controlText, styles.submitText]}>Syötä</Text>
+          </Pressable>
+        </View>
+
+        {/* Puzzle info */}
+        <Text style={styles.puzzleInfo}>Peli #{puzzle.puzzle_number}</Text>
+      </SafeAreaView>
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     backgroundColor: '#3A3A3A',
@@ -120,15 +142,43 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#F5E6C8',
   },
+  progressTrack: {
+    width: '60%',
+    height: 4,
+    backgroundColor: '#555555',
+    borderRadius: 2,
+    marginTop: 8,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#D4A843',
+    borderRadius: 2,
+  },
   score: {
     fontSize: 14,
     color: '#CCBBAA',
-    marginTop: 4,
+    marginTop: 6,
+  },
+  messageBar: {
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  messageText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#F5E6C8',
+  },
+  messageError: {
+    color: '#FF6B6B',
+  },
+  messageSpecial: {
+    color: '#D4A843',
   },
   wordRow: {
     alignItems: 'center',
-    paddingVertical: 16,
-    minHeight: 56,
+    paddingVertical: 12,
+    minHeight: 48,
   },
   currentWord: {
     fontSize: 28,
@@ -137,37 +187,10 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     textTransform: 'uppercase',
   },
-  letters: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 12,
-    paddingVertical: 24,
-  },
-  letterButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#555555',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  centerButton: {
-    backgroundColor: '#D4A843',
-  },
-  letterText: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    textTransform: 'uppercase',
-  },
-  centerText: {
-    color: '#3A3A3A',
-  },
   controls: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 16,
+    gap: 12,
     paddingVertical: 16,
   },
   controlButton: {
@@ -176,9 +199,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: '#4A4A4A',
   },
+  submitButton: {
+    backgroundColor: '#D4A843',
+  },
   controlText: {
     fontSize: 16,
     color: '#CCBBAA',
+  },
+  submitText: {
+    color: '#3A3A3A',
+    fontWeight: '600',
   },
   puzzleInfo: {
     textAlign: 'center',
