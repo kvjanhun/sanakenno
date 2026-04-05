@@ -2,13 +2,13 @@
 
 ## Context
 
-Sanakenno is a Finnish word puzzle game currently running as a React 19 web app with PWA support. The goal is to build truly native iOS and Android apps using React Native, not a WebView wrapper.
+Sanakenno is a Finnish word puzzle game currently running as a React 19 web app with PWA support. The goal of this plan is to build truly native iOS and Android apps using React Native, not a WebView wrapper. Web version of the game will continue to exist alongside the native apps.
 
-This project should also serve as a showcase of engineering skill and as a learning project for React Native and mobile development. The architecture should be clean and idiomatic, but should not chase purity at the cost of unnecessary churn.
+This project should also serve as a showcase of engineering skill and as a learning project for React Native and mobile development. The architecture should be clean and idiomatic, but should not chase purity at the cost of unnecessary churn. End product should look like a well-crafted native app, not a web app ported to React Native.
 
 The backend stays as-is for now: Hono + SQLite serving the same API to all clients.
 
-For the first mobile version, progress remains device-local. Cross-device identity, sync, and user accounts are explicitly out of scope for this migration and can be added later as a separate capability.
+For the first mobile version, progress / achievements remain device-local. Cross-device identity, sync, and user accounts are explicitly out of scope for this migration and will be added later as a separate capability.
 
 ---
 
