@@ -8,7 +8,7 @@ export { ErrorBoundary } from 'expo-router';
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
-      <StatusBar style="light" />
+      <StatusBar style="auto" />
       <Stack screenOptions={{ headerShown: false }} />
     </SafeAreaProvider>
   );

@@ -1,18 +1,21 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Polygon, Text as SvgText } from 'react-native-svg';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
+  runOnJS,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import * as Haptics from 'expo-haptics';
+import type { Theme } from '../theme';
 
 interface HoneycombProps {
   center: string;
   outerLetters: string[];
   onLetterPress: (letter: string) => void;
+  theme: Theme;
 }
 
 interface HexCell {
@@ -28,11 +31,6 @@ const DY = R * 1.5;
 const CX = 150;
 const CY = 150;
 const HEX_R = 46;
-
-const OUTER_FILL = '#555555';
-const CENTER_FILL = '#D4A843';
-const TEXT_COLOR = '#FFFFFF';
-const CENTER_TEXT_COLOR = '#3A3A3A';
 
 /** Generate SVG points string for a pointy-top hexagon. */
 function hexPoints(cx: number, cy: number, r: number): string {
@@ -64,11 +62,20 @@ function computeHexes(center: string, outerLetters: string[]): HexCell[] {
 function HexButton({
   hex,
   onPress,
+  fillColor,
+  textColor,
 }: {
   hex: HexCell;
   onPress: (letter: string) => void;
+  fillColor: string;
+  textColor: string;
 }) {
   const scale = useSharedValue(1);
+
+  const handlePress = useCallback(() => {
+    onPress(hex.letter);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }, [onPress, hex.letter]);
 
   const tap = Gesture.Tap()
     .onBegin(() => {
@@ -80,8 +87,8 @@ function HexButton({
       scale.value = withSpring(1, { damping: 12, stiffness: 300 });
     })
     .onEnd(() => {
-      onPress(hex.letter);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      'worklet';
+      runOnJS(handlePress)();
     });
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -103,10 +110,7 @@ function HexButton({
         ]}
       >
         <Svg width={HEX_R * 2} height={HEX_R * 2} viewBox="0 0 92 92">
-          <Polygon
-            points={hexPoints(46, 46, HEX_R)}
-            fill={hex.isCenter ? CENTER_FILL : OUTER_FILL}
-          />
+          <Polygon points={hexPoints(46, 46, HEX_R)} fill={fillColor} />
           <SvgText
             x="46"
             y="46"
@@ -114,7 +118,7 @@ function HexButton({
             alignmentBaseline="central"
             fontSize="24"
             fontWeight="600"
-            fill={hex.isCenter ? CENTER_TEXT_COLOR : TEXT_COLOR}
+            fill={textColor}
           >
             {hex.letter.toUpperCase()}
           </SvgText>
@@ -128,6 +132,7 @@ export function Honeycomb({
   center,
   outerLetters,
   onLetterPress,
+  theme,
 }: HoneycombProps) {
   const hexes = useMemo(
     () => computeHexes(center, outerLetters),
@@ -137,7 +142,13 @@ export function Honeycomb({
   return (
     <View style={styles.container}>
       {hexes.map((hex, i) => (
-        <HexButton key={i} hex={hex} onPress={onLetterPress} />
+        <HexButton
+          key={i}
+          hex={hex}
+          onPress={onLetterPress}
+          fillColor={hex.isCenter ? theme.accent : theme.hexHi}
+          textColor={hex.isCenter ? theme.hexCenterText : theme.textPrimary}
+        />
       ))}
     </View>
   );

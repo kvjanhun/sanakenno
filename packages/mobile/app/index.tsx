@@ -11,8 +11,11 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useGameStore } from '../src/store/useGameStore';
 import { Honeycomb } from '../src/components/Honeycomb';
 import { rankForScore, progressToNextRank } from '@sanakenno/shared';
+import { useTheme } from '../src/theme';
 
 export default function GameScreen() {
+  const theme = useTheme();
+
   const puzzle = useGameStore((s) => s.puzzle);
   const loading = useGameStore((s) => s.loading);
   const fetchError = useGameStore((s) => s.fetchError);
@@ -34,12 +37,16 @@ export default function GameScreen() {
 
   if (loading || !puzzle) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: theme.bgPrimary }]}
+      >
         <View style={styles.center}>
           {fetchError ? (
-            <Text style={styles.error}>{fetchError}</Text>
+            <Text style={[styles.error, { color: '#FF6B6B' }]}>
+              {fetchError}
+            </Text>
           ) : (
-            <ActivityIndicator size="large" color="#F5E6C8" />
+            <ActivityIndicator size="large" color={theme.accent} />
           )}
         </View>
       </SafeAreaView>
@@ -51,14 +58,39 @@ export default function GameScreen() {
 
   return (
     <GestureHandlerRootView style={styles.flex}>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: theme.bgPrimary }]}
+      >
+        {/* Title bar */}
+        <View style={[styles.titleBar, { borderBottomColor: theme.border }]}>
+          <Text style={[styles.title, { color: theme.textPrimary }]}>
+            Sanakenno
+            <Text style={{ fontWeight: '400' }}> — </Text>
+            <Text style={{ color: theme.accent, fontWeight: '400' }}>
+              #{puzzle.puzzle_number + 1}
+            </Text>
+          </Text>
+        </View>
+
         {/* Rank and score */}
         <View style={styles.header}>
-          <Text style={styles.rank}>{rankLabel}</Text>
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${progress}%` }]} />
+          <Text style={[styles.rank, { color: theme.textPrimary }]}>
+            {rankLabel}
+          </Text>
+          <View
+            style={[
+              styles.progressTrack,
+              { backgroundColor: theme.bgSecondary },
+            ]}
+          >
+            <View
+              style={[
+                styles.progressFill,
+                { width: `${progress}%`, backgroundColor: theme.accent },
+              ]}
+            />
           </View>
-          <Text style={styles.score}>
+          <Text style={[styles.score, { color: theme.textSecondary }]}>
             {score} / {puzzle.max_score} · {foundWords.size} sanaa
           </Text>
         </View>
@@ -69,8 +101,14 @@ export default function GameScreen() {
             <Text
               style={[
                 styles.messageText,
-                messageType === 'error' && styles.messageError,
-                messageType === 'special' && styles.messageSpecial,
+                {
+                  color:
+                    messageType === 'error'
+                      ? '#FF6B6B'
+                      : messageType === 'special'
+                        ? theme.accent
+                        : theme.textPrimary,
+                },
               ]}
             >
               {message}
@@ -80,7 +118,9 @@ export default function GameScreen() {
 
         {/* Current word */}
         <View style={styles.wordRow}>
-          <Text style={styles.currentWord}>{currentWord || '\u00A0'}</Text>
+          <Text style={[styles.currentWord, { color: theme.textPrimary }]}>
+            {currentWord || '\u00A0'}
+          </Text>
         </View>
 
         {/* Honeycomb */}
@@ -88,26 +128,54 @@ export default function GameScreen() {
           center={puzzle.center}
           outerLetters={outerLetters}
           onLetterPress={addLetter}
+          theme={theme}
         />
 
         {/* Controls */}
         <View style={styles.controls}>
-          <Pressable style={styles.controlButton} onPress={deleteLetter}>
-            <Text style={styles.controlText}>Poista</Text>
-          </Pressable>
-          <Pressable style={styles.controlButton} onPress={shuffleLetters}>
-            <Text style={styles.controlText}>Sekoita</Text>
+          <Pressable
+            style={[
+              styles.controlButton,
+              { backgroundColor: theme.bgSecondary },
+            ]}
+            onPress={deleteLetter}
+          >
+            <Text style={[styles.controlText, { color: theme.textSecondary }]}>
+              Poista
+            </Text>
           </Pressable>
           <Pressable
-            style={[styles.controlButton, styles.submitButton]}
+            style={[
+              styles.controlButton,
+              { backgroundColor: theme.bgSecondary },
+            ]}
+            onPress={shuffleLetters}
+          >
+            <Text style={[styles.controlText, { color: theme.textSecondary }]}>
+              Sekoita
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[styles.controlButton, { backgroundColor: theme.accent }]}
             onPress={submitWord}
           >
-            <Text style={[styles.controlText, styles.submitText]}>Syötä</Text>
+            <Text
+              style={[
+                styles.controlText,
+                { color: '#ffffff', fontWeight: '600' },
+              ]}
+            >
+              Syötä
+            </Text>
           </Pressable>
         </View>
 
-        {/* Puzzle info */}
-        <Text style={styles.puzzleInfo}>Peli #{puzzle.puzzle_number}</Text>
+        {/* Found words count */}
+        <Text style={[styles.puzzleInfo, { color: theme.textTertiary }]}>
+          {foundWords.size > 0
+            ? `${[...foundWords].map((w) => w.toUpperCase()).join(' · ')}`
+            : ''}
+        </Text>
       </SafeAreaView>
     </GestureHandlerRootView>
   );
@@ -119,7 +187,6 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: '#3A3A3A',
     paddingHorizontal: 24,
   },
   center: {
@@ -128,36 +195,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   error: {
-    color: '#FF6B6B',
     fontSize: 16,
     textAlign: 'center',
   },
+  titleBar: {
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
   header: {
     alignItems: 'center',
-    paddingTop: 16,
-    paddingBottom: 8,
+    paddingTop: 12,
+    paddingBottom: 4,
   },
   rank: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '600',
-    color: '#F5E6C8',
   },
   progressTrack: {
     width: '60%',
     height: 4,
-    backgroundColor: '#555555',
     borderRadius: 2,
     marginTop: 8,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#D4A843',
     borderRadius: 2,
   },
   score: {
     fontSize: 14,
-    color: '#CCBBAA',
     marginTop: 6,
   },
   messageBar: {
@@ -167,13 +238,6 @@ const styles = StyleSheet.create({
   messageText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#F5E6C8',
-  },
-  messageError: {
-    color: '#FF6B6B',
-  },
-  messageSpecial: {
-    color: '#D4A843',
   },
   wordRow: {
     alignItems: 'center',
@@ -183,7 +247,6 @@ const styles = StyleSheet.create({
   currentWord: {
     fontSize: 28,
     fontWeight: '600',
-    color: '#FFFFFF',
     letterSpacing: 2,
     textTransform: 'uppercase',
   },
@@ -197,23 +260,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
-    backgroundColor: '#4A4A4A',
-  },
-  submitButton: {
-    backgroundColor: '#D4A843',
   },
   controlText: {
     fontSize: 16,
-    color: '#CCBBAA',
-  },
-  submitText: {
-    color: '#3A3A3A',
-    fontWeight: '600',
   },
   puzzleInfo: {
     textAlign: 'center',
     fontSize: 12,
-    color: '#888888',
     marginTop: 'auto',
     paddingBottom: 8,
   },
