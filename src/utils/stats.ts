@@ -1,8 +1,8 @@
 /**
- * Player statistics computation — pure functions, no DOM access.
+ * Player statistics computation — pure functions, no DOM or platform access.
  *
- * Tracks per-puzzle play records in localStorage and derives
- * streaks, rank distribution, and average completion.
+ * Tracks per-puzzle play records and derives streaks, rank
+ * distribution, and average completion.
  *
  * @module src/utils/stats
  */
@@ -21,7 +21,7 @@ export interface StatsRecord {
   elapsed_ms: number;
 }
 
-/** Top-level stats shape stored in localStorage. */
+/** Top-level stats shape stored via platform storage. */
 export interface PlayerStats {
   records: StatsRecord[];
   version: 1;

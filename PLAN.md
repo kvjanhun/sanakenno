@@ -231,10 +231,24 @@ Tasks:
 4. Refactor the web app to consume those abstractions without changing behavior
 5. Keep tests green throughout
 
-Expected output of Phase 0:
-- A clear list of what belongs in `packages/shared`
-- A clear list of what must stay platform-specific
-- A web app already using the future architecture in-place
+**Phase 0 result — validated shared boundary:**
+
+Moves to `packages/shared`:
+- `src/utils/scoring.ts` — pure, no deps beyond TS
+- `src/utils/hint-data.ts` — pure, no deps beyond TS
+- `src/utils/stats.ts` — pure, imports only scoring.ts
+- `src/utils/kotus.ts` — pure, no deps
+- `src/platform/types.ts` — platform service interfaces
+
+Stays platform-specific (web):
+- `src/platform/web.ts` — browser implementations (localStorage, crypto.subtle, clipboard, import.meta.env)
+- `src/utils/storage.ts` — thin delegate to platform storage (can be inlined by consumers)
+- `src/utils/hash.ts` — thin delegate to platform crypto (can be inlined by consumers)
+- `src/store/useGameStore.ts` — imports platform services; the store itself is mostly shareable but needs the delegates and some UI state split
+- `src/hooks/useGameTimer.ts` — browser visibility/focus events
+- `src/hooks/useMidnightRollover.ts` — browser page reload
+- `src/hooks/useKeyboard.ts` — browser keydown listener
+- All `src/components/` — web UI, stays in web package
 
 ### Phase 1: Workspace Restructure
 **Goal**: move to a pnpm workspace after the shared boundary is proven.
