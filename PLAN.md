@@ -10,6 +10,8 @@ The backend stays as-is for now: Hono + SQLite serving the same API to all clien
 
 For the first mobile version, progress / achievements remain device-local. Cross-device identity, sync, and user accounts are explicitly out of scope for this migration and will be added later as a separate capability.
 
+Initial rollout should be iOS-first. Finish the native app for iPhone, validate it on simulator and a personal device, and defer Android-specific product and release work until the iOS path is solid.
+
 ---
 
 ## Architecture Decisions
@@ -18,10 +20,37 @@ For the first mobile version, progress / achievements remain device-local. Cross
 Use Expo SDK 53+ with Continuous Native Generation via `npx expo prebuild`.
 
 Reasons:
-- Most practical modern path for an Expo-first app that still needs real native capabilities.
-- Strong developer experience with a path to native configuration when needed.
-- Supports needed native modules: crypto, haptics, SVG rendering, safe area handling, Reanimated.
-- Fits the goal of early simulator and real-device testing.
+- It is the most practical modern path for an Expo-first React Native app that still needs real native capabilities.
+- It keeps the developer experience strong while leaving a path to native configuration when needed.
+- It supports the native modules this app is likely to need, including crypto, haptics, SVG rendering, safe area handling, and Reanimated.
+- It fits the goal of early simulator and real-device testing.
+
+Practical note for the current stage:
+- Early iOS development should use the local Xcode build path on macOS so the app can be tested on simulator and a personal iPhone before enrolling in the paid Apple Developer Program.
+- EAS iOS device builds, TestFlight, and App Store distribution should be treated as later release work.
+
+### iOS-First Rollout
+Treat the first mobile release as an iPhone release, not a simultaneous iOS + Android launch.
+
+Reasons:
+- The current development environment already supports native iOS work end-to-end.
+- It reduces release complexity for a solo developer.
+- The plan already uses iOS as the primary design reference.
+- It keeps Android work additive instead of forcing parallel platform delivery too early.
+
+Constraints:
+- Keep shared domain logic platform-neutral so Android remains a later client, not a rewrite.
+- Do not introduce iOS-specific assumptions into `packages/shared`.
+- Android parity remains a planned phase after the iOS app is stable.
+
+### Agent Guidance For Paid Program Boundaries
+When implementing any phase or task that requires Apple distribution tooling or paid-program-only capabilities, the implementing agent must state explicitly: "You will need the paid Apple Developer Program for this."
+
+This applies in particular to:
+- EAS iOS device builds
+- TestFlight setup
+- App Store Connect distribution setup
+- Final release signing and submission work
 
 ### pnpm Workspace Mono-repo
 Convert the repo to a pnpm workspace mono-repo.
@@ -37,59 +66,105 @@ sanakenno/
   pnpm-workspace.yaml
 ```
 
-Why packages: the shared boundary becomes explicit, both clients depend on the same module, and it reduces accidental coupling between web and mobile code.
+Why use packages:
+- The shared boundary becomes explicit instead of being an informal set of copied files.
+- Web and mobile both depend on the same shared module.
+- It is a better showcase architecture for a multi-client codebase.
+- It reduces accidental coupling between web and mobile code.
 
-Why pnpm: practical and common choice for multi-package repositories with clean workspace dependency handling.
+Why use pnpm:
+- It is a practical and common choice for multi-package repositories.
+- It handles workspace dependencies cleanly.
+- It makes the repository structure look intentional and idiomatic for a multi-app codebase.
 
 ### Shared Domain, Not Shared UI
-Share domain logic and types, not UI components.
+The goal is to share domain logic and types, not UI components.
+
+This is a native-first rewrite for mobile. iOS and Android UI should be designed as native apps, not as the web app translated into React Native components.
 
 `packages/shared` should contain:
 - Pure game logic: scoring, hint derivation, stats math, rank thresholds, word utilities
-- Shared TypeScript types and constants
+- Shared TypeScript types
+- Shared constants
 - API client and shared data mapping logic where useful
 - Platform interfaces and adapter contracts
 
 `packages/shared` should not contain:
-- Any UI (web or React Native)
-- Navigation, theme implementation, or platform-specific lifecycle code
+- Web UI
+- React Native UI
+- Navigation components
+- Theme implementation details
+- Platform-specific lifecycle code
 
-The Zustand store should not be shared wholesale. The current store mixes domain state with UI state and platform behavior. Share domain logic and pure state transitions; keep platform-specific UI state (modal visibility, theme, gestures, navigation) in each platform app. Keep platform services behind interfaces.
+### Shared Store Logic Only Where It Actually Helps
+Do not assume the entire Zustand store should be shared.
+
+The current store mixes domain state with UI state and platform behavior. The better target is:
+- Share domain logic and pure state transitions where useful
+- Keep platform-specific UI state in the platform app
+- Keep platform services behind interfaces
+
+Likely shareable:
+- Puzzle loading orchestration
+- Word submission rules
+- Score calculation and rank derivation
+- Persistence payload shapes
+- Share text formatting
+
+Likely platform-specific:
+- Modal visibility and presentation state
+- Theme state and appearance integration
+- Press and gesture state
+- App lifecycle integration
+- Navigation state
 
 ### Platform Services Boundary
 Introduce explicit platform services instead of letting browser or native APIs leak into domain code.
 
-At minimum: `storage`, `crypto`, `share`, `config`, `clock`, `lifecycle`.
+At minimum:
+- `storage`
+- `crypto`
+- `share`
+- `config`
+- `clock`
+- `lifecycle`
 
-The current web app relies on `localStorage`, `crypto.subtle`, `crypto.randomUUID()`, clipboard APIs, `window.location.reload()`, document visibility, and Vite env access — all of which need platform-specific adapters.
+This matters because the current web app relies on browser-specific behavior such as `localStorage`, `crypto.subtle`, `crypto.randomUUID()`, clipboard APIs, `window.location.reload()`, document visibility, and Vite env access.
 
-### Navigation Is Foundational
+### Navigation Is Foundational, Not Optional
 Use Expo Router from the beginning.
 
-The mobile app is a native rethink of the product structure. Archive, achievements, rules, stats, and settings are part of the app's information architecture — not web overlays in a mobile frame. A router from the start gives a clean route model, proper modal/sheet/stack handling, typed routes, deep-linking, and a foundation for future auth flows.
+The motivation is not just that Expo Router is standard in modern Expo. The real reason is that the mobile app is intended to be a native rethink of the product structure. Archive, achievements, rules, stats, and similar sections are not web overlays in a mobile frame; they are part of the app's information architecture.
+
+Using a router from the start gives:
+- A clean route model for a native app structure
+- Better handling of modal, sheet, stack, and detail flows
+- Typed route definitions and deep-linking support
+- A clearer foundation for future account and auth flows
 
 ### Mobile UI Direction
+The mobile app should be designed as a native iOS app first, with Android parity added deliberately afterward.
 
-Design iOS first, then add Android parity deliberately.
-
-#### iOS App Structure
-
-**No title bar.** The web app's fixed header with title, icons, and theme toggle does not exist in the iOS app. Instead:
-
-- **Native menu** (Liquid Glass context menu or equivalent native pattern) provides access to: Archive, Stats, Rules, and Settings.
-- **Settings** includes at minimum: appearance mode (Light / Dark / System).
-- **Main gameplay view** contains, top to bottom: score display with rank and progress bar, hint buttons, the honeycomb grid, and the action buttons (delete, shuffle, submit).
-- **Found words** need a native-idiomatic presentation — not CSS pills that expand into a list. Explore patterns like a collapsible inline section, a pull-up drawer, a dedicated bottom sheet, or a scrollable chip tray. The right answer should feel like it belongs in an iOS app.
-
-#### Android Direction
-
-Android should look and feel like an Android app, not an iOS port. Material Design 3 conventions apply: bottom sheets use Material styling, navigation follows Android patterns, elevation replaces iOS shadows, and haptic patterns match Android expectations. The underlying game logic and state management remain shared; the UI layer diverges where the platforms diverge.
+That means:
+- Navigation, screen structure, and modal presentation are designed for native use
+- Components like rules, stats, archive, and achievements are rethought instead of ported mechanically
+- Shared UI is not a goal by itself
+- Android should still feel native on Android, but iOS can be the primary design reference during early phases
 
 ### Hexagon Grid
-Use `react-native-svg` for the honeycomb. The visual structure is a good candidate for conceptual reuse, but the implementation is a native component rewrite — no pointer events, CSS transforms, or browser touch hacks carried over. Press feedback and animation use Reanimated.
+Use `react-native-svg` for the honeycomb.
+
+The visual structure is a good candidate for conceptual reuse, but the implementation should be treated as a native component rewrite. Pointer events, CSS transforms, and browser touch hacks should not be carried over mechanically.
+
+Press feedback and animation should use Reanimated.
 
 ### Sharing
-Use the React Native Share API for plain text status sharing. Add clipboard copy only if it improves the mobile UX. Do not use `expo-sharing` as the primary plain-text share mechanism.
+Treat native share and clipboard copy as separate capabilities.
+
+Initial plan:
+- Use the React Native Share API for plain text status sharing
+- Add clipboard copy only if it still improves the mobile UX
+- Do not use `expo-sharing` as the primary plain-text share mechanism
 
 ---
 
@@ -107,10 +182,12 @@ main
   └── ...
 ```
 
-- `main` remains deployable for the web app at all times.
-- Prefer short-lived feature branches over one long-lived mobile branch.
-- Merge structural and mobile-safe work to `main` as soon as it is validated and does not destabilize the web app.
-- Keep native app milestones visible via branches and tags.
+Guidelines:
+- `main` should remain in a deployable state for the web app
+- Prefer short-lived feature branches over one very long-lived mobile branch
+- Merge structural work as soon as it is validated
+- Merge mobile-safe incremental work to `main` when it does not destabilize the web app
+- Keep native app milestones visible via branches and tags, not just one giant integration branch
 
 ---
 
@@ -130,19 +207,7 @@ main
 | `pnpm` workspaces | Multi-package repo management |
 
 Additional likely dependency:
-- A UUID solution for device-local identity, instead of assuming `crypto.randomUUID()` maps directly.
-
----
-
-## BDD-First Development
-
-Every phase of this migration follows BDD-first discipline: write or update feature specs before implementing the feature. This is not a separate testing phase — it is how each phase works.
-
-- **New mobile behavior**: write the `.feature` file first, agree on the scenario, then implement.
-- **Shared behavior already covered by web specs**: tag existing scenarios as shared; add mobile-only scenarios for platform-specific behavior.
-- **Each phase deliverable includes its feature specs.** A phase is not complete until the scenarios that describe its behavior exist and pass.
-
-This means mobile feature coverage grows incrementally with each phase, not as a late bolt-on. By the end of Phase 6, the mobile app should have full BDD coverage matching its feature set.
+- A UUID solution for device-local identity if needed, instead of assuming web `crypto.randomUUID()` behavior maps directly.
 
 ---
 
@@ -151,21 +216,30 @@ This means mobile feature coverage grows incrementally with each phase, not as a
 ### Phase 0: Extract Shared Domain In-Place
 **Goal**: find and validate the real shared boundary before restructuring the repository.
 
-This phase happens before workspace restructuring to reduce uncertainty first. The biggest risk is incorrectly guessing what can be shared. Extracting in-place keeps the web app stable while the portable domain layer is carved out.
+This phase happens before workspace restructuring. The purpose is to reduce uncertainty first.
+
+Why this comes first:
+- The biggest risk is not folder layout. It is incorrectly guessing what can actually be shared between web and mobile.
+- Extracting shared logic first gives a concrete architecture to organize around.
+- It avoids paying the cost of a large repo move before the shared boundary is proven.
+- It keeps the web app stable while the portable domain layer is carved out.
 
 Tasks:
-1. Extract pure domain logic into clearly separated modules
+1. Extract pure domain logic from the current web app into clearly separated modules
 2. Identify and isolate browser-only assumptions
 3. Define platform service interfaces for storage, crypto, share, config, clock, and lifecycle
 4. Refactor the web app to consume those abstractions without changing behavior
 5. Keep tests green throughout
 
-Expected output:
-- A clear list of what belongs in `packages/shared` vs. what stays platform-specific
+Expected output of Phase 0:
+- A clear list of what belongs in `packages/shared`
+- A clear list of what must stay platform-specific
 - A web app already using the future architecture in-place
 
 ### Phase 1: Workspace Restructure
 **Goal**: move to a pnpm workspace after the shared boundary is proven.
+
+Split into small PRs:
 
 **PR 1a - Workspace and shared package setup**
 1. Add `pnpm-workspace.yaml`
@@ -189,82 +263,101 @@ Expected output:
 
 Tasks:
 1. Set up Expo app foundation, native dev build flow, and routing scaffold
-2. Define mobile platform adapters for storage, crypto, share, config, clock, and lifecycle
-3. Create the initial navigation structure using Expo Router
-4. Fetch puzzle data and render a minimal playable screen shell
-5. Validate on iOS simulator and a real iPhone as early as possible
+2. Set up the local iOS build path via Expo prebuild + Xcode for simulator and personal-device testing
+3. Define mobile platform adapters for storage, crypto, share, config, clock, and lifecycle
+4. Create the initial navigation structure using Expo Router
+5. Fetch puzzle data and render a minimal playable screen shell
+6. Validate on iOS simulator and a real iPhone as early as possible
 
-The goal is not visual parity — it is proving the shared domain and native foundation work on device.
+This phase should produce a running native app quickly. The goal is not visual parity. The goal is proving that the shared domain and native foundation actually work on device.
+
+For now, prefer local iOS builds over EAS device builds so development can continue without paid enrollment.
 
 ### Phase 3: Core Gameplay
 **Goal**: native letter entry, word building, submission, scoring, and persistence.
 
 Tasks:
-1. Write mobile-specific feature scenarios for input, submission, and scoring
-2. Implement the honeycomb using `react-native-svg` with Reanimated press feedback and haptics
-3. Design native input interaction (do not port browser keyboard assumptions)
-4. Wire the gameplay flow to shared domain logic
-5. Persist game state locally using MMKV
-6. Validate the full loop on simulator and device
+1. Implement the honeycomb as a native React Native component using `react-native-svg`
+2. Design native input interaction instead of porting browser keyboard assumptions directly
+3. Wire the gameplay flow to shared domain logic
+4. Persist game state locally using MMKV
+5. Validate the full loop on simulator and device
+
+Notes:
+- Do not assume the web keyboard model maps directly to mobile
+- Press feedback, animations, and haptics belong here, not as late polish only
 
 ### Phase 4: Lifecycle and Daily Puzzle Behavior
 **Goal**: native handling of timer, app backgrounding, and puzzle rollover.
 
 Tasks:
-1. Write mobile-only feature scenarios for backgrounding, timer pause/resume, and midnight rollover
-2. Implement lifecycle handling with app-state-aware services
-3. Rework timer logic around native lifecycle semantics
-4. Rework midnight rollover around native state refresh instead of page reload
-5. Validate persistence, restoration, and day changes through manual and automated tests
+1. Implement lifecycle handling with app-state-aware services
+2. Rework timer logic around native lifecycle semantics
+3. Rework midnight rollover around native state refresh semantics instead of page reload
+4. Validate persistence, restoration, and day changes through manual and automated tests
 
-This phase is separate because the current web behavior depends heavily on browser visibility and reload semantics.
+This phase is separate because the current web behavior depends heavily on browser visibility and reload behavior.
 
 ### Phase 5: Native Navigation and App Structure
-**Goal**: implement the iOS app's information architecture and Android equivalent.
+**Goal**: implement the native app's actual information architecture.
 
 Tasks:
-1. Implement the iOS native menu (Liquid Glass / context menu) for Archive, Stats, Rules, Settings
-2. Build the Settings screen with appearance mode selection
-3. Finalize route structure and modal/sheet/stack presentation patterns
-4. Build Android navigation equivalent following Material Design 3 patterns
-5. Ensure the route model supports long-term direction (future auth, deep links)
+1. Finalize route structure for gameplay, archive, achievements, rules, stats, and related flows
+2. Implement the chosen modal, sheet, and stack presentation patterns
+3. Build the app shell, menus, and structural screens in a native style
+4. Ensure the route model matches the long-term direction of the app
+
+This phase is intentionally not framed as porting web modals. The mobile app should have its own UI structure.
 
 ### Phase 6: Feature Parity Through Native Components
-**Goal**: bring over product capabilities with native UI per platform.
+**Goal**: bring over the product capabilities while designing native UI per platform.
 
-Workstreams:
-- Archive browsing and puzzle selection
-- Stats display and streak visualization
+Likely workstreams:
+- Archive
+- Stats
 - Achievements
 - Rules and help
-- Rank progress and sharing (native share sheet)
+- Rank progress and sharing
 - Hint surfaces
-- Found words — native-idiomatic presentation (resolve design during this phase)
+- Found words and progress review
 
-Each is a native feature implementation backed by shared logic. Write or update feature scenarios for each workstream before implementing.
+Each should be treated as a native feature implementation backed by shared logic where appropriate.
 
 ### Phase 7: Native Polish and Android Parity
 **Goal**: make the app feel intentional and native on both platforms.
 
 Tasks:
-1. Refine motion, haptics, typography, spacing, and transitions on iOS
-2. Add Android-specific adjustments deliberately (elevation, Material components, Android haptics)
-3. Profile performance on simulator and real devices
-4. Finalize assets, icons, and launch experience
+1. Refine motion, haptics, typography, spacing, and transitions
+2. Do iOS-specific presentation polish first
+3. Start Android implementation after the iOS app is stable enough that platform-specific work will not churn shared boundaries
+4. Add Android-specific adjustments deliberately rather than inheriting iOS decisions blindly
+5. Profile performance on simulator and real devices
+6. Finalize assets, icons, and launch experience
 
 ### Phase 8: Release Preparation
-**Goal**: prepare builds for distribution.
+**Goal**: prepare builds for distribution once the app is solid.
 
 Tasks:
-1. Validate production builds for iOS and Android
-2. Prepare EAS Build configuration
-3. Run release-quality smoke testing
-4. Prepare TestFlight and Android internal testing
-5. Document release and maintenance workflow
+1. Join the Apple Developer Program when distribution work is about to begin
+2. Prepare EAS Build configuration for release workflows
+3. Validate production iOS builds first
+4. Run release-quality smoke testing for iOS
+5. Prepare TestFlight and App Store Connect submission flow
+6. Add Android release preparation later when the Android app reaches parity
+7. Document release and maintenance workflow
 
 ---
 
 ## Testing Strategy
+
+Keep the test strategy strong, but do not start by expanding into full multi-platform E2E coverage.
+
+### Core Principles
+- Keep Vitest as the primary unit test runner
+- Keep feature files as the behavioral source of truth
+- Split shared behavior from platform-specific behavior explicitly
+- Focus on high-confidence unit, API, and feature logic coverage first
+- Add heavier end-to-end coverage only if the lighter layers prove insufficient
 
 ### Planned Layers
 
@@ -276,30 +369,39 @@ Tasks:
 | Component / Integration | React Testing Library variants as needed | Targeted web/mobile interaction coverage |
 
 ### BDD Restructure
-Feature files remain the source of truth, reorganized into shared, web-only, and mobile-only scenarios.
+Feature files remain the source of truth, but they should be reorganized conceptually into:
+- Shared scenarios
+- Web-only scenarios
+- Mobile-only scenarios
 
 Examples:
-- *word scores correctly* — shared
-- *player reloads the page* — web-only
-- *timer reacts to app backgrounding* — mobile-only
-- *PWA install and service worker* — web-only
+- word scores correctly is shared behavior
+- player reloads the page is web-only behavior
+- timer reacts to app backgrounding is mobile-only behavior
+- PWA install and service worker scenarios remain web-only
 
 ### E2E Position
-Do not make broad E2E coverage a gate for the initial mobile migration. Keep existing web E2E where valuable; add mobile E2E only when there is a clear return on maintenance cost.
+Do not make broad E2E coverage a gate for the initial mobile migration.
+
+Possible later additions:
+- Keep existing web E2E where it is valuable
+- Add mobile E2E only when there is a clear return on maintenance cost
 
 ---
 
 ## Critical Refactor Targets
 
-### Highest Priority (platform boundary extraction)
+The main goal is not to port files blindly. It is to extract the right boundaries.
+
+### Highest Priority
 - `src/store/useGameStore.ts`: separate domain logic from UI and platform assumptions
-- `src/hooks/useGameTimer.ts`: replace browser lifecycle with lifecycle abstraction
-- `src/hooks/useMidnightRollover.ts`: replace page reload with native refresh semantics
-- `src/hooks/useKeyboard.ts`: replace browser keydown with native input design
+- `src/hooks/useGameTimer.ts`: replace browser lifecycle assumptions with lifecycle abstraction
+- `src/hooks/useMidnightRollover.ts`: replace page reload semantics with native refresh semantics
+- `src/hooks/useKeyboard.ts`: replace browser keydown assumptions with native input design
 - `src/utils/storage.ts`: move behind storage service interface
 - `src/utils/hash.ts`: move behind crypto service interface
 
-### High Priority UI Rewrites (native component design)
+### High Priority UI Rewrites
 - `src/components/Honeycomb/Honeycomb.tsx`
 - `src/components/RankProgress.tsx`
 - `src/components/HintPanels.tsx`
@@ -307,7 +409,7 @@ Do not make broad E2E coverage a gate for the initial mobile migration. Keep exi
 - `src/components/StatsModal.tsx`
 - `src/components/ThemeToggle.tsx`
 
-### Good Shared Candidates (move to `packages/shared` verbatim)
+### Good Shared Candidates
 - `src/utils/scoring.ts`
 - `src/utils/hint-data.ts`
 - `src/utils/stats.ts`
@@ -319,6 +421,17 @@ Do not make broad E2E coverage a gate for the initial mobile migration. Keep exi
 
 Keep tasks small enough to be verifiable in one focused session.
 
-Preferred slice size: one boundary extraction, one platform service, one navigation flow, one gameplay capability, or one native screen family.
+- Phase 0: small refactors with no behavior change
+- Phase 1: small structural PRs with full verification
+- Phase 2: early mobile foundation with rapid device validation
+- Phase 3 onward: feature slices that can be tested independently
+
+Preferred slice size:
+- one boundary extraction
+- one platform service
+- one navigation flow
+- one gameplay capability
+- one native screen family
 
 This project is better served by many small, defensible steps than by large speculative rewrites.
+
