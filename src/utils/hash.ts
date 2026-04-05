@@ -1,7 +1,11 @@
-export async function hashWord(word: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(word);
-  const buffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(buffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+/**
+ * Word hashing — delegates to the platform crypto service.
+ *
+ * @module src/utils/hash
+ */
+
+import { crypto } from '../platform/index.js';
+
+export function hashWord(word: string): Promise<string> {
+  return crypto.hashSHA256(word);
 }

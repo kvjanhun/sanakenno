@@ -2,15 +2,16 @@
  * Central Zustand store for Sanakenno game state.
  *
  * Manages puzzle data, word submission, scoring, UI flags, and
- * localStorage persistence keyed by puzzle number.
+ * persistence keyed by puzzle number via platform services.
  *
  * @module src/store/useGameStore
  */
 
 import { create } from 'zustand';
 
-/** API base path, derived from Vite's `base` config (e.g. `/sanakenno-react` in production). */
-const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+import { storage, crypto, share, config } from '../platform/index.js';
+
+const API_BASE = config.apiBase;
 
 import { hashWord } from '../utils/hash.js';
 import { scoreWord, recalcScore, rankForScore } from '../utils/scoring.js';
@@ -155,16 +156,16 @@ function storageKey(puzzleNumber: number): string {
 }
 
 /**
- * Get or create a stable device ID from localStorage.
+ * Get or create a stable device ID.
  * Combined with puzzle_number, this gives a consistent session ID
  * for the same player on the same puzzle across refreshes.
  */
 function getDeviceId(): string {
   const key = 'sanakenno_device_id';
-  let id = localStorage.getItem(key);
+  let id = storage.getRaw(key);
   if (!id) {
     id = crypto.randomUUID();
-    localStorage.setItem(key, id);
+    storage.setRaw(key, id);
   }
   return id;
 }
@@ -175,12 +176,8 @@ function getDeviceId(): string {
  */
 async function buildSessionId(puzzleNumber: number): Promise<string> {
   const input = `${getDeviceId()}:${puzzleNumber}`;
-  const data = new TextEncoder().encode(input);
-  const hash = await crypto.subtle.digest('SHA-256', data);
-  const bytes = new Uint8Array(hash);
-  return Array.from(bytes.slice(0, 16))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
+  const fullHash = await crypto.hashSHA256(input);
+  return fullHash.slice(0, 32);
 }
 
 const LEGACY_KEY = 'sanakenno_state';
@@ -623,12 +620,10 @@ export const useGameStore = create<GameState>()((set, get) => ({
     lines.push('sanakenno.fi');
 
     const text = lines.join('\n');
-    try {
-      await navigator.clipboard.writeText(text);
+    const copied = await share.copyToClipboard(text);
+    if (copied) {
       set({ shareCopied: true });
       setTimeout(() => set({ shareCopied: false }), 2000);
-    } catch {
-      // Clipboard API may be unavailable; fail silently
     }
   },
 
