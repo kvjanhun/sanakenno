@@ -9,11 +9,17 @@ import { WordInput } from '../src/components/WordInput';
 import { GameControls } from '../src/components/GameControls';
 import { RankProgress } from '../src/components/RankProgress';
 import { FoundWords } from '../src/components/FoundWords';
+import { useGameTimer } from '../src/hooks/useGameTimer';
+import { useMidnightRollover } from '../src/hooks/useMidnightRollover';
 import { rankForScore, progressToNextRank } from '@sanakenno/shared';
 import { useTheme } from '../src/theme';
 
 export default function GameScreen() {
   const theme = useTheme();
+  const timer = useGameTimer();
+
+  // Midnight rollover: refetch puzzle when a new day starts
+  useMidnightRollover();
 
   const puzzle = useGameStore((s) => s.puzzle);
   const loading = useGameStore((s) => s.loading);
@@ -25,6 +31,8 @@ export default function GameScreen() {
   const foundWords = useGameStore((s) => s.foundWords);
   const message = useGameStore((s) => s.message);
   const messageType = useGameStore((s) => s.messageType);
+  const startedAt = useGameStore((s) => s.startedAt);
+  const totalPausedMs = useGameStore((s) => s.totalPausedMs);
   const fetchPuzzle = useGameStore((s) => s.fetchPuzzle);
   const addLetter = useGameStore((s) => s.addLetter);
   const deleteLetter = useGameStore((s) => s.deleteLetter);
@@ -34,6 +42,15 @@ export default function GameScreen() {
   useEffect(() => {
     fetchPuzzle();
   }, [fetchPuzzle]);
+
+  // Start or restore timer when puzzle loads
+  useEffect(() => {
+    if (puzzle && startedAt) {
+      timer.restore(startedAt, totalPausedMs);
+    } else if (puzzle) {
+      timer.start();
+    }
+  }, [puzzle, startedAt, totalPausedMs, timer]);
 
   if (loading || !puzzle) {
     return (

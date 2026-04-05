@@ -27,6 +27,8 @@ interface GameState {
   message: string;
   messageType: MessageType;
   wordRejected: boolean;
+  startedAt: number | null;
+  totalPausedMs: number;
 
   fetchPuzzle: (overrideNumber?: number) => Promise<void>;
   addLetter: (letter: string) => void;
@@ -34,6 +36,7 @@ interface GameState {
   clearWord: () => void;
   submitWord: () => Promise<void>;
   shuffleLetters: () => void;
+  saveState: () => void;
 }
 
 /** Persistence key for a given puzzle number. */
@@ -52,6 +55,8 @@ export const useGameStore = create<GameState>()((set, get) => ({
   message: '',
   messageType: 'ok' as MessageType,
   wordRejected: false,
+  startedAt: null,
+  totalPausedMs: 0,
 
   fetchPuzzle: async (overrideNumber?: number) => {
     set({ loading: true, fetchError: '' });
@@ -75,17 +80,23 @@ export const useGameStore = create<GameState>()((set, get) => ({
         message: '',
         fetchError: '',
         wordRejected: false,
+        startedAt: Date.now(),
+        totalPausedMs: 0,
       });
 
       // Restore persisted state
       const saved = storage.load<{
         foundWords: string[];
         score: number;
+        startedAt?: number;
+        totalPausedMs?: number;
       }>(stateKey(data.puzzle_number));
       if (saved) {
         set({
           foundWords: new Set(saved.foundWords),
           score: saved.score,
+          startedAt: saved.startedAt ?? Date.now(),
+          totalPausedMs: saved.totalPausedMs ?? 0,
         });
       }
     } catch (err: unknown) {
@@ -196,6 +207,8 @@ export const useGameStore = create<GameState>()((set, get) => ({
     storage.save(stateKey(puzzle.puzzle_number), {
       foundWords: [...newFoundWords],
       score: newScore,
+      startedAt: state.startedAt,
+      totalPausedMs: state.totalPausedMs,
     });
   },
 
@@ -207,6 +220,17 @@ export const useGameStore = create<GameState>()((set, get) => ({
         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
       return { outerLetters: shuffled };
+    });
+  },
+
+  saveState: () => {
+    const { puzzle, foundWords, score, startedAt, totalPausedMs } = get();
+    if (!puzzle) return;
+    storage.save(stateKey(puzzle.puzzle_number), {
+      foundWords: [...foundWords],
+      score,
+      startedAt,
+      totalPausedMs,
     });
   },
 }));
