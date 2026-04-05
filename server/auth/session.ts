@@ -8,7 +8,7 @@
  */
 
 import { randomBytes } from 'node:crypto';
-import { getDb } from '../db/connection.js';
+import { getDb } from '../db/connection';
 
 /** Session data returned after successful validation. */
 export interface SessionData {

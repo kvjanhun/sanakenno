@@ -15,7 +15,7 @@ import {
   hashWord,
   setWordlist,
   invalidateAll,
-} from '../server/puzzle-engine.js';
+} from '../server/puzzle-engine';
 
 function setupTestWordlist(words: string[]): void {
   setWordlist(new Set(words));

@@ -7,7 +7,7 @@
  * @module src/utils/storage
  */
 
-import { storage } from '../platform/index.js';
+import { storage } from '../platform/index';
 
 export function saveToStorage<T>(key: string, data: T): void {
   storage.save(key, data);

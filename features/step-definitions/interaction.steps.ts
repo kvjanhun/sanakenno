@@ -10,7 +10,7 @@
  */
 
 import { Given, When, Then } from '@cucumber/cucumber';
-import type { SanakennoWorld } from './types.js';
+import type { SanakennoWorld } from './types';
 
 // --- Input methods ---
 // Note: "the puzzle is loaded" is defined in accessibility.steps.ts

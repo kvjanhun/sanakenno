@@ -15,12 +15,12 @@ import {
 } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
 import argon2 from 'argon2';
-import app from '../../server/index.js';
-import { getDb, closeDb, setDb } from '../../server/db/connection.js';
-import { resetLoginRateLimit } from '../../server/auth/routes.js';
-import { SESSION_COOKIE } from '../../server/auth/middleware.js';
-import { invalidateAll, setWordlist } from '../../server/puzzle-engine.js';
-import type { SanakennoWorld } from './types.js';
+import app from '../../server/index';
+import { getDb, closeDb, setDb } from '../../server/db/connection';
+import { resetLoginRateLimit } from '../../server/auth/routes';
+import { SESSION_COOKIE } from '../../server/auth/middleware';
+import { invalidateAll, setWordlist } from '../../server/puzzle-engine';
+import type { SanakennoWorld } from './types';
 
 interface AuthWorld extends SanakennoWorld {
   sessionCookie: string | null;

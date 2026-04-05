@@ -14,7 +14,7 @@
 
 import { createInterface } from 'node:readline';
 import argon2 from 'argon2';
-import { initDb, getDb } from '../server/db/connection.js';
+import { initDb, getDb } from '../server/db/connection';
 
 const MIN_PASSWORD_LENGTH = 12;
 

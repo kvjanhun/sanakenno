@@ -9,7 +9,7 @@ import { Given, When, Then, Before } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
 import { deriveHintData } from '@sanakenno/shared';
 import type { HintData } from '@sanakenno/shared';
-import type { SanakennoWorld } from './types.js';
+import type { SanakennoWorld } from './types';
 
 /** Build a realistic hint_data fixture for 50 words, 3 pangrams. */
 function buildFixture(): {

@@ -14,19 +14,15 @@ import { Hono } from 'hono';
 import type { Context, Next } from 'hono';
 import { setCookie, getCookie, deleteCookie } from 'hono/cookie';
 import argon2 from 'argon2';
-import { getDb } from '../db/connection.js';
+import { getDb } from '../db/connection';
 import {
   createSession,
   validateSession,
   deleteSession,
   deleteSessionsForAdmin,
   cleanupExpiredSessions,
-} from './session.js';
-import {
-  SESSION_COOKIE,
-  requireAuth,
-  type AdminVariables,
-} from './middleware.js';
+} from './session';
+import { SESSION_COOKIE, requireAuth, type AdminVariables } from './middleware';
 
 const auth = new Hono<{ Variables: AdminVariables }>();
 

@@ -13,8 +13,8 @@ import {
   getPuzzleBySlot,
   totalPuzzles as getTotalPuzzles,
   getPuzzleForDate,
-} from '../puzzle-engine.js';
-import type { FullPuzzleData } from '../puzzle-engine.js';
+} from '../puzzle-engine';
+import type { FullPuzzleData } from '../puzzle-engine';
 
 interface PuzzleResponse {
   center: string;

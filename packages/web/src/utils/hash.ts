@@ -4,7 +4,7 @@
  * @module src/utils/hash
  */
 
-import { crypto } from '../platform/index.js';
+import { crypto } from '../platform/index';
 
 export function hashWord(word: string): Promise<string> {
   return crypto.hashSHA256(word);

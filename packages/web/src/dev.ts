@@ -13,9 +13,9 @@
  * @module src/dev
  */
 
-import { useGameStore } from './store/useGameStore.js';
+import { useGameStore } from './store/useGameStore';
 import { recalcScore } from '@sanakenno/shared';
-import type { CelebrationType } from './store/useGameStore.js';
+import type { CelebrationType } from './store/useGameStore';
 
 interface DevHelpers {
   removeWord: (word: string) => void;

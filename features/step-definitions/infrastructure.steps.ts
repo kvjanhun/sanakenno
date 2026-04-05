@@ -8,8 +8,8 @@
 
 import { Given, When, Then } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
-import app from '../../server/index.js';
-import type { SanakennoWorld } from './types.js';
+import app from '../../server/index';
+import type { SanakennoWorld } from './types';
 
 // --- Security & Environment (container-only) ---
 

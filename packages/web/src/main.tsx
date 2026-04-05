@@ -1,9 +1,9 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { useHashRoute } from './hooks/useHashRoute.js';
-import { ErrorBoundary } from './components/ErrorBoundary.js';
+import { useHashRoute } from './hooks/useHashRoute';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import App from './App';
-import { AdminLayout } from './components/admin/AdminLayout.js';
+import { AdminLayout } from './components/admin/AdminLayout';
 import './styles/index.css';
 
 if (import.meta.env.DEV) {

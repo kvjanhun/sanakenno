@@ -12,8 +12,8 @@
  */
 
 import { useState, useCallback } from 'react';
-import { useHintData } from '../hooks/useHintData.js';
-import type { DerivedHintData } from '../hooks/useHintData.js';
+import { useHintData } from '../hooks/useHintData';
+import type { DerivedHintData } from '../hooks/useHintData';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */

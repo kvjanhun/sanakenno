@@ -18,7 +18,7 @@ import {
   STATS_STORAGE_KEY,
 } from '@sanakenno/shared';
 import type { PlayerStats } from '@sanakenno/shared';
-import { loadFromStorage } from '../utils/storage.js';
+import { loadFromStorage } from '../utils/storage';
 
 /** Rank display colors, ordered from lowest to highest. */
 const RANK_COLORS: Record<string, string> = {

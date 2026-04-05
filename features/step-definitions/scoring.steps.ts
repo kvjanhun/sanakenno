@@ -8,8 +8,8 @@
 import { Given, When, Then, Before } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
 import { scoreWord, recalcScore } from '@sanakenno/shared';
-import { validateWord } from '../support/validation.js';
-import type { SanakennoWorld } from './types.js';
+import { validateWord } from '../support/validation';
+import type { SanakennoWorld } from './types';
 
 Before(function (this: SanakennoWorld) {
   this.allLetters = new Set();

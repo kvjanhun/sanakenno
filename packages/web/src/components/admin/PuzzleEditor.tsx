@@ -14,13 +14,13 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useAdminStore } from '../../store/useAdminStore.js';
+import { useAdminStore } from '../../store/useAdminStore';
 import type {
   CombinationEntry,
   VariationData,
-} from '../../store/useAdminStore.js';
-import { VariationsGrid } from './VariationsGrid.js';
-import { WordList } from './WordList.js';
+} from '../../store/useAdminStore';
+import { VariationsGrid } from './VariationsGrid';
+import { WordList } from './WordList';
 
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 

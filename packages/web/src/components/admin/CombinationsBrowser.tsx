@@ -12,9 +12,9 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type {
   CombinationEntry,
   VariationData,
-} from '../../store/useAdminStore.js';
-import { useAdminStore } from '../../store/useAdminStore.js';
-import { VariationsGrid } from './VariationsGrid.js';
+} from '../../store/useAdminStore';
+import { useAdminStore } from '../../store/useAdminStore';
+import { VariationsGrid } from './VariationsGrid';
 
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 

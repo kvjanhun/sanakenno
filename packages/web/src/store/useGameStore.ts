@@ -9,7 +9,7 @@
 
 import { create } from 'zustand';
 
-import { storage, crypto, share, config } from '../platform/index.js';
+import { storage, crypto, share, config } from '../platform/index';
 
 const API_BASE = config.apiBase;
 
@@ -24,12 +24,12 @@ import {
 import type { HintData, PlayerStats } from '@sanakenno/shared';
 export type { HintData } from '@sanakenno/shared';
 
-import { hashWord } from '../utils/hash.js';
+import { hashWord } from '../utils/hash';
 import {
   saveToStorage,
   loadFromStorage,
   removeFromStorage,
-} from '../utils/storage.js';
+} from '../utils/storage';
 
 /** Shape of the puzzle payload from GET /api/puzzle. */
 export interface Puzzle {

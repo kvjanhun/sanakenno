@@ -13,7 +13,7 @@ export {
   webCrypto as crypto,
   webShare as share,
   webConfig as config,
-} from './web.js';
+} from './web';
 
 export type {
   StorageService,

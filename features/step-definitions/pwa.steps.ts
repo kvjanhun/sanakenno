@@ -10,7 +10,7 @@ import { When, Then } from '@cucumber/cucumber';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import assert from 'node:assert/strict';
-import type { SanakennoWorld } from './types.js';
+import type { SanakennoWorld } from './types';
 
 /** Path to the built manifest (only available after `npm run build`). */
 const DIST_DIR = resolve(process.cwd(), 'packages/web/dist');

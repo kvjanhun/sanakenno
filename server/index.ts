@@ -21,17 +21,13 @@
 
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { getDb } from './db/connection.js';
-import puzzleRoutes from './routes/puzzle.js';
-import archiveRoutes from './routes/archive.js';
-import achievementRoutes from './routes/achievement.js';
-import authRoutes from './auth/routes.js';
-import adminRoutes from './routes/admin.js';
-import {
-  securityHeaders,
-  requireAuth,
-  requireCsrf,
-} from './auth/middleware.js';
+import { getDb } from './db/connection';
+import puzzleRoutes from './routes/puzzle';
+import archiveRoutes from './routes/archive';
+import achievementRoutes from './routes/achievement';
+import authRoutes from './auth/routes';
+import adminRoutes from './routes/admin';
+import { securityHeaders, requireAuth, requireCsrf } from './auth/middleware';
 
 const app = new Hono();
 

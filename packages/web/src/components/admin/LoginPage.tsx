@@ -9,7 +9,7 @@
 
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { useAdminStore } from '../../store/useAdminStore.js';
+import { useAdminStore } from '../../store/useAdminStore';
 
 export function LoginPage() {
   const [username, setUsername] = useState('');

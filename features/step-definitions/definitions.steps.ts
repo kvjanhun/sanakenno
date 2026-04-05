@@ -7,7 +7,7 @@
 import { Given, Then } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
 import { buildKotusUrl } from '@sanakenno/shared';
-import type { SanakennoWorld } from './types.js';
+import type { SanakennoWorld } from './types';
 
 Given(
   'the found word is {string}',

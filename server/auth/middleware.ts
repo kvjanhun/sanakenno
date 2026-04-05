@@ -12,7 +12,7 @@
 import { timingSafeEqual } from 'node:crypto';
 import type { Context, Next } from 'hono';
 import { getCookie } from 'hono/cookie';
-import { validateSession, type SessionData } from './session.js';
+import { validateSession, type SessionData } from './session';
 
 /** Cookie name used for session identification. */
 export const SESSION_COOKIE = 'sanakenno_session';

@@ -8,7 +8,7 @@
  */
 
 import { Hono } from 'hono';
-import { getPuzzleForDate, getPuzzleBySlot } from '../puzzle-engine.js';
+import { getPuzzleForDate, getPuzzleBySlot } from '../puzzle-engine';
 
 interface ArchiveEntry {
   date: string;

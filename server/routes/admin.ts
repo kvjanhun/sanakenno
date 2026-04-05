@@ -24,9 +24,9 @@
 
 import { Hono } from 'hono';
 import type { Context, Next } from 'hono';
-import { getDb } from '../db/connection.js';
-import type { AdminVariables } from '../auth/middleware.js';
-import type { SessionData } from '../auth/session.js';
+import { getDb } from '../db/connection';
+import type { AdminVariables } from '../auth/middleware';
+import type { SessionData } from '../auth/session';
 import {
   computePuzzle,
   computeVariations,
@@ -36,7 +36,7 @@ import {
   invalidateAll,
   totalPuzzles,
   FINNISH_LETTERS,
-} from '../puzzle-engine.js';
+} from '../puzzle-engine';
 
 const admin = new Hono<{ Variables: AdminVariables }>();
 

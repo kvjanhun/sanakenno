@@ -16,19 +16,19 @@ import {
 } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
 import argon2 from 'argon2';
-import app from '../../server/index.js';
-import { getDb, closeDb, setDb } from '../../server/db/connection.js';
-import { resetLoginRateLimit } from '../../server/auth/routes.js';
-import { resetPreviewRateLimit } from '../../server/routes/admin.js';
-import { SESSION_COOKIE } from '../../server/auth/middleware.js';
+import app from '../../server/index';
+import { getDb, closeDb, setDb } from '../../server/db/connection';
+import { resetLoginRateLimit } from '../../server/auth/routes';
+import { resetPreviewRateLimit } from '../../server/routes/admin';
+import { SESSION_COOKIE } from '../../server/auth/middleware';
 import {
   invalidateAll,
   setWordlist,
   getPuzzleBySlot,
   getPuzzleForDate,
   totalPuzzles,
-} from '../../server/puzzle-engine.js';
-import type { SanakennoWorld } from './types.js';
+} from '../../server/puzzle-engine';
+import type { SanakennoWorld } from './types';
 
 interface AdminWorld extends SanakennoWorld {
   sessionCookie: string;

@@ -8,7 +8,7 @@
 
 import { Given, When, Then } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
-import type { SanakennoWorld } from './types.js';
+import type { SanakennoWorld } from './types';
 
 /**
  * Compute elapsed milliseconds from timer state, excluding paused time.

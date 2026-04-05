@@ -14,7 +14,7 @@ import {
   computeAverageCompletion,
 } from '@sanakenno/shared';
 import type { StatsRecord } from '@sanakenno/shared';
-import type { SanakennoWorld } from './types.js';
+import type { SanakennoWorld } from './types';
 
 Before(function (this: SanakennoWorld) {
   this.playerStats = emptyStats();

@@ -12,7 +12,7 @@ import {
   rankThresholds,
   progressToNextRank,
 } from '@sanakenno/shared';
-import type { SanakennoWorld } from './types.js';
+import type { SanakennoWorld } from './types';
 
 Given(
   'a puzzle with a max score of {int}',

@@ -16,11 +16,11 @@ export {
   progressToNextRank,
   colorizeWord,
   toColumns,
-} from './scoring.js';
-export type { Rank, ColorizedChar, RankThreshold } from './scoring.js';
+} from './scoring';
+export type { Rank, ColorizedChar, RankThreshold } from './scoring';
 
 // Hint data
-export { deriveHintData } from './hint-data.js';
+export { deriveHintData } from './hint-data';
 export type {
   HintData,
   LetterEntry,
@@ -28,7 +28,7 @@ export type {
   PairEntry,
   PangramStats,
   DerivedHintData,
-} from './hint-data.js';
+} from './hint-data';
 
 // Stats
 export {
@@ -39,11 +39,11 @@ export {
   computeRankDistribution,
   computeAverageCompletion,
   emptyStats,
-} from './stats.js';
-export type { StatsRecord, PlayerStats } from './stats.js';
+} from './stats';
+export type { StatsRecord, PlayerStats } from './stats';
 
 // Kotus
-export { buildKotusUrl } from './kotus.js';
+export { buildKotusUrl } from './kotus';
 
 // Platform interfaces
 export type {
@@ -52,4 +52,4 @@ export type {
   ShareService,
   ConfigService,
   PlatformServices,
-} from './platform-types.js';
+} from './platform-types';

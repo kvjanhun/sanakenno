@@ -14,11 +14,11 @@ import {
   type ITestCaseHookParameter,
 } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
-import app from '../../server/index.js';
-import { getDb, closeDb, setDb } from '../../server/db/connection.js';
-import { setWordlist, invalidateAll } from '../../server/puzzle-engine.js';
-import { resetRateLimit } from '../../server/routes/achievement.js';
-import type { SanakennoWorld } from './types.js';
+import app from '../../server/index';
+import { getDb, closeDb, setDb } from '../../server/db/connection';
+import { setWordlist, invalidateAll } from '../../server/puzzle-engine';
+import { resetRateLimit } from '../../server/routes/achievement';
+import type { SanakennoWorld } from './types';
 
 Before(function (this: SanakennoWorld, scenario: ITestCaseHookParameter) {
   if (!scenario.gherkinDocument?.uri?.includes('server-errors.feature')) return;

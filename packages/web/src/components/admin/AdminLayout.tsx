@@ -8,12 +8,12 @@
  */
 
 import { useEffect, useState, useCallback } from 'react';
-import { useAdminStore } from '../../store/useAdminStore.js';
-import { LoginPage } from './LoginPage.js';
-import { PuzzleEditor } from './PuzzleEditor.js';
-import { BlockedWords } from './BlockedWords.js';
-import { Schedule } from './Schedule.js';
-import { Stats } from './Stats.js';
+import { useAdminStore } from '../../store/useAdminStore';
+import { LoginPage } from './LoginPage';
+import { PuzzleEditor } from './PuzzleEditor';
+import { BlockedWords } from './BlockedWords';
+import { Schedule } from './Schedule';
+import { Stats } from './Stats';
 
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 

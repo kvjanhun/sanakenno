@@ -6,7 +6,7 @@
  */
 
 import { Given, When, Then } from '@cucumber/cucumber';
-import type { SanakennoWorld } from './types.js';
+import type { SanakennoWorld } from './types';
 
 Given(
   'the player is on puzzle number {int}',

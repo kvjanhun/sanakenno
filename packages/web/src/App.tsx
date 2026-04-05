@@ -10,24 +10,24 @@
  */
 
 import { useEffect, useCallback } from 'react';
-import { useGameStore } from './store/useGameStore.js';
-import { useKeyboard } from './hooks/useKeyboard.js';
-import { useGameTimer } from './hooks/useGameTimer.js';
-import { useMidnightRollover } from './hooks/useMidnightRollover.js';
-import { Honeycomb } from './components/Honeycomb/Honeycomb.js';
-import { WordInput } from './components/WordInput.js';
-import { FoundWords } from './components/FoundWords.js';
-import { RankProgress } from './components/RankProgress.js';
-import { RulesModal } from './components/RulesModal.js';
-import { ErrorState } from './components/ErrorState.js';
-import { ThemeToggle } from './components/ThemeToggle.js';
-import { Celebration } from './components/Celebration.js';
-import { MessageBar } from './components/MessageBar.js';
-import { GameControls } from './components/GameControls.js';
-import { HintPanels } from './components/HintPanels.js';
-import { ArchiveModal } from './components/ArchiveModal.js';
-import { StatsModal } from './components/StatsModal.js';
-import { CalendarIcon, StatsIcon } from './components/icons.js';
+import { useGameStore } from './store/useGameStore';
+import { useKeyboard } from './hooks/useKeyboard';
+import { useGameTimer } from './hooks/useGameTimer';
+import { useMidnightRollover } from './hooks/useMidnightRollover';
+import { Honeycomb } from './components/Honeycomb/Honeycomb';
+import { WordInput } from './components/WordInput';
+import { FoundWords } from './components/FoundWords';
+import { RankProgress } from './components/RankProgress';
+import { RulesModal } from './components/RulesModal';
+import { ErrorState } from './components/ErrorState';
+import { ThemeToggle } from './components/ThemeToggle';
+import { Celebration } from './components/Celebration';
+import { MessageBar } from './components/MessageBar';
+import { GameControls } from './components/GameControls';
+import { HintPanels } from './components/HintPanels';
+import { ArchiveModal } from './components/ArchiveModal';
+import { StatsModal } from './components/StatsModal';
+import { CalendarIcon, StatsIcon } from './components/icons';
 
 /* ------------------------------------------------------------------ */
 /*  Zustand selectors — subscribe to individual slices of state        */

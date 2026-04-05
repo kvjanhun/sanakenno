@@ -16,7 +16,7 @@ import Database from 'better-sqlite3';
 import { existsSync, copyFileSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { initDb, closeDb } from '../server/db/connection.js';
+import { initDb, closeDb } from '../server/db/connection';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = join(__dirname, '..');

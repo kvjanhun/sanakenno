@@ -9,7 +9,7 @@
 
 import { Hono } from 'hono';
 import type { Context, Next } from 'hono';
-import { getDb } from '../db/connection.js';
+import { getDb } from '../db/connection';
 
 const achievement = new Hono();
 

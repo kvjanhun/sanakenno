@@ -14,15 +14,15 @@ import {
   type ITestCaseHookParameter,
 } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
-import app from '../../server/index.js';
-import { getDb, closeDb, setDb } from '../../server/db/connection.js';
+import app from '../../server/index';
+import { getDb, closeDb, setDb } from '../../server/db/connection';
 import {
   getPuzzleForDate,
   totalPuzzles as getTotalPuzzles,
   setWordlist,
   invalidateAll,
-} from '../../server/puzzle-engine.js';
-import type { SanakennoWorld } from './types.js';
+} from '../../server/puzzle-engine';
+import type { SanakennoWorld } from './types';
 
 Before(function (this: SanakennoWorld, scenario: ITestCaseHookParameter) {
   if (!scenario.gherkinDocument?.uri?.includes('puzzle.feature')) return;

@@ -9,8 +9,8 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { useAdminStore } from '../../store/useAdminStore.js';
-import type { AchievementDay } from '../../store/useAdminStore.js';
+import { useAdminStore } from '../../store/useAdminStore';
+import type { AchievementDay } from '../../store/useAdminStore';
 
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 

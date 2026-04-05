@@ -6,10 +6,10 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import app from '../server/index.js';
-import { getDb, closeDb, setDb } from '../server/db/connection.js';
-import { resetRateLimit } from '../server/routes/achievement.js';
-import { setWordlist, invalidateAll } from '../server/puzzle-engine.js';
+import app from '../server/index';
+import { getDb, closeDb, setDb } from '../server/db/connection';
+import { resetRateLimit } from '../server/routes/achievement';
+import { setWordlist, invalidateAll } from '../server/puzzle-engine';
 
 interface PuzzleResponse {
   center: string;

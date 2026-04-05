@@ -7,7 +7,7 @@
  * @module src/components/admin/VariationsGrid
  */
 
-import type { VariationData } from '../../store/useAdminStore.js';
+import type { VariationData } from '../../store/useAdminStore';
 
 interface VariationsGridProps {
   variations: VariationData[];

@@ -9,7 +9,7 @@ import {
   saveToStorage,
   loadFromStorage,
   removeFromStorage,
-} from '../packages/web/src/utils/storage.js';
+} from '../packages/web/src/utils/storage';
 
 beforeEach(() => {
   localStorage.clear();

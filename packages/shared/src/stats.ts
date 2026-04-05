@@ -7,7 +7,7 @@
  * @module src/utils/stats
  */
 
-import { RANKS } from './scoring.js';
+import { RANKS } from './scoring';
 
 /** Per-puzzle play record. */
 export interface StatsRecord {

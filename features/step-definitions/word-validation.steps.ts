@@ -13,8 +13,8 @@ import {
   type ITestCaseHookParameter,
 } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
-import { hashWordSync } from '../support/validation.js';
-import type { SanakennoWorld } from './types.js';
+import { hashWordSync } from '../support/validation';
+import type { SanakennoWorld } from './types';
 
 Before(function (this: SanakennoWorld, scenario: ITestCaseHookParameter) {
   if (scenario.gherkinDocument?.uri?.includes('word-validation')) {

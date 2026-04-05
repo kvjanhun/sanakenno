@@ -14,11 +14,11 @@ import {
   type ITestCaseHookParameter,
 } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
-import app from '../../server/index.js';
-import { getDb, closeDb, setDb } from '../../server/db/connection.js';
-import { resetRateLimit } from '../../server/routes/achievement.js';
-import { setWordlist, invalidateAll } from '../../server/puzzle-engine.js';
-import type { SanakennoWorld } from './types.js';
+import app from '../../server/index';
+import { getDb, closeDb, setDb } from '../../server/db/connection';
+import { resetRateLimit } from '../../server/routes/achievement';
+import { setWordlist, invalidateAll } from '../../server/puzzle-engine';
+import type { SanakennoWorld } from './types';
 
 interface AchievementRow {
   id: number;

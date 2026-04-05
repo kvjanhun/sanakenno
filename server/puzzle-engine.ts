@@ -14,7 +14,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getDb } from './db/connection.js';
+import { getDb } from './db/connection';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 

@@ -6,7 +6,7 @@
  */
 
 import { Given, When, Then } from '@cucumber/cucumber';
-import type { SanakennoWorld } from './types.js';
+import type { SanakennoWorld } from './types';
 
 When('the player first loads the app', function (this: SanakennoWorld) {
   return 'pending';

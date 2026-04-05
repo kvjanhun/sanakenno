@@ -9,7 +9,7 @@
  */
 
 import { useMemo } from 'react';
-import { useGameStore } from '../store/useGameStore.js';
+import { useGameStore } from '../store/useGameStore';
 import { deriveHintData } from '@sanakenno/shared';
 
 // Re-export types and pure function for consumers

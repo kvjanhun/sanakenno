@@ -7,8 +7,8 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { loadFromStorage, saveToStorage } from '../utils/storage.js';
-import { SunIcon, MoonIcon } from './icons.js';
+import { loadFromStorage, saveToStorage } from '../utils/storage';
+import { SunIcon, MoonIcon } from './icons';
 
 const STORAGE_KEY = 'sanakenno_theme';
 type Theme = 'light' | 'dark';

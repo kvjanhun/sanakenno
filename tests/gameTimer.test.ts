@@ -9,7 +9,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useGameTimer } from '../packages/web/src/hooks/useGameTimer.js';
+import { useGameTimer } from '../packages/web/src/hooks/useGameTimer';
 
 beforeEach(() => {
   vi.useFakeTimers();
