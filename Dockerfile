@@ -27,7 +27,7 @@ RUN addgroup -S sanakenno && adduser -S sanakenno -G sanakenno
 WORKDIR /app
 
 # Copy workspace config and root + server package.json for production deps
-COPY pnpm-workspace.yaml package.json ./
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY packages/shared/package.json packages/shared/
 COPY packages/web/package.json packages/web/
 
