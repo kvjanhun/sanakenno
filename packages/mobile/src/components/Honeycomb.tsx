@@ -14,7 +14,7 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import * as Haptics from 'expo-haptics';
+import * as PreparedHaptics from 'prepared-haptics';
 import type { Theme } from '../theme';
 
 interface HoneycombProps {
@@ -87,21 +87,18 @@ function HexButton({
 
   const handlePress = useCallback(() => {
     onPress(hex.letter);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    PreparedHaptics.trigger();
   }, [onPress, hex.letter]);
 
   const tap = Gesture.Tap()
     .onBegin(() => {
       'worklet';
       scale.value = withSpring(0.92, { damping: 15, stiffness: 400 });
+      runOnJS(handlePress)();
     })
     .onFinalize(() => {
       'worklet';
       scale.value = withSpring(1, { damping: 12, stiffness: 300 });
-    })
-    .onEnd(() => {
-      'worklet';
-      runOnJS(handlePress)();
     });
 
   const animatedStyle = useAnimatedStyle(() => ({

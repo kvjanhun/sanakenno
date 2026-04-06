@@ -34,6 +34,7 @@ export default function GameScreen() {
   const foundWords = useGameStore((s) => s.foundWords);
   const message = useGameStore((s) => s.message);
   const messageType = useGameStore((s) => s.messageType);
+  const pointsBubble = useGameStore((s) => s.pointsBubble);
   const startedAt = useGameStore((s) => s.startedAt);
   const totalPausedMs = useGameStore((s) => s.totalPausedMs);
   const fetchPuzzle = useGameStore((s) => s.fetchPuzzle);
@@ -111,7 +112,7 @@ export default function GameScreen() {
         />
       )}
 
-      <MessageBar message={message} messageType={messageType} theme={theme} />
+      <MessageBar message={message} messageType={messageType} pointsBubble={pointsBubble} theme={theme} />
 
       <WordInput
         currentWord={currentWord}

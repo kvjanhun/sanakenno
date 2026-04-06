@@ -12,6 +12,7 @@ import type { MessageType } from '../store/useGameStore';
 interface MessageBarProps {
   message: string;
   messageType: MessageType;
+  pointsBubble?: string | null;
   theme: Theme;
 }
 
@@ -36,7 +37,7 @@ const chipStyles: Record<
   }),
 };
 
-export function MessageBar({ message, messageType, theme }: MessageBarProps) {
+export function MessageBar({ message, messageType, pointsBubble, theme }: MessageBarProps) {
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(-8);
 
@@ -70,6 +71,11 @@ export function MessageBar({ message, messageType, theme }: MessageBarProps) {
           >
             <Text style={[styles.text, { color: chip.color }]}>{message}</Text>
           </View>
+          {pointsBubble ? (
+            <Text style={[styles.pointsText, { color: theme.textSecondary }]}>
+              {pointsBubble}
+            </Text>
+          ) : null}
         </Animated.View>
       )}
     </View>
@@ -83,6 +89,9 @@ const styles = StyleSheet.create({
   },
   content: {
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
   },
   chip: {},
   pill: {
@@ -91,6 +100,10 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   text: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  pointsText: {
     fontSize: 14,
     fontWeight: '500',
   },

@@ -35,6 +35,7 @@ interface GameState {
   foundWords: Set<string>;
   message: string;
   messageType: MessageType;
+  pointsBubble: string | null;
   wordRejected: boolean;
   startedAt: number | null;
   totalPausedMs: number;
@@ -70,6 +71,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
   foundWords: new Set<string>(),
   message: '',
   messageType: 'ok' as MessageType,
+  pointsBubble: null,
   wordRejected: false,
   startedAt: null,
   totalPausedMs: 0,
@@ -234,10 +236,10 @@ export const useGameStore = create<GameState>()((set, get) => ({
     let msg: string;
     let msgType: MessageType = 'ok';
     if (isPangram) {
-      msg = `Täysosuma! +${pts}`;
+      msg = `Täysosuma!`;
       msgType = 'special';
     } else if (newRank !== previousRank) {
-      msg = `${newRank}! +${pts}`;
+      msg = `${newRank}!`;
       msgType = 'special';
     } else {
       msg = `+${pts}`;
@@ -250,8 +252,17 @@ export const useGameStore = create<GameState>()((set, get) => ({
       wordRejected: false,
       message: msg,
       messageType: msgType,
+      pointsBubble: (isPangram || newRank !== previousRank) ? `+${pts}` : null,
     });
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+    // Auto-clear the success message after 2 seconds
+    setTimeout(() => {
+      const s = get();
+      if (s.message === msg) {
+        set({ message: '', pointsBubble: null });
+      }
+    }, 2000);
 
     // Trigger celebration on special ranks
     if (newRank !== previousRank) {
