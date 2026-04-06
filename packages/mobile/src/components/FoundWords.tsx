@@ -50,10 +50,16 @@ export function FoundWords({
   const fullHeight = sheetHeight + OVERHANG;
 
   const sorted = useMemo(
-    () => [...foundWords].sort((a, b) => a.localeCompare(b, 'fi')),
+    () =>
+      [...foundWords].sort(
+        (a, b) =>
+          a.localeCompare(b, 'fi', { sensitivity: 'base' }) ||
+          a.length - b.length,
+      ),
     [foundWords],
   );
-  const recent = useMemo(() => [...foundWords].slice(-8), [foundWords]);
+  // Most recent first (reverse insertion order)
+  const recent = useMemo(() => [...foundWords].slice(-8).reverse(), [foundWords]);
 
   // Fit as many columns as the longest word allows (~8px per char at fontSize 13)
   const numCols = useMemo(() => {
@@ -62,6 +68,16 @@ export function FoundWords({
     const minColWidth = maxLen * 8 + 4; // +4 for paddingRight
     return Math.min(6, Math.max(2, Math.floor(available / minColWidth)));
   }, [sorted, screenWidth]);
+
+  // Split sorted words into numCols columns (column-major: top→bottom per column)
+  const columns = useMemo(() => {
+    const numRows = Math.ceil(sorted.length / numCols);
+    const cols: string[][] = Array.from({ length: numCols }, () => []);
+    sorted.forEach((word, i) => {
+      cols[Math.floor(i / numRows)].push(word);
+    });
+    return cols;
+  }, [sorted, numCols]);
   const itemWidth = `${(100 / numCols).toFixed(2)}%` as `${number}%`;
 
   const openSheet = useCallback(() => {
@@ -230,36 +246,39 @@ export function FoundWords({
             scrollEventThrottle={16}
           >
             <View style={styles.wordsGrid}>
-              {sorted.map((word) => {
-                const isFlash = word === lastResubmittedWord;
-                const isCenter = word.includes(center);
-                const isPangram = [...allLetters].every((c) =>
-                  word.includes(c),
-                );
-                return (
-                  <Pressable
-                    key={word}
-                    onPress={() => Linking.openURL(buildKotusUrl(word))}
-                    style={[styles.wordItem, { width: itemWidth }]}
-                  >
-                    <Text
-                      style={[
-                        styles.wordText,
-                        {
-                          color:
-                            isFlash || isCenter
-                              ? theme.accent
-                              : theme.textPrimary,
-                          fontWeight: isPangram ? '700' : '400',
-                        },
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {word}
-                    </Text>
-                  </Pressable>
-                );
-              })}
+              {columns.map((col, ci) => (
+                <View key={ci} style={[styles.wordsCol, { width: itemWidth }]}>
+                  {col.map((word) => {
+                    const isFlash = word === lastResubmittedWord;
+                    const isCenter = word.includes(center);
+                    const isPangram = [...allLetters].every((c) =>
+                      word.includes(c),
+                    );
+                    return (
+                      <Pressable
+                        key={word}
+                        onPress={() => Linking.openURL(buildKotusUrl(word))}
+                      >
+                        <Text
+                          style={[
+                            styles.wordText,
+                            {
+                              color:
+                                isFlash || isCenter
+                                  ? theme.accent
+                                  : theme.textPrimary,
+                              fontWeight: isPangram ? '700' : '400',
+                            },
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {word}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              ))}
             </View>
           </ScrollView>
         </Animated.View>
@@ -350,7 +369,10 @@ const styles = StyleSheet.create({
   },
   wordsGrid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'flex-start',
+  },
+  wordsCol: {
+    // width set inline via itemWidth
   },
   wordItem: {
     paddingRight: 4,

@@ -17,7 +17,6 @@ interface RankProgressProps {
   scoreBeforeHints: number | null;
   hintsUsed: boolean;
   puzzleNumber: number;
-  totalPuzzles: number;
   theme: Theme;
 }
 
@@ -29,7 +28,6 @@ export function RankProgress({
   scoreBeforeHints,
   hintsUsed,
   puzzleNumber,
-  totalPuzzles,
   theme,
 }: RankProgressProps) {
   const animatedProgress = useSharedValue(0);
@@ -103,12 +101,7 @@ export function RankProgress({
 
         {/* Puzzle number badge */}
         <View style={[styles.puzzleBadge, { backgroundColor: theme.bgSecondary, borderColor: theme.border }]}>
-          <Text style={[styles.puzzleText, { color: theme.textSecondary }]}>
-            #{puzzleNumber}
-            <Text style={[styles.puzzleTotal, { color: theme.textTertiary }]}>
-              /{totalPuzzles}
-            </Text>
-          </Text>
+          <Text style={[styles.puzzleText, { color: theme.textSecondary }]}>Kenno #{puzzleNumber}</Text>
         </View>
 
         {/* Animated score */}
@@ -213,10 +206,6 @@ const styles = StyleSheet.create({
   puzzleText: {
     fontSize: 13,
     fontWeight: '500',
-  },
-  puzzleTotal: {
-    fontSize: 11,
-    fontWeight: '400',
   },
   progressTrack: {
     width: '100%',
