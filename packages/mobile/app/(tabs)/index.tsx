@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from 'react-native-bottom-tabs';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useGameStore } from '../../src/store/useGameStore';
 import { Honeycomb } from '../../src/components/Honeycomb';
@@ -19,6 +20,7 @@ import { share } from '../../src/platform';
 
 export default function GameScreen() {
   const theme = useTheme();
+  const tabBarHeight = useBottomTabBarHeight();
   const timer = useGameTimer();
 
   // Midnight rollover: refetch puzzle when a new day starts
@@ -89,7 +91,7 @@ export default function GameScreen() {
     <GestureHandlerRootView style={styles.flex}>
       <SafeAreaView
         edges={['top']}
-        style={[styles.container, { backgroundColor: theme.bgPrimary }]}
+        style={[styles.container, { backgroundColor: theme.bgPrimary, paddingBottom: tabBarHeight }]}
       >
         <RankProgress
           rankLabel={rankLabel}
@@ -118,6 +120,8 @@ export default function GameScreen() {
           pointsBubble={pointsBubble}
           theme={theme}
         />
+
+        <View style={styles.spacer} />
 
         <WordInput
           currentWord={currentWord}
@@ -174,6 +178,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 24,
+  },
+  spacer: {
+    flex: 1,
   },
   center: {
     flex: 1,

@@ -48,32 +48,34 @@ export function HintPanel({
                 isActive && { borderBottomColor: theme.accent },
               ]}
             >
-              <Text
-                style={[
-                  styles.tabText,
-                  {
-                    color: isActive ? theme.accent : theme.textSecondary,
-                    fontWeight: isActive ? '600' : '400',
-                  },
-                ]}
-              >
-                {tab.label}
-              </Text>
-              <View
-                style={[
-                  styles.dot,
-                  {
-                    backgroundColor: isUnlocked ? theme.accent : theme.border,
-                  },
-                ]}
-              />
+              <View style={styles.tabInner}>
+                <Text
+                  style={[
+                    styles.tabText,
+                    {
+                      color: isActive ? theme.accent : theme.textSecondary,
+                      fontWeight: isActive ? '600' : '400',
+                    },
+                  ]}
+                >
+                  {tab.label}
+                </Text>
+                <View
+                  style={[
+                    styles.dot,
+                    {
+                      backgroundColor: isUnlocked ? theme.accent : theme.border,
+                    },
+                  ]}
+                />
+              </View>
             </Pressable>
           );
         })}
       </View>
 
       {/* Content */}
-      <View style={[styles.content, { backgroundColor: theme.bgSecondary }]}>
+      <View style={[styles.content, { backgroundColor: theme.bgSecondary, borderColor: theme.border }]}>
         {hintsUnlocked.has(activeTab) ? (
           <TabContent tabId={activeTab} derived={derived} theme={theme} />
         ) : (
@@ -173,14 +175,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
   },
   tab: {
-    alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 6,
     paddingHorizontal: 12,
-    minHeight: 44,
+    minHeight: 36,
     justifyContent: 'center',
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
-    gap: 4,
+  },
+  tabInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
   },
   tabText: {
     fontSize: 13,
@@ -191,10 +196,11 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   content: {
-    minHeight: 100,
+    minHeight: 80,
     borderRadius: 10,
-    padding: 12,
-    marginTop: 4,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: 10,
+    marginTop: 2,
   },
   locked: {
     flex: 1,

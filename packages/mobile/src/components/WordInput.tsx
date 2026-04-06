@@ -103,8 +103,9 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    minHeight: 48,
+    paddingTop: 8,
+    paddingBottom: 2,
+    minHeight: 40,
   },
   charRow: {
     flexDirection: 'row',

@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { StyleSheet, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Svg, {
   Defs,
   LinearGradient,
@@ -35,7 +35,7 @@ const R = 50;
 const DX = R * Math.sqrt(3);
 const DY = R * 1.5;
 const CX = 150;
-const CY = 150;
+const CY = 125;  // shifted up from 150: top margin = CY-DY-HEX_R = 4px instead of 29px
 const HEX_R = 46;
 
 /** Generate SVG points string for a pointy-top hexagon. */
@@ -186,7 +186,7 @@ export function Honeycomb({
 const styles = StyleSheet.create({
   container: {
     width: 300,
-    height: 300,
+    height: 250,  // CY+DY+HEX_R+4 = 125+75+46+4; was 300
     alignSelf: 'center',
   },
 });

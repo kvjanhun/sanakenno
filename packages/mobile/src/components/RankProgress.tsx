@@ -135,7 +135,7 @@ export function RankProgress({
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 12,
+    paddingTop: 8,
     paddingBottom: 4,
   },
   row: {

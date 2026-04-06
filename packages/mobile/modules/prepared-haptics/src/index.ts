@@ -14,7 +14,14 @@ try {
   // Not available until native rebuild
 }
 
+let enabled = true;
+
+export function setEnabled(value: boolean): void {
+  enabled = value;
+}
+
 export function trigger(): void {
+  if (!enabled) return;
   if (native) {
     native.trigger();
   } else {
@@ -25,6 +32,7 @@ export function trigger(): void {
 export function triggerImpact(
   style: 'light' | 'medium' | 'heavy' = 'light',
 ): void {
+  if (!enabled) return;
   if (native) {
     native.triggerImpact(style);
   } else {
@@ -40,6 +48,7 @@ export function triggerImpact(
 export function triggerNotification(
   type: 'success' | 'error' | 'warning' = 'success',
 ): void {
+  if (!enabled) return;
   if (native) {
     native.triggerNotification(type);
   } else {
