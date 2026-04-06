@@ -5,7 +5,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { rankThresholds } from '@sanakenno/shared';
 import type { Theme } from '../theme';
 
@@ -16,6 +16,8 @@ interface RankProgressProps {
   maxScore: number;
   scoreBeforeHints: number | null;
   hintsUsed: boolean;
+  puzzleNumber: number;
+  totalPuzzles: number;
   theme: Theme;
 }
 
@@ -26,9 +28,14 @@ export function RankProgress({
   maxScore,
   scoreBeforeHints,
   hintsUsed,
+  puzzleNumber,
+  totalPuzzles,
   theme,
 }: RankProgressProps) {
   const animatedProgress = useSharedValue(0);
+  const [displayScore, setDisplayScore] = useState(score);
+  const fromRef = useRef(score);
+  const rafRef = useRef<ReturnType<typeof requestAnimationFrame> | undefined>(undefined);
   const [expanded, setExpanded] = useState(false);
   const panelHeight = useSharedValue(0);
 
@@ -40,6 +47,30 @@ export function RankProgress({
       stiffness: 200,
     });
   }, [progress, animatedProgress]);
+
+  // Animate score counter from previous value to new value (cubic ease-out, 300ms)
+  useEffect(() => {
+    const from = fromRef.current;
+    const to = score;
+    if (rafRef.current !== undefined) cancelAnimationFrame(rafRef.current);
+    if (from === to) return;
+    const duration = 300;
+    const startTime = performance.now();
+    const step = (now: number) => {
+      const t = Math.min((now - startTime) / duration, 1);
+      const eased = 1 - (1 - t) ** 3;
+      setDisplayScore(Math.round(from + (to - from) * eased));
+      if (t < 1) {
+        rafRef.current = requestAnimationFrame(step);
+      } else {
+        fromRef.current = to;
+      }
+    };
+    rafRef.current = requestAnimationFrame(step);
+    return () => {
+      if (rafRef.current !== undefined) cancelAnimationFrame(rafRef.current);
+    };
+  }, [score]);
 
   useEffect(() => {
     // Each row ~44px + 8px gap, padding 12 top/bottom, footer ~40px
@@ -69,8 +100,20 @@ export function RankProgress({
             {rankLabel} {expanded ? '▲' : '▼'}
           </Text>
         </Pressable>
+
+        {/* Puzzle number badge */}
+        <View style={[styles.puzzleBadge, { backgroundColor: theme.bgSecondary, borderColor: theme.border }]}>
+          <Text style={[styles.puzzleText, { color: theme.textSecondary }]}>
+            #{puzzleNumber}
+            <Text style={[styles.puzzleTotal, { color: theme.textTertiary }]}>
+              /{totalPuzzles}
+            </Text>
+          </Text>
+        </View>
+
+        {/* Animated score */}
         <Text style={[styles.score, { color: theme.textPrimary }]}>
-          {score} pistettä
+          {displayScore} p
         </Text>
       </View>
       <View
@@ -159,6 +202,21 @@ const styles = StyleSheet.create({
   score: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  puzzleBadge: {
+    borderRadius: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginHorizontal: 'auto',
+  },
+  puzzleText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  puzzleTotal: {
+    fontSize: 11,
+    fontWeight: '400',
   },
   progressTrack: {
     width: '100%',
