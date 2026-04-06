@@ -146,8 +146,10 @@ const styles = StyleSheet.create({
   },
   rankPill: {
     paddingHorizontal: 12,
-    paddingVertical: 3,
+    paddingVertical: 6,
     borderRadius: 999,
+    minHeight: 32,
+    justifyContent: 'center',
   },
   rankText: {
     color: '#ffffff',

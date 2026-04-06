@@ -82,7 +82,9 @@ export function HintPanel({
               onPress={() => onUnlock(activeTab)}
               style={[styles.unlockBtn, { backgroundColor: theme.accent }]}
             >
-              <Text style={styles.unlockText}>Avaa vihje</Text>
+              <Text style={[styles.unlockText, { color: theme.onAccent }]}>
+                Avaa vihje
+              </Text>
             </Pressable>
           </View>
         )}
@@ -172,8 +174,10 @@ const styles = StyleSheet.create({
   },
   tab: {
     alignItems: 'center',
-    paddingVertical: 6,
+    paddingVertical: 10,
     paddingHorizontal: 12,
+    minHeight: 44,
+    justifyContent: 'center',
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
     gap: 4,
@@ -201,10 +205,11 @@ const styles = StyleSheet.create({
   unlockBtn: {
     borderRadius: 999,
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingVertical: 12,
+    minHeight: 44,
+    justifyContent: 'center',
   },
   unlockText: {
-    color: '#fff',
     fontWeight: '600',
     fontSize: 14,
   },

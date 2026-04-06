@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { config, crypto, storage } from '../platform';
+import * as Haptics from 'expo-haptics';
 import {
   scoreWord,
   rankForScore,
@@ -41,6 +42,7 @@ interface GameState {
   scoreBeforeHints: number | null;
   celebration: CelebrationType;
   postedRanks: Set<string>;
+  lastResubmittedWord: string | null;
 
   fetchPuzzle: (overrideNumber?: number) => Promise<void>;
   addLetter: (letter: string) => void;
@@ -75,6 +77,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
   scoreBeforeHints: null,
   celebration: null,
   postedRanks: new Set<string>(),
+  lastResubmittedWord: null,
 
   fetchPuzzle: async (overrideNumber?: number) => {
     set({ loading: true, fetchError: '' });
@@ -162,6 +165,13 @@ export const useGameStore = create<GameState>()((set, get) => ({
 
     const showError = (msg: string) => {
       set({ message: msg, messageType: 'error', wordRejected: true });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      setTimeout(() => {
+        const s = get();
+        if (s.wordRejected) {
+          set({ currentWord: '', wordRejected: false, message: '' });
+        }
+      }, 2000);
     };
 
     // Too short
@@ -187,7 +197,20 @@ export const useGameStore = create<GameState>()((set, get) => ({
 
     // Already found
     if (foundWords.has(normalized)) {
-      showError('Löysit jo tämän!');
+      set({
+        message: 'Löysit jo tämän!',
+        messageType: 'error',
+        wordRejected: true,
+        lastResubmittedWord: normalized,
+      });
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      setTimeout(() => set({ lastResubmittedWord: null }), 1500);
+      setTimeout(() => {
+        const s = get();
+        if (s.wordRejected) {
+          set({ currentWord: '', wordRejected: false, message: '' });
+        }
+      }, 2000);
       return;
     }
 
@@ -228,6 +251,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
       message: msg,
       messageType: msgType,
     });
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     // Trigger celebration on special ranks
     if (newRank !== previousRank) {

@@ -7,6 +7,8 @@ import Animated, {
   withRepeat,
 } from 'react-native-reanimated';
 import { useEffect, useRef, useMemo } from 'react';
+import { colorizeWord } from '@sanakenno/shared';
+import type { ColorizedChar } from '@sanakenno/shared';
 import type { Theme } from '../theme';
 
 interface WordInputProps {
@@ -15,21 +17,6 @@ interface WordInputProps {
   center: string;
   allLetters: Set<string>;
   theme: Theme;
-}
-
-type CharColor = 'accent' | 'primary' | 'tertiary';
-
-function colorizeWord(
-  word: string,
-  center: string,
-  allLetters: Set<string>,
-): { char: string; color: CharColor }[] {
-  return [...word].map((ch) => {
-    const lower = ch.toLowerCase();
-    if (lower === center) return { char: ch, color: 'accent' };
-    if (allLetters.has(lower)) return { char: ch, color: 'primary' };
-    return { char: ch, color: 'tertiary' };
-  });
 }
 
 function BlinkingCursor({ color }: { color: string }) {
@@ -84,7 +71,7 @@ export function WordInput({
     transform: [{ translateX: shakeX.value }],
   }));
 
-  const colorMap: Record<CharColor, string> = {
+  const colorMap: Record<ColorizedChar['color'], string> = {
     accent: theme.accent,
     primary: theme.textPrimary,
     tertiary: theme.textTertiary,

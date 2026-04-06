@@ -343,8 +343,8 @@ Each should be treated as a native feature implementation backed by shared logic
 Tasks:
 1. Refine motion, haptics, typography, spacing, and transitions
 2. Do iOS-specific presentation polish first
-3. Start Android implementation after the iOS app is stable enough that platform-specific work will not churn shared boundaries
-4. Add Android-specific adjustments deliberately rather than inheriting iOS decisions blindly
+**SKIP**3. Start Android implementation after the iOS app is stable enough that platform-specific work will not churn shared boundaries
+**SKIP**4. Add Android-specific adjustments deliberately rather than inheriting iOS decisions blindly
 5. Profile performance on simulator and real devices
 6. Finalize assets, icons, and launch experience
 

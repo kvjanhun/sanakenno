@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   todayText: {
-    color: '#fff',
+    color: '#ffffff',
     fontSize: 12,
     fontWeight: '600',
   },

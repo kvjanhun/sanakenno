@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import Svg, {
   Defs,
   LinearGradient,

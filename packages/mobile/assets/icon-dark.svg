@@ -1,0 +1,54 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Hex gradient: deeper orange for dark context -->
+    <linearGradient id="hexGrad" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0%" stop-color="#ff6840"/>
+      <stop offset="100%" stop-color="#cc3d1a"/>
+    </linearGradient>
+    <!-- Background gradient -->
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e1e1e"/>
+      <stop offset="100%" stop-color="#141414"/>
+    </linearGradient>
+    <!-- Subtle glow for the hex -->
+    <filter id="glow" x="-15%" y="-15%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="18" flood-color="#ff643e40"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="224" fill="url(#bgGrad)"/>
+
+  <!-- Glow hexagon (R=350, regular) -->
+  <polygon
+    points="512,162 815,337 815,687 512,862 209,687 209,337"
+    fill="none"
+    filter="url(#glow)"
+  />
+
+  <!-- Main hexagon (R=340, regular) -->
+  <polygon
+    points="512,172 806,342 806,682 512,852 218,682 218,342"
+    fill="url(#hexGrad)"
+  />
+
+  <!-- Subtle inner highlight (R=320, regular) -->
+  <polygon
+    points="512,192 789,352 789,672 512,832 235,672 235,352"
+    fill="none"
+    stroke="#ffffff10"
+    stroke-width="3"
+  />
+
+  <!-- Letter S (optically centered) -->
+  <text
+    x="512"
+    y="645"
+    text-anchor="middle"
+    font-size="400"
+    font-family="-apple-system, 'SF Pro Rounded', 'Helvetica Neue', sans-serif"
+    font-weight="700"
+    fill="#FFFFFF"
+    letter-spacing="-10"
+  >S</text>
+</svg>

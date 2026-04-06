@@ -20,6 +20,16 @@ export interface Theme {
   hexStroke: string;
   /** Center hex text — always white. */
   hexCenterText: string;
+  /** Text color on accent backgrounds. */
+  onAccent: string;
+  /** Error / destructive color. */
+  error: string;
+  /** Golden celebration color. */
+  golden: string;
+  /** Golden shadow / glow. */
+  goldenShadow: string;
+  /** Backdrop overlay color. */
+  backdrop: string;
 }
 
 const light: Theme = {
@@ -34,6 +44,11 @@ const light: Theme = {
   hexLo: '#ececec',
   hexStroke: '#e0e0e0',
   hexCenterText: '#ffffff',
+  onAccent: '#ffffff',
+  error: '#FF6B6B',
+  golden: '#fbbf24',
+  goldenShadow: '#f59e0b',
+  backdrop: '#000000',
 };
 
 const dark: Theme = {
@@ -48,11 +63,29 @@ const dark: Theme = {
   hexLo: '#252525',
   hexStroke: '#3e3e3e',
   hexCenterText: '#ffffff',
+  onAccent: '#ffffff',
+  error: '#FF6B6B',
+  golden: '#fbbf24',
+  goldenShadow: '#f59e0b',
+  backdrop: '#000000',
 };
 
 export function useTheme(): Theme {
   const systemScheme = useColorScheme();
   const pref = useSettingsStore((s) => s.themePreference);
   const scheme = pref === 'system' ? systemScheme : pref;
+  return scheme === 'dark' ? dark : light;
+}
+
+/** Resolve the scheme string ('light' | 'dark') for StatusBar / non-hook contexts. */
+export function useResolvedScheme(): 'light' | 'dark' {
+  const systemScheme = useColorScheme();
+  const pref = useSettingsStore((s) => s.themePreference);
+  const scheme = pref === 'system' ? systemScheme : pref;
+  return scheme === 'dark' ? 'dark' : 'light';
+}
+
+/** Get theme object without hooks (for class components). */
+export function getTheme(scheme: 'light' | 'dark'): Theme {
   return scheme === 'dark' ? dark : light;
 }

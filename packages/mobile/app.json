@@ -15,7 +15,12 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "fi.sanakenno.app"
+      "bundleIdentifier": "fi.sanakenno.app",
+      "icon": {
+        "light": "./assets/images/icon.png",
+        "dark": "./assets/images/icon-dark.png",
+        "tinted": "./assets/images/icon-tinted.png"
+      }
     },
     "android": {
       "package": "fi.sanakenno.app",

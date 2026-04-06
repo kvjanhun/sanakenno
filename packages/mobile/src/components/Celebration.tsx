@@ -5,7 +5,10 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withTiming,
+  withRepeat,
+  withSequence,
   runOnJS,
+  Easing,
 } from 'react-native-reanimated';
 import type { Theme } from '../theme';
 import type { CelebrationType } from '../store/useGameStore';
@@ -27,11 +30,23 @@ export function Celebration({
 }: Props) {
   const scale = useSharedValue(0);
   const opacity = useSharedValue(0);
+  const glowRadius = useSharedValue(8);
 
   useEffect(() => {
     if (celebration) {
       scale.value = withSpring(1, { damping: 12, stiffness: 150 });
       opacity.value = withTiming(1, { duration: 300 });
+
+      // Looping glow: subtle for ällistyttävä, intense for täysi kenno
+      const maxRadius = celebration === 'taysikenno' ? 30 : 16;
+      glowRadius.value = withRepeat(
+        withSequence(
+          withTiming(maxRadius, { duration: 900, easing: Easing.inOut(Easing.ease) }),
+          withTiming(8, { duration: 900, easing: Easing.inOut(Easing.ease) }),
+        ),
+        -1,
+        false,
+      );
 
       const delay = celebration === 'taysikenno' ? 8000 : 5000;
       const timer = setTimeout(() => {
@@ -41,6 +56,7 @@ export function Celebration({
     } else {
       scale.value = withTiming(0, { duration: 200 });
       opacity.value = withTiming(0, { duration: 200 });
+      glowRadius.value = 8;
     }
   }, [celebration]);
 
@@ -58,12 +74,15 @@ export function Celebration({
   const cardAnim = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
     opacity: opacity.value,
+    shadowRadius: glowRadius.value,
+    shadowOpacity: 0.8,
   }));
 
   if (!celebration) return null;
 
   const title = celebration === 'taysikenno' ? 'Täysi kenno!' : 'Ällistyttävä!';
   const isGolden = celebration === 'taysikenno';
+  const cardColor = isGolden ? theme.golden : theme.accent;
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
@@ -71,7 +90,7 @@ export function Celebration({
         <Animated.View
           style={[
             StyleSheet.absoluteFill,
-            { backgroundColor: '#000' },
+            { backgroundColor: theme.backdrop },
             backdropAnim,
           ]}
         />
@@ -81,15 +100,16 @@ export function Celebration({
           style={[
             styles.card,
             {
-              backgroundColor: isGolden ? '#fbbf24' : theme.accent,
+              backgroundColor: cardColor,
+              shadowColor: isGolden ? theme.goldenShadow : theme.accent,
             },
             cardAnim,
           ]}
         >
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.score}>{score} pistettä</Text>
+          <Text style={[styles.title, { color: theme.onAccent }]}>{title}</Text>
+          <Text style={[styles.score, { color: theme.onAccent }]}>{score} pistettä</Text>
           <Pressable onPress={onShare} style={styles.shareBtn}>
-            <Text style={styles.shareText}>Jaa</Text>
+            <Text style={[styles.shareText, { color: theme.onAccent }]}>Jaa</Text>
           </Pressable>
         </Animated.View>
       </View>
@@ -109,26 +129,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     minWidth: 240,
+    shadowOffset: { width: 0, height: 0 },
   },
   title: {
     fontSize: 28,
     fontWeight: '800',
-    color: '#fff',
   },
   score: {
     fontSize: 18,
-    color: '#fff',
     opacity: 0.9,
   },
   shareBtn: {
     marginTop: 8,
     borderRadius: 999,
     paddingHorizontal: 24,
-    paddingVertical: 10,
+    paddingVertical: 12,
+    minHeight: 44,
+    justifyContent: 'center',
     backgroundColor: 'rgba(255,255,255,0.25)',
   },
   shareText: {
-    color: '#fff',
     fontWeight: '600',
     fontSize: 15,
   },

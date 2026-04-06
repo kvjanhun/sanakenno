@@ -1,0 +1,30 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Tinted icon: monochrome so iOS can apply its own tint color -->
+    <linearGradient id="hexGrad" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0%" stop-color="#e0e0e0"/>
+      <stop offset="100%" stop-color="#a0a0a0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Transparent background (iOS applies its own) -->
+  <rect width="1024" height="1024" rx="224" fill="#2a2a2a"/>
+
+  <!-- Main hexagon (R=340, regular) -->
+  <polygon
+    points="512,172 806,342 806,682 512,852 218,682 218,342"
+    fill="url(#hexGrad)"
+  />
+
+  <!-- Letter S (optically centered) -->
+  <text
+    x="512"
+    y="645"
+    text-anchor="middle"
+    font-size="400"
+    font-family="-apple-system, 'SF Pro Rounded', 'Helvetica Neue', sans-serif"
+    font-weight="700"
+    fill="#2a2a2a"
+    letter-spacing="-10"
+  >S</text>
+</svg>

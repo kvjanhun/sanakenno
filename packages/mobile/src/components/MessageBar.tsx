@@ -55,30 +55,34 @@ export function MessageBar({ message, messageType, theme }: MessageBarProps) {
     transform: [{ translateY: translateY.value }],
   }));
 
-  if (!message) return null;
-
-  const chip = chipStyles[messageType](theme);
+  const chip = message ? chipStyles[messageType](theme) : null;
 
   return (
-    <Animated.View style={[styles.container, animatedStyle]}>
-      <View
-        style={[
-          styles.chip,
-          chip.isPill && styles.pill,
-          chip.isPill && { backgroundColor: chip.bg },
-        ]}
-      >
-        <Text style={[styles.text, { color: chip.color }]}>{message}</Text>
-      </View>
-    </Animated.View>
+    <View style={styles.container}>
+      {chip && (
+        <Animated.View style={[styles.content, animatedStyle]}>
+          <View
+            style={[
+              styles.chip,
+              chip.isPill && styles.pill,
+              chip.isPill && { backgroundColor: chip.bg },
+            ]}
+          >
+            <Text style={[styles.text, { color: chip.color }]}>{message}</Text>
+          </View>
+        </Animated.View>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    height: 28,
+    justifyContent: 'center',
+  },
+  content: {
     alignItems: 'center',
-    paddingVertical: 4,
-    minHeight: 28,
   },
   chip: {},
   pill: {

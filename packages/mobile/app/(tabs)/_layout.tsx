@@ -8,6 +8,7 @@ import type {
   ParamListBase,
   TabNavigationState,
 } from '@react-navigation/native';
+import { useTheme } from '../../src/theme';
 
 const BottomTabNavigator = createNativeBottomTabNavigator().Navigator;
 
@@ -19,8 +20,15 @@ const Tabs = withLayoutContext<
 >(BottomTabNavigator);
 
 export default function TabsLayout() {
+  const theme = useTheme();
   return (
-    <Tabs>
+    <Tabs
+      tabBarActiveTintColor={theme.accent}
+      {...({
+        barTintColor: theme.bgPrimary,
+        scrollEdgeAppearance: 'opaque',
+      } as Record<string, unknown>)}
+    >
       <Tabs.Screen
         name="index"
         options={{

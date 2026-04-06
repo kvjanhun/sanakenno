@@ -46,6 +46,7 @@ export default function GameScreen() {
   const unlockHint = useGameStore((s) => s.unlockHint);
   const celebration = useGameStore((s) => s.celebration);
   const setCelebration = useGameStore((s) => s.setCelebration);
+  const lastResubmittedWord = useGameStore((s) => s.lastResubmittedWord);
 
   useEffect(() => {
     fetchPuzzle();
@@ -63,11 +64,12 @@ export default function GameScreen() {
   if (loading || !puzzle) {
     return (
       <SafeAreaView
+        edges={['top']}
         style={[styles.container, { backgroundColor: theme.bgPrimary }]}
       >
         <View style={styles.center}>
           {fetchError ? (
-            <Text style={[styles.error, { color: '#FF6B6B' }]}>
+            <Text style={[styles.error, { color: theme.error }]}>
               {fetchError}
             </Text>
           ) : (
@@ -85,68 +87,75 @@ export default function GameScreen() {
   return (
     <GestureHandlerRootView style={styles.flex}>
       <SafeAreaView
+        edges={['top']}
         style={[styles.container, { backgroundColor: theme.bgPrimary }]}
       >
         <RankProgress
-          rankLabel={rankLabel}
-          progress={progress}
-          score={score}
-          maxScore={puzzle.max_score}
-          scoreBeforeHints={scoreBeforeHints}
-          hintsUsed={hintsUnlocked.size > 0}
-          theme={theme}
-        />
+        rankLabel={rankLabel}
+        progress={progress}
+        score={score}
+        maxScore={puzzle.max_score}
+        scoreBeforeHints={scoreBeforeHints}
+        hintsUsed={hintsUnlocked.size > 0}
+        theme={theme}
+      />
 
-        {puzzle.hint_data && (
-          <HintPanel
-            hintData={puzzle.hint_data}
-            foundWords={foundWords}
-            allLetters={allLetters}
-            hintsUnlocked={hintsUnlocked}
-            onUnlock={unlockHint}
-            theme={theme}
-          />
-        )}
-
-        <MessageBar message={message} messageType={messageType} theme={theme} />
-
-        <WordInput
-          currentWord={currentWord}
-          wordRejected={wordRejected}
-          center={puzzle.center}
+      {puzzle.hint_data && (
+        <HintPanel
+          hintData={puzzle.hint_data}
+          foundWords={foundWords}
           allLetters={allLetters}
+          hintsUnlocked={hintsUnlocked}
+          onUnlock={unlockHint}
           theme={theme}
         />
+      )}
 
-        <Honeycomb
-          center={puzzle.center}
-          outerLetters={outerLetters}
-          onLetterPress={addLetter}
-          theme={theme}
-        />
+      <MessageBar message={message} messageType={messageType} theme={theme} />
 
-        <GameControls
-          onDelete={deleteLetter}
-          onShuffle={shuffleLetters}
-          onSubmit={submitWord}
-          theme={theme}
-        />
+      <WordInput
+        currentWord={currentWord}
+        wordRejected={wordRejected}
+        center={puzzle.center}
+        allLetters={allLetters}
+        theme={theme}
+      />
 
-        <FoundWords foundWords={foundWords} theme={theme} />
+      <Honeycomb
+        center={puzzle.center}
+        outerLetters={outerLetters}
+        onLetterPress={addLetter}
+        theme={theme}
+      />
 
-        <Celebration
-          celebration={celebration}
-          score={score}
-          onDismiss={() => setCelebration(null)}
-          onShare={() => {
-            const text =
-              celebration === 'taysikenno'
-                ? `Sanakenno: Täysi kenno! ${score} pistettä 🏆`
-                : `Sanakenno: Ällistyttävä! ${score} pistettä ⭐`;
-            share.copyToClipboard(text);
-          }}
-          theme={theme}
-        />
+      <GameControls
+        onDelete={deleteLetter}
+        onShuffle={shuffleLetters}
+        onSubmit={submitWord}
+        theme={theme}
+      />
+
+      <FoundWords
+        foundWords={foundWords}
+        lastResubmittedWord={lastResubmittedWord}
+        center={puzzle.center}
+        allLetters={allLetters}
+        theme={theme}
+      />
+
+      <Celebration
+        celebration={celebration}
+        score={score}
+        onDismiss={() => setCelebration(null)}
+        onShare={() => {
+          const text =
+            celebration === 'taysikenno'
+              ? `Sanakenno: Täysi kenno! ${score} pistettä 🏆`
+              : `Sanakenno: Ällistyttävä! ${score} pistettä ⭐`;
+          share.copyToClipboard(text);
+        }}
+        theme={theme}
+      />
       </SafeAreaView>
     </GestureHandlerRootView>
   );

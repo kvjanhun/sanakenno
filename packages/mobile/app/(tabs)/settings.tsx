@@ -48,7 +48,7 @@ export default function SettingsScreen() {
                 style={[
                   styles.segmentText,
                   {
-                    color: isActive ? '#fff' : theme.textSecondary,
+                    color: isActive ? '#ffffff' : theme.textSecondary,
                     fontWeight: isActive ? '600' : '400',
                   },
                 ]}
