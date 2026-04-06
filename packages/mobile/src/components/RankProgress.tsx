@@ -1,9 +1,15 @@
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  Pressable,
+  Modal,
+  StyleSheet,
+  ScrollView,
+} from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-  withTiming,
 } from 'react-native-reanimated';
 import { useEffect, useRef, useState } from 'react';
 import { rankThresholds } from '@sanakenno/shared';
@@ -36,8 +42,8 @@ export function RankProgress({
   const rafRef = useRef<ReturnType<typeof requestAnimationFrame> | undefined>(
     undefined,
   );
-  const [expanded, setExpanded] = useState(false);
-  const panelHeight = useSharedValue(0);
+  const [rankOpen, setRankOpen] = useState(false);
+  const [scoreOpen, setScoreOpen] = useState(false);
 
   const thresholds = rankThresholds(rankLabel, maxScore);
 
@@ -72,52 +78,64 @@ export function RankProgress({
     };
   }, [score]);
 
-  useEffect(() => {
-    // Each row ~44px + 8px gap, padding 12 top/bottom, footer ~40px
-    const rows = thresholds.length;
-    const footerH = hintsUsed ? 40 : 0;
-    const target = expanded ? rows * 52 + 24 + footerH : 0;
-    panelHeight.value = withTiming(target, { duration: 250 });
-  }, [expanded, thresholds.length, hintsUsed, panelHeight]);
-
   const fillStyle = useAnimatedStyle(() => ({
     width: `${animatedProgress.value}%`,
-  }));
-
-  const panelStyle = useAnimatedStyle(() => ({
-    height: panelHeight.value,
-    opacity: panelHeight.value > 0 ? 1 : 0,
   }));
 
   return (
     <View style={styles.container}>
       <View style={styles.row}>
+        {/* Rank chip → opens rank overlay */}
         <Pressable
-          onPress={() => setExpanded((v) => !v)}
-          style={[styles.rankPill, { backgroundColor: theme.accent }]}
+          onPress={() => setRankOpen(true)}
+          style={[styles.chip, { backgroundColor: theme.accent }]}
         >
-          <Text style={styles.rankText}>
-            {rankLabel} {expanded ? '▲' : '▼'}
+          <Text style={[styles.chipText, { color: '#fff', fontWeight: '600' }]}>
+            {rankLabel} ▼
           </Text>
         </Pressable>
 
         {/* Puzzle number badge */}
         <View
           style={[
-            styles.puzzleBadge,
-            { backgroundColor: theme.bgSecondary, borderColor: theme.border },
+            styles.chip,
+            {
+              backgroundColor: theme.bgSecondary,
+              borderColor: theme.border,
+              borderWidth: StyleSheet.hairlineWidth,
+            },
           ]}
         >
-          <Text style={[styles.puzzleText, { color: theme.textSecondary }]}>
+          <Text style={[styles.chipText, { color: theme.textSecondary }]}>
             Kenno #{puzzleNumber}
           </Text>
         </View>
 
-        {/* Animated score */}
-        <Text style={[styles.score, { color: theme.textPrimary }]}>
-          {displayScore} p
-        </Text>
+        {/* Animated score — tappable when hints used */}
+        <Pressable
+          onPress={() => {
+            if (hintsUsed) setScoreOpen(true);
+          }}
+          style={[
+            styles.chip,
+            {
+              backgroundColor: theme.bgSecondary,
+              borderColor: theme.border,
+              borderWidth: StyleSheet.hairlineWidth,
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.chipText,
+              { color: theme.textPrimary, fontWeight: '600' },
+            ]}
+          >
+            {displayScore} p{hintsUsed ? ' ⓘ' : ''}
+          </Text>
+        </Pressable>
       </View>
+
       <View
         style={[styles.progressTrack, { backgroundColor: theme.bgSecondary }]}
       >
@@ -130,50 +148,103 @@ export function RankProgress({
         />
       </View>
 
-      <Animated.View style={[styles.panel, panelStyle]}>
-        {thresholds.map((item) => (
-          <View
-            key={item.name}
+      {/* Rank thresholds overlay */}
+      <Modal
+        visible={rankOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setRankOpen(false)}
+      >
+        <Pressable style={styles.backdrop} onPress={() => setRankOpen(false)}>
+          <Pressable
             style={[
-              styles.thresholdRow,
-              {
-                backgroundColor: item.isCurrent
-                  ? theme.accent + '18'
-                  : 'transparent',
-                borderColor: item.isCurrent ? theme.accent : theme.border,
-                borderWidth: item.isCurrent ? 2 : 1,
-              },
+              styles.overlayCard,
+              { backgroundColor: theme.bgPrimary, borderColor: theme.border },
+            ]}
+            onPress={() => {}}
+          >
+            <Text style={[styles.overlayTitle, { color: theme.textSecondary }]}>
+              Pisteet / taso
+            </Text>
+            <ScrollView
+              style={styles.rankScroll}
+              showsVerticalScrollIndicator={false}
+            >
+              {thresholds.map((item) => (
+                <View
+                  key={item.name}
+                  style={[
+                    styles.thresholdRow,
+                    {
+                      backgroundColor: item.isCurrent
+                        ? theme.accent + '18'
+                        : 'transparent',
+                      borderColor: item.isCurrent ? theme.accent : theme.border,
+                      borderWidth: item.isCurrent
+                        ? 2
+                        : StyleSheet.hairlineWidth,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.thresholdName,
+                      {
+                        color: item.isCurrent
+                          ? theme.accent
+                          : theme.textPrimary,
+                        fontWeight: item.isCurrent ? '700' : '400',
+                      },
+                    ]}
+                  >
+                    {item.name}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.thresholdPoints,
+                      {
+                        color: item.isCurrent
+                          ? theme.accent
+                          : theme.textSecondary,
+                      },
+                    ]}
+                  >
+                    {item.points} p
+                  </Text>
+                </View>
+              ))}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* "Pisteet ilman apuja" overlay */}
+      <Modal
+        visible={scoreOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setScoreOpen(false)}
+      >
+        <Pressable style={styles.backdrop} onPress={() => setScoreOpen(false)}>
+          <View
+            style={[
+              styles.overlayCard,
+              styles.scoreCard,
+              { backgroundColor: theme.bgPrimary, borderColor: theme.border },
             ]}
           >
-            <Text
-              style={[
-                styles.thresholdName,
-                {
-                  color: item.isCurrent ? theme.accent : theme.textPrimary,
-                  fontWeight: item.isCurrent ? '700' : '400',
-                },
-              ]}
-            >
-              {item.name}
+            <Text style={[styles.overlayTitle, { color: theme.textSecondary }]}>
+              Pisteet ilman apuja
             </Text>
-            <Text
-              style={[
-                styles.thresholdPoints,
-                {
-                  color: item.isCurrent ? theme.accent : theme.textSecondary,
-                },
-              ]}
-            >
-              {item.points} p
+            <Text style={[styles.scoreCardValue, { color: theme.textPrimary }]}>
+              {scoreBeforeHints ?? 0} p
+            </Text>
+            <Text style={[styles.scoreCardSub, { color: theme.textSecondary }]}>
+              Nykyinen pisteet: {score} p
             </Text>
           </View>
-        ))}
-        {hintsUsed && scoreBeforeHints !== null && (
-          <Text style={[styles.footer, { color: theme.textSecondary }]}>
-            Ilman apuja: {scoreBeforeHints} pistettä
-          </Text>
-        )}
-      </Animated.View>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -189,32 +260,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 8,
   },
-  rankPill: {
+  chip: {
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-    minHeight: 32,
+    paddingVertical: 7,
+    borderRadius: 8,
     justifyContent: 'center',
+    alignItems: 'center',
   },
-  rankText: {
-    color: '#ffffff',
+  chipText: {
     fontSize: 14,
-    fontWeight: '600',
-  },
-  score: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  puzzleBadge: {
-    borderRadius: 6,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    marginHorizontal: 'auto',
-  },
-  puzzleText: {
-    fontSize: 13,
-    fontWeight: '500',
   },
   progressTrack: {
     width: '100%',
@@ -226,10 +280,35 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 4,
   },
-  panel: {
-    overflow: 'hidden',
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  overlayCard: {
+    width: '100%',
+    maxHeight: '70%',
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: 16,
     gap: 8,
-    paddingTop: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
+  },
+  overlayTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  rankScroll: {
+    flexGrow: 0,
   },
   thresholdRow: {
     flexDirection: 'row',
@@ -238,6 +317,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 16,
     paddingVertical: 12,
+    marginBottom: 6,
   },
   thresholdName: {
     fontSize: 16,
@@ -245,10 +325,16 @@ const styles = StyleSheet.create({
   thresholdPoints: {
     fontSize: 15,
   },
-  footer: {
-    textAlign: 'center',
-    marginTop: 4,
+  scoreCard: {
+    maxWidth: 280,
+    alignItems: 'center',
+  },
+  scoreCardValue: {
+    fontSize: 36,
+    fontWeight: '700',
+  },
+  scoreCardSub: {
     fontSize: 14,
-    fontStyle: 'italic',
+    marginTop: 4,
   },
 });

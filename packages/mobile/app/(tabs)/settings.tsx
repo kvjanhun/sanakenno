@@ -90,7 +90,7 @@ export default function SettingsScreen() {
           borderColor={theme.border}
         />
         <SettingRow
-          label="Seuraa laitetta"
+          label="Laitteen asetus"
           value={followSystem}
           onValueChange={(v) => {
             if (v) {

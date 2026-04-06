@@ -50,6 +50,7 @@ export default function GameScreen() {
   const celebration = useGameStore((s) => s.celebration);
   const setCelebration = useGameStore((s) => s.setCelebration);
   const lastResubmittedWord = useGameStore((s) => s.lastResubmittedWord);
+  const copyStatus = useGameStore((s) => s.copyStatus);
 
   useEffect(() => {
     fetchPuzzle();
@@ -146,6 +147,7 @@ export default function GameScreen() {
           onDelete={deleteLetter}
           onShuffle={shuffleLetters}
           onSubmit={submitWord}
+          onShare={copyStatus}
           theme={theme}
         />
 

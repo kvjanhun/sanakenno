@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { config, crypto, storage } from '../platform';
+import { config, crypto, storage, share } from '../platform';
 import * as PreparedHaptics from 'prepared-haptics';
 import {
   scoreWord,
@@ -9,6 +9,14 @@ import {
   emptyStats,
 } from '@sanakenno/shared';
 import type { HintData, PlayerStats } from '@sanakenno/shared';
+
+/** Map mobile hint tab IDs to share emoji (same visual meaning as web). */
+const HINT_ICONS: Record<string, string> = {
+  overview: '\u{1F4CA}', // 📊
+  lengths: '\u{1F4CF}', // 📋
+  pairs: '\u{1F520}', // 🔠
+};
+const HINT_ORDER: string[] = ['overview', 'lengths', 'pairs'];
 
 export type CelebrationType = 'allistyttava' | 'taysikenno' | null;
 
@@ -44,6 +52,7 @@ interface GameState {
   celebration: CelebrationType;
   postedRanks: Set<string>;
   lastResubmittedWord: string | null;
+  shareCopied: boolean;
 
   fetchPuzzle: (overrideNumber?: number) => Promise<void>;
   addLetter: (letter: string) => void;
@@ -54,6 +63,7 @@ interface GameState {
   saveState: () => void;
   unlockHint: (id: string) => void;
   setCelebration: (value: CelebrationType) => void;
+  copyStatus: () => Promise<void>;
 }
 
 /** Persistence key for a given puzzle number. */
@@ -80,6 +90,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
   celebration: null,
   postedRanks: new Set<string>(),
   lastResubmittedWord: null,
+  shareCopied: false,
 
   fetchPuzzle: async (overrideNumber?: number) => {
     set({ loading: true, fetchError: '' });
@@ -392,5 +403,41 @@ export const useGameStore = create<GameState>()((set, get) => ({
 
   setCelebration: (value: CelebrationType) => {
     set({ celebration: value });
+  },
+
+  copyStatus: async () => {
+    const { puzzle, score, hintsUnlocked, scoreBeforeHints } = get();
+    if (!puzzle) return;
+
+    const rank = rankForScore(score, puzzle.max_score);
+    const hasTrophy = rank === 'Ällistyttävä' || rank === 'Täysi kenno';
+    const rankPrefix = hasTrophy ? '🏆 ' : '';
+
+    // Progress bar: 10 blocks proportional to score/max_score
+    const filled = Math.round((score / puzzle.max_score) * 10);
+    const bar = '🟧'.repeat(filled) + '⬛'.repeat(10 - filled);
+
+    const lines: string[] = [
+      `Sanakenno \u2014 Kenno #${puzzle.puzzle_number + 1}`,
+      `${rankPrefix}${rank} \u00B7 ${score}/${puzzle.max_score}`,
+      bar,
+    ];
+
+    const unlockedIcons = HINT_ORDER.filter((id) => hintsUnlocked.has(id)).map(
+      (id) => HINT_ICONS[id],
+    );
+    if (unlockedIcons.length > 0) {
+      const beforeHints = scoreBeforeHints ?? 0;
+      lines.push(`Avut: ${unlockedIcons.join('')} (${beforeHints} p. ilman)`);
+    }
+
+    lines.push('sanakenno.fi');
+
+    const text = lines.join('\n');
+    const ok = await share.copyToClipboard(text);
+    if (ok) {
+      set({ shareCopied: true });
+      setTimeout(() => set({ shareCopied: false }), 2000);
+    }
   },
 }));

@@ -256,22 +256,36 @@ function PairsContent({
   derived: DerivedHintData;
   theme: Theme;
 }) {
+  const ROWS = 4;
+  const items = derived.pairMap;
+  const numCols = Math.ceil(items.length / ROWS);
+  // Column-major: slice into columns of ROWS items
+  const cols = Array.from({ length: numCols }, (_, ci) =>
+    items.slice(ci * ROWS, ci * ROWS + ROWS),
+  );
+
   return (
-    <View style={styles.pairsWrap}>
-      {derived.pairMap.map((item) => (
-        <Text
-          key={item.pair}
-          style={[
-            styles.pairItem,
-            {
-              color:
-                item.remaining === 0 ? theme.textTertiary : theme.textPrimary,
-            },
-          ]}
-        >
-          <Text style={styles.pairKey}>{item.pair.toUpperCase()}: </Text>
-          {item.remaining}
-        </Text>
+    <View style={styles.pairsCols}>
+      {cols.map((col, ci) => (
+        <View key={ci} style={styles.pairsCol}>
+          {col.map((item) => (
+            <Text
+              key={item.pair}
+              style={[
+                styles.pairItem,
+                {
+                  color:
+                    item.remaining === 0
+                      ? theme.textTertiary
+                      : theme.textPrimary,
+                },
+              ]}
+            >
+              <Text style={styles.pairKey}>{item.pair.toUpperCase()}: </Text>
+              {item.remaining}
+            </Text>
+          ))}
+        </View>
       ))}
     </View>
   );
@@ -360,11 +374,11 @@ const styles = StyleSheet.create({
 
   // --- Overview ---
   allFoundText: {
-    fontSize: 14,
+    fontSize: 17,
     fontWeight: '600',
   },
   overviewRows: {
-    gap: 4,
+    gap: 6,
   },
   overviewLine: {
     flexDirection: 'row',
@@ -372,14 +386,14 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   overviewMain: {
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: 17,
+    fontWeight: '600',
   },
   overviewSub: {
-    fontSize: 12,
+    fontSize: 15,
   },
   overviewDetail: {
-    fontSize: 12,
+    fontSize: 14,
   },
 
   // --- Lengths bar chart ---
@@ -423,16 +437,18 @@ const styles = StyleSheet.create({
   },
 
   // --- Pairs ---
-  pairsWrap: {
+  pairsCols: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    rowGap: 4,
+    gap: 14,
+  },
+  pairsCol: {
+    flexDirection: 'column',
+    gap: 3,
   },
   pairItem: {
     fontSize: 13,
   },
   pairKey: {
-    fontWeight: '500',
+    fontWeight: '600',
   },
 });
