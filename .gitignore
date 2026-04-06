@@ -15,5 +15,3 @@ test-results/
 playwright-report/
 .vscode/
 package-lock.json
-ios/
-android/
