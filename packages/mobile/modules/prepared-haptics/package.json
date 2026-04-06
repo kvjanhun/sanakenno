@@ -2,5 +2,9 @@
   "name": "prepared-haptics",
   "version": "1.0.0",
   "main": "src/index.ts",
-  "private": true
+  "private": true,
+  "peerDependencies": {
+    "expo-modules-core": "*",
+    "expo-haptics": "*"
+  }
 }

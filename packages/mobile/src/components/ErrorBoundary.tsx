@@ -1,5 +1,11 @@
 import { Component } from 'react';
-import { View, Text, Pressable, StyleSheet, useColorScheme } from 'react-native';
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  useColorScheme,
+} from 'react-native';
 import type { ReactNode, ErrorInfo } from 'react';
 import { getTheme } from '../theme';
 import { useSettingsStore } from '../store/useSettingsStore';

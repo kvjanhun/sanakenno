@@ -1,5 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Linking } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Pressable,
+  Linking,
+} from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -72,9 +79,7 @@ export function FoundWords({
                 style={[
                   styles.pill,
                   {
-                    backgroundColor: isFlash
-                      ? theme.accent
-                      : theme.bgSecondary,
+                    backgroundColor: isFlash ? theme.accent : theme.bgSecondary,
                     borderColor: theme.border,
                   },
                 ]}

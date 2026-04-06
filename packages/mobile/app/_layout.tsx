@@ -16,7 +16,7 @@ export default function RootLayout() {
   // Propagate the user's theme preference to the native layer so native
   // components (tab bar, alerts, etc.) match the app theme.
   useEffect(() => {
-    Appearance.setColorScheme(pref === 'system' ? null : pref);
+    Appearance.setColorScheme(pref === 'system' ? 'unspecified' : pref);
   }, [pref]);
 
   return (

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { config, crypto, storage } from '../platform';
-import * as Haptics from 'expo-haptics';
+import * as PreparedHaptics from 'prepared-haptics';
 import {
   scoreWord,
   rankForScore,
@@ -167,7 +167,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
 
     const showError = (msg: string) => {
       set({ message: msg, messageType: 'error', wordRejected: true });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      PreparedHaptics.triggerNotification('error');
       setTimeout(() => {
         const s = get();
         if (s.wordRejected) {
@@ -205,7 +205,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
         wordRejected: true,
         lastResubmittedWord: normalized,
       });
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      PreparedHaptics.trigger();
       setTimeout(() => set({ lastResubmittedWord: null }), 1500);
       setTimeout(() => {
         const s = get();
@@ -252,9 +252,9 @@ export const useGameStore = create<GameState>()((set, get) => ({
       wordRejected: false,
       message: msg,
       messageType: msgType,
-      pointsBubble: (isPangram || newRank !== previousRank) ? `+${pts}` : null,
+      pointsBubble: isPangram || newRank !== previousRank ? `+${pts}` : null,
     });
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    PreparedHaptics.triggerNotification('success');
 
     // Auto-clear the success message after 2 seconds
     setTimeout(() => {

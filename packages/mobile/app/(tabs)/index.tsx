@@ -92,71 +92,76 @@ export default function GameScreen() {
         style={[styles.container, { backgroundColor: theme.bgPrimary }]}
       >
         <RankProgress
-        rankLabel={rankLabel}
-        progress={progress}
-        score={score}
-        maxScore={puzzle.max_score}
-        scoreBeforeHints={scoreBeforeHints}
-        hintsUsed={hintsUnlocked.size > 0}
-        theme={theme}
-      />
-
-      {puzzle.hint_data && (
-        <HintPanel
-          hintData={puzzle.hint_data}
-          foundWords={foundWords}
-          allLetters={allLetters}
-          hintsUnlocked={hintsUnlocked}
-          onUnlock={unlockHint}
+          rankLabel={rankLabel}
+          progress={progress}
+          score={score}
+          maxScore={puzzle.max_score}
+          scoreBeforeHints={scoreBeforeHints}
+          hintsUsed={hintsUnlocked.size > 0}
           theme={theme}
         />
-      )}
 
-      <MessageBar message={message} messageType={messageType} pointsBubble={pointsBubble} theme={theme} />
+        {puzzle.hint_data && (
+          <HintPanel
+            hintData={puzzle.hint_data}
+            foundWords={foundWords}
+            allLetters={allLetters}
+            hintsUnlocked={hintsUnlocked}
+            onUnlock={unlockHint}
+            theme={theme}
+          />
+        )}
 
-      <WordInput
-        currentWord={currentWord}
-        wordRejected={wordRejected}
-        center={puzzle.center}
-        allLetters={allLetters}
-        theme={theme}
-      />
+        <MessageBar
+          message={message}
+          messageType={messageType}
+          pointsBubble={pointsBubble}
+          theme={theme}
+        />
 
-      <Honeycomb
-        center={puzzle.center}
-        outerLetters={outerLetters}
-        onLetterPress={addLetter}
-        theme={theme}
-      />
+        <WordInput
+          currentWord={currentWord}
+          wordRejected={wordRejected}
+          center={puzzle.center}
+          allLetters={allLetters}
+          theme={theme}
+        />
 
-      <GameControls
-        onDelete={deleteLetter}
-        onShuffle={shuffleLetters}
-        onSubmit={submitWord}
-        theme={theme}
-      />
+        <Honeycomb
+          center={puzzle.center}
+          outerLetters={outerLetters}
+          onLetterPress={addLetter}
+          theme={theme}
+        />
 
-      <FoundWords
-        foundWords={foundWords}
-        lastResubmittedWord={lastResubmittedWord}
-        center={puzzle.center}
-        allLetters={allLetters}
-        theme={theme}
-      />
+        <GameControls
+          onDelete={deleteLetter}
+          onShuffle={shuffleLetters}
+          onSubmit={submitWord}
+          theme={theme}
+        />
 
-      <Celebration
-        celebration={celebration}
-        score={score}
-        onDismiss={() => setCelebration(null)}
-        onShare={() => {
-          const text =
-            celebration === 'taysikenno'
-              ? `Sanakenno: Täysi kenno! ${score} pistettä 🏆`
-              : `Sanakenno: Ällistyttävä! ${score} pistettä ⭐`;
-          share.copyToClipboard(text);
-        }}
-        theme={theme}
-      />
+        <FoundWords
+          foundWords={foundWords}
+          lastResubmittedWord={lastResubmittedWord}
+          center={puzzle.center}
+          allLetters={allLetters}
+          theme={theme}
+        />
+
+        <Celebration
+          celebration={celebration}
+          score={score}
+          onDismiss={() => setCelebration(null)}
+          onShare={() => {
+            const text =
+              celebration === 'taysikenno'
+                ? `Sanakenno: Täysi kenno! ${score} pistettä 🏆`
+                : `Sanakenno: Ällistyttävä! ${score} pistettä ⭐`;
+            share.copyToClipboard(text);
+          }}
+          theme={theme}
+        />
       </SafeAreaView>
     </GestureHandlerRootView>
   );

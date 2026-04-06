@@ -37,7 +37,12 @@ const chipStyles: Record<
   }),
 };
 
-export function MessageBar({ message, messageType, pointsBubble, theme }: MessageBarProps) {
+export function MessageBar({
+  message,
+  messageType,
+  pointsBubble,
+  theme,
+}: MessageBarProps) {
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(-8);
 

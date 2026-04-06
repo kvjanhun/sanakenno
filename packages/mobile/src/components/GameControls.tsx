@@ -4,7 +4,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
+import * as PreparedHaptics from 'prepared-haptics';
 import type { Theme } from '../theme';
 
 interface GameControlsProps {
@@ -38,7 +38,9 @@ function ScaleButton({
       }}
       onPress={onPress}
     >
-      <Animated.View style={[...style, animatedStyle]}>{children}</Animated.View>
+      <Animated.View style={[...style, animatedStyle]}>
+        {children}
+      </Animated.View>
     </Pressable>
   );
 }
@@ -50,17 +52,17 @@ export function GameControls({
   theme,
 }: GameControlsProps) {
   const handleDelete = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    PreparedHaptics.trigger();
     onDelete();
   };
 
   const handleShuffle = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    PreparedHaptics.triggerImpact('medium');
     onShuffle();
   };
 
   const handleSubmit = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    PreparedHaptics.triggerImpact('medium');
     onSubmit();
   };
 
@@ -86,7 +88,12 @@ export function GameControls({
         onPress={handleSubmit}
         style={[styles.button, { backgroundColor: theme.accent }]}
       >
-        <Text style={[styles.buttonText, { color: theme.onAccent, fontWeight: '600' }]}>
+        <Text
+          style={[
+            styles.buttonText,
+            { color: theme.onAccent, fontWeight: '600' },
+          ]}
+        >
           OK
         </Text>
       </ScaleButton>

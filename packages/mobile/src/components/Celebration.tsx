@@ -41,7 +41,10 @@ export function Celebration({
       const maxRadius = celebration === 'taysikenno' ? 30 : 16;
       glowRadius.value = withRepeat(
         withSequence(
-          withTiming(maxRadius, { duration: 900, easing: Easing.inOut(Easing.ease) }),
+          withTiming(maxRadius, {
+            duration: 900,
+            easing: Easing.inOut(Easing.ease),
+          }),
           withTiming(8, { duration: 900, easing: Easing.inOut(Easing.ease) }),
         ),
         -1,
@@ -107,9 +110,13 @@ export function Celebration({
           ]}
         >
           <Text style={[styles.title, { color: theme.onAccent }]}>{title}</Text>
-          <Text style={[styles.score, { color: theme.onAccent }]}>{score} pistettä</Text>
+          <Text style={[styles.score, { color: theme.onAccent }]}>
+            {score} pistettä
+          </Text>
           <Pressable onPress={onShare} style={styles.shareBtn}>
-            <Text style={[styles.shareText, { color: theme.onAccent }]}>Jaa</Text>
+            <Text style={[styles.shareText, { color: theme.onAccent }]}>
+              Jaa
+            </Text>
           </Pressable>
         </Animated.View>
       </View>
