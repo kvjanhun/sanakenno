@@ -56,7 +56,9 @@ export default function RulesScreen() {
       contentInsetAdjustmentBehavior="automatic"
     >
       {/* Next puzzle countdown */}
-      <View style={[styles.countdownBox, { backgroundColor: theme.bgSecondary }]}>
+      <View
+        style={[styles.countdownBox, { backgroundColor: theme.bgSecondary }]}
+      >
         <Text style={[styles.countdownLabel, { color: theme.textSecondary }]}>
           Seuraava kenno
         </Text>
@@ -72,7 +74,8 @@ export default function RulesScreen() {
 
       {/* Rules content */}
       <Text style={[styles.body, { color: theme.textSecondary }]}>
-        Yritä löytää mahdollisimman monta sanaa seitsemästä annetusta kirjaimesta.
+        Yritä löytää mahdollisimman monta sanaa seitsemästä annetusta
+        kirjaimesta.
       </Text>
 
       <Text style={[styles.heading, { color: theme.textPrimary }]}>
@@ -87,7 +90,8 @@ export default function RulesScreen() {
           • Olla vähintään 4 kirjaimen pituisia
         </Text>
         <Text style={[styles.item, { color: theme.textSecondary }]}>
-          • Koostua vain annetuista kirjaimista — samaa kirjainta voi käyttää useasti
+          • Koostua vain annetuista kirjaimista — samaa kirjainta voi käyttää
+          useasti
         </Text>
         <Text style={[styles.item, { color: theme.textSecondary }]}>
           {'• Löytyä Kotuksen sanalistasta ('}
@@ -105,7 +109,9 @@ export default function RulesScreen() {
         </Text>
       </View>
 
-      <Text style={[styles.heading, { color: theme.textPrimary }]}>Pisteytys</Text>
+      <Text style={[styles.heading, { color: theme.textPrimary }]}>
+        Pisteytys
+      </Text>
       <View style={styles.list}>
         <Text style={[styles.item, { color: theme.textSecondary }]}>
           • 4-kirjaiminen sana: 1 piste
@@ -134,12 +140,15 @@ export default function RulesScreen() {
         </Text>
       </View>
 
-      <Text style={[styles.heading, { color: theme.textPrimary }]}>Yhdyssanat</Text>
+      <Text style={[styles.heading, { color: theme.textPrimary }]}>
+        Yhdyssanat
+      </Text>
       <Text style={[styles.body, { color: theme.textSecondary }]}>
-        Sanalista sisältää myös yhdyssanoja.{'\n'}Yhdysviivallisen sanan voi kirjoittaa
-        joko viivalla tai ilman — esimerkiksi{' '}
+        Sanalista sisältää myös yhdyssanoja.{'\n'}Yhdysviivallisen sanan voi
+        kirjoittaa joko viivalla tai ilman — esimerkiksi{' '}
         <Text style={styles.mono}>palo-ovi</Text> tai{' '}
-        <Text style={styles.mono}>paloovi</Text> ovat molemmat hyväksyttyjä muotoja.
+        <Text style={styles.mono}>paloovi</Text> ovat molemmat hyväksyttyjä
+        muotoja.
       </Text>
 
       <View style={[styles.divider, { borderColor: theme.border }]} />
@@ -154,7 +163,9 @@ export default function RulesScreen() {
         {'  ·  Lähdekoodi  '}
         <Text
           style={{ textDecorationLine: 'underline' }}
-          onPress={() => Linking.openURL('https://github.com/kvjanhun/sanakenno')}
+          onPress={() =>
+            Linking.openURL('https://github.com/kvjanhun/sanakenno')
+          }
         >
           GitHub
         </Text>
@@ -212,4 +223,3 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-

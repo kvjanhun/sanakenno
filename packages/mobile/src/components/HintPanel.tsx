@@ -42,8 +42,15 @@ export function HintPanel({
     <View style={styles.container}>
       {/* Segmented control row */}
       <View style={styles.controlRow}>
-        <Text style={[styles.aputLabel, { color: theme.textPrimary }]}>Avut</Text>
-        <View style={[styles.segmentedControl, { backgroundColor: theme.bgSecondary }]}>
+        <Text style={[styles.aputLabel, { color: theme.textPrimary }]}>
+          Avut
+        </Text>
+        <View
+          style={[
+            styles.segmentedControl,
+            { backgroundColor: theme.bgSecondary },
+          ]}
+        >
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
@@ -52,7 +59,10 @@ export function HintPanel({
                 onPress={() => setActiveTab(tab.id)}
                 style={[
                   styles.segment,
-                  isActive && [styles.segmentActive, { backgroundColor: theme.bgPrimary }],
+                  isActive && [
+                    styles.segmentActive,
+                    { backgroundColor: theme.bgPrimary },
+                  ],
                 ]}
               >
                 <Text
@@ -77,7 +87,11 @@ export function HintPanel({
               key={tab.id}
               style={[
                 styles.statusBar,
-                { backgroundColor: hintsUnlocked.has(tab.id) ? theme.accent : theme.border },
+                {
+                  backgroundColor: hintsUnlocked.has(tab.id)
+                    ? theme.accent
+                    : theme.border,
+                },
               ]}
             />
           ))}
@@ -125,15 +139,25 @@ function TabContent({
   derived: DerivedHintData;
   theme: Theme;
 }) {
-  if (tabId === 'overview') return <OverviewContent derived={derived} theme={theme} />;
-  if (tabId === 'lengths') return <LengthsContent derived={derived} theme={theme} />;
+  if (tabId === 'overview')
+    return <OverviewContent derived={derived} theme={theme} />;
+  if (tabId === 'lengths')
+    return <LengthsContent derived={derived} theme={theme} />;
   return <PairsContent derived={derived} theme={theme} />;
 }
 
-function OverviewContent({ derived, theme }: { derived: DerivedHintData; theme: Theme }) {
+function OverviewContent({
+  derived,
+  theme,
+}: {
+  derived: DerivedHintData;
+  theme: Theme;
+}) {
   if (derived.wordsRemaining === 0) {
     return (
-      <Text style={[styles.allFoundText, { color: theme.accent }]}>kaikki löydetty</Text>
+      <Text style={[styles.allFoundText, { color: theme.accent }]}>
+        kaikki löydetty
+      </Text>
     );
   }
 
@@ -141,7 +165,8 @@ function OverviewContent({ derived, theme }: { derived: DerivedHintData; theme: 
   const { pangramStats } = derived;
   const pangramLabel = pangramStats.total === 1 ? 'pangrammi' : 'pangrammia';
   const unfound = derived.lengthDistribution.filter((e) => e.remaining > 0);
-  const longest = unfound.length > 0 ? Math.max(...unfound.map((e) => e.len)) : 0;
+  const longest =
+    unfound.length > 0 ? Math.max(...unfound.map((e) => e.len)) : 0;
 
   return (
     <View style={styles.overviewRows}>
@@ -149,7 +174,10 @@ function OverviewContent({ derived, theme }: { derived: DerivedHintData; theme: 
         <Text style={[styles.overviewMain, { color: theme.textPrimary }]}>
           {derived.wordsRemaining}/{derived.wordCount} sanaa löytämättä
         </Text>
-        <Text style={[styles.overviewSub, { color: theme.textSecondary }]}> ({pct}%)</Text>
+        <Text style={[styles.overviewSub, { color: theme.textSecondary }]}>
+          {' '}
+          ({pct}%)
+        </Text>
       </View>
       <Text style={[styles.overviewDetail, { color: theme.textSecondary }]}>
         {pangramStats.remaining}/{pangramStats.total} {pangramLabel}
@@ -159,14 +187,23 @@ function OverviewContent({ derived, theme }: { derived: DerivedHintData; theme: 
   );
 }
 
-function LengthsContent({ derived, theme }: { derived: DerivedHintData; theme: Theme }) {
+function LengthsContent({
+  derived,
+  theme,
+}: {
+  derived: DerivedHintData;
+  theme: Theme;
+}) {
   return (
     <View style={styles.barsWrapper}>
-      <Text style={[styles.barsCaption, { color: theme.textTertiary }]}>jäljellä</Text>
+      <Text style={[styles.barsCaption, { color: theme.textTertiary }]}>
+        jäljellä
+      </Text>
       <View style={styles.barsRow}>
         {derived.lengthDistribution.map((item) => {
           const done = item.remaining === 0;
-          const fillH = item.total > 0 ? Math.round(BAR_H * (item.found / item.total)) : 0;
+          const fillH =
+            item.total > 0 ? Math.round(BAR_H * (item.found / item.total)) : 0;
           return (
             <View key={item.len} style={styles.barCol}>
               <Text
@@ -177,11 +214,19 @@ function LengthsContent({ derived, theme }: { derived: DerivedHintData; theme: T
               >
                 {item.remaining}
               </Text>
-              <View style={[styles.barContainer, { backgroundColor: theme.bgPrimary }]}>
+              <View
+                style={[
+                  styles.barContainer,
+                  { backgroundColor: theme.bgPrimary },
+                ]}
+              >
                 <View
                   style={[
                     styles.barFill,
-                    { height: fillH, backgroundColor: done ? theme.textTertiary : theme.accent },
+                    {
+                      height: fillH,
+                      backgroundColor: done ? theme.textTertiary : theme.accent,
+                    },
                   ]}
                 />
               </View>
@@ -197,12 +242,20 @@ function LengthsContent({ derived, theme }: { derived: DerivedHintData; theme: T
           );
         })}
       </View>
-      <Text style={[styles.barsCaption, { color: theme.textTertiary }]}>kirjainta</Text>
+      <Text style={[styles.barsCaption, { color: theme.textTertiary }]}>
+        kirjainta
+      </Text>
     </View>
   );
 }
 
-function PairsContent({ derived, theme }: { derived: DerivedHintData; theme: Theme }) {
+function PairsContent({
+  derived,
+  theme,
+}: {
+  derived: DerivedHintData;
+  theme: Theme;
+}) {
   return (
     <View style={styles.pairsWrap}>
       {derived.pairMap.map((item) => (
@@ -210,7 +263,10 @@ function PairsContent({ derived, theme }: { derived: DerivedHintData; theme: The
           key={item.pair}
           style={[
             styles.pairItem,
-            { color: item.remaining === 0 ? theme.textTertiary : theme.textPrimary },
+            {
+              color:
+                item.remaining === 0 ? theme.textTertiary : theme.textPrimary,
+            },
           ]}
         >
           <Text style={styles.pairKey}>{item.pair.toUpperCase()}: </Text>

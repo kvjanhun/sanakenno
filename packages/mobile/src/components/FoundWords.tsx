@@ -59,7 +59,10 @@ export function FoundWords({
     [foundWords],
   );
   // Most recent first (reverse insertion order)
-  const recent = useMemo(() => [...foundWords].slice(-8).reverse(), [foundWords]);
+  const recent = useMemo(
+    () => [...foundWords].slice(-8).reverse(),
+    [foundWords],
+  );
 
   // Fit as many columns as the longest word allows (~8px per char at fontSize 13)
   const numCols = useMemo(() => {

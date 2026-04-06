@@ -33,7 +33,9 @@ export function RankProgress({
   const animatedProgress = useSharedValue(0);
   const [displayScore, setDisplayScore] = useState(score);
   const fromRef = useRef(score);
-  const rafRef = useRef<ReturnType<typeof requestAnimationFrame> | undefined>(undefined);
+  const rafRef = useRef<ReturnType<typeof requestAnimationFrame> | undefined>(
+    undefined,
+  );
   const [expanded, setExpanded] = useState(false);
   const panelHeight = useSharedValue(0);
 
@@ -100,8 +102,15 @@ export function RankProgress({
         </Pressable>
 
         {/* Puzzle number badge */}
-        <View style={[styles.puzzleBadge, { backgroundColor: theme.bgSecondary, borderColor: theme.border }]}>
-          <Text style={[styles.puzzleText, { color: theme.textSecondary }]}>Kenno #{puzzleNumber}</Text>
+        <View
+          style={[
+            styles.puzzleBadge,
+            { backgroundColor: theme.bgSecondary, borderColor: theme.border },
+          ]}
+        >
+          <Text style={[styles.puzzleText, { color: theme.textSecondary }]}>
+            Kenno #{puzzleNumber}
+          </Text>
         </View>
 
         {/* Animated score */}
