@@ -26,10 +26,18 @@ function SettingRow({
     <View
       style={[
         styles.row,
-        !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: borderColor },
+        !isLast && {
+          borderBottomWidth: StyleSheet.hairlineWidth,
+          borderBottomColor: borderColor,
+        },
       ]}
     >
-      <Text style={[styles.rowLabel, { color: disabled ? borderColor : labelColor }]}>
+      <Text
+        style={[
+          styles.rowLabel,
+          { color: disabled ? borderColor : labelColor },
+        ]}
+      >
         {label}
       </Text>
       <Switch
@@ -50,9 +58,7 @@ function SettingGroup({
   children: React.ReactNode;
   backgroundColor: string;
 }) {
-  return (
-    <View style={[styles.group, { backgroundColor }]}>{children}</View>
-  );
+  return <View style={[styles.group, { backgroundColor }]}>{children}</View>;
 }
 
 export default function SettingsScreen() {
@@ -70,7 +76,9 @@ export default function SettingsScreen() {
       edges={['top']}
       style={[styles.container, { backgroundColor: theme.bgPrimary }]}
     >
-      <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Teema</Text>
+      <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
+        Teema
+      </Text>
       <SettingGroup backgroundColor={theme.bgSecondary}>
         <SettingRow
           label="Tumma tila"
@@ -98,7 +106,9 @@ export default function SettingsScreen() {
         />
       </SettingGroup>
 
-      <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Palaute</Text>
+      <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
+        Palaute
+      </Text>
       <SettingGroup backgroundColor={theme.bgSecondary}>
         <SettingRow
           label="Värinät"

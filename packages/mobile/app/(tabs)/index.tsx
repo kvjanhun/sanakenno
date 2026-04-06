@@ -91,7 +91,10 @@ export default function GameScreen() {
     <GestureHandlerRootView style={styles.flex}>
       <SafeAreaView
         edges={['top']}
-        style={[styles.container, { backgroundColor: theme.bgPrimary, paddingBottom: tabBarHeight }]}
+        style={[
+          styles.container,
+          { backgroundColor: theme.bgPrimary, paddingBottom: tabBarHeight },
+        ]}
       >
         <RankProgress
           rankLabel={rankLabel}

@@ -59,7 +59,7 @@ export function FoundWords({
   const numCols = useMemo(() => {
     const maxLen = sorted.reduce((m, w) => Math.max(m, w.length), 4);
     const available = screenWidth - 32; // 16px padding each side
-    const minColWidth = maxLen * 8 + 4;  // +4 for paddingRight
+    const minColWidth = maxLen * 8 + 4; // +4 for paddingRight
     return Math.min(6, Math.max(2, Math.floor(available / minColWidth)));
   }, [sorted, screenWidth]);
   const itemWidth = `${(100 / numCols).toFixed(2)}%` as `${number}%`;
@@ -193,7 +193,12 @@ export function FoundWords({
           <GestureDetector gesture={dragGesture}>
             <View>
               <View style={styles.dragZone}>
-                <View style={[styles.sheetHandle, { backgroundColor: theme.border }]} />
+                <View
+                  style={[
+                    styles.sheetHandle,
+                    { backgroundColor: theme.border },
+                  ]}
+                />
               </View>
               <View style={styles.sheetHeader}>
                 <Text style={[styles.sheetTitle, { color: theme.textPrimary }]}>
@@ -201,7 +206,10 @@ export function FoundWords({
                 </Text>
                 <Pressable
                   onPress={closeSheet}
-                  style={[styles.doneBtn, { backgroundColor: theme.bgSecondary }]}
+                  style={[
+                    styles.doneBtn,
+                    { backgroundColor: theme.bgSecondary },
+                  ]}
                 >
                   <Text style={[styles.doneBtnText, { color: theme.accent }]}>
                     Valmis
@@ -225,7 +233,9 @@ export function FoundWords({
               {sorted.map((word) => {
                 const isFlash = word === lastResubmittedWord;
                 const isCenter = word.includes(center);
-                const isPangram = [...allLetters].every((c) => word.includes(c));
+                const isPangram = [...allLetters].every((c) =>
+                  word.includes(c),
+                );
                 return (
                   <Pressable
                     key={word}

@@ -75,7 +75,12 @@ export function HintPanel({
       </View>
 
       {/* Content */}
-      <View style={[styles.content, { backgroundColor: theme.bgSecondary, borderColor: theme.border }]}>
+      <View
+        style={[
+          styles.content,
+          { backgroundColor: theme.bgSecondary, borderColor: theme.border },
+        ]}
+      >
         {hintsUnlocked.has(activeTab) ? (
           <TabContent tabId={activeTab} derived={derived} theme={theme} />
         ) : (

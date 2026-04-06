@@ -18,7 +18,10 @@ interface SettingsState {
   setHapticsEnabled: (value: boolean) => void;
 }
 
-function loadSettings(): { themePreference: ThemePreference; hapticsEnabled: boolean } {
+function loadSettings(): {
+  themePreference: ThemePreference;
+  hapticsEnabled: boolean;
+} {
   const saved = storage.load<PersistedSettings>(SETTINGS_KEY);
 
   let themePreference: ThemePreference = 'system';
