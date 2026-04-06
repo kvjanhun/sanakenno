@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { deriveHintData } from '@sanakenno/shared';
 import type { HintData, DerivedHintData } from '@sanakenno/shared';
 import type { Theme } from '../theme';
@@ -11,6 +11,12 @@ const TABS = [
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
+
+/** Fixed height of the content panel — never shifts regardless of tab or content. */
+const CONTENT_HEIGHT = 108;
+
+/** Height of each bar in the lengths chart. */
+const BAR_H = 26;
 
 interface Props {
   hintData: HintData;
@@ -34,63 +40,73 @@ export function HintPanel({
 
   return (
     <View style={styles.container}>
-      {/* Tab bar */}
-      <View style={styles.tabBar}>
-        {TABS.map((tab) => {
-          const isActive = activeTab === tab.id;
-          const isUnlocked = hintsUnlocked.has(tab.id);
-          return (
-            <Pressable
-              key={tab.id}
-              onPress={() => setActiveTab(tab.id)}
-              style={[
-                styles.tab,
-                isActive && { borderBottomColor: theme.accent },
-              ]}
-            >
-              <View style={styles.tabInner}>
+      {/* Segmented control row */}
+      <View style={styles.controlRow}>
+        <Text style={[styles.aputLabel, { color: theme.textPrimary }]}>Avut</Text>
+        <View style={[styles.segmentedControl, { backgroundColor: theme.bgSecondary }]}>
+          {TABS.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <Pressable
+                key={tab.id}
+                onPress={() => setActiveTab(tab.id)}
+                style={[
+                  styles.segment,
+                  isActive && [styles.segmentActive, { backgroundColor: theme.bgPrimary }],
+                ]}
+              >
                 <Text
                   style={[
-                    styles.tabText,
+                    styles.segmentText,
                     {
-                      color: isActive ? theme.accent : theme.textSecondary,
+                      color: isActive ? theme.textPrimary : theme.textSecondary,
                       fontWeight: isActive ? '600' : '400',
                     },
                   ]}
                 >
                   {tab.label}
                 </Text>
-                <View
-                  style={[
-                    styles.dot,
-                    {
-                      backgroundColor: isUnlocked ? theme.accent : theme.border,
-                    },
-                  ]}
-                />
-              </View>
-            </Pressable>
-          );
-        })}
+              </Pressable>
+            );
+          })}
+        </View>
+        {/* Unlock status bars */}
+        <View style={styles.statusBars}>
+          {TABS.map((tab) => (
+            <View
+              key={tab.id}
+              style={[
+                styles.statusBar,
+                { backgroundColor: hintsUnlocked.has(tab.id) ? theme.accent : theme.border },
+              ]}
+            />
+          ))}
+        </View>
       </View>
 
-      {/* Content */}
+      {/* Fixed-height content area — always the same size */}
       <View
         style={[
-          styles.content,
+          styles.contentArea,
           { backgroundColor: theme.bgSecondary, borderColor: theme.border },
         ]}
       >
         {hintsUnlocked.has(activeTab) ? (
-          <TabContent tabId={activeTab} derived={derived} theme={theme} />
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <TabContent tabId={activeTab} derived={derived} theme={theme} />
+          </ScrollView>
         ) : (
-          <View style={styles.locked}>
+          <View style={styles.lockedOverlay}>
             <Pressable
               onPress={() => onUnlock(activeTab)}
               style={[styles.unlockBtn, { backgroundColor: theme.accent }]}
             >
-              <Text style={[styles.unlockText, { color: theme.onAccent }]}>
-                Avaa vihje
+              <Text style={[styles.unlockBtnText, { color: theme.onAccent }]}>
+                Aktivoi apu
               </Text>
             </Pressable>
           </View>
@@ -109,63 +125,97 @@ function TabContent({
   derived: DerivedHintData;
   theme: Theme;
 }) {
-  if (tabId === 'overview') {
+  if (tabId === 'overview') return <OverviewContent derived={derived} theme={theme} />;
+  if (tabId === 'lengths') return <LengthsContent derived={derived} theme={theme} />;
+  return <PairsContent derived={derived} theme={theme} />;
+}
+
+function OverviewContent({ derived, theme }: { derived: DerivedHintData; theme: Theme }) {
+  if (derived.wordsRemaining === 0) {
     return (
-      <View style={styles.overviewGrid}>
-        <Text style={[styles.overviewText, { color: theme.textPrimary }]}>
-          Sanoja: {derived.wordsFound}/{derived.wordCount}
-        </Text>
-        <Text style={[styles.overviewText, { color: theme.textPrimary }]}>
-          Täysosumia: {derived.pangramStats.found}/{derived.pangramStats.total}
-        </Text>
-        {derived.letterMap.map((entry) => (
-          <Text
-            key={entry.letter}
-            style={[styles.entryText, { color: theme.textSecondary }]}
-          >
-            {entry.letter.toUpperCase()}: {entry.found}/{entry.total}
-          </Text>
-        ))}
-      </View>
+      <Text style={[styles.allFoundText, { color: theme.accent }]}>kaikki löydetty</Text>
     );
   }
 
-  if (tabId === 'lengths') {
-    return (
-      <View style={styles.lengthGrid}>
-        {derived.lengthDistribution.map((entry) => (
-          <View key={entry.len} style={styles.lengthRow}>
-            <Text style={[styles.lengthLabel, { color: theme.textSecondary }]}>
-              {entry.len} kirj.
-            </Text>
-            <Text style={[styles.lengthValue, { color: theme.textPrimary }]}>
-              {entry.found}/{entry.total}
-            </Text>
-          </View>
-        ))}
-      </View>
-    );
-  }
+  const pct = Math.round((derived.wordsFound / derived.wordCount) * 100);
+  const { pangramStats } = derived;
+  const pangramLabel = pangramStats.total === 1 ? 'pangrammi' : 'pangrammia';
+  const unfound = derived.lengthDistribution.filter((e) => e.remaining > 0);
+  const longest = unfound.length > 0 ? Math.max(...unfound.map((e) => e.len)) : 0;
 
-  // pairs
   return (
-    <View style={styles.pairGrid}>
-      {derived.pairMap.map((entry) => (
-        <View key={entry.pair} style={styles.pairCell}>
-          <Text style={[styles.pairLabel, { color: theme.textSecondary }]}>
-            {entry.pair.toUpperCase()}
-          </Text>
-          <Text
-            style={[
-              styles.pairValue,
-              {
-                color: entry.remaining === 0 ? theme.accent : theme.textPrimary,
-              },
-            ]}
-          >
-            {entry.found}/{entry.total}
-          </Text>
-        </View>
+    <View style={styles.overviewRows}>
+      <View style={styles.overviewLine}>
+        <Text style={[styles.overviewMain, { color: theme.textPrimary }]}>
+          {derived.wordsRemaining}/{derived.wordCount} sanaa löytämättä
+        </Text>
+        <Text style={[styles.overviewSub, { color: theme.textSecondary }]}> ({pct}%)</Text>
+      </View>
+      <Text style={[styles.overviewDetail, { color: theme.textSecondary }]}>
+        {pangramStats.remaining}/{pangramStats.total} {pangramLabel}
+        {' · '}pisin jäljellä {longest} kirj.
+      </Text>
+    </View>
+  );
+}
+
+function LengthsContent({ derived, theme }: { derived: DerivedHintData; theme: Theme }) {
+  return (
+    <View style={styles.barsWrapper}>
+      <Text style={[styles.barsCaption, { color: theme.textTertiary }]}>jäljellä</Text>
+      <View style={styles.barsRow}>
+        {derived.lengthDistribution.map((item) => {
+          const done = item.remaining === 0;
+          const fillH = item.total > 0 ? Math.round(BAR_H * (item.found / item.total)) : 0;
+          return (
+            <View key={item.len} style={styles.barCol}>
+              <Text
+                style={[
+                  styles.barCountText,
+                  { color: done ? theme.textTertiary : theme.textSecondary },
+                ]}
+              >
+                {item.remaining}
+              </Text>
+              <View style={[styles.barContainer, { backgroundColor: theme.bgPrimary }]}>
+                <View
+                  style={[
+                    styles.barFill,
+                    { height: fillH, backgroundColor: done ? theme.textTertiary : theme.accent },
+                  ]}
+                />
+              </View>
+              <Text
+                style={[
+                  styles.barLenText,
+                  { color: done ? theme.textTertiary : theme.textSecondary },
+                ]}
+              >
+                {item.len}
+              </Text>
+            </View>
+          );
+        })}
+      </View>
+      <Text style={[styles.barsCaption, { color: theme.textTertiary }]}>kirjainta</Text>
+    </View>
+  );
+}
+
+function PairsContent({ derived, theme }: { derived: DerivedHintData; theme: Theme }) {
+  return (
+    <View style={styles.pairsWrap}>
+      {derived.pairMap.map((item) => (
+        <Text
+          key={item.pair}
+          style={[
+            styles.pairItem,
+            { color: item.remaining === 0 ? theme.textTertiary : theme.textPrimary },
+          ]}
+        >
+          <Text style={styles.pairKey}>{item.pair.toUpperCase()}: </Text>
+          {item.remaining}
+        </Text>
       ))}
     </View>
   );
@@ -173,95 +223,160 @@ function TabContent({
 
 const styles = StyleSheet.create({
   container: {
-    gap: 0,
+    gap: 6,
   },
-  tabBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  tab: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    minHeight: 36,
-    justifyContent: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  tabInner: {
+
+  // --- Control row ---
+  controlRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 8,
   },
-  tabText: {
-    fontSize: 13,
+  aputLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    flexShrink: 0,
   },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+  segmentedControl: {
+    flex: 1,
+    flexDirection: 'row',
+    borderRadius: 9,
+    padding: 3,
+    gap: 2,
   },
-  content: {
-    minHeight: 80,
+  segment: {
+    flex: 1,
+    paddingVertical: 5,
+    paddingHorizontal: 2,
+    borderRadius: 7,
+    alignItems: 'center',
+  },
+  segmentActive: {
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
+  segmentText: {
+    fontSize: 12,
+  },
+  statusBars: {
+    flexDirection: 'row',
+    gap: 3,
+    flexShrink: 0,
+  },
+  statusBar: {
+    width: 4,
+    height: 16,
+    borderRadius: 2,
+  },
+
+  // --- Content area ---
+  contentArea: {
+    height: CONTENT_HEIGHT,
     borderRadius: 10,
     borderWidth: StyleSheet.hairlineWidth,
-    padding: 10,
-    marginTop: 2,
+    overflow: 'hidden',
   },
-  locked: {
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 12,
+    minHeight: CONTENT_HEIGHT,
+    justifyContent: 'center',
+  },
+  lockedOverlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    minHeight: 80,
   },
   unlockBtn: {
-    borderRadius: 999,
+    borderRadius: 8,
     paddingHorizontal: 20,
-    paddingVertical: 12,
-    minHeight: 44,
-    justifyContent: 'center',
+    paddingVertical: 9,
   },
-  unlockText: {
+  unlockBtnText: {
     fontWeight: '600',
     fontSize: 14,
   },
-  overviewGrid: {
-    gap: 4,
-  },
-  overviewText: {
+
+  // --- Overview ---
+  allFoundText: {
     fontSize: 14,
     fontWeight: '600',
   },
-  entryText: {
-    fontSize: 13,
-  },
-  lengthGrid: {
+  overviewRows: {
     gap: 4,
   },
-  lengthRow: {
+  overviewLine: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  lengthLabel: {
-    fontSize: 13,
-  },
-  lengthValue: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  pairGrid: {
-    flexDirection: 'row',
+    alignItems: 'baseline',
     flexWrap: 'wrap',
-    gap: 8,
   },
-  pairCell: {
-    alignItems: 'center',
-    width: 50,
+  overviewMain: {
+    fontSize: 13,
+    fontWeight: '500',
   },
-  pairLabel: {
+  overviewSub: {
     fontSize: 12,
   },
-  pairValue: {
+  overviewDetail: {
+    fontSize: 12,
+  },
+
+  // --- Lengths bar chart ---
+  barsWrapper: {
+    alignItems: 'center',
+    gap: 3,
+  },
+  barsCaption: {
+    fontSize: 10,
+    lineHeight: 12,
+  },
+  barsRow: {
+    flexDirection: 'row',
+    alignSelf: 'stretch',
+    gap: 4,
+    alignItems: 'flex-end',
+  },
+  barCol: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  barCountText: {
+    fontSize: 9,
+    lineHeight: 11,
+    marginBottom: 1,
+  },
+  barContainer: {
+    width: '100%',
+    height: BAR_H,
+    borderRadius: 3,
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+  },
+  barFill: {
+    width: '100%',
+  },
+  barLenText: {
+    fontSize: 9,
+    lineHeight: 11,
+    marginTop: 1,
+  },
+
+  // --- Pairs ---
+  pairsWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    rowGap: 4,
+  },
+  pairItem: {
     fontSize: 13,
-    fontWeight: '600',
+  },
+  pairKey: {
+    fontWeight: '500',
   },
 });
