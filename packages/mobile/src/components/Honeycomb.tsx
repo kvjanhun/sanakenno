@@ -10,7 +10,8 @@ import Svg, {
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
+  withTiming,
+  Easing,
   runOnJS,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -93,12 +94,18 @@ function HexButton({
   const tap = Gesture.Tap()
     .onBegin(() => {
       'worklet';
-      scale.value = withSpring(0.92, { damping: 15, stiffness: 400 });
+      scale.value = withTiming(0.95, {
+        duration: 50,
+        easing: Easing.out(Easing.ease),
+      });
       runOnJS(handlePress)();
     })
     .onFinalize(() => {
       'worklet';
-      scale.value = withSpring(1, { damping: 12, stiffness: 300 });
+      scale.value = withTiming(1, {
+        duration: 80,
+        easing: Easing.out(Easing.ease),
+      });
     });
 
   const animatedStyle = useAnimatedStyle(() => ({

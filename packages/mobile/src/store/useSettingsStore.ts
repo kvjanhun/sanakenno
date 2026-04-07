@@ -3,24 +3,26 @@ import { storage } from '../platform';
 import * as PreparedHaptics from 'prepared-haptics';
 
 export type ThemePreference = 'light' | 'dark' | 'system';
+export type HapticsIntensity = 'off' | 'light' | 'medium' | 'heavy';
 
 const SETTINGS_KEY = 'sanakenno_settings';
 
 interface PersistedSettings {
   themePreference?: ThemePreference;
   hapticsEnabled?: boolean;
+  hapticsIntensity?: HapticsIntensity;
 }
 
 interface SettingsState {
   themePreference: ThemePreference;
-  hapticsEnabled: boolean;
+  hapticsIntensity: HapticsIntensity;
   setThemePreference: (pref: ThemePreference) => void;
-  setHapticsEnabled: (value: boolean) => void;
+  setHapticsIntensity: (value: HapticsIntensity) => void;
 }
 
 function loadSettings(): {
   themePreference: ThemePreference;
-  hapticsEnabled: boolean;
+  hapticsIntensity: HapticsIntensity;
 } {
   const saved = storage.load<PersistedSettings>(SETTINGS_KEY);
 
@@ -33,10 +35,19 @@ function loadSettings(): {
     themePreference = saved.themePreference;
   }
 
-  const hapticsEnabled = saved?.hapticsEnabled !== false;
-  PreparedHaptics.setEnabled(hapticsEnabled);
+  // Migrate old boolean hapticsEnabled to hapticsIntensity
+  let hapticsIntensity: HapticsIntensity = 'heavy';
+  if (saved?.hapticsIntensity != null) {
+    const v = saved.hapticsIntensity;
+    if (v === 'off' || v === 'light' || v === 'medium' || v === 'heavy') {
+      hapticsIntensity = v;
+    }
+  } else if (saved?.hapticsEnabled === false) {
+    hapticsIntensity = 'off';
+  }
+  PreparedHaptics.setIntensity(hapticsIntensity);
 
-  return { themePreference, hapticsEnabled };
+  return { themePreference, hapticsIntensity };
 }
 
 const initial = loadSettings();
@@ -48,16 +59,16 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
     set({ themePreference: pref });
     storage.save(SETTINGS_KEY, {
       themePreference: pref,
-      hapticsEnabled: get().hapticsEnabled,
+      hapticsIntensity: get().hapticsIntensity,
     });
   },
 
-  setHapticsEnabled: (value: boolean) => {
-    PreparedHaptics.setEnabled(value);
-    set({ hapticsEnabled: value });
+  setHapticsIntensity: (value: HapticsIntensity) => {
+    PreparedHaptics.setIntensity(value);
+    set({ hapticsIntensity: value });
     storage.save(SETTINGS_KEY, {
       themePreference: get().themePreference,
-      hapticsEnabled: value,
+      hapticsIntensity: value,
     });
   },
 }));

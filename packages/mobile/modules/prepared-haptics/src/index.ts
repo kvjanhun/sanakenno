@@ -15,9 +15,39 @@ try {
 }
 
 let enabled = true;
+let intensity: 'off' | 'light' | 'medium' | 'heavy' = 'heavy';
 
 export function setEnabled(value: boolean): void {
   enabled = value;
+  intensity = value ? 'heavy' : 'off';
+}
+
+export function setIntensity(
+  value: 'off' | 'light' | 'medium' | 'heavy',
+): void {
+  intensity = value;
+  enabled = value !== 'off';
+}
+
+/** Cap an impact style to the user's intensity preference. */
+function cappedImpact(
+  requested: 'light' | 'medium' | 'heavy',
+): 'light' | 'medium' | 'heavy' | null {
+  if (intensity === 'off') return null;
+  const order: Array<'light' | 'medium' | 'heavy'> = [
+    'light',
+    'medium',
+    'heavy',
+  ];
+  const cap =
+    intensity === 'heavy'
+      ? 'heavy'
+      : intensity === 'medium'
+        ? 'medium'
+        : 'light';
+  const reqIdx = order.indexOf(requested);
+  const capIdx = order.indexOf(cap);
+  return order[Math.min(reqIdx, capIdx)];
 }
 
 export function trigger(): void {
@@ -32,16 +62,17 @@ export function trigger(): void {
 export function triggerImpact(
   style: 'light' | 'medium' | 'heavy' = 'light',
 ): void {
-  if (!enabled) return;
+  const capped = cappedImpact(style);
+  if (capped === null) return;
   if (native) {
-    native.triggerImpact(style);
+    native.triggerImpact(capped);
   } else {
     const map = {
       light: Haptics.ImpactFeedbackStyle.Light,
       medium: Haptics.ImpactFeedbackStyle.Medium,
       heavy: Haptics.ImpactFeedbackStyle.Heavy,
     };
-    Haptics.impactAsync(map[style]);
+    Haptics.impactAsync(map[capped]);
   }
 }
 
@@ -49,6 +80,15 @@ export function triggerNotification(
   type: 'success' | 'error' | 'warning' = 'success',
 ): void {
   if (!enabled) return;
+  // For light intensity, downgrade notifications to a light impact
+  if (intensity === 'light') {
+    if (native) {
+      native.triggerImpact('light');
+    } else {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    return;
+  }
   if (native) {
     native.triggerNotification(type);
   } else {

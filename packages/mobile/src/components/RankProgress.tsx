@@ -10,6 +10,7 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import { useEffect, useRef, useState } from 'react';
 import { rankThresholds } from '@sanakenno/shared';
@@ -36,7 +37,8 @@ export function RankProgress({
   puzzleNumber,
   theme,
 }: RankProgressProps) {
-  const animatedProgress = useSharedValue(0);
+  const animatedProgress = useSharedValue(progress);
+  const prevScoreRef = useRef(score);
   const [displayScore, setDisplayScore] = useState(score);
   const fromRef = useRef(score);
   const rafRef = useRef<ReturnType<typeof requestAnimationFrame> | undefined>(
@@ -48,11 +50,18 @@ export function RankProgress({
   const thresholds = rankThresholds(rankLabel, maxScore);
 
   useEffect(() => {
-    animatedProgress.value = withSpring(progress, {
-      damping: 18,
-      stiffness: 200,
-    });
-  }, [progress, animatedProgress]);
+    const delta = score - prevScoreRef.current;
+    prevScoreRef.current = score;
+    if (delta > 10) {
+      animatedProgress.value = withSpring(progress, {
+        damping: 18,
+        stiffness: 200,
+        overshootClamping: true,
+      });
+    } else {
+      animatedProgress.value = withTiming(progress, { duration: 0 });
+    }
+  }, [progress, score, animatedProgress]);
 
   // Animate score counter from previous value to new value (cubic ease-out, 300ms)
   useEffect(() => {
@@ -79,7 +88,7 @@ export function RankProgress({
   }, [score]);
 
   const fillStyle = useAnimatedStyle(() => ({
-    width: `${animatedProgress.value}%`,
+    width: `${Math.min(100, Math.max(0, animatedProgress.value))}%`,
   }));
 
   return (

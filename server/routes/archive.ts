@@ -16,6 +16,7 @@ interface ArchiveEntry {
   letters: string[];
   center: string;
   is_today: boolean;
+  max_score: number;
 }
 
 const archive = new Hono();
@@ -53,6 +54,7 @@ archive.get('/', (c) => {
         letters: [puzzle.center, ...puzzle.letters],
         center: puzzle.center,
         is_today: daysAgo === 0,
+        max_score: puzzle.max_score,
       });
     }
 

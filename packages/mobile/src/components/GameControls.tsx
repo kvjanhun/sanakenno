@@ -82,28 +82,39 @@ function ShareIcon({ color }: { color: string }) {
 function ShuffleIcon({ color }: { color: string }) {
   return (
     <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+      {/* Arrowhead at top-right */}
       <Path
-        d="M16 3L21 8L16 13"
+        d="M16 3L21 3L21 8"
         stroke={color}
         strokeWidth={2}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+      {/* Long diagonal: bottom-left → top-right */}
       <Path
-        d="M21 8H8C5.23858 8 3 10.2386 3 13V13"
+        d="M4 20L21 3"
         stroke={color}
         strokeWidth={2}
         strokeLinecap="round"
       />
+      {/* Arrowhead at bottom-right */}
       <Path
-        d="M8 21L3 16L8 11"
+        d="M21 16L21 21L16 21"
         stroke={color}
         strokeWidth={2}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+      {/* Short diagonal → bottom-right */}
       <Path
-        d="M3 16H16C18.7614 16 21 13.7614 21 11V11"
+        d="M15 15L21 21"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+      {/* Short diagonal from top-left */}
+      <Path
+        d="M4 4L9 9"
         stroke={color}
         strokeWidth={2}
         strokeLinecap="round"

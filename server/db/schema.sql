@@ -80,3 +80,15 @@ CREATE TABLE IF NOT EXISTS config (
     key     TEXT PRIMARY KEY,
     value   TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS failed_guesses (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    word        TEXT NOT NULL,
+    puzzle_date TEXT NOT NULL,
+    count       INTEGER NOT NULL DEFAULT 1,
+    first_at    TEXT NOT NULL DEFAULT (datetime('now')),
+    last_at     TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(word, puzzle_date)
+);
+CREATE INDEX IF NOT EXISTS idx_failed_guesses_word ON failed_guesses(word);
+CREATE INDEX IF NOT EXISTS idx_failed_guesses_date ON failed_guesses(puzzle_date);

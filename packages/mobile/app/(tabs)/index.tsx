@@ -16,7 +16,6 @@ import { useGameTimer } from '../../src/hooks/useGameTimer';
 import { useMidnightRollover } from '../../src/hooks/useMidnightRollover';
 import { rankForScore, progressToNextRank } from '@sanakenno/shared';
 import { useTheme } from '../../src/theme';
-import { share } from '../../src/platform';
 
 export default function GameScreen() {
   const theme = useTheme();
@@ -163,13 +162,7 @@ export default function GameScreen() {
           celebration={celebration}
           score={score}
           onDismiss={() => setCelebration(null)}
-          onShare={() => {
-            const text =
-              celebration === 'taysikenno'
-                ? `Sanakenno: Täysi kenno! ${score} pistettä 🏆`
-                : `Sanakenno: Ällistyttävä! ${score} pistettä ⭐`;
-            share.copyToClipboard(text);
-          }}
+          onShare={copyStatus}
           theme={theme}
         />
       </SafeAreaView>

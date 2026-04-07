@@ -47,14 +47,11 @@ export function useMidnightRollover(): void {
       }
     };
 
-    // Schedule a refetch at midnight
-    timerId.current = setTimeout(() => {
-      mountDate.current = getHelsinkiDateString();
-      useGameStore.getState().fetchPuzzle();
-      // Re-schedule for the next midnight (recursive via effect cleanup + re-run)
-    }, msUntilMidnight());
+    // Schedule a single refetch at next midnight (+500ms buffer to avoid edge misfires).
+    // The AppState listener handles the case where the app is backgrounded past midnight.
+    timerId.current = setTimeout(refetchIfNewDay, msUntilMidnight() + 500);
 
-    // Check on app foregrounding
+    // Check on app foregrounding (reliable fallback for backgrounded JS timers)
     const handleAppState = (nextState: AppStateStatus) => {
       if (nextState === 'active') {
         refetchIfNewDay();

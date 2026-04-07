@@ -2,7 +2,7 @@
   "expo": {
     "name": "Sanakenno",
     "slug": "sanakenno",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "sanakenno",
@@ -11,7 +11,7 @@
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#3A3A3A"
+      "backgroundColor": "#FFFFFF"
     },
     "ios": {
       "supportsTablet": false,
@@ -20,6 +20,16 @@
         "light": "./assets/images/icon.png",
         "dark": "./assets/images/icon-dark.png",
         "tinted": "./assets/images/icon-tinted.png"
+      },
+      "splash": {
+        "image": "./assets/images/splash-icon.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#FFFFFF",
+        "dark": {
+          "image": "./assets/images/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#1A1A1A"
+        }
       }
     },
     "android": {
@@ -30,7 +40,12 @@
       },
       "edgeToEdgeEnabled": true
     },
-    "plugins": ["expo-router", "expo-font", "react-native-bottom-tabs"],
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "react-native-bottom-tabs",
+      "expo-splash-screen"
+    ],
     "experiments": {
       "typedRoutes": true
     }

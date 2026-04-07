@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,8 +10,9 @@ import {
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../src/theme';
-import { config } from '../../src/platform';
+import { config, storage } from '../../src/platform';
 import { useGameStore } from '../../src/store/useGameStore';
+import { rankForScore } from '@sanakenno/shared';
 
 interface ArchiveEntry {
   date: string;
@@ -19,6 +20,11 @@ interface ArchiveEntry {
   letters: string[];
   center: string;
   is_today: boolean;
+  max_score: number;
+}
+
+interface SavedGameState {
+  score?: number;
 }
 
 function formatFinnishDate(dateStr: string): string {
@@ -54,6 +60,23 @@ export default function ArchiveScreen() {
         setLoading(false);
       });
   }, []);
+
+  // Build a map of puzzleNumber → { score, rank } from local storage
+  const savedProgress = useMemo(() => {
+    const map = new Map<number, { score: number; rank: string }>();
+    for (const entry of entries) {
+      const saved = storage.load<SavedGameState>(
+        `game_state_${entry.puzzle_number}`,
+      );
+      if (saved?.score != null && saved.score > 0) {
+        map.set(entry.puzzle_number, {
+          score: saved.score,
+          rank: rankForScore(saved.score, entry.max_score),
+        });
+      }
+    }
+    return map;
+  }, [entries]);
 
   const handlePress = useCallback(
     (puzzleNumber: number) => {
@@ -94,6 +117,7 @@ export default function ArchiveScreen() {
       contentInsetAdjustmentBehavior="automatic"
       renderItem={({ item }) => {
         const isCurrent = item.puzzle_number === currentPuzzleNumber;
+        const progress = savedProgress.get(item.puzzle_number);
         return (
           <Pressable
             onPress={() => handlePress(item.puzzle_number)}
@@ -119,6 +143,23 @@ export default function ArchiveScreen() {
               )}
             </View>
             <View style={styles.rowRight}>
+              {progress && (
+                <View
+                  style={[
+                    styles.rankBadge,
+                    {
+                      backgroundColor: theme.bgPrimary,
+                      borderColor: theme.border,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[styles.rankText, { color: theme.textSecondary }]}
+                  >
+                    {progress.rank} · {progress.score}p
+                  </Text>
+                </View>
+              )}
               <Text style={[styles.letters, { color: theme.textSecondary }]}>
                 {item.letters
                   .map((l) => (l === item.center ? '' : l.toUpperCase()))
@@ -178,11 +219,21 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   letters: {
-    fontSize: 14,
-    letterSpacing: 2,
+    fontSize: 13,
+    letterSpacing: 1,
   },
   centerLetter: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
+  },
+  rankBadge: {
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  rankText: {
+    fontSize: 11,
+    fontWeight: '500',
   },
 });

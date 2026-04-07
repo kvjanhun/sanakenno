@@ -10,6 +10,7 @@
  *   GET  /api/puzzle/:number      - Specific puzzle by slot number
  *   GET  /api/archive             - Last 7 days of puzzle metadata
  *   POST /api/achievement         - Record player achievement
+ *   POST /api/failed-guess        - Record non-dictionary guess
  *   POST /api/auth/login          - Admin login
  *   POST /api/auth/logout         - Admin logout
  *   GET  /api/auth/session        - Check session validity
@@ -25,6 +26,7 @@ import { getDb } from './db/connection';
 import puzzleRoutes from './routes/puzzle';
 import archiveRoutes from './routes/archive';
 import achievementRoutes from './routes/achievement';
+import failedGuessRoutes from './routes/failed-guess';
 import authRoutes from './auth/routes';
 import adminRoutes from './routes/admin';
 import { securityHeaders, requireAuth, requireCsrf } from './auth/middleware';
@@ -112,6 +114,7 @@ app.use('/api/admin/*', requireCsrf);
 app.route('/api/puzzle', puzzleRoutes);
 app.route('/api/archive', archiveRoutes);
 app.route('/api/achievement', achievementRoutes);
+app.route('/api/failed-guess', failedGuessRoutes);
 app.route('/api/auth', authRoutes);
 app.route('/api/admin', adminRoutes);
 

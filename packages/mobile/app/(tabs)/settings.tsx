@@ -1,7 +1,8 @@
-import { View, Text, Switch, StyleSheet } from 'react-native';
+import { View, Text, Switch, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../src/theme';
 import { useSettingsStore } from '../../src/store/useSettingsStore';
+import type { HapticsIntensity } from '../../src/store/useSettingsStore';
 
 function SettingRow({
   label,
@@ -51,6 +52,69 @@ function SettingRow({
   );
 }
 
+const HAPTICS_OPTIONS: Array<{ value: HapticsIntensity; label: string }> = [
+  { value: 'off', label: 'Ei' },
+  { value: 'light', label: 'Kevyt' },
+  { value: 'medium', label: 'Normaali' },
+  { value: 'heavy', label: 'Voimakas' },
+];
+
+function HapticsSegmentedControl({
+  value,
+  onChange,
+  accentColor,
+  labelColor,
+  bgColor,
+  borderColor,
+}: {
+  value: HapticsIntensity;
+  onChange: (v: HapticsIntensity) => void;
+  accentColor: string;
+  labelColor: string;
+  bgColor: string;
+  borderColor: string;
+}) {
+  return (
+    <View style={[styles.row, styles.rowColumn]}>
+      <Text style={[styles.rowLabel, { color: labelColor }]}>Värinät</Text>
+      <View style={[styles.segmented, { borderColor }]}>
+        {HAPTICS_OPTIONS.map((opt, i) => {
+          const isSelected = value === opt.value;
+          const isFirst = i === 0;
+          const isLast = i === HAPTICS_OPTIONS.length - 1;
+          return (
+            <Pressable
+              key={opt.value}
+              onPress={() => onChange(opt.value)}
+              style={[
+                styles.segment,
+                {
+                  backgroundColor: isSelected ? accentColor : bgColor,
+                  borderLeftWidth: isFirst ? 0 : StyleSheet.hairlineWidth,
+                  borderLeftColor: borderColor,
+                  borderTopLeftRadius: isFirst ? 8 : 0,
+                  borderBottomLeftRadius: isFirst ? 8 : 0,
+                  borderTopRightRadius: isLast ? 8 : 0,
+                  borderBottomRightRadius: isLast ? 8 : 0,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.segmentText,
+                  { color: isSelected ? '#fff' : labelColor },
+                ]}
+              >
+                {opt.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
 function SettingGroup({
   children,
   backgroundColor,
@@ -64,9 +128,9 @@ function SettingGroup({
 export default function SettingsScreen() {
   const theme = useTheme();
   const themePreference = useSettingsStore((s) => s.themePreference);
-  const hapticsEnabled = useSettingsStore((s) => s.hapticsEnabled);
+  const hapticsIntensity = useSettingsStore((s) => s.hapticsIntensity);
   const setThemePreference = useSettingsStore((s) => s.setThemePreference);
-  const setHapticsEnabled = useSettingsStore((s) => s.setHapticsEnabled);
+  const setHapticsIntensity = useSettingsStore((s) => s.setHapticsIntensity);
 
   const followSystem = themePreference === 'system';
   const darkMode = themePreference === 'dark';
@@ -110,14 +174,13 @@ export default function SettingsScreen() {
         Palaute
       </Text>
       <SettingGroup backgroundColor={theme.bgSecondary}>
-        <SettingRow
-          label="Värinät"
-          value={hapticsEnabled}
-          onValueChange={setHapticsEnabled}
+        <HapticsSegmentedControl
+          value={hapticsIntensity}
+          onChange={setHapticsIntensity}
           accentColor={theme.accent}
           labelColor={theme.textPrimary}
+          bgColor={theme.bgSecondary}
           borderColor={theme.border}
-          isLast
         />
       </SettingGroup>
     </SafeAreaView>
@@ -151,7 +214,29 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
     backgroundColor: 'transparent',
   },
+  rowColumn: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    gap: 8,
+    paddingVertical: 14,
+  },
   rowLabel: {
     fontSize: 16,
+  },
+  segmented: {
+    flexDirection: 'row',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  segment: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  segmentText: {
+    fontSize: 13,
+    fontWeight: '500',
   },
 });

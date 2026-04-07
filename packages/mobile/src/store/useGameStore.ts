@@ -150,7 +150,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
   addLetter: (letter: string) => {
     const { wordRejected } = get();
     if (wordRejected) {
-      set({ currentWord: letter, wordRejected: false });
+      set({ currentWord: letter, wordRejected: false, message: '' });
       return;
     }
     set((s) => ({ currentWord: s.currentWord + letter }));
@@ -159,7 +159,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
   deleteLetter: () => {
     const { wordRejected } = get();
     if (wordRejected) {
-      set({ currentWord: '', wordRejected: false });
+      set({ currentWord: '', wordRejected: false, message: '' });
       return;
     }
     set((s) => ({ currentWord: s.currentWord.slice(0, -1) }));
@@ -232,6 +232,15 @@ export const useGameStore = create<GameState>()((set, get) => ({
     const hashSet = new Set(puzzle.word_hashes);
     if (!hashSet.has(wordHash)) {
       showError('Ei sanakirjassa');
+      // Fire-and-forget: record non-dictionary guess on server
+      const today = new Date().toISOString().slice(0, 10);
+      fetch(`${config.apiBase}/api/failed-guess`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ word: normalized, date: today }),
+      }).catch(() => {
+        // Silently ignore network errors
+      });
       return;
     }
 
@@ -247,10 +256,10 @@ export const useGameStore = create<GameState>()((set, get) => ({
     let msg: string;
     let msgType: MessageType = 'ok';
     if (isPangram) {
-      msg = `Täysosuma!`;
+      msg = 'Pangrammi!';
       msgType = 'special';
     } else if (newRank !== previousRank) {
-      msg = `${newRank}!`;
+      msg = newRank.endsWith('!') ? newRank : `${newRank}!`;
       msgType = 'special';
     } else {
       msg = `+${pts}`;

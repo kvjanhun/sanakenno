@@ -35,7 +35,7 @@ interface FoundWordsProps {
 export function FoundWords({
   foundWords,
   lastResubmittedWord,
-  center,
+  center: _center,
   allLetters,
   theme,
 }: FoundWordsProps) {
@@ -139,7 +139,19 @@ export function FoundWords({
     opacity: backdropOpacity.value,
   }));
 
-  if (foundWords.size === 0) return null;
+  if (foundWords.size === 0) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.headerRow}>
+          <Text style={[styles.headerText, { color: theme.textSecondary }]}>
+            Löydetyt sanat (0)
+          </Text>
+        </View>
+        {/* Reserve the same height as the pill row so the hex doesn't jump */}
+        <View style={styles.pillRowPlaceholder} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -253,7 +265,6 @@ export function FoundWords({
                 <View key={ci} style={[styles.wordsCol, { width: itemWidth }]}>
                   {col.map((word) => {
                     const isFlash = word === lastResubmittedWord;
-                    const isCenter = word.includes(center);
                     const isPangram = [...allLetters].every((c) =>
                       word.includes(c),
                     );
@@ -266,10 +277,7 @@ export function FoundWords({
                           style={[
                             styles.wordText,
                             {
-                              color:
-                                isFlash || isCenter
-                                  ? theme.accent
-                                  : theme.textPrimary,
+                              color: isFlash ? theme.accent : theme.textPrimary,
                               fontWeight: isPangram ? '700' : '400',
                             },
                           ]}
@@ -298,7 +306,7 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 4,
   },
   headerText: {
     fontSize: 13,
@@ -310,6 +318,9 @@ const styles = StyleSheet.create({
   pillRow: {
     flexDirection: 'row',
     gap: 6,
+  },
+  pillRowPlaceholder: {
+    height: 32,
   },
   pill: {
     paddingHorizontal: 10,

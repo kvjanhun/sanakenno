@@ -386,6 +386,16 @@ export const useGameStore = create<GameState>()((set, get) => ({
       set({ wordRejected: true, wordShake: true });
       setTimeout(() => set({ wordShake: false }), 400);
 
+      // Fire-and-forget: record non-dictionary guess on server
+      const today = new Date().toISOString().slice(0, 10);
+      fetch(`${API_BASE}/api/failed-guess`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ word: normalized, date: today }),
+      }).catch(() => {
+        // Silently ignore network errors
+      });
+
       return;
     }
 
