@@ -94,55 +94,39 @@ export function RankProgress({
   return (
     <View style={styles.container}>
       <View style={styles.row}>
-        {/* Rank chip → opens rank overlay */}
-        <Pressable
-          onPress={() => setRankOpen(true)}
-          style={[styles.chip, { backgroundColor: theme.accent }]}
-        >
-          <Text style={[styles.chipText, { color: '#fff', fontWeight: '600' }]}>
-            {rankLabel} ▼
-          </Text>
-        </Pressable>
-
-        {/* Puzzle number badge */}
-        <View
-          style={[
-            styles.chip,
-            {
-              backgroundColor: theme.bgSecondary,
-              borderColor: theme.border,
-              borderWidth: StyleSheet.hairlineWidth,
-            },
-          ]}
-        >
-          <Text style={[styles.chipText, { color: theme.textSecondary }]}>
-            Kenno #{puzzleNumber}
-          </Text>
-        </View>
-
-        {/* Animated score — tappable when hints used */}
-        <Pressable
-          onPress={() => {
-            if (hintsUsed) setScoreOpen(true);
-          }}
-          style={[
-            styles.chip,
-            {
-              backgroundColor: theme.bgSecondary,
-              borderColor: theme.border,
-              borderWidth: StyleSheet.hairlineWidth,
-            },
-          ]}
-        >
+        <View style={styles.rowLeft}>
+          {/* Score */}
           <Text
             style={[
-              styles.chipText,
-              { color: theme.textPrimary, fontWeight: '600' },
+              styles.scoreText,
+              { color: theme.textPrimary },
             ]}
           >
-            {displayScore} p{hintsUsed ? ' ⓘ' : ''}
+            {displayScore} p
           </Text>
-        </Pressable>
+
+          {/* Score info button */}
+          <Pressable onPress={() => setScoreOpen(true)}>
+            <Text style={[styles.infoIcon, { color: theme.textSecondary }]}>
+              ⓘ
+            </Text>
+          </Pressable>
+
+          {/* Rank pill → opens rank overlay */}
+          <Pressable
+            onPress={() => setRankOpen(true)}
+            style={[styles.chip, { backgroundColor: theme.accent }]}
+          >
+            <Text style={[styles.chipText, { color: '#fff', fontWeight: '600' }]}>
+              {rankLabel} ▼
+            </Text>
+          </Pressable>
+        </View>
+
+        {/* Puzzle number */}
+        <Text style={[styles.puzzleNumber, { color: theme.textSecondary }]}>
+          Kenno #{puzzleNumber}
+        </Text>
       </View>
 
       <View
@@ -235,23 +219,36 @@ export function RankProgress({
         onRequestClose={() => setScoreOpen(false)}
       >
         <Pressable style={styles.backdrop} onPress={() => setScoreOpen(false)}>
-          <View
+          <Pressable
             style={[
               styles.overlayCard,
               styles.scoreCard,
               { backgroundColor: theme.bgPrimary, borderColor: theme.border },
             ]}
+            onPress={() => {}}
           >
-            <Text style={[styles.overlayTitle, { color: theme.textSecondary }]}>
-              Pisteet ilman apuja
-            </Text>
             <Text style={[styles.scoreCardValue, { color: theme.textPrimary }]}>
-              {scoreBeforeHints ?? 0} p
+              {displayScore} / {maxScore} p
             </Text>
             <Text style={[styles.scoreCardSub, { color: theme.textSecondary }]}>
-              Nykyinen pisteet: {score} p
+              Ilman vihjeitä: {scoreBeforeHints ?? score} p
             </Text>
-          </View>
+            <View style={[styles.scoreCardDivider, { backgroundColor: theme.border }]} />
+            <Text style={[styles.overlayTitle, { color: theme.textSecondary }]}>
+              Pisteytys
+            </Text>
+            <View style={styles.scoreCardList}>
+              <Text style={[styles.scoreCardItem, { color: theme.textSecondary }]}>
+                • 4-kirjaiminen sana: 1 piste
+              </Text>
+              <Text style={[styles.scoreCardItem, { color: theme.textSecondary }]}>
+                • Pidempi sana: pisteitä sanan pituuden verran
+              </Text>
+              <Text style={[styles.scoreCardItem, { color: theme.textSecondary }]}>
+                • Pangrammi: +7 lisäpistettä
+              </Text>
+            </View>
+          </Pressable>
         </Pressable>
       </Modal>
     </View>
@@ -260,7 +257,7 @@ export function RankProgress({
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 8,
+    paddingTop: 4,
     paddingBottom: 4,
   },
   row: {
@@ -269,15 +266,31 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 8,
   },
+  rowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  scoreText: {
+    fontSize: 26,
+    fontWeight: '700',
+  },
+  infoIcon: {
+    fontSize: 20,
+  },
   chip: {
     paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 8,
+    paddingVertical: 5,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
   },
   chipText: {
-    fontSize: 14,
+    fontSize: 13,
+  },
+  puzzleNumber: {
+    fontSize: 18,
+    fontWeight: '500',
   },
   progressTrack: {
     width: '100%',
@@ -335,15 +348,32 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   scoreCard: {
-    maxWidth: 280,
-    alignItems: 'center',
+    maxWidth: 300,
+    alignItems: 'flex-start',
+  },
+  scoreCardList: {
+    gap: 2,
+  },
+  scoreCardItem: {
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  scoreCardCaption: {
+    fontSize: 11,
+    lineHeight: 16,
+    marginTop: 2,
+  },
+  scoreCardDivider: {
+    height: StyleSheet.hairlineWidth,
+    alignSelf: 'stretch',
+    marginVertical: 8,
   },
   scoreCardValue: {
     fontSize: 36,
     fontWeight: '700',
   },
   scoreCardSub: {
-    fontSize: 14,
+    fontSize: 18,
     marginTop: 4,
   },
 });

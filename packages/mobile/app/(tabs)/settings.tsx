@@ -57,7 +57,7 @@ function SettingRow({
 }
 
 const HAPTICS_OPTIONS: Array<{ value: HapticsIntensity; label: string }> = [
-  { value: 'off', label: 'Ei' },
+  { value: 'off', label: 'Pois' },
   { value: 'light', label: 'Kevyt' },
   { value: 'medium', label: 'Normaali' },
   { value: 'heavy', label: 'Voimakas' },
@@ -80,7 +80,7 @@ function HapticsSegmentedControl({
 }) {
   return (
     <View style={[styles.row, styles.rowColumn]}>
-      <Text style={[styles.rowLabel, { color: labelColor }]}>Värinät</Text>
+      <Text style={[styles.rowLabel, { color: labelColor }]}>Voimakkuus</Text>
       <View style={[styles.segmented, { borderColor }]}>
         {HAPTICS_OPTIONS.map((opt, i) => {
           const isSelected = value === opt.value;
@@ -153,7 +153,7 @@ export default function SettingsScreen() {
       </Text>
       <SettingGroup backgroundColor={theme.bgSecondary}>
         <SettingRow
-          label="Tumma tila"
+          label="Tumma teema"
           value={followSystem ? false : darkMode}
           onValueChange={(v) => setThemePreference(v ? 'dark' : 'light')}
           disabled={followSystem}
@@ -162,7 +162,7 @@ export default function SettingsScreen() {
           borderColor={theme.border}
         />
         <SettingRow
-          label="Laitteen asetus"
+          label="Seuraa laitteen asetusta"
           value={followSystem}
           onValueChange={(v) => {
             if (v) {
@@ -179,7 +179,7 @@ export default function SettingsScreen() {
       </SettingGroup>
 
       <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
-        Palaute
+        Värinäpalaute
       </Text>
       <SettingGroup backgroundColor={theme.bgSecondary}>
         <HapticsSegmentedControl
@@ -193,7 +193,7 @@ export default function SettingsScreen() {
       </SettingGroup>
 
       <View style={{ flex: 1 }} />
-      <Text style={[styles.versionText, { color: theme.textSecondary }]}>
+      <Text style={[styles.versionText, { color: theme.textTertiary }]}>
         v{APP_VERSION}
       </Text>
     </SafeAreaView>
