@@ -1,6 +1,6 @@
 {
   "name": "sanakenno",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "type": "module",
   "private": true,
   "packageManager": "pnpm@10.33.0",
@@ -18,7 +18,7 @@
     "format": "prettier --write .",
     "create-admin": "tsx scripts/create-admin.ts",
     "version:changeset": "changeset",
-    "version:bump": "changeset version"
+    "version:bump": "changeset version && node -e \"const fs=require('fs'); const v=JSON.parse(fs.readFileSync('packages/web/package.json','utf8')).version; const r=JSON.parse(fs.readFileSync('package.json','utf8')); r.version=v; fs.writeFileSync('package.json',JSON.stringify(r,null,2)+'\\n');\""
   },
   "dependencies": {
     "@hono/node-server": "^1.13.8",
