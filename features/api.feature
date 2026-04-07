@@ -46,3 +46,26 @@ Feature: Puzzle API
   Scenario: Achievement endpoint is rate-limited to 10/minute
     When 11 POST requests are made to /api/achievement within one minute
     Then the 11th should receive a 429 response
+
+  # --- POST /api/failed-guess ---
+
+  Scenario: Valid failed guess is recorded
+    When a POST is made to /api/failed-guess with word "xyzxyz" and date "2025-01-01"
+    Then the server should respond with 200
+
+  Scenario: Duplicate failed guess increments the count
+    Given a failed guess for word "xyzxyz" on date "2025-01-01" already exists
+    When a POST is made to /api/failed-guess with word "xyzxyz" and date "2025-01-01"
+    Then the server should respond with 200
+
+  Scenario: Failed guess with word exceeding 20 characters is rejected
+    When a POST is made to /api/failed-guess with word "aaaaabbbbbcccccddddde" and date "2025-01-01"
+    Then the server should respond with 400
+
+  Scenario: Failed guess missing required fields is rejected
+    When a POST is made to /api/failed-guess without a word
+    Then the server should respond with 400
+
+  Scenario: Failed-guess endpoint is rate-limited to 30/minute
+    When 31 POST requests are made to /api/failed-guess within one minute
+    Then the 31st should receive a 429 response

@@ -9,7 +9,9 @@ Finnish Spelling Bee word game — find words from 7 letters, every word must co
 | Layer | Choice |
 |---|---|
 | Language | TypeScript (strict) |
-| Frontend | React 19, Vite, Zustand, Tailwind CSS 4 |
+| Web Frontend | React 19, Vite, Zustand, Tailwind CSS 4 |
+| Mobile App | Expo 55, React Native 0.83, Zustand, MMKV |
+| Shared Domain | `packages/shared` — pure game logic, types, platform interfaces |
 | Backend | Hono (Node.js via tsx) |
 | Storage | SQLite (better-sqlite3) |
 | Testing | Vitest, Cucumber.js (BDD), Playwright (E2E) |
@@ -19,14 +21,14 @@ Finnish Spelling Bee word game — find words from 7 letters, every word must co
 ## Commands
 
 ```
-npm install          # Install dependencies
-npm run dev          # Start dev server (Vite + Hono)
-npm run build        # Production build
-npm run typecheck    # TypeScript check
-npm run test:unit    # Vitest unit tests
-npm run test:bdd     # Cucumber.js BDD specs
-npm run test:e2e     # Playwright E2E tests
-npm run lint         # ESLint + Prettier check
+pnpm install         # Install dependencies
+pnpm run dev         # Start dev server (Vite + Hono)
+pnpm run build       # Production build
+pnpm run typecheck   # TypeScript check
+pnpm run test:unit   # Vitest unit tests
+pnpm run test:bdd    # Cucumber.js BDD specs
+pnpm exec playwright test   # Playwright E2E tests (dev server required)
+pnpm run lint        # ESLint + Prettier check
 ```
 
 ## Feature specs
@@ -35,8 +37,8 @@ All behaviour is defined in Gherkin specs under `features/`. The BDD suite runs 
 
 | Feature | What it covers |
 |---|---|
-| [scoring](features/scoring.feature) | Point values, pangram bonus, score accumulation |
-| [word-validation](features/word-validation.feature) | Rejection rules, SHA-256 hash checking, input normalisation |
+| [scoring](features/scoring.feature) | Point values, pangram bonus ("Pangrammi!"), score accumulation |
+| [word-validation](features/word-validation.feature) | Rejection rules, SHA-256 hash checking, input normalisation, failed-guess reporting |
 | [ranks](features/ranks.feature) | 7 rank thresholds, progress bar, celebrations |
 | [puzzle](features/puzzle.feature) | Daily rotation, puzzle structure, midnight rollover |
 | [hints](features/hints.feature) | 4 unlockable hint panels, persistence, collapse state |
@@ -44,7 +46,9 @@ All behaviour is defined in Gherkin specs under `features/`. The BDD suite runs 
 | [timer](features/timer.feature) | Elapsed time tracking, pause on tab hidden/blur |
 | [persistence](features/persistence.feature) | localStorage per-puzzle, validation on reload |
 | [achievements](features/achievements.feature) | Server-side rank recording, session dedup |
-| [api](features/api.feature) | Hono endpoints, response shape, rate limiting |
+| [api](features/api.feature) | Hono endpoints, response shape, rate limiting, failed-guess recording |
+| [settings](features/settings.feature) | Theme preference, haptics intensity levels (mobile) |
+| [navigation](features/navigation.feature) | Stack navigator, archive/stats/rules/settings screens (mobile) |
 | [theme](features/theme.feature) | Light/dark mode toggle, system preference |
 | [error-handling](features/error-handling.feature) | Network errors, corrupt data, storage limits |
 | [accessibility](features/accessibility.feature) | Keyboard behaviour, touch quirks, safe areas |
@@ -52,7 +56,7 @@ All behaviour is defined in Gherkin specs under `features/`. The BDD suite runs 
 | [infrastructure](features/infrastructure.feature) | Docker, nginx, health checks |
 | [auth](features/auth.feature) | Admin authentication, sessions, CSRF |
 | [admin](features/admin.feature) | Puzzle CRUD, blocked words, schedule |
-| [archive](features/archive.feature) | 7-day puzzle archive, replay past puzzles |
+| [archive](features/archive.feature) | 7-day puzzle archive, score+rank per day, replay past puzzles |
 | [definitions](features/definitions.feature) | Word definitions via Kotus dictionary links |
 | [stats](features/stats.feature) | Player statistics, streaks, rank distribution |
 | [server-errors](features/server-errors.feature) | API error responses, structured error logging |

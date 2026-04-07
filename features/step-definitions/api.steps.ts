@@ -2,7 +2,8 @@
  * BDD step definitions for api.feature.
  *
  * Wires Cucumber scenarios to the Hono app using app.request().
- * Tests puzzle API structure, achievement recording, validation, and rate limiting.
+ * Tests puzzle API structure, achievement recording, validation, rate limiting,
+ * and failed-guess recording.
  */
 
 import {
@@ -17,6 +18,7 @@ import assert from 'node:assert/strict';
 import app from '../../server/index';
 import { getDb, closeDb, setDb } from '../../server/db/connection';
 import { resetRateLimit } from '../../server/routes/achievement';
+import { resetRateLimit as resetFailedGuessRateLimit } from '../../server/routes/failed-guess';
 import { setWordlist, invalidateAll } from '../../server/puzzle-engine';
 import type { SanakennoWorld } from './types';
 
@@ -34,6 +36,7 @@ Before(function (this: SanakennoWorld, scenario: ITestCaseHookParameter) {
   setDb(null);
   const db = getDb({ inMemory: true });
   resetRateLimit();
+  resetFailedGuessRateLimit();
   invalidateAll();
   this.responses = [];
 
@@ -268,3 +271,64 @@ When(
 Then('the 11th should receive a 429 response', function (this: SanakennoWorld) {
   assert.equal(this.responses[10].status, 429);
 });
+
+/* ------------------------------------------------------------------ */
+/* POST /api/failed-guess steps */
+/* ------------------------------------------------------------------ */
+
+When(
+  'a POST is made to \\/api\\/failed-guess with word {string} and date {string}',
+  async function (this: SanakennoWorld, word: string, date: string) {
+    this.response = await app.request('/api/failed-guess', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ word, date }),
+    });
+    this.responseJson = await this.response.json();
+  },
+);
+
+Given(
+  'a failed guess for word {string} on date {string} already exists',
+  async function (this: SanakennoWorld, word: string, date: string) {
+    await app.request('/api/failed-guess', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ word, date }),
+    });
+  },
+);
+
+When(
+  "a POST is made to \\/api\\/failed-guess without a word",
+  async function (this: SanakennoWorld) {
+    this.response = await app.request('/api/failed-guess', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date: '2025-01-01' }),
+    });
+    this.responseJson = await this.response.json();
+  },
+);
+
+When(
+  /^(\d+) POST requests are made to \/api\/failed-guess within one minute$/,
+  async function (this: SanakennoWorld, count: string) {
+    resetFailedGuessRateLimit();
+    for (let i = 0; i < parseInt(count, 10); i++) {
+      const res = await app.request('/api/failed-guess', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ word: `word${i}`, date: '2025-01-01' }),
+      });
+      this.responses.push(res);
+    }
+  },
+);
+
+Then(
+  'the 31st should receive a 429 response',
+  function (this: SanakennoWorld) {
+    assert.equal(this.responses[30].status, 429);
+  },
+);

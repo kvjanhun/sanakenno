@@ -23,6 +23,7 @@ interface ArchiveEntry {
   letters: string[];
   center: string;
   is_today: boolean;
+  max_score: number;
 }
 
 Before(function (this: SanakennoWorld, scenario: ITestCaseHookParameter) {
@@ -93,7 +94,7 @@ Then(
 );
 
 Then(
-  'each entry should include date, puzzle_number, letters, and center',
+  'each entry should include date, puzzle_number, letters, center, and max_score',
   function (this: SanakennoWorld) {
     for (const entry of this.archiveEntries) {
       assert.ok(typeof entry.date === 'string', 'date should be a string');
@@ -108,6 +109,10 @@ Then(
       assert.ok(
         typeof entry.is_today === 'boolean',
         'is_today should be a boolean',
+      );
+      assert.ok(
+        typeof entry.max_score === 'number',
+        'max_score should be a number',
       );
     }
   },

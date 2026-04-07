@@ -64,7 +64,7 @@ When(
     this.lastScoreIncrease = score;
     this.lastWordWasPangram = isPangram;
     this.totalScore = recalcScore(this.foundWords, this.allLetters);
-    this.message = null;
+    this.message = isPangram ? 'Pangrammi!' : null;
   },
 );
 

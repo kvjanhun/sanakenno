@@ -46,3 +46,10 @@ Feature: Word validation
   Scenario: Every valid word must contain the center letter
     Given the puzzle center is "a"
     Then every word in the puzzle's word list contains "a"
+
+  # --- Failed-guess reporting ---
+
+  Scenario: Non-dictionary guess is reported to the server
+    When the player submits "aaaaaa"
+    Then the word should be rejected with message stating it is not in the dictionary
+    And the rejected word should be reported to POST /api/failed-guess

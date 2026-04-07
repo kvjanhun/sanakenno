@@ -8,7 +8,7 @@ Feature: 7-day puzzle archive
     When a GET request is made to /api/archive
     Then the response status should be 200
     And the response should contain 7 entries
-    And each entry should include date, puzzle_number, letters, and center
+    And each entry should include date, puzzle_number, letters, center, and max_score
 
   Scenario: Archive entries are ordered newest-first
     When a GET request is made to /api/archive

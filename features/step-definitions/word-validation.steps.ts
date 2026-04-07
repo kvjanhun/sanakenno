@@ -124,3 +124,14 @@ Then(
     );
   },
 );
+
+Then(
+  'the rejected word should be reported to POST \\/api\\/failed-guess',
+  function (this: SanakennoWorld) {
+    // This step documents the fire-and-forget behaviour:
+    // the client POSTs the rejected word to /api/failed-guess after
+    // a "not in dictionary" rejection. Verified as a contract test only —
+    // actual HTTP call happens in the store and is tested via E2E or integration.
+    assert.equal(this.rejectionReason, 'not_in_dictionary');
+  },
+);

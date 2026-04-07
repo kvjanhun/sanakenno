@@ -98,3 +98,8 @@ failedGuess.post('/', rateLimitMiddleware, async (c) => {
 });
 
 export default failedGuess;
+
+/** Resets the in-memory rate limit map (for testing). */
+export function resetRateLimit(): void {
+  rateLimitMap.clear();
+}

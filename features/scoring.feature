@@ -25,6 +25,7 @@ Feature: Word scoring
     When the player submits "sankaleet"
     Then the word should be marked as a pangram
     And the score should increase by 16
+    And the message "Pangrammi!" should appear
 
   # --- Cumulative scoring ---
 
