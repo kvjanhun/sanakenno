@@ -300,7 +300,7 @@ Given(
 );
 
 When(
-  "a POST is made to \\/api\\/failed-guess without a word",
+  'a POST is made to \\/api\\/failed-guess without a word',
   async function (this: SanakennoWorld) {
     this.response = await app.request('/api/failed-guess', {
       method: 'POST',
@@ -326,9 +326,6 @@ When(
   },
 );
 
-Then(
-  'the 31st should receive a 429 response',
-  function (this: SanakennoWorld) {
-    assert.equal(this.responses[30].status, 429);
-  },
-);
+Then('the 31st should receive a 429 response', function (this: SanakennoWorld) {
+  assert.equal(this.responses[30].status, 429);
+});

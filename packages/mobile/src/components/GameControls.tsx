@@ -113,12 +113,7 @@ function ShuffleIcon({ color }: { color: string }) {
         strokeLinecap="round"
       />
       {/* Short diagonal from top-left */}
-      <Path
-        d="M4 4L9 9"
-        stroke={color}
-        strokeWidth={2}
-        strokeLinecap="round"
-      />
+      <Path d="M4 4L9 9" stroke={color} strokeWidth={2} strokeLinecap="round" />
     </Svg>
   );
 }

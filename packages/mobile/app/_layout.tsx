@@ -1,10 +1,14 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef } from 'react';
-import { Appearance, StyleSheet, View } from 'react-native';
+import { Appearance, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
-import Animated, { useSharedValue, withTiming, useAnimatedStyle } from 'react-native-reanimated';
+import Animated, {
+  useSharedValue,
+  withTiming,
+  useAnimatedStyle,
+} from 'react-native-reanimated';
 import { useSettingsStore } from '../src/store/useSettingsStore';
 import { useTheme } from '../src/theme';
 import { useGameStore } from '../src/store/useGameStore';

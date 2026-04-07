@@ -37,7 +37,9 @@ function loadPreference(): ThemePreference {
 
 function savePreference(pref: ThemePreference): void {
   const existing = persisted['sanakenno_settings'];
-  const base = existing ? (JSON.parse(existing) as Record<string, unknown>) : {};
+  const base = existing
+    ? (JSON.parse(existing) as Record<string, unknown>)
+    : {};
   persisted['sanakenno_settings'] = JSON.stringify({
     ...base,
     themePreference: pref,
@@ -72,7 +74,9 @@ function loadHapticsIntensity(): HapticsIntensity {
 
 function saveHapticsIntensity(intensity: HapticsIntensity): void {
   const existing = persisted['sanakenno_settings'];
-  const base = existing ? (JSON.parse(existing) as Record<string, unknown>) : {};
+  const base = existing
+    ? (JSON.parse(existing) as Record<string, unknown>)
+    : {};
   persisted['sanakenno_settings'] = JSON.stringify({
     ...base,
     hapticsIntensity: intensity,
@@ -138,13 +142,10 @@ When('the settings store is initialised', function (this: SanakennoWorld) {
 /* Haptics intensity */
 /* ------------------------------------------------------------------ */
 
-Given(
-  'no haptics preference has been saved',
-  function (this: SanakennoWorld) {
-    persisted = {};
-    activeHapticsIntensity = 'off';
-  },
-);
+Given('no haptics preference has been saved', function (this: SanakennoWorld) {
+  persisted = {};
+  activeHapticsIntensity = 'off';
+});
 
 Then(
   'the active haptics intensity should be {string}',

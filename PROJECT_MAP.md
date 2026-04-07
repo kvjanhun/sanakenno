@@ -4,7 +4,7 @@ This document provides a high-level overview of the project's architecture and d
 
 ## Core Architecture
 
-Sanakenno is a word-puzzle game with a web app, a native iOS/Android app, and a Hono (Node.js) backend.  A pnpm workspace ties them together:
+Sanakenno is a word-puzzle game with a web app, a native iOS/Android app, and a Hono (Node.js) backend. A pnpm workspace ties them together:
 
 ```
 sanakenno/
