@@ -1,8 +1,11 @@
 import { View, Text, Switch, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Constants from 'expo-constants';
 import { useTheme } from '../../src/theme';
 import { useSettingsStore } from '../../src/store/useSettingsStore';
 import type { HapticsIntensity } from '../../src/store/useSettingsStore';
+
+const APP_VERSION = Constants.expoConfig?.version ?? '?';
 
 function SettingRow({
   label,
@@ -183,6 +186,10 @@ export default function SettingsScreen() {
           borderColor={theme.border}
         />
       </SettingGroup>
+
+      <Text style={[styles.versionText, { color: theme.textSecondary }]}>
+        v{APP_VERSION}
+      </Text>
     </SafeAreaView>
   );
 }
@@ -238,5 +245,12 @@ const styles = StyleSheet.create({
   segmentText: {
     fontSize: 13,
     fontWeight: '500',
+  },
+  versionText: {
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 'auto',
+    paddingTop: 16,
+    paddingBottom: 8,
   },
 });

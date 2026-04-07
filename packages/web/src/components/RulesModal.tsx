@@ -237,6 +237,12 @@ export function RulesModal({
               GitHub
             </a>
           </p>
+          <p
+            className="text-xs text-center mt-1"
+            style={{ color: 'var(--color-text-tertiary)' }}
+          >
+            v{__APP_VERSION__}
+          </p>
         </div>
       </div>
     </div>
