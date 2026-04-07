@@ -52,10 +52,17 @@ function cappedImpact(
 
 export function trigger(): void {
   if (!enabled) return;
+  const capped = cappedImpact('light');
+  if (capped === null) return;
   if (native) {
-    native.trigger();
+    native.triggerImpact(capped);
   } else {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const map = {
+      light: Haptics.ImpactFeedbackStyle.Light,
+      medium: Haptics.ImpactFeedbackStyle.Medium,
+      heavy: Haptics.ImpactFeedbackStyle.Heavy,
+    };
+    Haptics.impactAsync(map[capped]);
   }
 }
 

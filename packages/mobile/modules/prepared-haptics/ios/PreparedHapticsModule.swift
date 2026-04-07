@@ -18,6 +18,7 @@ public class PreparedHapticsModule: Module {
     OnCreate {
       self.lightGenerator.prepare()
       self.mediumGenerator.prepare()
+      self.heavyGenerator.prepare()
       self.notificationGenerator.prepare()
       self.selectionGenerator.prepare()
     }
@@ -49,6 +50,9 @@ public class PreparedHapticsModule: Module {
     }
 
     Function("triggerNotification") { (type: String) in
+      let now = CACurrentMediaTime()
+      guard now - self.lastImpactTime >= self.minimumInterval else { return }
+      self.lastImpactTime = now
       let feedbackType: UINotificationFeedbackGenerator.FeedbackType
       switch type {
       case "success": feedbackType = .success

@@ -102,7 +102,6 @@ export default function GameScreen() {
           score={score}
           maxScore={puzzle.max_score}
           scoreBeforeHints={scoreBeforeHints}
-          hintsUsed={hintsUnlocked.size > 0}
           puzzleNumber={puzzle.puzzle_number}
           theme={theme}
         />

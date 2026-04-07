@@ -1,7 +1,7 @@
 {
   "name": "@sanakenno/mobile",
   "main": "expo-router/entry",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "scripts": {
     "start": "expo start",
@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@bottom-tabs/react-navigation": "^1.1.0",
+    "@expo/vector-icons": "^15.1.1",
     "@react-navigation/native": "^7.1.33",
     "@sanakenno/shared": "workspace:*",
     "expo": "~55.0.11",
@@ -20,10 +21,10 @@
     "expo-font": "~55.0.6",
     "expo-haptics": "~55.0.11",
     "expo-linking": "~55.0.11",
-    "prepared-haptics": "workspace:*",
     "expo-router": "~55.0.10",
     "expo-splash-screen": "~55.0.15",
     "expo-status-bar": "~55.0.5",
+    "prepared-haptics": "workspace:*",
     "react": "19.2.0",
     "react-native": "0.83.4",
     "react-native-bottom-tabs": "^1.1.0",

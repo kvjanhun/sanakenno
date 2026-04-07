@@ -13,6 +13,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useEffect, useRef, useState } from 'react';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { rankThresholds } from '@sanakenno/shared';
 import type { Theme } from '../theme';
 
@@ -22,7 +23,6 @@ interface RankProgressProps {
   score: number;
   maxScore: number;
   scoreBeforeHints: number | null;
-  hintsUsed: boolean;
   puzzleNumber: number;
   theme: Theme;
 }
@@ -33,7 +33,6 @@ export function RankProgress({
   score,
   maxScore,
   scoreBeforeHints,
-  hintsUsed,
   puzzleNumber,
   theme,
 }: RankProgressProps) {
@@ -96,35 +95,43 @@ export function RankProgress({
       <View style={styles.row}>
         <View style={styles.rowLeft}>
           {/* Score */}
-          <Text
-            style={[
-              styles.scoreText,
-              { color: theme.textPrimary },
-            ]}
-          >
+          <Text style={[styles.scoreText, { color: theme.textPrimary }]}>
             {displayScore} p
           </Text>
 
           {/* Score info button */}
-          <Pressable onPress={() => setScoreOpen(true)}>
-            <Text style={[styles.infoIcon, { color: theme.textSecondary }]}>
-              ⓘ
-            </Text>
+          <Pressable onPress={() => setScoreOpen(true)} hitSlop={8}>
+            <Ionicons
+              name="information-circle-outline"
+              size={22}
+              color={theme.textSecondary}
+            />
           </Pressable>
+        </View>
 
-          {/* Rank pill → opens rank overlay */}
+        {/* Rank pill → opens rank overlay, centered */}
+        <View style={styles.rowCenter} pointerEvents="box-none">
           <Pressable
             onPress={() => setRankOpen(true)}
             style={[styles.chip, { backgroundColor: theme.accent }]}
           >
-            <Text style={[styles.chipText, { color: '#fff', fontWeight: '600' }]}>
-              {rankLabel} ▼
-            </Text>
+            <View style={styles.chipContent}>
+              <Text
+                style={[styles.chipText, { color: '#fff', fontWeight: '600' }]}
+                numberOfLines={1}
+              >
+                {rankLabel}
+              </Text>
+              <Ionicons name="chevron-down" size={14} color="#fff" />
+            </View>
           </Pressable>
         </View>
 
         {/* Puzzle number */}
-        <Text style={[styles.puzzleNumber, { color: theme.textSecondary }]}>
+        <Text
+          style={[styles.puzzleNumber, { color: theme.textSecondary }]}
+          numberOfLines={1}
+        >
           Kenno #{puzzleNumber}
         </Text>
       </View>
@@ -233,18 +240,29 @@ export function RankProgress({
             <Text style={[styles.scoreCardSub, { color: theme.textSecondary }]}>
               Ilman vihjeitä: {scoreBeforeHints ?? score} p
             </Text>
-            <View style={[styles.scoreCardDivider, { backgroundColor: theme.border }]} />
+            <View
+              style={[
+                styles.scoreCardDivider,
+                { backgroundColor: theme.border },
+              ]}
+            />
             <Text style={[styles.overlayTitle, { color: theme.textSecondary }]}>
               Pisteytys
             </Text>
             <View style={styles.scoreCardList}>
-              <Text style={[styles.scoreCardItem, { color: theme.textSecondary }]}>
+              <Text
+                style={[styles.scoreCardItem, { color: theme.textSecondary }]}
+              >
                 • 4-kirjaiminen sana: 1 piste
               </Text>
-              <Text style={[styles.scoreCardItem, { color: theme.textSecondary }]}>
+              <Text
+                style={[styles.scoreCardItem, { color: theme.textSecondary }]}
+              >
                 • Pidempi sana: pisteitä sanan pituuden verran
               </Text>
-              <Text style={[styles.scoreCardItem, { color: theme.textSecondary }]}>
+              <Text
+                style={[styles.scoreCardItem, { color: theme.textSecondary }]}
+              >
                 • Pangrammi: +7 lisäpistettä
               </Text>
             </View>
@@ -263,7 +281,6 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     marginBottom: 8,
   },
   rowLeft: {
@@ -271,12 +288,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
+  rowCenter: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  rowRight: {
+    flex: 1,
+  },
   scoreText: {
     fontSize: 26,
     fontWeight: '700',
-  },
-  infoIcon: {
-    fontSize: 20,
   },
   chip: {
     paddingHorizontal: 12,
@@ -285,10 +308,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  chipContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   chipText: {
     fontSize: 13,
   },
   puzzleNumber: {
+    position: 'absolute',
+    right: 0,
     fontSize: 18,
     fontWeight: '500',
   },

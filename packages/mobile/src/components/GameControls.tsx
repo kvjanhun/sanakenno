@@ -4,7 +4,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import Svg, { Path } from 'react-native-svg';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import * as PreparedHaptics from 'prepared-haptics';
 import type { Theme } from '../theme';
 
@@ -57,67 +57,6 @@ function ScaleButton({
   );
 }
 
-/** Share / upload icon */
-function ShareIcon({ color }: { color: string }) {
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M12 3L12 15M12 3L8 7M12 3L16 7"
-        stroke={color}
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <Path
-        d="M4 17V19C4 20.1046 4.89543 21 6 21H18C19.1046 21 20 20.1046 20 19V17"
-        stroke={color}
-        strokeWidth={2}
-        strokeLinecap="round"
-      />
-    </Svg>
-  );
-}
-
-/** Shuffle / circular arrows icon */
-function ShuffleIcon({ color }: { color: string }) {
-  return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-      {/* Arrowhead at top-right */}
-      <Path
-        d="M16 3L21 3L21 8"
-        stroke={color}
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* Long diagonal: bottom-left → top-right */}
-      <Path
-        d="M4 20L21 3"
-        stroke={color}
-        strokeWidth={2}
-        strokeLinecap="round"
-      />
-      {/* Arrowhead at bottom-right */}
-      <Path
-        d="M21 16L21 21L16 21"
-        stroke={color}
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* Short diagonal → bottom-right */}
-      <Path
-        d="M15 15L21 21"
-        stroke={color}
-        strokeWidth={2}
-        strokeLinecap="round"
-      />
-      {/* Short diagonal from top-left */}
-      <Path d="M4 4L9 9" stroke={color} strokeWidth={2} strokeLinecap="round" />
-    </Svg>
-  );
-}
-
 export function GameControls({
   onDelete,
   onShuffle,
@@ -156,12 +95,12 @@ export function GameControls({
 
       {/* Narrow: Share icon */}
       <ScaleButton onPress={handleShare} flex={1} bgColor={theme.bgSecondary}>
-        <ShareIcon color={theme.textPrimary} />
+        <Ionicons name="share-outline" size={22} color={theme.textPrimary} />
       </ScaleButton>
 
       {/* Narrow: Shuffle icon */}
       <ScaleButton onPress={handleShuffle} flex={1} bgColor={theme.bgSecondary}>
-        <ShuffleIcon color={theme.textPrimary} />
+        <Ionicons name="shuffle" size={22} color={theme.textPrimary} />
       </ScaleButton>
 
       {/* Wide: OK */}

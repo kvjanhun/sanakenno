@@ -2,6 +2,8 @@ import { View, Text, Switch, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
 import { useBottomTabBarHeight } from 'react-native-bottom-tabs';
+import { useRouter } from 'expo-router';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTheme } from '../../src/theme';
 import { useSettingsStore } from '../../src/store/useSettingsStore';
 import type { HapticsIntensity } from '../../src/store/useSettingsStore';
@@ -131,6 +133,7 @@ function SettingGroup({
 
 export default function SettingsScreen() {
   const theme = useTheme();
+  const router = useRouter();
   const themePreference = useSettingsStore((s) => s.themePreference);
   const hapticsIntensity = useSettingsStore((s) => s.hapticsIntensity);
   const setThemePreference = useSettingsStore((s) => s.setThemePreference);
@@ -193,6 +196,17 @@ export default function SettingsScreen() {
       </SettingGroup>
 
       <View style={{ flex: 1 }} />
+
+      <Pressable
+        style={[styles.licensesLink]}
+        onPress={() => router.push('/licenses')}
+      >
+        <Text style={[styles.licensesText, { color: theme.textSecondary }]}>
+          Lisenssit
+        </Text>
+        <Ionicons name="chevron-forward" size={16} color={theme.textTertiary} />
+      </Pressable>
+
       <Text style={[styles.versionText, { color: theme.textTertiary }]}>
         v{APP_VERSION}
       </Text>
@@ -251,6 +265,16 @@ const styles = StyleSheet.create({
   segmentText: {
     fontSize: 13,
     fontWeight: '500',
+  },
+  licensesLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingVertical: 8,
+  },
+  licensesText: {
+    fontSize: 14,
   },
   versionText: {
     fontSize: 12,
