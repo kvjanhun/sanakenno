@@ -1,6 +1,7 @@
 import { View, Text, Switch, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
+import { useBottomTabBarHeight } from 'react-native-bottom-tabs';
 import { useTheme } from '../../src/theme';
 import { useSettingsStore } from '../../src/store/useSettingsStore';
 import type { HapticsIntensity } from '../../src/store/useSettingsStore';
@@ -135,13 +136,14 @@ export default function SettingsScreen() {
   const setThemePreference = useSettingsStore((s) => s.setThemePreference);
   const setHapticsIntensity = useSettingsStore((s) => s.setHapticsIntensity);
 
+  const tabBarHeight = useBottomTabBarHeight();
   const followSystem = themePreference === 'system';
   const darkMode = themePreference === 'dark';
 
   return (
     <SafeAreaView
       edges={['top']}
-      style={[styles.container, { backgroundColor: theme.bgPrimary }]}
+      style={[styles.container, { backgroundColor: theme.bgPrimary, paddingBottom: tabBarHeight }]}
     >
       <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
         Teema
@@ -187,6 +189,7 @@ export default function SettingsScreen() {
         />
       </SettingGroup>
 
+      <View style={{ flex: 1 }} />
       <Text style={[styles.versionText, { color: theme.textSecondary }]}>
         v{APP_VERSION}
       </Text>
@@ -249,8 +252,6 @@ const styles = StyleSheet.create({
   versionText: {
     fontSize: 12,
     textAlign: 'center',
-    marginTop: 'auto',
-    paddingTop: 16,
-    paddingBottom: 8,
+    paddingBottom: 12,
   },
 });
