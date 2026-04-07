@@ -143,7 +143,10 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView
       edges={['top']}
-      style={[styles.container, { backgroundColor: theme.bgPrimary, paddingBottom: tabBarHeight }]}
+      style={[
+        styles.container,
+        { backgroundColor: theme.bgPrimary, paddingBottom: tabBarHeight },
+      ]}
     >
       <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
         Teema

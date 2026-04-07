@@ -61,6 +61,7 @@ export function Celebration({
       opacity.value = withTiming(0, { duration: 200 });
       glowRadius.value = 8;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- shared values & dismiss are stable
   }, [celebration]);
 
   function dismiss() {
