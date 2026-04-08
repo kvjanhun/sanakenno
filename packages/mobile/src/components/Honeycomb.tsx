@@ -86,19 +86,24 @@ function HexButton({
   const scale = useSharedValue(1);
   const gradId = `hex-grad-${index}`;
 
-  const handlePress = useCallback(() => {
-    onPress(hex.letter);
+  const handlePressHaptic = useCallback(() => {
     PreparedHaptics.trigger();
+  }, []);
+
+  const handlePressLetter = useCallback(() => {
+    onPress(hex.letter);
   }, [onPress, hex.letter]);
 
+  // Gesture.onBegin is the touch-down phase (Pressable onPressIn equivalent).
   const tap = Gesture.Tap()
     .onBegin(() => {
       'worklet';
+      runOnJS(handlePressHaptic)();
+      runOnJS(handlePressLetter)();
       scale.value = withTiming(0.95, {
         duration: 50,
         easing: Easing.out(Easing.ease),
       });
-      runOnJS(handlePress)();
     })
     .onFinalize(() => {
       'worklet';

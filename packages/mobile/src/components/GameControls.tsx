@@ -18,11 +18,13 @@ interface GameControlsProps {
 
 function SimpleButton({
   onPress,
+  onPressIn,
   flex,
   bgColor,
   children,
 }: {
   onPress: () => void;
+  onPressIn?: () => void;
   flex: number;
   bgColor: string;
   children: React.ReactNode;
@@ -36,6 +38,7 @@ function SimpleButton({
     <Pressable
       style={{ flex }}
       onPressIn={() => {
+        onPressIn?.();
         scale.value = withTiming(0.94, { duration: 80 });
       }}
       onPressOut={() => {
@@ -64,42 +67,49 @@ export function GameControls({
   theme,
 }: GameControlsProps) {
   const handleDelete = () => {
-    PreparedHaptics.trigger();
     onDelete();
   };
 
   const handleShuffle = () => {
-    PreparedHaptics.triggerImpact('medium');
     onShuffle();
   };
 
   const handleSubmit = () => {
-    PreparedHaptics.triggerImpact('medium');
     onSubmit();
   };
 
   const handleShare = () => {
-    PreparedHaptics.triggerImpact('medium');
     onShare();
   };
 
   return (
     <View style={styles.controls}>
       {/* Wide: Poista */}
-      <SimpleButton onPress={handleDelete} flex={2} bgColor={theme.bgSecondary}>
+      <SimpleButton
+        onPress={handleDelete}
+        onPressIn={PreparedHaptics.trigger}
+        flex={2}
+        bgColor={theme.bgSecondary}
+      >
         <Text style={[styles.buttonText, { color: theme.textPrimary }]}>
           Poista
         </Text>
       </SimpleButton>
 
       {/* Narrow: Share icon */}
-      <SimpleButton onPress={handleShare} flex={1} bgColor={theme.bgSecondary}>
+      <SimpleButton
+        onPress={handleShare}
+        onPressIn={() => PreparedHaptics.triggerImpact('medium')}
+        flex={1}
+        bgColor={theme.bgSecondary}
+      >
         <Ionicons name="share-outline" size={22} color={theme.textPrimary} />
       </SimpleButton>
 
       {/* Narrow: Shuffle icon */}
       <SimpleButton
         onPress={handleShuffle}
+        onPressIn={() => PreparedHaptics.triggerImpact('medium')}
         flex={1}
         bgColor={theme.bgSecondary}
       >
@@ -107,7 +117,12 @@ export function GameControls({
       </SimpleButton>
 
       {/* Wide: OK */}
-      <SimpleButton onPress={handleSubmit} flex={2} bgColor={theme.accent}>
+      <SimpleButton
+        onPress={handleSubmit}
+        onPressIn={() => PreparedHaptics.triggerImpact('medium')}
+        flex={2}
+        bgColor={theme.accent}
+      >
         <Text
           style={[
             styles.buttonText,
