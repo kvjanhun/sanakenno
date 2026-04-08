@@ -30,6 +30,38 @@ Feature files in `features/` are the source of truth for behaviour.
 pnpm mono-repo with `packages/shared` (pure domain logic, types, platform interfaces).
 Shared code is imported as `@sanakenno/shared`.
 
+## Versioning
+
+Each deployable target has its **own independent version**. Do not bump one when only the other changes.
+
+| Package | Version source | Notes |
+|---|---|---|
+| Web + server (root) | `package.json` + `packages/web/package.json` | Synced by `scripts/sync-versions.js` |
+| Shared | `packages/shared/package.json` | Synced with web automatically |
+| Mobile (iOS) | `packages/mobile/package.json` | Independent — also reflected in `app.json` via `app.config.js` |
+
+### How to bump versions
+
+**Web / server / shared** (changesets workflow):
+```
+pnpm run version:changeset   # create a changeset describing the change
+pnpm run version:bump         # apply changesets → bumps web, syncs root + shared
+```
+
+**Mobile** (manual — bump directly in `packages/mobile/package.json`):
+```
+cd packages/mobile
+npm version patch   # 0.2.4 → 0.2.5 (bug fix, small tweak)
+npm version minor   # 0.2.4 → 0.3.0 (new feature)
+npm version major   # 0.2.4 → 1.0.0 (breaking / major milestone)
+```
+This updates both `package.json` and `app.json` is overridden at build time via `app.config.js`.
+
+### Semver guide
+- **patch** (0.0.X): bug fixes, copy changes, minor UI tweaks
+- **minor** (0.X.0): new features, new screens, notable UX changes
+- **major** (X.0.0): breaking changes, major redesigns, first stable release
+
 ## Commands
 ```
 pnpm install           install dependencies

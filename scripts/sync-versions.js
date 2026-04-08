@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 /**
  * Sync the version from packages/web/package.json (set by changesets)
- * to root package.json and packages/mobile/app.json.
+ * to root package.json and packages/shared/package.json.
+ *
+ * Mobile has its own independent version — see packages/mobile/package.json.
  *
  * Run automatically as part of `pnpm run version:bump`.
  */
@@ -15,12 +17,16 @@ const rootPkg = JSON.parse(readFileSync('package.json', 'utf8'));
 rootPkg.version = version;
 writeFileSync('package.json', JSON.stringify(rootPkg, null, 2) + '\n');
 
-// Sync app.json (Expo config)
-const appJson = JSON.parse(readFileSync('packages/mobile/app.json', 'utf8'));
-appJson.expo.version = version;
+// Sync shared package.json
+const sharedPkg = JSON.parse(
+  readFileSync('packages/shared/package.json', 'utf8'),
+);
+sharedPkg.version = version;
 writeFileSync(
-  'packages/mobile/app.json',
-  JSON.stringify(appJson, null, 2) + '\n',
+  'packages/shared/package.json',
+  JSON.stringify(sharedPkg, null, 2) + '\n',
 );
 
-console.log(`Synced version ${version} to root package.json and app.json`);
+console.log(
+  `Synced version ${version} to root and shared package.json (mobile is independent)`,
+);
