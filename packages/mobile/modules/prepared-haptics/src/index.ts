@@ -17,6 +17,8 @@ try {
 let enabled = true;
 let intensity: 'off' | 'light' | 'medium' | 'heavy' = 'heavy';
 
+type ImpactStyle = 'light' | 'medium' | 'heavy';
+
 export function setEnabled(value: boolean): void {
   enabled = value;
   intensity = value ? 'heavy' : 'off';
@@ -29,57 +31,53 @@ export function setIntensity(
   enabled = value !== 'off';
 }
 
-/** Cap an impact style to the user's intensity preference. */
-function cappedImpact(
-  requested: 'light' | 'medium' | 'heavy',
-): 'light' | 'medium' | 'heavy' | null {
+/**
+ * Scale an impact style using the user's intensity preference.
+ *
+ * - light: downgrades stronger requests
+ * - medium: uses requested style as-is
+ * - heavy: upgrades lighter requests
+ */
+function scaledImpact(requested: ImpactStyle): ImpactStyle | null {
   if (intensity === 'off') return null;
-  const order: Array<'light' | 'medium' | 'heavy'> = [
-    'light',
-    'medium',
-    'heavy',
-  ];
-  const cap =
-    intensity === 'heavy'
-      ? 'heavy'
-      : intensity === 'medium'
-        ? 'medium'
-        : 'light';
+  const order: ImpactStyle[] = ['light', 'medium', 'heavy'];
   const reqIdx = order.indexOf(requested);
-  const capIdx = order.indexOf(cap);
-  return order[Math.min(reqIdx, capIdx)];
+  const adjustment = intensity === 'light' ? -1 : intensity === 'heavy' ? 1 : 0;
+  const scaledIdx = Math.min(2, Math.max(0, reqIdx + adjustment));
+  return order[scaledIdx];
 }
 
 export function trigger(): void {
   if (!enabled) return;
-  const capped = cappedImpact('light');
-  if (capped === null) return;
+  // Use medium as the baseline so light/medium/heavy settings feel distinct.
+  const scaled = scaledImpact('medium');
+  if (scaled === null) return;
   if (native) {
-    native.triggerImpact(capped);
+    native.triggerImpact(scaled);
   } else {
     const map = {
       light: Haptics.ImpactFeedbackStyle.Light,
       medium: Haptics.ImpactFeedbackStyle.Medium,
       heavy: Haptics.ImpactFeedbackStyle.Heavy,
     };
-    Haptics.impactAsync(map[capped]);
+    Haptics.impactAsync(map[scaled]);
   }
 }
 
 export function triggerImpact(
   style: 'light' | 'medium' | 'heavy' = 'light',
 ): void {
-  const capped = cappedImpact(style);
-  if (capped === null) return;
+  const scaled = scaledImpact(style);
+  if (scaled === null) return;
   if (native) {
-    native.triggerImpact(capped);
+    native.triggerImpact(scaled);
   } else {
     const map = {
       light: Haptics.ImpactFeedbackStyle.Light,
       medium: Haptics.ImpactFeedbackStyle.Medium,
       heavy: Haptics.ImpactFeedbackStyle.Heavy,
     };
-    Haptics.impactAsync(map[capped]);
+    Haptics.impactAsync(map[scaled]);
   }
 }
 

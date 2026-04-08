@@ -4,6 +4,7 @@ import Constants from 'expo-constants';
 import { useBottomTabBarHeight } from 'react-native-bottom-tabs';
 import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import * as PreparedHaptics from 'prepared-haptics';
 import { useTheme } from '../../src/theme';
 import { useSettingsStore } from '../../src/store/useSettingsStore';
 import type { HapticsIntensity } from '../../src/store/useSettingsStore';
@@ -143,6 +144,13 @@ export default function SettingsScreen() {
   const followSystem = themePreference === 'system';
   const darkMode = themePreference === 'dark';
 
+  const handleHapticsChange = (value: HapticsIntensity) => {
+    setHapticsIntensity(value);
+    if (value !== 'off') {
+      PreparedHaptics.trigger();
+    }
+  };
+
   return (
     <SafeAreaView
       edges={['top']}
@@ -187,7 +195,7 @@ export default function SettingsScreen() {
       <SettingGroup backgroundColor={theme.bgSecondary}>
         <HapticsSegmentedControl
           value={hapticsIntensity}
-          onChange={setHapticsIntensity}
+          onChange={handleHapticsChange}
           accentColor={theme.accent}
           labelColor={theme.textPrimary}
           bgColor={theme.bgSecondary}

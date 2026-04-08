@@ -190,7 +190,8 @@ export const useGameStore = create<GameState>()((set, get) => ({
       set({ message: msg, messageType: 'error', wordRejected: true });
       PreparedHaptics.triggerNotification('error');
       setTimeout(() => {
-        if (rejectionCounter === myId) {
+        const s = get();
+        if (rejectionCounter === myId && s.wordRejected) {
           set({ currentWord: '', wordRejected: false, message: '' });
         }
       }, 2000);
@@ -230,7 +231,8 @@ export const useGameStore = create<GameState>()((set, get) => ({
       PreparedHaptics.trigger();
       setTimeout(() => set({ lastResubmittedWord: null }), 1500);
       setTimeout(() => {
-        if (rejectionCounter === myId) {
+        const s = get();
+        if (rejectionCounter === myId && s.wordRejected) {
           set({ currentWord: '', wordRejected: false, message: '' });
         }
       }, 2000);
