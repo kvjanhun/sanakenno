@@ -18,6 +18,7 @@
  *   GET    /api/admin/combinations        - Filterable/sortable combinations browser
  *   GET    /api/admin/schedule            - 14-day upcoming puzzle rotation
  *   GET    /api/admin/achievements        - Daily achievement breakdown by rank
+ *   GET    /api/admin/failed-guesses      - Daily failed-guess breakdown by word
  *
  * @module server/routes/admin
  */
@@ -62,6 +63,12 @@ interface AchievementRow {
   words_found: number;
   elapsed_ms: number | null;
   achieved_at: string;
+}
+
+interface FailedGuessStatRow {
+  puzzle_date: string;
+  word: string;
+  count: number;
 }
 
 /**
@@ -888,6 +895,73 @@ admin.get('/achievements', (c) => {
   }
 
   return c.json({ days, daily, totals, mode: bySession ? 'sessions' : 'all' });
+});
+
+/**
+ * GET /failed-guesses
+ * Daily failed guess breakdown with top words per day.
+ * Query params:
+ *   days=7 (default) — period length
+ */
+admin.get('/failed-guesses', (c) => {
+  const days = Math.min(
+    90,
+    Math.max(1, parseInt(c.req.query('days') || '7', 10)),
+  );
+
+  const db = getDb();
+  const rows = db
+    .prepare(
+      `SELECT puzzle_date, word, count FROM failed_guesses
+       WHERE puzzle_date >= date('now', ?)
+       ORDER BY puzzle_date DESC, count DESC, word ASC`,
+    )
+    .all(`-${days} days`) as FailedGuessStatRow[];
+
+  const totalsByDay = new Map<string, number>();
+  const wordsByDay = new Map<string, Array<{ word: string; count: number }>>();
+
+  for (const row of rows) {
+    totalsByDay.set(
+      row.puzzle_date,
+      (totalsByDay.get(row.puzzle_date) || 0) + row.count,
+    );
+
+    if (!wordsByDay.has(row.puzzle_date)) {
+      wordsByDay.set(row.puzzle_date, []);
+    }
+
+    // Keep only the top 50 words per day by query order.
+    const words = wordsByDay.get(row.puzzle_date)!;
+    if (words.length < 50) {
+      words.push({ word: row.word, count: row.count });
+    }
+  }
+
+  // Fill missing days using Helsinki dates (same anchoring as achievements).
+  const todayHki = new Date().toLocaleDateString('en-CA', {
+    timeZone: 'Europe/Helsinki',
+  });
+  const anchor = new Date(todayHki + 'T12:00:00Z');
+
+  const daily: Array<{
+    date: string;
+    total_count: number;
+    words: Array<{ word: string; count: number }>;
+  }> = [];
+
+  for (let d = 0; d < days; d++) {
+    const date = new Date(anchor.getTime() - d * 86400000);
+    const dateStr = date.toISOString().slice(0, 10);
+    daily.push({
+      date: dateStr,
+      total_count: totalsByDay.get(dateStr) || 0,
+      words: wordsByDay.get(dateStr) || [],
+    });
+  }
+
+  const grandTotal = daily.reduce((sum, day) => sum + day.total_count, 0);
+  return c.json({ days, daily, grand_total: grandTotal });
 });
 
 export default admin;

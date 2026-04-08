@@ -3,6 +3,7 @@
  *
  * Tests admin API: puzzle CRUD, today's puzzle protection, center letter,
  * preview, word blocking, combinations browser, schedule, achievements,
+ * failed-guess stats,
  * and cache invalidation via Hono app.request().
  */
 
@@ -59,6 +60,18 @@ function adminGet(sessionCookie: string): Record<string, string> {
   return {
     Cookie: `${SESSION_COOKIE}=${sessionCookie}`,
   };
+}
+
+/**
+ * Build YYYY-MM-DD for a Helsinki day offset from today.
+ */
+function helsinkiDateByOffset(offset: number): string {
+  const todayHki = new Date().toLocaleDateString('en-CA', {
+    timeZone: 'Europe/Helsinki',
+  });
+  const anchor = new Date(todayHki + 'T12:00:00Z');
+  const date = new Date(anchor.getTime() - offset * 86400000);
+  return date.toISOString().slice(0, 10);
 }
 
 Before(async function (this: AdminWorld, scenario: ITestCaseHookParameter) {
@@ -1455,6 +1468,83 @@ Then(
     const entry = daily.find((e) => e.date === dateStr);
     assert.ok(entry, `Date ${dateStr} should appear in stats`);
     assert.equal(entry!.total, 0, 'Total should be 0');
+  },
+);
+
+// --- Failed-guess stats ---
+
+Given(
+  'failed guesses include word {string} with count {int} for day offset {int}',
+  function (this: AdminWorld, word: string, count: number, dayOffset: number) {
+    const db = getDb();
+    const date = helsinkiDateByOffset(dayOffset);
+    const normalized = word.toLowerCase().replace(/-/g, '');
+
+    db.prepare(
+      `INSERT INTO failed_guesses (word, puzzle_date, count, first_at, last_at)
+       VALUES (?, ?, ?, datetime('now'), datetime('now'))
+       ON CONFLICT(word, puzzle_date) DO UPDATE SET
+         count = count + excluded.count,
+         last_at = datetime('now')`,
+    ).run(normalized, date, count);
+  },
+);
+
+When(
+  'the admin requests failed guess stats for the last {int} days',
+  async function (this: AdminWorld, days: number) {
+    this.response = await app.request(
+      `/api/admin/failed-guesses?days=${days}`,
+      {
+        method: 'GET',
+        headers: adminGet(this.sessionCookie),
+      },
+    );
+    this.responseJson = (await this.response.json()) as Record<string, unknown>;
+  },
+);
+
+Then(
+  'the failed guess response should include {int} daily entries',
+  function (this: AdminWorld, count: number) {
+    const daily = this.responseJson.daily as unknown[];
+    assert.equal(daily.length, count);
+  },
+);
+
+Then(
+  'failed guess day offset {int} should have total_count {int}',
+  function (this: AdminWorld, dayOffset: number, expectedTotal: number) {
+    const date = helsinkiDateByOffset(dayOffset);
+    const daily = this.responseJson.daily as Array<{
+      date: string;
+      total_count: number;
+    }>;
+    const entry = daily.find((d) => d.date === date);
+    assert.ok(entry, `Date ${date} should appear in failed-guess stats`);
+    assert.equal(entry!.total_count, expectedTotal);
+  },
+);
+
+Then(
+  'failed guess day offset {int} should include word {string} with count {int}',
+  function (
+    this: AdminWorld,
+    dayOffset: number,
+    word: string,
+    expectedCount: number,
+  ) {
+    const date = helsinkiDateByOffset(dayOffset);
+    const normalized = word.toLowerCase().replace(/-/g, '');
+    const daily = this.responseJson.daily as Array<{
+      date: string;
+      words: Array<{ word: string; count: number }>;
+    }>;
+    const entry = daily.find((d) => d.date === date);
+    assert.ok(entry, `Date ${date} should appear in failed-guess stats`);
+    const item = entry!.words.find((w) => w.word === normalized);
+    assert.ok(item, `Word ${normalized} should appear for ${date}`);
+    assert.equal(item!.count, expectedCount);
   },
 );
 

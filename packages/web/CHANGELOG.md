@@ -1,5 +1,12 @@
 # @sanakenno/web
 
+## 1.0.2
+
+### Patch Changes
+
+- Add failed-guesses admin stats endpoint and stats-tab UI section.
+  - @sanakenno/shared@1.0.2
+
 ## 0.2.4
 
 ### Patch Changes

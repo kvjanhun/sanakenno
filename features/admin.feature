@@ -224,6 +224,19 @@ Feature: Admin tool
     When the admin requests stats covering that date
     Then 2026-03-20 should appear with all rank counts as 0
 
+  # --- Failed guesses stats ---
+
+  Scenario: View daily failed guess counts and words
+    Given failed guesses include word "vieras" with count 3 for day offset 0
+    And failed guesses include word "outu" with count 1 for day offset 0
+    And failed guesses include word "kumma" with count 2 for day offset 1
+    When the admin requests failed guess stats for the last 7 days
+    Then the failed guess response should include 7 daily entries
+    And failed guess day offset 0 should have total_count 4
+    And failed guess day offset 0 should include word "vieras" with count 3
+    And failed guess day offset 0 should include word "outu" with count 1
+    And failed guess day offset 1 should have total_count 2
+
   # --- Cache invalidation ---
 
   Scenario: Admin writes invalidate the puzzle engine cache

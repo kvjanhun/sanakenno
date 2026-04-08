@@ -53,6 +53,12 @@ export interface AchievementDay {
   total: number;
 }
 
+export interface FailedGuessDay {
+  date: string;
+  total_count: number;
+  words: { word: string; count: number }[];
+}
+
 interface AdminState {
   // Auth
   authenticated: boolean;
