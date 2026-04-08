@@ -121,11 +121,89 @@ export default function ArchiveScreen() {
 
   return (
     <FlatList
-      data={entries}
+      data={entries.filter((e) => !e.is_today)}
       keyExtractor={(item) => String(item.puzzle_number)}
       style={{ backgroundColor: theme.bgPrimary, flex: 1 }}
       contentContainerStyle={styles.list}
       contentInsetAdjustmentBehavior="automatic"
+      ListHeaderComponent={() => {
+        const today = entries.find((e) => e.is_today);
+        if (!today) return null;
+        const isCurrent = today.puzzle_number === currentPuzzleNumber;
+        const progress = savedProgress.get(today.puzzle_number);
+        return (
+          <>
+            <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>
+              Tänään
+            </Text>
+            <Pressable
+              onPress={() => handlePress(today.puzzle_number)}
+              style={[
+                styles.row,
+                {
+                  backgroundColor: theme.bgSecondary,
+                  borderColor: isCurrent ? theme.accent : theme.border,
+                  borderWidth: isCurrent ? 2 : 1,
+                },
+              ]}
+            >
+              <View style={styles.rowLeft}>
+                <Text
+                  style={[styles.puzzleNum, { color: theme.textSecondary }]}
+                >
+                  #{today.puzzle_number + 1}
+                </Text>
+                <Text style={[styles.date, { color: theme.textPrimary }]}>
+                  {formatFinnishDate(today.date)}
+                </Text>
+              </View>
+              <View style={styles.rowRight}>
+                {progress && (
+                  <View
+                    style={[
+                      styles.rankBadge,
+                      {
+                        backgroundColor: theme.bgPrimary,
+                        borderColor: theme.border,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[styles.rankText, { color: theme.textSecondary }]}
+                    >
+                      {progress.rank} · {progress.score}p
+                    </Text>
+                  </View>
+                )}
+                <Text style={[styles.letters, { color: theme.textSecondary }]}>
+                  {today.letters
+                    .map((l, i) =>
+                      l === today.center ? (
+                        <Text key={i} style={{ color: theme.accent }}>
+                          {l.toUpperCase()}
+                        </Text>
+                      ) : (
+                        l.toUpperCase()
+                      ),
+                    )
+                    .reduce<React.ReactNode[]>((acc, el, i) => {
+                      if (i === 0) return [el];
+                      return [...acc, ' ', el];
+                    }, [])}
+                </Text>
+              </View>
+            </Pressable>
+            <Text
+              style={[
+                styles.sectionLabel,
+                { color: theme.textSecondary, marginTop: 8 },
+              ]}
+            >
+              Arkisto
+            </Text>
+          </>
+        );
+      }}
       renderItem={({ item }) => {
         const isCurrent = item.puzzle_number === currentPuzzleNumber;
         const progress = savedProgress.get(item.puzzle_number);
@@ -148,13 +226,6 @@ export default function ArchiveScreen() {
               <Text style={[styles.date, { color: theme.textPrimary }]}>
                 {formatFinnishDate(item.date)}
               </Text>
-              {item.is_today && (
-                <View
-                  style={[styles.todayBadge, { backgroundColor: theme.accent }]}
-                >
-                  <Text style={styles.todayText}>tänään</Text>
-                </View>
-              )}
             </View>
             <View style={styles.rowRight}>
               {progress && (
@@ -176,12 +247,19 @@ export default function ArchiveScreen() {
               )}
               <Text style={[styles.letters, { color: theme.textSecondary }]}>
                 {item.letters
-                  .map((l) => (l === item.center ? '' : l.toUpperCase()))
-                  .filter(Boolean)
-                  .join(' ')}
-              </Text>
-              <Text style={[styles.centerLetter, { color: theme.accent }]}>
-                {item.center.toUpperCase()}
+                  .map((l, i) =>
+                    l === item.center ? (
+                      <Text key={i} style={{ color: theme.accent }}>
+                        {l.toUpperCase()}
+                      </Text>
+                    ) : (
+                      l.toUpperCase()
+                    ),
+                  )
+                  .reduce<React.ReactNode[]>((acc, el, i) => {
+                    if (i === 0) return [el];
+                    return [...acc, ' ', el];
+                  }, [])}
               </Text>
             </View>
           </Pressable>
@@ -222,28 +300,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  sectionLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 6,
+  },
   puzzleNum: {
     fontSize: 13,
     fontWeight: '500',
     minWidth: 36,
   },
-  todayBadge: {
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  todayText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
   letters: {
     fontSize: 13,
-    letterSpacing: 1,
-  },
-  centerLetter: {
-    fontSize: 15,
-    fontWeight: '700',
+    letterSpacing: 0,
   },
   rankBadge: {
     borderRadius: 8,

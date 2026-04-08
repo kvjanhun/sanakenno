@@ -1,5 +1,12 @@
 # @sanakenno/mobile
 
+## 0.2.4
+
+### Patch Changes
+
+- Redesign archive list: today puzzle as framed Tänään section, uniform letter display with inline accent for center letter
+  - @sanakenno/shared@0.2.4
+
 ## 0.2.3
 
 ### Patch Changes
