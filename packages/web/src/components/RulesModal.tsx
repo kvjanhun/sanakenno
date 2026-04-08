@@ -5,8 +5,22 @@
  * @module src/components/RulesModal
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { msUntilMidnight } from '../hooks/useMidnightRollover';
+
+const LICENSES = [
+  { name: 'React', license: 'MIT', copyright: 'Meta Platforms, Inc.' },
+  { name: 'Vite', license: 'MIT', copyright: 'Evan You' },
+  { name: 'Tailwind CSS', license: 'MIT', copyright: 'Tailwind Labs, Inc.' },
+  { name: 'Zustand', license: 'MIT', copyright: 'Paul Henschel' },
+  { name: 'Hono', license: 'MIT', copyright: 'Yusuke Wada' },
+  { name: 'better-sqlite3', license: 'MIT', copyright: 'Joshua Wise' },
+  {
+    name: 'vite-plugin-pwa',
+    license: 'MIT',
+    copyright: 'Anthony Fu',
+  },
+];
 
 /** Props for {@link RulesModal}. */
 export interface RulesModalProps {
@@ -36,6 +50,8 @@ export function RulesModal({
 }: RulesModalProps): React.JSX.Element | null {
   const [timeRemaining, setTimeRemaining] = useState<string>('00:00:00');
   const [msRemaining, setMsRemaining] = useState<number>(0);
+  const [licensesOpen, setLicensesOpen] = useState(false);
+  const licensesRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!show) return;
@@ -243,6 +259,62 @@ export function RulesModal({
           >
             v{__APP_VERSION__}
           </p>
+
+          <p className="text-xs text-center mt-1">
+            <button
+              onClick={() => {
+                const next = !licensesOpen;
+                setLicensesOpen(next);
+                if (next) {
+                  setTimeout(() => {
+                    licensesRef.current?.scrollIntoView({ behavior: 'smooth' });
+                  }, 50);
+                }
+              }}
+              style={{
+                color: 'var(--color-text-tertiary)',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                textDecoration: 'underline',
+                fontSize: 'inherit',
+                padding: 0,
+              }}
+            >
+              Lisenssit {licensesOpen ? '▲' : '▼'}
+            </button>
+          </p>
+
+          {licensesOpen && (
+            <div ref={licensesRef} className="mt-2 space-y-1">
+              <p
+                className="text-xs"
+                style={{ color: 'var(--color-text-tertiary)' }}
+              >
+                Sanakenno käyttää seuraavia avoimen lähdekoodin kirjastoja:
+              </p>
+              {LICENSES.map((entry) => (
+                <div
+                  key={entry.name}
+                  className="text-xs rounded-lg px-3 py-2"
+                  style={{
+                    background: 'var(--color-bg-secondary)',
+                    color: 'var(--color-text-secondary)',
+                  }}
+                >
+                  <span className="font-medium">{entry.name}</span>
+                  {' — '}
+                  <span style={{ color: 'var(--color-accent)' }}>
+                    {entry.license}
+                  </span>
+                  {' — '}
+                  <span style={{ color: 'var(--color-text-tertiary)' }}>
+                    {entry.copyright}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
