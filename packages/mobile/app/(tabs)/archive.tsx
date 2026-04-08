@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../src/theme';
 import { config, storage } from '../../src/platform';
@@ -44,22 +44,33 @@ export default function ArchiveScreen() {
   const [entries, setEntries] = useState<ArchiveEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const hasFetched = useRef(false);
 
-  useEffect(() => {
-    fetch(`${config.apiBase}/api/archive`)
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json() as Promise<ArchiveEntry[]>;
-      })
-      .then((data) => {
-        setEntries(data);
-        setLoading(false);
-      })
-      .catch((err: Error) => {
-        setError(err.message);
-        setLoading(false);
-      });
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      // Show spinner only on first visit; silently update on subsequent focuses
+      if (!hasFetched.current) setLoading(true);
+      fetch(`${config.apiBase}/api/archive`)
+        .then((res) => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.json() as Promise<ArchiveEntry[]>;
+        })
+        .then((data) => {
+          setEntries(data);
+          setLoading(false);
+          hasFetched.current = true;
+        })
+        .catch((err: Error) => {
+          if (!hasFetched.current) {
+            setError(err.message);
+            setLoading(false);
+          }
+        });
+    }, []),
+  );
+
+  // Keep currentPuzzleNumber-dependent highlight fresh (no extra fetch needed)
+  useEffect(() => {}, [currentPuzzleNumber]);
 
   // Build a map of puzzleNumber → { score, rank } from local storage
   const savedProgress = useMemo(() => {
@@ -131,6 +142,9 @@ export default function ArchiveScreen() {
             ]}
           >
             <View style={styles.rowLeft}>
+              <Text style={[styles.puzzleNum, { color: theme.textSecondary }]}>
+                #{item.puzzle_number + 1}
+              </Text>
               <Text style={[styles.date, { color: theme.textPrimary }]}>
                 {formatFinnishDate(item.date)}
               </Text>
@@ -207,6 +221,11 @@ const styles = StyleSheet.create({
   date: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  puzzleNum: {
+    fontSize: 13,
+    fontWeight: '500',
+    minWidth: 36,
   },
   todayBadge: {
     borderRadius: 999,

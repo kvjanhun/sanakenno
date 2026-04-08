@@ -1,5 +1,7 @@
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useState, useCallback } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { useTheme } from '../../src/theme';
 import { storage } from '../../src/platform';
 import {
@@ -14,9 +16,15 @@ import {
 
 export default function StatsScreen() {
   const theme = useTheme();
-  const stats: PlayerStats =
-    storage.load<PlayerStats>(STATS_STORAGE_KEY) ?? emptyStats();
+  const [stats, setStats] = useState<PlayerStats>(
+    storage.load<PlayerStats>(STATS_STORAGE_KEY) ?? emptyStats(),
+  );
 
+  useFocusEffect(
+    useCallback(() => {
+      setStats(storage.load<PlayerStats>(STATS_STORAGE_KEY) ?? emptyStats());
+    }, []),
+  );
   if (stats.records.length === 0) {
     return (
       <SafeAreaView

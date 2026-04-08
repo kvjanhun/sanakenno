@@ -55,10 +55,9 @@ export function RankProgress({
       animatedProgress.value = withSpring(progress, {
         damping: 18,
         stiffness: 200,
-        overshootClamping: true,
       });
     } else {
-      animatedProgress.value = withTiming(progress, { duration: 0 });
+      animatedProgress.value = withTiming(progress, { duration: 250 });
     }
   }, [progress, score, animatedProgress]);
 
@@ -132,7 +131,7 @@ export function RankProgress({
           style={[styles.puzzleNumber, { color: theme.textSecondary }]}
           numberOfLines={1}
         >
-          Kenno #{puzzleNumber}
+          Kenno #{puzzleNumber + 1}
         </Text>
       </View>
 

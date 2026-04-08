@@ -1,5 +1,7 @@
 # @sanakenno/shared
 
+## 0.2.3
+
 ## 0.2.1
 
 ### Patch Changes

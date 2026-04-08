@@ -1,5 +1,12 @@
 # @sanakenno/mobile
 
+## 0.2.3
+
+### Patch Changes
+
+- Fix archive/stats refresh, puzzle numbering, midnight rollover, and UI animations
+  - @sanakenno/shared@0.2.3
+
 ## 0.2.1
 
 ### Patch Changes

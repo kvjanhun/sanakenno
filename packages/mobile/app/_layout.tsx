@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef } from 'react';
-import { Appearance, StyleSheet } from 'react-native';
+import { Appearance, AppState, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 import Animated, {
@@ -24,6 +24,8 @@ export default function RootLayout() {
   const pref = useSettingsStore((s) => s.themePreference);
   const puzzle = useGameStore((s) => s.puzzle);
   const fetchError = useGameStore((s) => s.fetchError);
+  const lastFetchedDate = useGameStore((s) => s.lastFetchedDate);
+  const fetchPuzzle = useGameStore((s) => s.fetchPuzzle);
   const overlayOpacity = useSharedValue(1);
   const ready = puzzle !== null || fetchError !== '';
 
@@ -40,6 +42,26 @@ export default function RootLayout() {
     // Once fully transparent, stop blocking touches
     pointerEvents: overlayOpacity.value === 0 ? 'none' : 'auto',
   }));
+
+  // Midnight rollover: when the app becomes active, refetch if the date has changed
+  const lastFetchedDateRef = useRef(lastFetchedDate);
+  useEffect(() => {
+    lastFetchedDateRef.current = lastFetchedDate;
+  }, [lastFetchedDate]);
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        const today = new Date().toISOString().slice(0, 10);
+        if (
+          lastFetchedDateRef.current !== null &&
+          today !== lastFetchedDateRef.current
+        ) {
+          fetchPuzzle();
+        }
+      }
+    });
+    return () => sub.remove();
+  }, [fetchPuzzle]);
 
   // Propagate explicit dark/light preference to the native layer (tab bar, alerts, etc.).
   const didSetOverride = useRef(false);

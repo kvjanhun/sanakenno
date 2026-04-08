@@ -8,6 +8,9 @@ import {
   updateStatsRecord,
   emptyStats,
 } from '@sanakenno/shared';
+
+// Each rejection gets a unique ID so its auto-clear timer doesn't cancel a later rejection
+let rejectionCounter = 0;
 import type { HintData, PlayerStats } from '@sanakenno/shared';
 
 /** Map mobile hint tab IDs to share emoji (same visual meaning as web). */
@@ -53,6 +56,7 @@ interface GameState {
   postedRanks: Set<string>;
   lastResubmittedWord: string | null;
   shareCopied: boolean;
+  lastFetchedDate: string | null;
 
   fetchPuzzle: (overrideNumber?: number) => Promise<void>;
   addLetter: (letter: string) => void;
@@ -91,6 +95,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
   postedRanks: new Set<string>(),
   lastResubmittedWord: null,
   shareCopied: false,
+  lastFetchedDate: null,
 
   fetchPuzzle: async (overrideNumber?: number) => {
     set({ loading: true, fetchError: '' });
@@ -120,6 +125,9 @@ export const useGameStore = create<GameState>()((set, get) => ({
         scoreBeforeHints: null,
         celebration: null,
         postedRanks: new Set<string>(),
+        ...(overrideNumber === undefined && {
+          lastFetchedDate: new Date().toISOString().slice(0, 10),
+        }),
       });
 
       // Restore persisted state
@@ -177,11 +185,12 @@ export const useGameStore = create<GameState>()((set, get) => ({
     const normalized = currentWord.toLowerCase().replace(/-/g, '');
 
     const showError = (msg: string) => {
+      rejectionCounter++;
+      const myId = rejectionCounter;
       set({ message: msg, messageType: 'error', wordRejected: true });
       PreparedHaptics.triggerNotification('error');
       setTimeout(() => {
-        const s = get();
-        if (s.wordRejected) {
+        if (rejectionCounter === myId) {
           set({ currentWord: '', wordRejected: false, message: '' });
         }
       }, 2000);
@@ -210,6 +219,8 @@ export const useGameStore = create<GameState>()((set, get) => ({
 
     // Already found
     if (foundWords.has(normalized)) {
+      rejectionCounter++;
+      const myId = rejectionCounter;
       set({
         message: 'Löysit jo tämän!',
         messageType: 'error',
@@ -219,8 +230,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
       PreparedHaptics.trigger();
       setTimeout(() => set({ lastResubmittedWord: null }), 1500);
       setTimeout(() => {
-        const s = get();
-        if (s.wordRejected) {
+        if (rejectionCounter === myId) {
           set({ currentWord: '', wordRejected: false, message: '' });
         }
       }, 2000);

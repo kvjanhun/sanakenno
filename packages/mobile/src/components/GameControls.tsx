@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as PreparedHaptics from 'prepared-haptics';
@@ -16,7 +16,7 @@ interface GameControlsProps {
   theme: Theme;
 }
 
-function ScaleButton({
+function SimpleButton({
   onPress,
   flex,
   bgColor,
@@ -33,14 +33,13 @@ function ScaleButton({
   }));
 
   return (
-    // flex must be on Pressable (the direct child of the row container)
     <Pressable
       style={{ flex }}
       onPressIn={() => {
-        scale.value = withSpring(0.92, { damping: 15, stiffness: 400 });
+        scale.value = withTiming(0.94, { duration: 80 });
       }}
       onPressOut={() => {
-        scale.value = withSpring(1, { damping: 12, stiffness: 300 });
+        scale.value = withTiming(1, { duration: 120 });
       }}
       onPress={onPress}
     >
@@ -87,24 +86,28 @@ export function GameControls({
   return (
     <View style={styles.controls}>
       {/* Wide: Poista */}
-      <ScaleButton onPress={handleDelete} flex={2} bgColor={theme.bgSecondary}>
+      <SimpleButton onPress={handleDelete} flex={2} bgColor={theme.bgSecondary}>
         <Text style={[styles.buttonText, { color: theme.textPrimary }]}>
           Poista
         </Text>
-      </ScaleButton>
+      </SimpleButton>
 
       {/* Narrow: Share icon */}
-      <ScaleButton onPress={handleShare} flex={1} bgColor={theme.bgSecondary}>
+      <SimpleButton onPress={handleShare} flex={1} bgColor={theme.bgSecondary}>
         <Ionicons name="share-outline" size={22} color={theme.textPrimary} />
-      </ScaleButton>
+      </SimpleButton>
 
       {/* Narrow: Shuffle icon */}
-      <ScaleButton onPress={handleShuffle} flex={1} bgColor={theme.bgSecondary}>
+      <SimpleButton
+        onPress={handleShuffle}
+        flex={1}
+        bgColor={theme.bgSecondary}
+      >
         <Ionicons name="shuffle" size={22} color={theme.textPrimary} />
-      </ScaleButton>
+      </SimpleButton>
 
       {/* Wide: OK */}
-      <ScaleButton onPress={handleSubmit} flex={2} bgColor={theme.accent}>
+      <SimpleButton onPress={handleSubmit} flex={2} bgColor={theme.accent}>
         <Text
           style={[
             styles.buttonText,
@@ -113,7 +116,7 @@ export function GameControls({
         >
           OK
         </Text>
-      </ScaleButton>
+      </SimpleButton>
     </View>
   );
 }
