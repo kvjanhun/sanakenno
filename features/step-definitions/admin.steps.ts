@@ -517,7 +517,10 @@ Given(
     const db = getDb();
     const total = totalPuzzles();
     const daysDiff = (((slot - 1) % total) + total) % total;
-    const today = new Date();
+    // Use Helsinki time to match the server's todaysSlot() logic.
+    const today = new Date(
+      new Date().toLocaleString('en-US', { timeZone: 'Europe/Helsinki' }),
+    );
     const epochDate = new Date(
       today.getFullYear(),
       today.getMonth(),
