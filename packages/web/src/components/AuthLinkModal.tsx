@@ -1,9 +1,14 @@
 /**
- * Interstitial shown when the page is opened with a magic link token.
+ * Smart landing page shown when the magic link is opened in a browser.
  *
- * Lets the player choose whether to log in on the web or open the native app.
- * The token is not consumed until one of the two actions is taken, so
- * whichever path the player picks gets the single-use token.
+ * Presents two options:
+ *   - "Avaa sovelluksessa": links to sanakenno://auth?token=... — iOS requires
+ *     a real user tap to redirect to a custom scheme, so this must be a button
+ *     the player presses, not an automatic redirect.
+ *   - "Kirjaudu selaimessa": calls verifyToken directly in the web app.
+ *
+ * This is the standard approach used by Firebase Dynamic Links, Branch, etc.
+ * when Universal Links are not available.
  *
  * @module src/components/AuthLinkModal
  */
@@ -19,29 +24,26 @@ export function AuthLinkModal({ token, onLoginWeb }: AuthLinkModalProps) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
+      style={{ backgroundColor: 'var(--color-bg-primary)' }}
     >
-      <div
-        className="w-full max-w-sm rounded-xl p-6 space-y-4"
-        style={{ backgroundColor: 'var(--color-bg-primary)' }}
-      >
+      <div className="w-full max-w-sm space-y-4">
         <h2
-          className="text-lg font-semibold"
+          className="text-xl font-semibold text-center"
           style={{ color: 'var(--color-text-primary)' }}
         >
-          Kirjaudu sisään
+          Sanakenno
         </h2>
-        <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-          Haluatko kirjautua selaimessa vai avata Sanakenno-sovelluksen?
+        <p
+          className="text-sm text-center"
+          style={{ color: 'var(--color-text-secondary)' }}
+        >
+          Kirjaudu sisään sovelluksessa tai selaimessa.
         </p>
 
         <a
           href={appUrl}
           className="block w-full py-3 rounded-lg text-center font-semibold text-sm no-underline"
-          style={{
-            backgroundColor: 'var(--color-accent)',
-            color: '#fff',
-          }}
+          style={{ backgroundColor: 'var(--color-accent)', color: '#fff' }}
         >
           Avaa sovelluksessa
         </a>
@@ -49,10 +51,10 @@ export function AuthLinkModal({ token, onLoginWeb }: AuthLinkModalProps) {
         <button
           type="button"
           onClick={onLoginWeb}
-          className="w-full py-3 rounded-lg text-sm font-medium bg-transparent border cursor-pointer"
+          className="block w-full py-3 rounded-lg text-sm font-medium bg-transparent border cursor-pointer"
           style={{
             borderColor: 'var(--color-text-tertiary)',
-            color: 'var(--color-text-primary)',
+            color: 'var(--color-text-secondary)',
           }}
         >
           Kirjaudu selaimessa
