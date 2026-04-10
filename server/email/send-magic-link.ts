@@ -34,23 +34,26 @@ export async function sendMagicLink(
   token: string,
   baseUrl: string,
 ): Promise<void> {
-  // Skip actual sending in test environment.
-  if (process.env.RESEND_API_KEY === 'test') return;
-
   const link = `${baseUrl}/auth?token=${encodeURIComponent(token)}`;
+
+  // In test/dev mode print the link to stdout instead of sending email.
+  if (process.env.RESEND_API_KEY === 'test') {
+    console.log(`\n[magic-link] ${email}\n${link}\n`);
+    return;
+  }
 
   const { error } = await getResend().emails.send({
     from: 'Sanakenno <noreply@sanakenno.fi>',
     to: email,
-    subject: 'Kirjaudu Sanakenno-tilillesi',
+    subject: 'Sanakenno.fi - Kirjaudu sisään',
     html: `
       <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
-        <h2 style="color: #1a1a1a;">Tervetuloa Sanakennolle!</h2>
+        <h2 style="color: #1a1a1a;">Sanakenno.fi</h2>
         <p>Klikkaa alla olevaa linkkiä kirjautuaksesi sisään.
            Linkki on voimassa <strong>15 minuuttia</strong>.</p>
         <p style="margin: 24px 0;">
           <a href="${link}"
-             style="background: #2563eb; color: #fff; padding: 12px 24px;
+             style="background: #ff643e; color: #fff; padding: 12px 24px;
                     border-radius: 6px; text-decoration: none; font-weight: 600;">
             Kirjaudu sisään
           </a>
@@ -60,11 +63,11 @@ export async function sendMagicLink(
         </p>
         <p style="color: #999; font-size: 12px;">
           Tai kopioi tämä osoite selaimeesi:<br>
-          <a href="${link}" style="color: #999;">${link}</a>
+          <span style="color: #999;">${link}</span>
         </p>
       </div>
     `,
-    text: `Kirjaudu sisään Sanakenno-tilillesi:\n${link}\n\nLinkki on voimassa 15 minuuttia.\n\nJos et pyytänyt tätä viestiä, voit jättää sen huomiotta.`,
+    text: `Kirjaudu sisään Sanakennoon:\n${link}\n\nLinkki on voimassa 15 minuuttia.\n\nJos et pyytänyt tätä viestiä, voit jättää sen huomiotta.`,
   });
 
   if (error) {

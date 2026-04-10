@@ -29,6 +29,7 @@ import { HintPanels } from './components/HintPanels';
 import { ArchiveModal } from './components/ArchiveModal';
 import { StatsModal } from './components/StatsModal';
 import { AuthModal } from './components/AuthModal';
+import { AuthLinkModal } from './components/AuthLinkModal';
 import { CalendarIcon, StatsIcon } from './components/icons';
 
 /* ------------------------------------------------------------------ */
@@ -99,6 +100,7 @@ function App() {
   const authIsLoggedIn = useAuthIsLoggedIn();
   const authEmail = useAuthEmail();
   const [showAuth, setShowAuth] = useState(false);
+  const [pendingLinkToken, setPendingLinkToken] = useState<string | null>(null);
   const fetchError = useFetchError();
   const currentWord = useCurrentWord();
   const score = useScore();
@@ -152,15 +154,15 @@ function App() {
 
   // Restore auth session on mount and intercept magic link token from URL
   useEffect(() => {
-    const { initialize, verifyToken } = useAuthStore.getState();
-    initialize();
+    useAuthStore.getState().initialize();
 
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
     if (token) {
       // Clean the URL immediately so the token is not bookmarked or shared
       window.history.replaceState({}, '', '/');
-      void verifyToken(token);
+      // Show the choice modal — don't auto-verify so the app can still use the token
+      setPendingLinkToken(token);
     }
   }, []);
 
@@ -331,6 +333,16 @@ function App() {
       {/* Rules modal */}
       <RulesModal show={showRules} onClose={() => setShowRules(false)} />
       <AuthModal show={showAuth} onClose={() => setShowAuth(false)} />
+      {pendingLinkToken && (
+        <AuthLinkModal
+          token={pendingLinkToken}
+          onLoginWeb={() => {
+            const token = pendingLinkToken;
+            setPendingLinkToken(null);
+            void useAuthStore.getState().verifyToken(token);
+          }}
+        />
+      )}
       <ArchiveModal
         show={showArchive}
         onClose={() => setShowArchive(false)}

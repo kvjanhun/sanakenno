@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef } from 'react';
 import { Appearance, AppState, StyleSheet } from 'react-native';
+import * as Linking from 'expo-linking';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 import Animated, {
@@ -34,6 +35,19 @@ export default function RootLayout() {
   useEffect(() => {
     useAuthStore.getState().initialize();
   }, []);
+
+  // Handle magic link deep links: sanakenno://auth?token=xxx
+  const incomingUrl = Linking.useURL();
+  useEffect(() => {
+    if (!incomingUrl) return;
+    const { path, queryParams } = Linking.parse(incomingUrl);
+    if (path === 'auth') {
+      const token = queryParams?.token;
+      if (typeof token === 'string') {
+        void useAuthStore.getState().verifyToken(token);
+      }
+    }
+  }, [incomingUrl]);
 
   // Once puzzle (or an error) is available, fade out the JS overlay and hide native splash
   useEffect(() => {
