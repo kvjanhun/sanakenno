@@ -234,6 +234,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         stats: body.stats,
         puzzle_states: body.puzzle_states,
       });
+      // Reload so the game store re-reads merged data from localStorage.
+      window.location.reload();
     } catch (err) {
       set({
         error: err instanceof Error ? err.message : 'Vahvistus epäonnistui',

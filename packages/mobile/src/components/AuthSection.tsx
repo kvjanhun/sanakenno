@@ -16,6 +16,7 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from 'react-native';
+import isEmail from 'validator/lib/isEmail';
 import { useAuthStore } from '../store/useAuthStore';
 import type { Theme } from '../theme';
 
@@ -35,6 +36,10 @@ export function AuthSection({ theme }: AuthSectionProps) {
   const handleRequestLink = useCallback(async () => {
     const trimmed = inputEmail.trim();
     if (!trimmed) return;
+    if (!isEmail(trimmed)) {
+      useAuthStore.setState({ error: 'Tarkista sähköpostiosoite.' });
+      return;
+    }
     const { requestLink } = useAuthStore.getState();
     await requestLink(trimmed);
     setInputEmail('');
@@ -104,6 +109,16 @@ export function AuthSection({ theme }: AuthSectionProps) {
             </Text>
           )}
         </Pressable>
+        <Pressable
+          onPress={() =>
+            useAuthStore.setState({ pendingEmail: null, error: null })
+          }
+          style={styles.changeEmailButton}
+        >
+          <Text style={[styles.changeEmailText, { color: theme.textTertiary }]}>
+            Vaihda sähköpostiosoite
+          </Text>
+        </Pressable>
       </View>
     );
   }
@@ -119,7 +134,10 @@ export function AuthSection({ theme }: AuthSectionProps) {
       </Text>
       <TextInput
         value={inputEmail}
-        onChangeText={setInputEmail}
+        onChangeText={(v) => {
+          setInputEmail(v);
+          if (error) useAuthStore.setState({ error: null });
+        }}
         placeholder="sähköpostiosoite"
         placeholderTextColor={theme.textTertiary}
         keyboardType="email-address"
@@ -204,5 +222,12 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 15,
     fontWeight: '600',
+  },
+  changeEmailButton: {
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  changeEmailText: {
+    fontSize: 13,
   },
 });

@@ -15,6 +15,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import isEmail from 'validator/lib/isEmail';
 import { useAuthStore } from '../store/useAuthStore';
 
 /** Props for {@link AuthModal}. */
@@ -58,8 +59,13 @@ export function AuthModal({
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!inputEmail.trim()) return;
-      await requestLink(inputEmail.trim());
+      const trimmed = inputEmail.trim();
+      if (!trimmed) return;
+      if (!isEmail(trimmed)) {
+        useAuthStore.setState({ error: 'Tarkista sähköpostiosoite.' });
+        return;
+      }
+      await requestLink(trimmed);
     },
     [inputEmail, requestLink],
   );
@@ -167,6 +173,16 @@ export function AuthModal({
             >
               {isLoading ? 'Lähetetään…' : 'Lähetä uudelleen'}
             </button>
+            <button
+              type="button"
+              onClick={() =>
+                useAuthStore.setState({ pendingEmail: null, error: null })
+              }
+              className="w-full bg-transparent border-none cursor-pointer text-sm"
+              style={{ color: 'var(--color-text-tertiary)' }}
+            >
+              Vaihda sähköpostiosoite
+            </button>
           </div>
         )}
 
@@ -197,7 +213,10 @@ export function AuthModal({
                 id="auth-email"
                 type="email"
                 value={inputEmail}
-                onChange={(e) => setInputEmail(e.target.value)}
+                onChange={(e) => {
+                  setInputEmail(e.target.value);
+                  if (error) useAuthStore.setState({ error: null });
+                }}
                 placeholder="sinä@esimerkki.fi"
                 autoComplete="email"
                 autoFocus
