@@ -12,12 +12,14 @@ import {
   computeStreak,
   computeRankDistribution,
   computeAverageCompletion,
+  mergeStatsRecord,
 } from '@sanakenno/shared';
 import type { StatsRecord } from '@sanakenno/shared';
 import type { SanakennoWorld } from './types';
 
 Before(function (this: SanakennoWorld) {
   this.playerStats = emptyStats();
+  this.serverStatsRecord = null;
 });
 
 /** Helper to build a minimal stats record. */
@@ -226,5 +228,66 @@ Then(
       Math.abs(avg - expected) < 0.1,
       `Expected ~${expected}%, got ${avg}%`,
     );
+  },
+);
+
+/* ------------------------------------------------------------------ */
+/*  Server-backed stats (merge scenarios)                              */
+/* ------------------------------------------------------------------ */
+
+Given(
+  'the server has a stats record for puzzle {int} with best_rank {string}',
+  function (this: SanakennoWorld, puzzleNum: number, rank: string) {
+    this.serverStatsRecord = makeRecord({
+      puzzle_number: puzzleNum,
+      date: '2026-04-01',
+      best_rank: rank,
+      best_score: 30,
+    });
+  },
+);
+
+Given(
+  'the local device has a stats record for puzzle {int} with best_rank {string}',
+  function (this: SanakennoWorld, puzzleNum: number, rank: string) {
+    this.playerStats = updateStatsRecord(
+      this.playerStats,
+      makeRecord({
+        puzzle_number: puzzleNum,
+        date: '2026-04-01',
+        best_rank: rank,
+        best_score: 20,
+      }),
+    );
+  },
+);
+
+When(
+  'pullAndMerge is called with the server record',
+  function (this: SanakennoWorld) {
+    assert.ok(this.serverStatsRecord, 'serverStatsRecord must be set');
+    const puzzleNum = this.serverStatsRecord.puzzle_number;
+    const existing = this.playerStats.records.find(
+      (r) => r.puzzle_number === puzzleNum,
+    );
+    assert.ok(existing, `No local record for puzzle ${puzzleNum}`);
+    const merged = mergeStatsRecord(existing, this.serverStatsRecord);
+    this.playerStats = {
+      ...this.playerStats,
+      records: this.playerStats.records.map((r) =>
+        r.puzzle_number === puzzleNum ? merged : r,
+      ),
+    };
+  },
+);
+
+Then(
+  'the local stats record for puzzle {int} should have best_rank {string}',
+  function (this: SanakennoWorld, puzzleNum: number, expectedRank: string) {
+    const rec = this.playerStats.records.find(
+      (r) => r.puzzle_number === puzzleNum,
+    );
+    assert.ok(rec, `No record for puzzle ${puzzleNum}`);
+    assert.equal(rec.best_rank, expectedRank);
   },
 );

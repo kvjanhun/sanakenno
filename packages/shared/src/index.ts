@@ -51,5 +51,13 @@ export type {
   CryptoService,
   ShareService,
   ConfigService,
+  AuthService,
   PlatformServices,
 } from './platform-types';
+
+// Auth and sync types
+export { AUTH_TOKEN_STORAGE_KEY } from './auth-types';
+export type { AuthToken, SyncPuzzleState, SyncPayload } from './auth-types';
+
+// Sync merge utilities
+export { mergeStatsRecord, mergePuzzleState } from './sync-merge';

@@ -19,6 +19,7 @@ import {
 } from '@sanakenno/shared';
 import type { PlayerStats } from '@sanakenno/shared';
 import { loadFromStorage } from '../utils/storage';
+import { useAuthStore } from '../store/useAuthStore';
 
 /** Rank display colors, ordered from lowest to highest. */
 const RANK_COLORS: Record<string, string> = {
@@ -45,6 +46,8 @@ export function StatsModal({
   onClose,
 }: StatsModalProps): React.JSX.Element | null {
   const [stats, setStats] = useState<PlayerStats>(emptyStats());
+  const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
+  const authEmail = useAuthStore((s) => s.email);
 
   useEffect(() => {
     if (show) {
@@ -88,7 +91,7 @@ export function StatsModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-1">
           <h2
             id="stats-title"
             className="text-lg font-semibold"
@@ -106,6 +109,14 @@ export function StatsModal({
             ✕
           </button>
         </div>
+        {isLoggedIn && (
+          <p
+            className="text-xs mb-3"
+            style={{ color: 'var(--color-text-tertiary)' }}
+          >
+            ✓ Synkronoitu · {authEmail}
+          </p>
+        )}
 
         {records.length === 0 ? (
           <div

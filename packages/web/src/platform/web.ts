@@ -9,7 +9,10 @@ import type {
   CryptoService,
   ShareService,
   ConfigService,
+  AuthService,
 } from '@sanakenno/shared';
+import { AUTH_TOKEN_STORAGE_KEY } from '@sanakenno/shared';
+import type { AuthToken } from '@sanakenno/shared';
 
 export const webStorage: StorageService = {
   save<T>(key: string, data: T): void {
@@ -84,4 +87,16 @@ export const webShare: ShareService = {
 
 export const webConfig: ConfigService = {
   apiBase: import.meta.env.BASE_URL.replace(/\/$/, ''),
+};
+
+export const webAuth: AuthService = {
+  getToken(): AuthToken | null {
+    return webStorage.load<AuthToken>(AUTH_TOKEN_STORAGE_KEY);
+  },
+  setToken(token: AuthToken): void {
+    webStorage.save(AUTH_TOKEN_STORAGE_KEY, token);
+  },
+  clearToken(): void {
+    webStorage.remove(AUTH_TOKEN_STORAGE_KEY);
+  },
 };

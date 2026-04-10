@@ -13,6 +13,7 @@ export {
   webCrypto as crypto,
   webShare as share,
   webConfig as config,
+  webAuth as auth,
 } from './web';
 
 export type {
@@ -20,5 +21,6 @@ export type {
   CryptoService,
   ShareService,
   ConfigService,
+  AuthService,
   PlatformServices,
 } from '@sanakenno/shared';

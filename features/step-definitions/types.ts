@@ -54,6 +54,7 @@ export interface SanakennoWorld {
   kotusUrl: string;
   /* Player stats */
   playerStats: import('@sanakenno/shared').PlayerStats;
+  serverStatsRecord: import('@sanakenno/shared').StatsRecord | null;
   /* Archive */
   archiveEntries: Array<{
     date: string;

@@ -9,8 +9,9 @@
  * @module src/App
  */
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { useGameStore } from './store/useGameStore';
+import { useAuthStore } from './store/useAuthStore';
 import { useKeyboard } from './hooks/useKeyboard';
 import { useGameTimer } from './hooks/useGameTimer';
 import { useMidnightRollover } from './hooks/useMidnightRollover';
@@ -27,6 +28,7 @@ import { GameControls } from './components/GameControls';
 import { HintPanels } from './components/HintPanels';
 import { ArchiveModal } from './components/ArchiveModal';
 import { StatsModal } from './components/StatsModal';
+import { AuthModal } from './components/AuthModal';
 import { CalendarIcon, StatsIcon } from './components/icons';
 
 /* ------------------------------------------------------------------ */
@@ -60,6 +62,9 @@ const useShowArchive = () => useGameStore((s) => s.showArchive);
 const useShowStats = () => useGameStore((s) => s.showStats);
 const useViewingPuzzleDate = () => useGameStore((s) => s.viewingPuzzleDate);
 
+const useAuthIsLoggedIn = () => useAuthStore((s) => s.isLoggedIn);
+const useAuthEmail = () => useAuthStore((s) => s.email);
+
 /* Stable action references — these don't change between renders */
 const actions = () => {
   const s = useGameStore.getState();
@@ -91,6 +96,9 @@ const actions = () => {
 function App() {
   const puzzle = usePuzzle();
   const loading = useLoading();
+  const authIsLoggedIn = useAuthIsLoggedIn();
+  const authEmail = useAuthEmail();
+  const [showAuth, setShowAuth] = useState(false);
   const fetchError = useFetchError();
   const currentWord = useCurrentWord();
   const score = useScore();
@@ -141,6 +149,20 @@ function App() {
   useEffect(() => {
     fetchPuzzle();
   }, [fetchPuzzle]);
+
+  // Restore auth session on mount and intercept magic link token from URL
+  useEffect(() => {
+    const { initialize, verifyToken } = useAuthStore.getState();
+    initialize();
+
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    if (token) {
+      // Clean the URL immediately so the token is not bookmarked or shared
+      window.history.replaceState({}, '', '/');
+      void verifyToken(token);
+    }
+  }, []);
 
   // Restore or start timer when puzzle loads
   useEffect(() => {
@@ -271,7 +293,23 @@ function App() {
               </>
             )}
           </h1>
-          <div className="flex items-center">
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setShowAuth(true)}
+              className="py-2 px-2 rounded-lg bg-transparent border-none cursor-pointer text-sm"
+              style={{ color: 'var(--color-text-secondary)' }}
+              aria-label={authIsLoggedIn ? 'Oma tili' : 'Kirjaudu'}
+              title={
+                authIsLoggedIn
+                  ? (authEmail ?? 'Kirjautunut')
+                  : 'Kirjaudu sisään'
+              }
+            >
+              {authIsLoggedIn
+                ? (authEmail?.[0]?.toUpperCase() ?? '●')
+                : 'Kirjaudu'}
+            </button>
             <button
               type="button"
               onClick={() => setShowRules(true)}
@@ -292,6 +330,7 @@ function App() {
 
       {/* Rules modal */}
       <RulesModal show={showRules} onClose={() => setShowRules(false)} />
+      <AuthModal show={showAuth} onClose={() => setShowAuth(false)} />
       <ArchiveModal
         show={showArchive}
         onClose={() => setShowArchive(false)}

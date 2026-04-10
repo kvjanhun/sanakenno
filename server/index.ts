@@ -16,6 +16,13 @@
  *   GET  /api/auth/session        - Check session validity
  *   POST /api/auth/change-password - Change admin password
  *   /api/admin/*                  - Admin API (auth required)
+ *   POST /api/player/auth/request - Request magic link email
+ *   POST /api/player/auth/verify  - Exchange magic link token for Bearer session
+ *   POST /api/player/auth/logout  - Invalidate player session
+ *   GET  /api/player/me           - Current player identity
+ *   GET  /api/player/sync         - Pull all server data for authenticated player
+ *   POST /api/player/sync/stats   - Push a stats record
+ *   POST /api/player/sync/state   - Push a puzzle state
  *
  * @module server/index
  */
@@ -29,6 +36,8 @@ import achievementRoutes from './routes/achievement';
 import failedGuessRoutes from './routes/failed-guess';
 import authRoutes from './auth/routes';
 import adminRoutes from './routes/admin';
+import playerAuthRoutes from './player-auth/routes';
+import playerSyncRoutes from './routes/player-sync';
 import { securityHeaders, requireAuth, requireCsrf } from './auth/middleware';
 
 const app = new Hono();
@@ -52,9 +61,14 @@ app.onError((err, c) => {
 app.use(
   '*',
   cors({
-    origin: 'https://sanakenno.fi',
+    // Allow the production site, localhost dev, and React Native (no Origin header).
+    origin: (origin) => {
+      if (origin === 'https://sanakenno.fi') return origin;
+      if (!origin || origin.startsWith('http://localhost')) return origin;
+      return null;
+    },
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-    allowHeaders: ['Content-Type', 'X-CSRF-Token'],
+    allowHeaders: ['Content-Type', 'X-CSRF-Token', 'Authorization'],
     credentials: true,
   }),
 );
@@ -117,6 +131,8 @@ app.route('/api/achievement', achievementRoutes);
 app.route('/api/failed-guess', failedGuessRoutes);
 app.route('/api/auth', authRoutes);
 app.route('/api/admin', adminRoutes);
+app.route('/api/player', playerAuthRoutes);
+app.route('/api/player/sync', playerSyncRoutes);
 
 // --- Server startup ---
 

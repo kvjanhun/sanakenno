@@ -12,6 +12,7 @@ import Animated, {
 import { useSettingsStore } from '../src/store/useSettingsStore';
 import { useTheme } from '../src/theme';
 import { useGameStore } from '../src/store/useGameStore';
+import { useAuthStore } from '../src/store/useAuthStore';
 import 'react-native-reanimated';
 
 export { ErrorBoundary } from 'expo-router';
@@ -28,6 +29,11 @@ export default function RootLayout() {
   const fetchPuzzle = useGameStore((s) => s.fetchPuzzle);
   const overlayOpacity = useSharedValue(1);
   const ready = puzzle !== null || fetchError !== '';
+
+  // Restore auth session on mount
+  useEffect(() => {
+    useAuthStore.getState().initialize();
+  }, []);
 
   // Once puzzle (or an error) is available, fade out the JS overlay and hide native splash
   useEffect(() => {
