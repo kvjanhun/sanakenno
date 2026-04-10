@@ -5,3 +5,4 @@ README.md
 features/*.feature
 pnpm-lock.yaml
 packages/mobile/ios/
+packages/mobile/expo-env.d.ts

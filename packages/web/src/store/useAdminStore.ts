@@ -89,7 +89,10 @@ interface AdminState {
   loadSlot: (slot: number) => Promise<void>;
   saveSlot: (force?: boolean) => Promise<void>;
   changeCenter: (center: string, force?: boolean) => Promise<void>;
-  swapSlots: (otherSlot: number, force?: boolean) => Promise<void>;
+  swapSlots: (
+    otherSlot: number,
+    force?: boolean,
+  ) => Promise<'ok' | 'needs_force' | 'error'>;
   deleteSlot: (force?: boolean) => Promise<void>;
   createPuzzle: (letters: string[], center: string) => Promise<void>;
   previewCombo: (letters: string[], center?: string) => Promise<void>;
@@ -362,19 +365,15 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       const data = await res.json();
       if (!res.ok) {
         if (res.status === 409 && data.requires_force) {
-          set({
-            saving: false,
-            statusMessage: data.error,
-            statusType: 'warning',
-          });
-          return;
+          set({ saving: false });
+          return 'needs_force';
         }
         set({
           saving: false,
           statusMessage: data.error || 'Vaihto epäonnistui',
           statusType: 'error',
         });
-        return;
+        return 'error';
       }
       set({
         saving: false,
@@ -382,8 +381,10 @@ export const useAdminStore = create<AdminState>((set, get) => ({
         statusType: 'success',
       });
       get().loadSlot(currentSlot);
+      return 'ok';
     } catch {
       set({ saving: false, statusMessage: 'Yhteysvirhe', statusType: 'error' });
+      return 'error';
     }
   },
 

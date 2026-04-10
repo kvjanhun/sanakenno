@@ -254,7 +254,7 @@ export function PuzzleEditor() {
     }
   }, [currentSlot, totalPuzzles, loadSlot]);
 
-  const handleSwap = useCallback(() => {
+  const handleSwap = useCallback(async () => {
     const target = parseInt(swapTarget, 10) - 1;
     if (
       isNaN(target) ||
@@ -264,7 +264,16 @@ export function PuzzleEditor() {
     ) {
       return;
     }
-    swapSlots(target);
+    const result = await swapSlots(target);
+    if (result === 'needs_force') {
+      if (
+        window.confirm(
+          `Peli #${target + 1} tai #${currentSlot + 1} on tämän päivän julkaistu peli. Vaihdetaanko silti?`,
+        )
+      ) {
+        await swapSlots(target, true);
+      }
+    }
   }, [swapTarget, totalPuzzles, currentSlot, swapSlots]);
 
   const handleDelete = useCallback(() => {
@@ -440,7 +449,7 @@ export function PuzzleEditor() {
           />
           <button
             type="button"
-            onClick={handleSwap}
+            onClick={() => void handleSwap()}
             disabled={saving}
             className="px-2 py-1 rounded text-xs cursor-pointer"
             style={{
