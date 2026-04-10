@@ -114,6 +114,19 @@ function gatherLocalData(): {
   return { stats, puzzle_states };
 }
 
+/** Safely extract an error message from a failed response body. */
+async function safeErrorMessage(
+  res: Response,
+  fallback: string,
+): Promise<string> {
+  try {
+    const body = (await res.json()) as { error?: string };
+    return body.error ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Store
 // ---------------------------------------------------------------------------
@@ -170,8 +183,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         body: JSON.stringify({ email }),
       });
       if (!res.ok) {
-        const body = (await res.json()) as { error?: string };
-        throw new Error(body.error ?? 'Pyyntö epäonnistui');
+        throw new Error(await safeErrorMessage(res, 'Pyyntö epäonnistui'));
       }
       set({ pendingEmail: email, isLoading: false });
     } catch (err) {
@@ -192,8 +204,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         body: JSON.stringify({ token, stats, puzzle_states }),
       });
       if (!res.ok) {
-        const body = (await res.json()) as { error?: string };
-        throw new Error(body.error ?? 'Vahvistus epäonnistui');
+        throw new Error(await safeErrorMessage(res, 'Vahvistus epäonnistui'));
       }
       interface VerifyBody {
         token: string;
