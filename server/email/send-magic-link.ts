@@ -42,6 +42,8 @@ export async function sendMagicLink(
     return;
   }
 
+  const appLink = `sanakenno://auth?token=${encodeURIComponent(token)}`;
+
   const { error } = await getResend().emails.send({
     from: 'Sanakenno <noreply@sanakenno.fi>',
     to: email,
@@ -51,23 +53,27 @@ export async function sendMagicLink(
         <h2 style="color: #1a1a1a;">Sanakenno.fi</h2>
         <p>Klikkaa alla olevaa linkkiä kirjautuaksesi sisään.
            Linkki on voimassa <strong>15 minuuttia</strong>.</p>
-        <p style="margin: 24px 0;">
-          <a href="${link}"
+        <p style="margin: 8px 0;">
+          <a href="${appLink}"
              style="background: #ff643e; color: #fff; padding: 12px 24px;
                     border-radius: 6px; text-decoration: none; font-weight: 600;">
-            Kirjaudu sisään
+            Avaa sovelluksessa
           </a>
         </p>
-        <p style="color: #666; font-size: 14px;">
-          Jos et pyytänyt tätä viestiä, voit jättää sen huomiotta.
+        <p style="margin: 8px 0;">
+          <a href="${link}"
+             style="background: transparent; color: #ff643e; padding: 12px 24px;
+                    border-radius: 6px; text-decoration: none; font-weight: 600;
+                    border: 2px solid #ff643e; display: inline-block;">
+            Kirjaudu selaimessa
+          </a>
         </p>
-        <p style="color: #999; font-size: 12px;">
-          Tai kopioi tämä osoite selaimeesi:<br>
-          <span style="color: #999;">${link}</span>
+        <p style="color: #666; font-size: 14px; margin-top: 24px;">
+          Jos et pyytänyt tätä viestiä, voit jättää sen huomiotta.
         </p>
       </div>
     `,
-    text: `Kirjaudu sisään Sanakennoon:\n${link}\n\nLinkki on voimassa 15 minuuttia.\n\nJos et pyytänyt tätä viestiä, voit jättää sen huomiotta.`,
+    text: `Kirjaudu sisään Sanakennoon:\n\nSovelluksessa: ${appLink}\nSelaimessa: ${link}\n\nLinkki on voimassa 15 minuuttia.\n\nJos et pyytänyt tätä viestiä, voit jättää sen huomiotta.`,
   });
 
   if (error) {
