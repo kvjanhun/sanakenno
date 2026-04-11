@@ -52,3 +52,17 @@ Feature: Game state persistence
     When the player loads a puzzle
     Then migration should not run
     And the game should load normally
+
+  # --- Server sync ---
+
+  Scenario: Stats and puzzle state are synced to server after finding a word when logged in
+    Given the player is logged in
+    And the player is on puzzle number 3
+    When the player finds a word
+    Then a POST request should have been made to "/api/player/sync/stats"
+    And a POST request should have been made to "/api/player/sync/state"
+
+  Scenario: No sync requests are made when the player is anonymous
+    Given the player is not logged in
+    When the player finds a word
+    Then no POST request should have been made to "/api/player/sync/stats"

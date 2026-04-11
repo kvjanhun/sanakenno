@@ -7,7 +7,7 @@ import {
   useColorScheme,
 } from 'react-native';
 import type { ReactNode, ErrorInfo } from 'react';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { AlertTriangle } from 'lucide-react-native';
 import { getTheme } from '../theme';
 import { useSettingsStore } from '../store/useSettingsStore';
 
@@ -52,9 +52,9 @@ class ErrorBoundaryInner extends Component<
       const { theme } = this.props;
       return (
         <View style={[styles.container, { backgroundColor: theme.bgPrimary }]}>
-          <Ionicons
-            name="warning-outline"
+          <AlertTriangle
             size={48}
+            strokeWidth={2.5}
             color={theme.error}
             style={styles.icon}
           />

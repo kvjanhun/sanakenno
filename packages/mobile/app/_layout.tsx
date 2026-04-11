@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef } from 'react';
 import { Appearance, AppState, StyleSheet } from 'react-native';
+import * as Linking from 'expo-linking';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 import Animated, {
@@ -12,6 +13,7 @@ import Animated, {
 import { useSettingsStore } from '../src/store/useSettingsStore';
 import { useTheme } from '../src/theme';
 import { useGameStore } from '../src/store/useGameStore';
+import { useAuthStore } from '../src/store/useAuthStore';
 import 'react-native-reanimated';
 
 export { ErrorBoundary } from 'expo-router';
@@ -28,6 +30,24 @@ export default function RootLayout() {
   const fetchPuzzle = useGameStore((s) => s.fetchPuzzle);
   const overlayOpacity = useSharedValue(1);
   const ready = puzzle !== null || fetchError !== '';
+
+  // Restore auth session on mount
+  useEffect(() => {
+    useAuthStore.getState().initialize();
+  }, []);
+
+  // Handle magic link deep links: sanakenno://auth?token=xxx
+  const incomingUrl = Linking.useURL();
+  useEffect(() => {
+    if (!incomingUrl) return;
+    const { path, queryParams } = Linking.parse(incomingUrl);
+    if (path === 'auth') {
+      const token = queryParams?.token;
+      if (typeof token === 'string') {
+        void useAuthStore.getState().verifyToken(token);
+      }
+    }
+  }, [incomingUrl]);
 
   // Once puzzle (or an error) is available, fade out the JS overlay and hide native splash
   useEffect(() => {

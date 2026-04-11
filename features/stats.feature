@@ -1,6 +1,7 @@
 Feature: Player stats and history
   Personal play statistics are tracked in localStorage and displayed
-  in a stats modal. Privacy-first: no backend changes needed.
+  in a stats modal. When the player is logged in, stats are also
+  backed up to the server and synced across devices.
 
   # --- Data recording ---
 
@@ -70,3 +71,23 @@ Feature: Player stats and history
     Given the stats modal is open
     When the player clicks outside the modal
     Then the stats modal should close
+
+  @e2e
+  Scenario: Stats modal shows sync status when logged in
+    Given the player is logged in with email "testi@esimerkki.fi"
+    When the player opens the stats modal
+    Then the stats modal should show a sync status line containing "testi@esimerkki.fi"
+
+  # --- Server-backed stats ---
+
+  Scenario: Server stats are merged into local after login on a new device
+    Given the server has a stats record for puzzle 5 with best_rank "Ällistyttävä"
+    And the local device has a stats record for puzzle 5 with best_rank "Onnistuja"
+    When pullAndMerge is called with the server record
+    Then the local stats record for puzzle 5 should have best_rank "Ällistyttävä"
+
+  Scenario: Local stats are not overwritten by weaker server stats
+    Given the server has a stats record for puzzle 5 with best_rank "Hyvä alku"
+    And the local device has a stats record for puzzle 5 with best_rank "Täysi kenno"
+    When pullAndMerge is called with the server record
+    Then the local stats record for puzzle 5 should have best_rank "Täysi kenno"

@@ -138,3 +138,27 @@ Then('migration should not run', function (this: SanakennoWorld) {
 Then('the game should load normally', function (this: SanakennoWorld) {
   return 'pending';
 });
+
+// --- Server sync (require Zustand + fetch mocking — pending) ---
+
+Given('the player is logged in', function (this: SanakennoWorld) {
+  return 'pending';
+});
+
+Given('the player is not logged in', function (this: SanakennoWorld) {
+  return 'pending';
+});
+
+Then(
+  'a POST request should have been made to {string}',
+  function (this: SanakennoWorld, _path: string) {
+    return 'pending';
+  },
+);
+
+Then(
+  'no POST request should have been made to {string}',
+  function (this: SanakennoWorld, _path: string) {
+    return 'pending';
+  },
+);

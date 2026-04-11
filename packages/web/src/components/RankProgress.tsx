@@ -7,6 +7,7 @@
 
 import { useRef, useEffect, useState } from 'react';
 import { rankThresholds, progressToNextRank } from '@sanakenno/shared';
+import { CopyIcon } from './icons';
 import styles from './animations.module.css';
 
 /** Props for {@link RankProgress}. */
@@ -114,14 +115,11 @@ export function RankProgress({
           <button
             type="button"
             onClick={onShare}
-            className="px-3 py-0.5 text-sm rounded-full cursor-pointer border-none"
-            style={{
-              background: 'var(--color-bg-secondary)',
-              color: 'var(--color-text-secondary)',
-              border: '1px solid var(--color-border)',
-            }}
+            className="flex items-center gap-1 text-sm bg-transparent border-none cursor-pointer p-1"
+            style={{ color: 'var(--color-text-secondary)' }}
           >
-            Jaa tulos
+            Jaa
+            <CopyIcon />
           </button>
 
           {/* Kopioitu! popup — floats below share button, does not affect layout */}

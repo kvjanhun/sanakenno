@@ -1,5 +1,11 @@
 # @sanakenno/mobile
 
+## 1.1.0
+
+### Patch Changes
+
+- @sanakenno/shared@1.1.0
+
 ## 0.2.4
 
 ### Patch Changes

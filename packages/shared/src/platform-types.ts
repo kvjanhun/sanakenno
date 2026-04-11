@@ -8,6 +8,8 @@
  * @module src/platform/types
  */
 
+import type { AuthToken } from './auth-types';
+
 /** Key-value storage with JSON serialization and raw string access. */
 export interface StorageService {
   save<T>(key: string, data: T): void;
@@ -33,10 +35,18 @@ export interface ConfigService {
   readonly apiBase: string;
 }
 
+/** Player authentication token storage. */
+export interface AuthService {
+  getToken(): AuthToken | null;
+  setToken(token: AuthToken): void;
+  clearToken(): void;
+}
+
 /** Aggregate of all platform services. */
 export interface PlatformServices {
   storage: StorageService;
   crypto: CryptoService;
   share: ShareService;
   config: ConfigService;
+  auth: AuthService;
 }

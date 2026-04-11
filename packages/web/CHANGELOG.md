@@ -1,5 +1,15 @@
 # @sanakenno/web
 
+## 1.1.0
+
+### Minor Changes
+
+- Add player authentication and cross-device progress sync via magic links (Resend). Players can optionally create an account to back up and sync their stats and puzzle state across devices.
+
+### Patch Changes
+
+- @sanakenno/shared@1.1.0
+
 ## 1.0.2
 
 ### Patch Changes

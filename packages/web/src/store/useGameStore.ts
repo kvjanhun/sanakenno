@@ -30,6 +30,7 @@ import {
   loadFromStorage,
   removeFromStorage,
 } from '../utils/storage';
+import { useAuthStore } from './useAuthStore';
 
 /** Shape of the puzzle payload from GET /api/puzzle. */
 export interface Puzzle {
@@ -466,6 +467,31 @@ export const useGameStore = create<GameState>()((set, get) => ({
         elapsed_ms: elapsed,
       });
       saveToStorage(STATS_STORAGE_KEY, updated);
+
+      // Fire-and-forget server sync when player is logged in
+      const { isLoggedIn, syncStatsRecord, syncPuzzleState } =
+        useAuthStore.getState();
+      if (isLoggedIn) {
+        void syncStatsRecord({
+          puzzle_number: puzzle.puzzle_number,
+          date: get().viewingPuzzleDate ?? dateStr,
+          best_rank: newRank,
+          best_score: newScore,
+          max_score: puzzle.max_score,
+          words_found: newFoundWords.size,
+          hints_used: state.hintsUnlocked.size,
+          elapsed_ms: elapsed,
+        });
+        void syncPuzzleState({
+          puzzle_number: puzzle.puzzle_number,
+          found_words: [...newFoundWords],
+          score: newScore,
+          hints_unlocked: [...state.hintsUnlocked],
+          started_at: state.startedAt,
+          total_paused_ms: state.totalPausedMs,
+          score_before_hints: state.scoreBeforeHints,
+        });
+      }
     }
 
     // Always show points; add pangram chip if applicable

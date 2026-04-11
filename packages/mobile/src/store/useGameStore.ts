@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { config, crypto, storage, share } from '../platform';
+import { useAuthStore } from './useAuthStore';
 import * as PreparedHaptics from 'prepared-haptics';
 import {
   scoreWord,
@@ -352,6 +353,21 @@ export const useGameStore = create<GameState>()((set, get) => ({
         elapsed_ms: elapsed,
       });
       storage.save(STATS_STORAGE_KEY, updated);
+
+      // Fire-and-forget stats sync when player is logged in
+      const { isLoggedIn, syncStatsRecord } = useAuthStore.getState();
+      if (isLoggedIn) {
+        void syncStatsRecord({
+          puzzle_number: puzzle.puzzle_number,
+          date: dateStr,
+          best_rank: newRank,
+          best_score: newScore,
+          max_score: puzzle.max_score,
+          words_found: newFoundWords.size,
+          hints_used: state.hintsUnlocked.size,
+          elapsed_ms: elapsed,
+        });
+      }
     }
 
     // Persist state
@@ -363,6 +379,22 @@ export const useGameStore = create<GameState>()((set, get) => ({
       hintsUnlocked: [...state.hintsUnlocked],
       scoreBeforeHints: state.scoreBeforeHints,
     });
+
+    // Fire-and-forget state sync when player is logged in
+    {
+      const { isLoggedIn, syncPuzzleState } = useAuthStore.getState();
+      if (isLoggedIn) {
+        void syncPuzzleState({
+          puzzle_number: puzzle.puzzle_number,
+          found_words: [...newFoundWords],
+          score: newScore,
+          hints_unlocked: [...state.hintsUnlocked],
+          started_at: state.startedAt ?? 0,
+          total_paused_ms: state.totalPausedMs,
+          score_before_hints: state.scoreBeforeHints,
+        });
+      }
+    }
   },
 
   shuffleLetters: () => {

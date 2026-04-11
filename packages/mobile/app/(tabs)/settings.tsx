@@ -7,6 +7,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import * as PreparedHaptics from 'prepared-haptics';
 import { useTheme } from '../../src/theme';
 import { useSettingsStore } from '../../src/store/useSettingsStore';
+import { AuthSection } from '../../src/components/AuthSection';
 import type { HapticsIntensity } from '../../src/store/useSettingsStore';
 
 const APP_VERSION = Constants.expoConfig?.version ?? '?';
@@ -202,6 +203,11 @@ export default function SettingsScreen() {
           borderColor={theme.border}
         />
       </SettingGroup>
+
+      <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
+        Tili
+      </Text>
+      <AuthSection theme={theme} />
 
       <View style={{ flex: 1 }} />
 

@@ -92,3 +92,71 @@ CREATE TABLE IF NOT EXISTS failed_guesses (
 );
 CREATE INDEX IF NOT EXISTS idx_failed_guesses_word ON failed_guesses(word);
 CREATE INDEX IF NOT EXISTS idx_failed_guesses_date ON failed_guesses(puzzle_date);
+
+-- -------------------------------------------------------------------------
+-- Player accounts and authentication (separate from admin auth)
+-- -------------------------------------------------------------------------
+
+-- Player accounts (email-only, no passwords)
+CREATE TABLE IF NOT EXISTS players (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    email      TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_players_email ON players(email);
+
+-- One-time magic link tokens (15-min TTL, single use)
+CREATE TABLE IF NOT EXISTS player_magic_tokens (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    player_id   INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+    token_hash  TEXT NOT NULL UNIQUE,   -- SHA-256 of raw token sent in URL
+    expires_at  TEXT NOT NULL,          -- 15 min from creation
+    used        INTEGER NOT NULL DEFAULT 0,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_magic_tokens_hash    ON player_magic_tokens(token_hash);
+CREATE INDEX IF NOT EXISTS idx_magic_tokens_expires ON player_magic_tokens(expires_at);
+
+-- Player sessions (Bearer tokens, 90-day TTL)
+CREATE TABLE IF NOT EXISTS player_sessions (
+    id         TEXT PRIMARY KEY,        -- 64-hex opaque token returned to client
+    player_id  INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+    expires_at TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_player_sessions_expires ON player_sessions(expires_at);
+CREATE INDEX IF NOT EXISTS idx_player_sessions_player  ON player_sessions(player_id);
+
+-- Per-player lifetime stats (one row per puzzle_number)
+CREATE TABLE IF NOT EXISTS player_stats (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    player_id     INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+    puzzle_number INTEGER NOT NULL,
+    date          TEXT NOT NULL,          -- YYYY-MM-DD Helsinki tz
+    best_rank     TEXT NOT NULL,
+    best_score    INTEGER NOT NULL DEFAULT 0,
+    max_score     INTEGER NOT NULL DEFAULT 0,
+    words_found   INTEGER NOT NULL DEFAULT 0,
+    hints_used    INTEGER NOT NULL DEFAULT 0,
+    elapsed_ms    INTEGER NOT NULL DEFAULT 0,
+    updated_at    TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(player_id, puzzle_number)
+);
+CREATE INDEX IF NOT EXISTS idx_player_stats_player ON player_stats(player_id);
+
+-- Per-player puzzle states (one row per puzzle_number)
+CREATE TABLE IF NOT EXISTS player_puzzle_states (
+    id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+    player_id          INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+    puzzle_number      INTEGER NOT NULL,
+    found_words        TEXT NOT NULL DEFAULT '[]',  -- JSON string[]
+    score              INTEGER NOT NULL DEFAULT 0,
+    hints_unlocked     TEXT NOT NULL DEFAULT '[]',  -- JSON string[]
+    started_at         INTEGER NOT NULL DEFAULT 0,  -- epoch ms
+    total_paused_ms    INTEGER NOT NULL DEFAULT 0,
+    score_before_hints INTEGER,                     -- null = no hints used
+    updated_at         TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(player_id, puzzle_number)
+);
+CREATE INDEX IF NOT EXISTS idx_player_puzzle_states_player ON player_puzzle_states(player_id);

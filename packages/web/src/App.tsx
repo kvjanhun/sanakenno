@@ -9,8 +9,9 @@
  * @module src/App
  */
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { useGameStore } from './store/useGameStore';
+import { useAuthStore } from './store/useAuthStore';
 import { useKeyboard } from './hooks/useKeyboard';
 import { useGameTimer } from './hooks/useGameTimer';
 import { useMidnightRollover } from './hooks/useMidnightRollover';
@@ -27,7 +28,14 @@ import { GameControls } from './components/GameControls';
 import { HintPanels } from './components/HintPanels';
 import { ArchiveModal } from './components/ArchiveModal';
 import { StatsModal } from './components/StatsModal';
-import { CalendarIcon, StatsIcon } from './components/icons';
+import { AuthModal } from './components/AuthModal';
+import { AuthLinkModal } from './components/AuthLinkModal';
+import {
+  CalendarIcon,
+  StatsIcon,
+  UserIcon,
+  CircleHelpIcon,
+} from './components/icons';
 
 /* ------------------------------------------------------------------ */
 /*  Zustand selectors — subscribe to individual slices of state        */
@@ -60,6 +68,9 @@ const useShowArchive = () => useGameStore((s) => s.showArchive);
 const useShowStats = () => useGameStore((s) => s.showStats);
 const useViewingPuzzleDate = () => useGameStore((s) => s.viewingPuzzleDate);
 
+const useAuthIsLoggedIn = () => useAuthStore((s) => s.isLoggedIn);
+const useAuthEmail = () => useAuthStore((s) => s.email);
+
 /* Stable action references — these don't change between renders */
 const actions = () => {
   const s = useGameStore.getState();
@@ -91,6 +102,10 @@ const actions = () => {
 function App() {
   const puzzle = usePuzzle();
   const loading = useLoading();
+  const authIsLoggedIn = useAuthIsLoggedIn();
+  const authEmail = useAuthEmail();
+  const [showAuth, setShowAuth] = useState(false);
+  const [pendingLinkToken, setPendingLinkToken] = useState<string | null>(null);
   const fetchError = useFetchError();
   const currentWord = useCurrentWord();
   const score = useScore();
@@ -141,6 +156,18 @@ function App() {
   useEffect(() => {
     fetchPuzzle();
   }, [fetchPuzzle]);
+
+  // Restore auth session on mount and intercept magic link token from URL
+  useEffect(() => {
+    useAuthStore.getState().initialize();
+
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    if (token) {
+      window.history.replaceState({}, '', '/');
+      setPendingLinkToken(token);
+    }
+  }, []);
 
   // Restore or start timer when puzzle loads
   useEffect(() => {
@@ -199,8 +226,22 @@ function App() {
           <div className="flex items-center">
             <button
               type="button"
+              onClick={() => setShowAuth(true)}
+              className="py-2 pr-1 rounded-lg bg-transparent border-none cursor-pointer"
+              style={{ color: 'var(--color-text-primary)' }}
+              aria-label={authIsLoggedIn ? 'Oma tili' : 'Kirjaudu'}
+              title={
+                authIsLoggedIn
+                  ? (authEmail ?? 'Kirjautunut')
+                  : 'Kirjaudu sisään'
+              }
+            >
+              <UserIcon loggedIn={authIsLoggedIn} />
+            </button>
+            <button
+              type="button"
               onClick={() => setShowArchive(true)}
-              className="py-2 pr-2 rounded-lg bg-transparent border-none cursor-pointer"
+              className="py-2 px-1 rounded-lg bg-transparent border-none cursor-pointer"
               style={{ color: 'var(--color-text-primary)' }}
               aria-label="Arkisto"
             >
@@ -209,7 +250,7 @@ function App() {
             <button
               type="button"
               onClick={() => setShowStats(true)}
-              className="py-2 pr-2 pl-1 rounded-lg bg-transparent border-none cursor-pointer"
+              className="py-2 pl-1 rounded-lg bg-transparent border-none cursor-pointer"
               style={{ color: 'var(--color-text-primary)' }}
               aria-label="Tilastot"
             >
@@ -271,19 +312,15 @@ function App() {
               </>
             )}
           </h1>
-          <div className="flex items-center">
+          <div className="flex items-center gap-1">
             <button
               type="button"
               onClick={() => setShowRules(true)}
-              className="p-2 rounded-lg text-lg bg-transparent border-none cursor-pointer"
-              style={{
-                color: 'var(--color-text-primary)',
-                fontWeight: '500',
-                fontSize: '1.3em',
-              }}
+              className="p-2 rounded-lg bg-transparent border-none cursor-pointer"
+              style={{ color: 'var(--color-text-primary)' }}
               aria-label="Säännöt"
             >
-              ?
+              <CircleHelpIcon />
             </button>
             <ThemeToggle />
           </div>
@@ -292,6 +329,17 @@ function App() {
 
       {/* Rules modal */}
       <RulesModal show={showRules} onClose={() => setShowRules(false)} />
+      <AuthModal show={showAuth} onClose={() => setShowAuth(false)} />
+      {pendingLinkToken && (
+        <AuthLinkModal
+          token={pendingLinkToken}
+          onLoginWeb={() => {
+            const t = pendingLinkToken;
+            setPendingLinkToken(null);
+            void useAuthStore.getState().verifyToken(t);
+          }}
+        />
+      )}
       <ArchiveModal
         show={showArchive}
         onClose={() => setShowArchive(false)}
