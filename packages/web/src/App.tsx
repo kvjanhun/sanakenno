@@ -30,7 +30,7 @@ import { ArchiveModal } from './components/ArchiveModal';
 import { StatsModal } from './components/StatsModal';
 import { AuthModal } from './components/AuthModal';
 import { AuthLinkModal } from './components/AuthLinkModal';
-import { CalendarIcon, StatsIcon } from './components/icons';
+import { CalendarIcon, StatsIcon, UserIcon } from './components/icons';
 
 /* ------------------------------------------------------------------ */
 /*  Zustand selectors — subscribe to individual slices of state        */
@@ -221,8 +221,22 @@ function App() {
           <div className="flex items-center">
             <button
               type="button"
+              onClick={() => setShowAuth(true)}
+              className="py-2 pr-1 rounded-lg bg-transparent border-none cursor-pointer"
+              style={{ color: 'var(--color-text-primary)' }}
+              aria-label={authIsLoggedIn ? 'Oma tili' : 'Kirjaudu'}
+              title={
+                authIsLoggedIn
+                  ? (authEmail ?? 'Kirjautunut')
+                  : 'Kirjaudu sisään'
+              }
+            >
+              <UserIcon loggedIn={authIsLoggedIn} />
+            </button>
+            <button
+              type="button"
               onClick={() => setShowArchive(true)}
-              className="py-2 pr-2 rounded-lg bg-transparent border-none cursor-pointer"
+              className="py-2 px-1 rounded-lg bg-transparent border-none cursor-pointer"
               style={{ color: 'var(--color-text-primary)' }}
               aria-label="Arkisto"
             >
@@ -231,7 +245,7 @@ function App() {
             <button
               type="button"
               onClick={() => setShowStats(true)}
-              className="py-2 pr-2 pl-1 rounded-lg bg-transparent border-none cursor-pointer"
+              className="py-2 pl-1 rounded-lg bg-transparent border-none cursor-pointer"
               style={{ color: 'var(--color-text-primary)' }}
               aria-label="Tilastot"
             >
@@ -294,22 +308,6 @@ function App() {
             )}
           </h1>
           <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => setShowAuth(true)}
-              className="py-2 px-2 rounded-lg bg-transparent border-none cursor-pointer text-sm"
-              style={{ color: 'var(--color-text-secondary)' }}
-              aria-label={authIsLoggedIn ? 'Oma tili' : 'Kirjaudu'}
-              title={
-                authIsLoggedIn
-                  ? (authEmail ?? 'Kirjautunut')
-                  : 'Kirjaudu sisään'
-              }
-            >
-              {authIsLoggedIn
-                ? (authEmail?.[0]?.toUpperCase() ?? '●')
-                : 'Kirjaudu'}
-            </button>
             <button
               type="button"
               onClick={() => setShowRules(true)}

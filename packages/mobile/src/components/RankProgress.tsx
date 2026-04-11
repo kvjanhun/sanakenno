@@ -13,7 +13,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useEffect, useRef, useState } from 'react';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { Info, ChevronDown } from 'lucide-react-native';
 import { rankThresholds } from '@sanakenno/shared';
 import type { Theme } from '../theme';
 
@@ -100,11 +100,7 @@ export function RankProgress({
 
           {/* Score info button */}
           <Pressable onPress={() => setScoreOpen(true)} hitSlop={8}>
-            <Ionicons
-              name="information-circle-outline"
-              size={22}
-              color={theme.textSecondary}
-            />
+            <Info size={22} color={theme.textSecondary} />
           </Pressable>
         </View>
 
@@ -121,7 +117,7 @@ export function RankProgress({
               >
                 {rankLabel}
               </Text>
-              <Ionicons name="chevron-down" size={14} color="#fff" />
+              <ChevronDown size={14} color="#fff" />
             </View>
           </Pressable>
         </View>

@@ -4,7 +4,7 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
 } from 'react-native-reanimated';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { Share2, Shuffle } from 'lucide-react-native';
 import * as PreparedHaptics from 'prepared-haptics';
 import type { Theme } from '../theme';
 
@@ -103,7 +103,7 @@ export function GameControls({
         flex={1}
         bgColor={theme.bgSecondary}
       >
-        <Ionicons name="share-outline" size={22} color={theme.textPrimary} />
+        <Share2 size={22} color={theme.textPrimary} />
       </SimpleButton>
 
       {/* Narrow: Shuffle icon */}
@@ -113,7 +113,7 @@ export function GameControls({
         flex={1}
         bgColor={theme.bgSecondary}
       >
-        <Ionicons name="shuffle" size={22} color={theme.textPrimary} />
+        <Shuffle size={22} color={theme.textPrimary} />
       </SimpleButton>
 
       {/* Wide: OK */}
