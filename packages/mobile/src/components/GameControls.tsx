@@ -103,7 +103,7 @@ export function GameControls({
         flex={1}
         bgColor={theme.bgSecondary}
       >
-        <Share size={22} strokeWidth={2.5} color={theme.textPrimary} />
+        <Share size={22} strokeWidth={1.5} color={theme.textPrimary} />
       </SimpleButton>
 
       {/* Narrow: Shuffle icon */}
@@ -113,7 +113,7 @@ export function GameControls({
         flex={1}
         bgColor={theme.bgSecondary}
       >
-        <Shuffle size={22} strokeWidth={2.5} color={theme.textPrimary} />
+        <Shuffle size={22} strokeWidth={1.5} color={theme.textPrimary} />
       </SimpleButton>
 
       {/* Wide: OK */}
@@ -123,14 +123,7 @@ export function GameControls({
         flex={2}
         bgColor={theme.accent}
       >
-        <Text
-          style={[
-            styles.buttonText,
-            { color: theme.onAccent, fontWeight: '600' },
-          ]}
-        >
-          OK
-        </Text>
+        <Text style={[styles.buttonText, { color: theme.onAccent }]}>OK</Text>
       </SimpleButton>
     </View>
   );
