@@ -24,6 +24,7 @@ import {
   cleanupExpiredPlayerSessions,
 } from './session';
 import { requirePlayer, type PlayerVariables } from './middleware';
+import { rankIndex } from '@sanakenno/shared';
 import type {
   StatsRecord,
   PlayerStats,
@@ -85,8 +86,11 @@ function hashToken(raw: string): string {
 const MAGIC_TOKEN_TTL_MS = 15 * 60 * 1000;
 
 /**
- * Bulk-insert player stats records and puzzle states.
- * Uses INSERT OR REPLACE so re-uploading is idempotent.
+ * Merge-upsert player stats records and puzzle states uploaded at login.
+ *
+ * Stats: MAX strategy on all numeric fields, best rank wins.
+ * Puzzle states: union found_words + hints_unlocked, MAX score, MIN started_at.
+ * Never discards data already on the server.
  */
 function bulkUpsertLocalData(
   playerId: number,
@@ -96,52 +100,151 @@ function bulkUpsertLocalData(
   const db = getDb();
 
   if (stats?.records?.length) {
-    const insertStat = db.prepare(`
-      INSERT OR REPLACE INTO player_stats
-        (player_id, puzzle_number, date, best_rank, best_score,
-         max_score, words_found, hints_used, elapsed_ms)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    const insertMany = db.transaction((records: StatsRecord[]) => {
+    interface ExistingStatRow {
+      best_rank: string;
+      best_score: number;
+      max_score: number;
+      words_found: number;
+      hints_used: number;
+      elapsed_ms: number;
+    }
+    const selectStat = db.prepare(
+      `SELECT best_rank, best_score, max_score, words_found, hints_used, elapsed_ms
+       FROM player_stats WHERE player_id = ? AND puzzle_number = ?`,
+    );
+    const insertStat = db.prepare(
+      `INSERT INTO player_stats
+         (player_id, puzzle_number, date, best_rank, best_score,
+          max_score, words_found, hints_used, elapsed_ms)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    );
+    const updateStat = db.prepare(
+      `UPDATE player_stats SET
+         best_rank = ?,
+         best_score = MAX(best_score, ?),
+         max_score = MAX(max_score, ?),
+         words_found = MAX(words_found, ?),
+         hints_used = MAX(hints_used, ?),
+         elapsed_ms = MAX(elapsed_ms, ?),
+         updated_at = datetime('now')
+       WHERE player_id = ? AND puzzle_number = ?`,
+    );
+    db.transaction((records: StatsRecord[]) => {
       for (const r of records) {
-        insertStat.run(
-          playerId,
-          r.puzzle_number,
-          r.date,
-          r.best_rank,
-          r.best_score,
-          r.max_score,
-          r.words_found,
-          r.hints_used,
-          r.elapsed_ms,
-        );
+        const existing = selectStat.get(playerId, r.puzzle_number) as
+          | ExistingStatRow
+          | undefined;
+        if (!existing) {
+          insertStat.run(
+            playerId,
+            r.puzzle_number,
+            r.date,
+            r.best_rank,
+            r.best_score,
+            r.max_score,
+            r.words_found,
+            r.hints_used,
+            r.elapsed_ms,
+          );
+        } else {
+          const mergedRank =
+            rankIndex(r.best_rank) > rankIndex(existing.best_rank)
+              ? r.best_rank
+              : existing.best_rank;
+          updateStat.run(
+            mergedRank,
+            r.best_score,
+            r.max_score,
+            r.words_found,
+            r.hints_used,
+            r.elapsed_ms,
+            playerId,
+            r.puzzle_number,
+          );
+        }
       }
-    });
-    insertMany(stats.records);
+    })(stats.records);
   }
 
   if (puzzleStates?.length) {
-    const insertState = db.prepare(`
-      INSERT OR REPLACE INTO player_puzzle_states
-        (player_id, puzzle_number, found_words, score, hints_unlocked,
-         started_at, total_paused_ms, score_before_hints)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    const insertMany = db.transaction((states: SyncPuzzleState[]) => {
+    interface ExistingStateRow {
+      found_words: string;
+      score: number;
+      hints_unlocked: string;
+      started_at: number;
+      total_paused_ms: number;
+      score_before_hints: number | null;
+    }
+    const selectState = db.prepare(
+      `SELECT found_words, score, hints_unlocked, started_at, total_paused_ms, score_before_hints
+       FROM player_puzzle_states WHERE player_id = ? AND puzzle_number = ?`,
+    );
+    const insertState = db.prepare(
+      `INSERT INTO player_puzzle_states
+         (player_id, puzzle_number, found_words, score, hints_unlocked,
+          started_at, total_paused_ms, score_before_hints)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    );
+    const updateState = db.prepare(
+      `UPDATE player_puzzle_states SET
+         found_words = ?, score = ?, hints_unlocked = ?,
+         started_at = ?, total_paused_ms = ?, score_before_hints = ?,
+         updated_at = datetime('now')
+       WHERE player_id = ? AND puzzle_number = ?`,
+    );
+    db.transaction((states: SyncPuzzleState[]) => {
       for (const s of states) {
-        insertState.run(
-          playerId,
-          s.puzzle_number,
-          JSON.stringify(s.found_words),
-          s.score,
-          JSON.stringify(s.hints_unlocked),
-          s.started_at,
-          s.total_paused_ms,
-          s.score_before_hints ?? null,
-        );
+        const existing = selectState.get(playerId, s.puzzle_number) as
+          | ExistingStateRow
+          | undefined;
+        if (!existing) {
+          insertState.run(
+            playerId,
+            s.puzzle_number,
+            JSON.stringify(s.found_words),
+            s.score,
+            JSON.stringify(s.hints_unlocked),
+            s.started_at,
+            s.total_paused_ms,
+            s.score_before_hints ?? null,
+          );
+        } else {
+          const mergedWords = [
+            ...new Set([
+              ...(JSON.parse(existing.found_words) as string[]),
+              ...s.found_words,
+            ]),
+          ];
+          const mergedHints = [
+            ...new Set([
+              ...(JSON.parse(existing.hints_unlocked) as string[]),
+              ...s.hints_unlocked,
+            ]),
+          ];
+          const mergedScore = Math.max(existing.score, s.score);
+          const mergedStartedAt =
+            existing.started_at && s.started_at
+              ? Math.min(existing.started_at, s.started_at)
+              : existing.started_at || s.started_at;
+          const mergedPausedMs = Math.max(
+            existing.total_paused_ms,
+            s.total_paused_ms,
+          );
+          const mergedScoreBefore =
+            existing.score_before_hints ?? s.score_before_hints;
+          updateState.run(
+            JSON.stringify(mergedWords),
+            mergedScore,
+            JSON.stringify(mergedHints),
+            mergedStartedAt,
+            mergedPausedMs,
+            mergedScoreBefore,
+            playerId,
+            s.puzzle_number,
+          );
+        }
       }
-    });
-    insertMany(puzzleStates);
+    })(puzzleStates);
   }
 }
 

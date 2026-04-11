@@ -220,21 +220,81 @@ sync.post('/state', async (c) => {
   }
 
   const db = getDb();
-  db.prepare(
-    `INSERT OR REPLACE INTO player_puzzle_states
-       (player_id, puzzle_number, found_words, score, hints_unlocked,
-        started_at, total_paused_ms, score_before_hints)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-  ).run(
-    playerId,
-    puzzle_number,
-    JSON.stringify(found_words),
-    score ?? 0,
-    JSON.stringify(hints_unlocked ?? []),
-    started_at ?? 0,
-    total_paused_ms ?? 0,
-    score_before_hints ?? null,
-  );
+
+  interface ExistingStateRow {
+    found_words: string;
+    score: number;
+    hints_unlocked: string;
+    started_at: number;
+    total_paused_ms: number;
+    score_before_hints: number | null;
+  }
+
+  const existing = db
+    .prepare(
+      `SELECT found_words, score, hints_unlocked, started_at, total_paused_ms, score_before_hints
+       FROM player_puzzle_states WHERE player_id = ? AND puzzle_number = ?`,
+    )
+    .get(playerId, puzzle_number) as ExistingStateRow | undefined;
+
+  if (!existing) {
+    db.prepare(
+      `INSERT INTO player_puzzle_states
+         (player_id, puzzle_number, found_words, score, hints_unlocked,
+          started_at, total_paused_ms, score_before_hints)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      playerId,
+      puzzle_number,
+      JSON.stringify(found_words),
+      score ?? 0,
+      JSON.stringify(hints_unlocked ?? []),
+      started_at ?? 0,
+      total_paused_ms ?? 0,
+      score_before_hints ?? null,
+    );
+  } else {
+    const mergedWords = [
+      ...new Set([
+        ...(JSON.parse(existing.found_words) as string[]),
+        ...(found_words ?? []),
+      ]),
+    ];
+    const mergedHints = [
+      ...new Set([
+        ...(JSON.parse(existing.hints_unlocked) as string[]),
+        ...(hints_unlocked ?? []),
+      ]),
+    ];
+    const mergedScore = Math.max(existing.score, score ?? 0);
+    const incomingStarted = started_at ?? 0;
+    const mergedStartedAt =
+      existing.started_at && incomingStarted
+        ? Math.min(existing.started_at, incomingStarted)
+        : existing.started_at || incomingStarted;
+    const mergedPausedMs = Math.max(
+      existing.total_paused_ms,
+      total_paused_ms ?? 0,
+    );
+    const mergedScoreBefore =
+      existing.score_before_hints ?? score_before_hints ?? null;
+    db.prepare(
+      `UPDATE player_puzzle_states SET
+         found_words = ?, score = ?, hints_unlocked = ?,
+         started_at = ?, total_paused_ms = ?, score_before_hints = ?,
+         updated_at = datetime('now')
+       WHERE player_id = ? AND puzzle_number = ?`,
+    ).run(
+      JSON.stringify(mergedWords),
+      mergedScore,
+      JSON.stringify(mergedHints),
+      mergedStartedAt,
+      mergedPausedMs,
+      mergedScoreBefore,
+      playerId,
+      puzzle_number,
+    );
+  }
 
   return c.json({ status: 'synced' });
 });

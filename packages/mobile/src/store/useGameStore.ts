@@ -60,6 +60,7 @@ interface GameState {
   lastFetchedDate: string | null;
 
   fetchPuzzle: (overrideNumber?: number) => Promise<void>;
+  reloadStateFromStorage: () => void;
   addLetter: (letter: string) => void;
   deleteLetter: () => void;
   clearWord: () => void;
@@ -153,6 +154,29 @@ export const useGameStore = create<GameState>()((set, get) => ({
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Tuntematon virhe';
       set({ loading: false, fetchError: msg });
+    }
+  },
+
+  reloadStateFromStorage() {
+    const { puzzle } = get();
+    if (!puzzle) return;
+    const saved = storage.load<{
+      foundWords: string[];
+      score: number;
+      startedAt?: number;
+      totalPausedMs?: number;
+      hintsUnlocked?: string[];
+      scoreBeforeHints?: number | null;
+    }>(stateKey(puzzle.puzzle_number));
+    if (saved) {
+      set({
+        foundWords: new Set(saved.foundWords),
+        score: saved.score,
+        startedAt: saved.startedAt ?? Date.now(),
+        totalPausedMs: saved.totalPausedMs ?? 0,
+        hintsUnlocked: new Set(saved.hintsUnlocked ?? []),
+        scoreBeforeHints: saved.scoreBeforeHints ?? null,
+      });
     }
   },
 

@@ -49,8 +49,8 @@ export interface AuthState {
   verifyToken(token: string): Promise<void>;
   /** POST /api/player/auth/logout — invalidates session. */
   logout(): Promise<void>;
-  /** Merge server data into local storage after login. */
-  pullAndMerge(payload: SyncPayload): void;
+  /** Merge server data into local storage. Returns true if local data changed. */
+  pullAndMerge(payload: SyncPayload): boolean;
   /** Fire-and-forget push of a stats record. Only fires when logged in. */
   syncStatsRecord(record: StatsRecord): Promise<void>;
   /** Fire-and-forget push of a puzzle state. Only fires when logged in. */
@@ -140,24 +140,37 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const stored = authService.getToken();
     if (!stored) return;
 
-    // Token exists — verify it's still valid
+    // Token exists — verify it's still valid, then pull latest server data
     fetch(apiUrl('/api/player/me'), {
       headers: { Authorization: `Bearer ${stored.token}` },
     })
       .then(async (res) => {
-        if (res.ok) {
-          interface MeBody {
-            player_id: number;
-            email: string;
-          }
-          const body = (await res.json()) as MeBody;
-          set({
-            isLoggedIn: true,
-            email: body.email,
-            playerId: body.player_id,
-          });
-        } else {
+        if (!res.ok) {
           authService.clearToken();
+          return;
+        }
+        interface MeBody {
+          player_id: number;
+          email: string;
+        }
+        const body = (await res.json()) as MeBody;
+        set({ isLoggedIn: true, email: body.email, playerId: body.player_id });
+
+        // Pull latest server data and merge into local storage
+        const syncRes = await fetch(apiUrl('/api/player/sync'), {
+          headers: { Authorization: `Bearer ${stored.token}` },
+        });
+        if (!syncRes.ok) return;
+        interface SyncBody {
+          stats: PlayerStats;
+          puzzle_states: SyncPuzzleState[];
+        }
+        const payload = (await syncRes.json()) as SyncBody;
+        const changed = get().pullAndMerge(payload);
+        if (changed) {
+          // Refresh in-memory game state from the newly merged MMKV data
+          const { useGameStore } = await import('./useGameStore');
+          useGameStore.getState().reloadStateFromStorage();
         }
       })
       .catch(() => {
@@ -251,7 +264,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoggedIn: false, email: null, playerId: null, pendingEmail: null });
   },
 
-  pullAndMerge(payload: SyncPayload) {
+  pullAndMerge(payload: SyncPayload): boolean {
+    let changed = false;
+
     // Merge server stats into local stats (MAX strategy)
     const localStats =
       storage.load<PlayerStats>(STATS_STORAGE_KEY) ?? emptyStats();
@@ -266,6 +281,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           ...mergedStats,
           records: [...mergedStats.records, serverRecord],
         };
+        changed = true;
       } else {
         const merged = mergeStatsRecord(existing, serverRecord);
         mergedStats = {
@@ -292,6 +308,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           totalPausedMs: serverState.total_paused_ms,
           scoreBeforeHints: serverState.score_before_hints,
         });
+        changed = true;
         continue;
       }
 
@@ -315,6 +332,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           score_before_hints: saved.scoreBeforeHints ?? null,
         };
         const merged = mergePuzzleState(localSyncState, serverState);
+        if (merged.found_words.length > localSyncState.found_words.length) {
+          changed = true;
+        }
         storage.save(localKey, {
           foundWords: merged.found_words,
           score: merged.score,
@@ -340,6 +360,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         // Ignore parse errors — local state wins
       }
     }
+
+    return changed;
   },
 
   async syncStatsRecord(record: StatsRecord) {
