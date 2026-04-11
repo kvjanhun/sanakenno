@@ -72,3 +72,30 @@ Android release preparation — add after Android parity (Phase 7) is complete:
   lighter BDD + manual layers prove insufficient, but keep it on the radar before App Store
   submission.
 - Android: no mobile-specific BDD scenarios tagged `@android` yet. Add when Phase 7 begins.
+
+---
+
+## Stale Account Cleanup (deferred — low priority)
+
+Every `initPlayer()` call creates a permanent player row. Anonymous players who play once and
+never return, accounts abandoned after logout, and orphaned transfer-token players all accumulate
+indefinitely. The data is tiny, so this is not urgent.
+
+**Planned approach:** a scheduled cleanup job on the server (run at startup + daily cron) that
+hard-deletes player accounts with no session activity in the last 180 days. Cascade deletes
+handle `player_stats` and `player_puzzle_states` automatically.
+
+```sql
+DELETE FROM players
+WHERE id NOT IN (
+  SELECT DISTINCT player_id FROM player_sessions
+  WHERE expires_at > datetime('now', '-180 days')
+);
+```
+
+Implementation notes:
+- Run opportunistically in `server/player-auth/session.ts` alongside the existing
+  `cleanupExpiredPlayerSessions()` call, or as a standalone cron entry.
+- 180-day window is conservative; adjust once real usage patterns are known.
+- Add a BDD scenario: player with no sessions older than 180 days is removed; player with
+  recent activity is preserved.
