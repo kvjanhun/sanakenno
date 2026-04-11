@@ -21,7 +21,9 @@ Time: $(date "+%Y-%m-%d %H:%M")"
 
 export GIT_SSH_COMMAND="ssh -i /home/kvjanhun/.ssh/sanakenno_deploy_key -o IdentitiesOnly=yes"
 echo "Pulling latest changes from GitHub..."
+git stash
 git pull origin main || fail "git pull"
+git stash drop 2>/dev/null || true
 
 echo "Rebuilding Docker container..."
 docker compose up --build -d || fail "docker compose"
