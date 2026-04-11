@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Copy, LogOut, Mail, QrCode } from 'lucide-react';
 import isEmail from 'validator/lib/isEmail';
 import { useAuthStore } from '../store/useAuthStore';
 
@@ -181,7 +182,7 @@ export function SyncModal({
             <button
               type="button"
               onClick={() => void copyText(connectUrl)}
-              className="w-full py-2 px-4 rounded-lg border cursor-pointer"
+              className="w-full py-2 px-4 rounded-lg border cursor-pointer flex items-center justify-center gap-2"
               style={{
                 backgroundColor: 'transparent',
                 borderColor: 'var(--color-text-tertiary)',
@@ -189,12 +190,13 @@ export function SyncModal({
               }}
               disabled={isLoading || !connectUrl}
             >
+              <Copy size={16} />
               Kopioi linkki
             </button>
             <button
               type="button"
               onClick={() => void copyText(transferToken ?? '')}
-              className="w-full py-2 px-4 rounded-lg border cursor-pointer"
+              className="w-full py-2 px-4 rounded-lg border cursor-pointer flex items-center justify-center gap-2"
               style={{
                 backgroundColor: 'transparent',
                 borderColor: 'var(--color-text-tertiary)',
@@ -202,12 +204,13 @@ export function SyncModal({
               }}
               disabled={isLoading || !transferToken}
             >
+              <Copy size={16} />
               Kopioi koodi
             </button>
             <button
               type="button"
               onClick={() => setMode('qr')}
-              className="w-full py-2 px-4 rounded-lg border cursor-pointer"
+              className="w-full py-2 px-4 rounded-lg border cursor-pointer flex items-center justify-center gap-2"
               style={{
                 backgroundColor: 'transparent',
                 borderColor: 'var(--color-text-tertiary)',
@@ -215,12 +218,13 @@ export function SyncModal({
               }}
               disabled={isLoading || !connectUrl}
             >
+              <QrCode size={16} />
               Näytä QR-koodi
             </button>
             <button
               type="button"
               onClick={() => setMode('email')}
-              className="w-full py-2 px-4 rounded-lg border cursor-pointer"
+              className="w-full py-2 px-4 rounded-lg border cursor-pointer flex items-center justify-center gap-2"
               style={{
                 backgroundColor: 'transparent',
                 borderColor: 'var(--color-text-tertiary)',
@@ -228,19 +232,21 @@ export function SyncModal({
               }}
               disabled={isLoading}
             >
-              Lähetä sähköpostiin →
+              <Mail size={16} />
+              Lähetä sähköpostiin
             </button>
             <hr style={{ borderColor: 'var(--color-text-tertiary)' }} />
             <button
               type="button"
               onClick={() => void handleLogout()}
-              className="w-full py-2 px-4 rounded-lg border cursor-pointer"
+              className="w-full py-2 px-4 rounded-lg border cursor-pointer flex items-center justify-center gap-2"
               style={{
                 backgroundColor: 'transparent',
                 borderColor: 'var(--color-text-tertiary)',
                 color: 'var(--color-text-primary)',
               }}
             >
+              <LogOut size={16} />
               Kirjaudu ulos
             </button>
           </div>

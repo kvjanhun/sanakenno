@@ -8,7 +8,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { Copy } from 'lucide-react-native';
+import { Copy, LogOut, Mail, QrCode } from 'lucide-react-native';
 import isEmail from 'validator/lib/isEmail';
 import QRCode from 'react-native-qrcode-svg';
 import { useAuthStore } from '../store/useAuthStore';
@@ -216,9 +216,12 @@ export function AuthSection({ theme }: AuthSectionProps) {
               { borderColor: theme.border, opacity: isLoading ? 0.6 : 1 },
             ]}
           >
-            <Text style={[styles.buttonText, { color: theme.textPrimary }]}>
-              Näytä QR-koodi
-            </Text>
+            <View style={styles.buttonRow}>
+              <QrCode size={16} color={theme.textPrimary} />
+              <Text style={[styles.buttonText, { color: theme.textPrimary }]}>
+                Näytä QR-koodi
+              </Text>
+            </View>
           </Pressable>
 
           <Pressable
@@ -228,9 +231,12 @@ export function AuthSection({ theme }: AuthSectionProps) {
             }}
             style={[styles.button, { borderColor: theme.border }]}
           >
-            <Text style={[styles.buttonText, { color: theme.textPrimary }]}>
-              Lähetä sähköpostiin
-            </Text>
+            <View style={styles.buttonRow}>
+              <Mail size={16} color={theme.textPrimary} />
+              <Text style={[styles.buttonText, { color: theme.textPrimary }]}>
+                Lähetä sähköpostiin
+              </Text>
+            </View>
           </Pressable>
 
           {showQr && connectUrl ? (
@@ -293,9 +299,12 @@ export function AuthSection({ theme }: AuthSectionProps) {
             onPress={() => void handleLogout()}
             style={[styles.button, { borderColor: theme.border }]}
           >
-            <Text style={[styles.buttonText, { color: theme.textPrimary }]}>
-              Kirjaudu ulos
-            </Text>
+            <View style={styles.buttonRow}>
+              <LogOut size={16} color={theme.textPrimary} />
+              <Text style={[styles.buttonText, { color: theme.textPrimary }]}>
+                Kirjaudu ulos
+              </Text>
+            </View>
           </Pressable>
         </>
       )}
