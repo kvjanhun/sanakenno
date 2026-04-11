@@ -81,7 +81,7 @@ function gatherLocalData(): {
   const puzzle_states: SyncPuzzleState[] = [];
 
   for (const record of stats.records) {
-    const key = `sanakenno_state_${record.puzzle_number}`;
+    const key = `game_state_${record.puzzle_number}`;
     const raw = storage.getRaw(key);
     if (!raw) continue;
     try {
@@ -296,7 +296,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     // Merge server puzzle states into local
     for (const serverState of payload.puzzle_states) {
-      const localKey = `sanakenno_state_${serverState.puzzle_number}`;
+      const localKey = `game_state_${serverState.puzzle_number}`;
       const rawLocal = storage.getRaw(localKey);
 
       if (!rawLocal) {
