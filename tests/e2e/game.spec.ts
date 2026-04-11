@@ -263,7 +263,7 @@ test.describe('Share button', () => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await loadGame(page);
 
-    await page.getByText('Jaa tulos').first().click();
+    await page.getByText('Jaa').first().click();
 
     // Popup should appear
     await expect(page.getByText('Kopioitu!')).toBeVisible({ timeout: 3000 });
@@ -281,7 +281,7 @@ test.describe('Share button', () => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await loadGame(page);
 
-    await page.getByText('Jaa tulos').first().click();
+    await page.getByText('Jaa').first().click();
     await expect(page.getByText('Kopioitu!')).toBeVisible({ timeout: 3000 });
 
     // Popup auto-hides after 2s
