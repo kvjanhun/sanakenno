@@ -86,7 +86,7 @@ export function AuthSection({ theme }: AuthSectionProps) {
       <View style={[styles.card, { backgroundColor: theme.bgSecondary }]}>
         <Text style={[styles.label, { color: theme.textSecondary }]}>Tili</Text>
         <Text style={[styles.hint, { color: theme.textTertiary }]}>
-          Luodaan paikallista pelaajatilaa...
+          Luodaan pelaajaprofiilia...
         </Text>
         {error ? (
           <>
@@ -113,7 +113,7 @@ export function AuthSection({ theme }: AuthSectionProps) {
         Lisää laite
       </Text>
       <Text style={[styles.hint, { color: theme.textTertiary }]}>
-        Avaa Sanakenno toisella laitteella ja käytä linkkiä tai koodia.
+        Synkronoi edistymisesi ja tilastosi toiselle laitteelle.
       </Text>
 
       <Pressable
@@ -182,7 +182,7 @@ export function AuthSection({ theme }: AuthSectionProps) {
       {showEmail ? (
         <View style={styles.emailWrap}>
           <Text style={[styles.hint, { color: theme.textTertiary }]}>
-            Sähköpostiosoitettasi ei tallenneta.
+            Sanakenno.fi ei tallenna sähköpostiosoitettasi.
           </Text>
           <TextInput
             value={emailInput}
@@ -223,7 +223,7 @@ export function AuthSection({ theme }: AuthSectionProps) {
           </Pressable>
           {emailSent ? (
             <Text style={[styles.hint, { color: theme.textSecondary }]}>
-              Tarkista sähköpostisi.
+              Tarkista sähköpostiosoite.
             </Text>
           ) : null}
         </View>

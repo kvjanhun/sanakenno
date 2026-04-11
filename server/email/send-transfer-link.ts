@@ -49,7 +49,7 @@ export async function sendTransferLink(
     html: `
       <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
         <h2 style="color: #1a1a1a;">Sanakenno.fi</h2>
-        <p>Joku (sinä?) haluaa yhdistää Sanakenno-tilisi uudelle laitteelle.</p>
+        <p>Yhdistä Sanakenno-tilisi uudelle laitteelle klikkaamalla alla olevaa linkkiä.</p>
         <p>Linkki on voimassa <strong>15 minuuttia</strong>.</p>
         <p style="margin: 24px 0;">
           <a href="${link}"
@@ -58,13 +58,13 @@ export async function sendTransferLink(
             Yhdistä laite
           </a>
         </p>
-        <p><strong>Sähköpostiosoitettasi ei tallenneta Sanakennolle.</strong></p>
+        <p><strong>Sanakenno.fi ei tallenna sähköpostiosoitettasi.</strong></p>
         <p style="color: #666; font-size: 14px;">
           Jos et pyytänyt tätä viestiä, voit jättää sen huomiotta.
         </p>
       </div>
     `,
-    text: `Joku (sinä?) haluaa yhdistää Sanakenno-tilisi uudelle laitteelle.\n\nYhdistä laite:\n${link}\n\nLinkki on voimassa 15 minuuttia.\n\nSähköpostiosoitettasi ei tallenneta Sanakennolle.\n\nJos et pyytänyt tätä viestiä, voit jättää sen huomiotta.`,
+    text: `Yhdistä Sanakenno-tilisi uudelle laitteelle klikkaamalla alla olevaa linkkiä.\n\nYhdistä laite:\n${link}\n\nLinkki on voimassa 15 minuuttia.\n\nSanakenno.fi ei tallenna sähköpostiosoitettasi.\n\nJos et pyytänyt tätä viestiä, voit jättää sen huomiotta.`,
   });
 
   if (error) {
