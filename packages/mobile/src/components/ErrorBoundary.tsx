@@ -52,7 +52,12 @@ class ErrorBoundaryInner extends Component<
       const { theme } = this.props;
       return (
         <View style={[styles.container, { backgroundColor: theme.bgPrimary }]}>
-          <AlertTriangle size={48} color={theme.error} style={styles.icon} />
+          <AlertTriangle
+            size={48}
+            strokeWidth={2.5}
+            color={theme.error}
+            style={styles.icon}
+          />
           <Text style={[styles.title, { color: theme.textPrimary }]}>
             Jokin meni pieleen
           </Text>

@@ -13,21 +13,27 @@ import {
   Lightbulb,
   Search,
   BarChart2,
+  ChartBar,
+  CircleHelp,
   Sun,
   Calendar,
   Moon,
   User,
   UserCheck,
+  Copy,
 } from 'lucide-react';
 
 const HEADER_SIZE = 20;
 const INLINE_SIZE = '1em';
+/** Stroke weight for standalone icons — slightly bolder than Lucide default. */
+const SW = 2.5;
 
 /** Lightbulb icon for the hints toggle button. */
 export function BulbIcon(): React.JSX.Element {
   return (
     <Lightbulb
       size={INLINE_SIZE}
+      strokeWidth={SW}
       aria-hidden="true"
       style={{
         verticalAlign: '-0.15em',
@@ -43,6 +49,7 @@ export function SummaryIcon(): React.JSX.Element {
   return (
     <Search
       size={INLINE_SIZE}
+      strokeWidth={SW}
       aria-hidden="true"
       className="inline-block align-middle ml-1"
     />
@@ -72,6 +79,7 @@ export function DistributionIcon(): React.JSX.Element {
   return (
     <BarChart2
       size={INLINE_SIZE}
+      strokeWidth={SW}
       aria-hidden="true"
       className="inline-block align-middle ml-1"
     />
@@ -98,22 +106,27 @@ export function PairsIcon(): React.JSX.Element {
 
 /** Sun icon for the theme toggle (shown in dark mode). */
 export function SunIcon(): React.JSX.Element {
-  return <Sun size={HEADER_SIZE} aria-hidden="true" />;
+  return <Sun size={HEADER_SIZE} strokeWidth={SW} aria-hidden="true" />;
 }
 
 /** Calendar icon for the archive button. */
 export function CalendarIcon(): React.JSX.Element {
-  return <Calendar size={HEADER_SIZE} aria-hidden="true" />;
+  return <Calendar size={HEADER_SIZE} strokeWidth={SW} aria-hidden="true" />;
 }
 
 /** Bar chart icon for the stats button. */
 export function StatsIcon(): React.JSX.Element {
-  return <BarChart2 size={HEADER_SIZE} aria-hidden="true" />;
+  return <ChartBar size={HEADER_SIZE} strokeWidth={SW} aria-hidden="true" />;
 }
 
 /** Moon icon for the theme toggle (shown in light mode). */
 export function MoonIcon(): React.JSX.Element {
-  return <Moon size={HEADER_SIZE} aria-hidden="true" />;
+  return <Moon size={HEADER_SIZE} strokeWidth={SW} aria-hidden="true" />;
+}
+
+/** Circle with question mark for the rules button. */
+export function CircleHelpIcon(): React.JSX.Element {
+  return <CircleHelp size={HEADER_SIZE} strokeWidth={SW} aria-hidden="true" />;
 }
 
 /** User icon for the auth button. Shows a checkmark variant when logged in. */
@@ -123,8 +136,16 @@ export function UserIcon({
   loggedIn?: boolean;
 }): React.JSX.Element {
   return loggedIn ? (
-    <UserCheck size={HEADER_SIZE} aria-hidden="true" />
+    <UserCheck size={HEADER_SIZE} strokeWidth={SW} aria-hidden="true" />
   ) : (
-    <User size={HEADER_SIZE} aria-hidden="true" />
+    <User size={HEADER_SIZE} strokeWidth={SW} aria-hidden="true" />
   );
+}
+
+/**
+ * Copy icon for the share button.
+ * Stroke weight matches regular-weight body text rather than the bolder icons.
+ */
+export function CopyIcon(): React.JSX.Element {
+  return <Copy size={14} strokeWidth={1.5} aria-hidden="true" />;
 }

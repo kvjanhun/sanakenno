@@ -4,7 +4,7 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
 } from 'react-native-reanimated';
-import { Share2, Shuffle } from 'lucide-react-native';
+import { Share, Shuffle } from 'lucide-react-native';
 import * as PreparedHaptics from 'prepared-haptics';
 import type { Theme } from '../theme';
 
@@ -103,7 +103,7 @@ export function GameControls({
         flex={1}
         bgColor={theme.bgSecondary}
       >
-        <Share2 size={22} color={theme.textPrimary} />
+        <Share size={22} strokeWidth={2.5} color={theme.textPrimary} />
       </SimpleButton>
 
       {/* Narrow: Shuffle icon */}
@@ -113,7 +113,7 @@ export function GameControls({
         flex={1}
         bgColor={theme.bgSecondary}
       >
-        <Shuffle size={22} color={theme.textPrimary} />
+        <Shuffle size={22} strokeWidth={2.5} color={theme.textPrimary} />
       </SimpleButton>
 
       {/* Wide: OK */}

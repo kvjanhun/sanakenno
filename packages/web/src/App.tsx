@@ -30,7 +30,12 @@ import { ArchiveModal } from './components/ArchiveModal';
 import { StatsModal } from './components/StatsModal';
 import { AuthModal } from './components/AuthModal';
 import { AuthLinkModal } from './components/AuthLinkModal';
-import { CalendarIcon, StatsIcon, UserIcon } from './components/icons';
+import {
+  CalendarIcon,
+  StatsIcon,
+  UserIcon,
+  CircleHelpIcon,
+} from './components/icons';
 
 /* ------------------------------------------------------------------ */
 /*  Zustand selectors — subscribe to individual slices of state        */
@@ -311,15 +316,11 @@ function App() {
             <button
               type="button"
               onClick={() => setShowRules(true)}
-              className="p-2 rounded-lg text-lg bg-transparent border-none cursor-pointer"
-              style={{
-                color: 'var(--color-text-primary)',
-                fontWeight: '500',
-                fontSize: '1.3em',
-              }}
+              className="p-2 rounded-lg bg-transparent border-none cursor-pointer"
+              style={{ color: 'var(--color-text-primary)' }}
               aria-label="Säännöt"
             >
-              ?
+              <CircleHelpIcon />
             </button>
             <ThemeToggle />
           </div>

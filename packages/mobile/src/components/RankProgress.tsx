@@ -100,7 +100,7 @@ export function RankProgress({
 
           {/* Score info button */}
           <Pressable onPress={() => setScoreOpen(true)} hitSlop={8}>
-            <Info size={22} color={theme.textSecondary} />
+            <Info size={22} strokeWidth={2.5} color={theme.textSecondary} />
           </Pressable>
         </View>
 
@@ -117,7 +117,7 @@ export function RankProgress({
               >
                 {rankLabel}
               </Text>
-              <ChevronDown size={14} color="#fff" />
+              <ChevronDown size={14} strokeWidth={2.5} color="#fff" />
             </View>
           </Pressable>
         </View>
