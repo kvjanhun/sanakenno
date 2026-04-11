@@ -293,9 +293,21 @@ player.post('/auth/init', (c) => {
   const playerKey = randomBytes(32).toString('hex');
   const playerKeyHash = hashToken(playerKey);
   const db = getDb();
-  db.prepare('INSERT INTO players (player_key_hash) VALUES (?)').run(
-    playerKeyHash,
-  );
+  try {
+    db.prepare('INSERT INTO players (player_key_hash) VALUES (?)').run(
+      playerKeyHash,
+    );
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('players.email')) {
+      // Legacy DB compatibility: keep privacy (no user email), satisfy NOT NULL.
+      db.prepare(
+        'INSERT INTO players (player_key_hash, email) VALUES (?, ?)',
+      ).run(playerKeyHash, `legacy-${playerKeyHash}@invalid.local`);
+    } else {
+      throw err;
+    }
+  }
   const row = db
     .prepare('SELECT id FROM players WHERE player_key_hash = ?')
     .get(playerKeyHash) as { id: number };

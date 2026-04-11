@@ -81,7 +81,31 @@ export function AuthSection({ theme }: AuthSectionProps) {
     await useAuthStore.getState().logout();
   }, []);
 
-  if (!isLoggedIn) return null;
+  if (!isLoggedIn) {
+    return (
+      <View style={[styles.card, { backgroundColor: theme.bgSecondary }]}>
+        <Text style={[styles.label, { color: theme.textSecondary }]}>Tili</Text>
+        <Text style={[styles.hint, { color: theme.textTertiary }]}>
+          Luodaan paikallista pelaajatilaa...
+        </Text>
+        {error ? (
+          <>
+            <Text style={styles.errorText}>{error}</Text>
+            <Pressable
+              onPress={() => void useAuthStore.getState().initPlayer()}
+              style={[styles.button, { borderColor: theme.border }]}
+            >
+              <Text style={[styles.buttonText, { color: theme.textPrimary }]}>
+                Yritä uudelleen
+              </Text>
+            </Pressable>
+          </>
+        ) : (
+          <ActivityIndicator size="small" color={theme.textSecondary} />
+        )}
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.card, { backgroundColor: theme.bgSecondary }]}>
