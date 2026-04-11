@@ -115,7 +115,7 @@ export function CalendarIcon(): React.JSX.Element {
 
 /** Bar chart icon for the stats button. */
 export function StatsIcon(): React.JSX.Element {
-  return <BarChart2 size={22} strokeWidth={SW} aria-hidden="true" />;
+  return <BarChart2 size={HEADER_SIZE} strokeWidth={3} aria-hidden="true" />;
 }
 
 /** Moon icon for the theme toggle (shown in light mode). */
