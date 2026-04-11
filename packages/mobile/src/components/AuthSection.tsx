@@ -113,125 +113,31 @@ export function AuthSection({ theme }: AuthSectionProps) {
       <Text style={[styles.label, { color: theme.textSecondary }]}>
         Lisää laite
       </Text>
-      <Text style={[styles.hint, { color: theme.textTertiary }]}>
-        Synkronoi edistymisesi ja tilastosi toiselle laitteelle.
-      </Text>
 
-      <Pressable
-        onPress={() => void handleCopyLink()}
-        disabled={isLoading}
-        style={[
-          styles.button,
-          { borderColor: theme.border, opacity: isLoading ? 0.6 : 1 },
-        ]}
-      >
-        <View style={styles.buttonRow}>
-          <Copy size={16} color={theme.textPrimary} />
-          <Text style={[styles.buttonText, { color: theme.textPrimary }]}>
-            Kopioi linkki
-          </Text>
-        </View>
-      </Pressable>
-
-      <Pressable
-        onPress={() => void handleCopyCode()}
-        disabled={isLoading}
-        style={[
-          styles.button,
-          { borderColor: theme.border, opacity: isLoading ? 0.6 : 1 },
-        ]}
-      >
-        <View style={styles.buttonRow}>
-          <Copy size={16} color={theme.textPrimary} />
-          <Text style={[styles.buttonText, { color: theme.textPrimary }]}>
-            Kopioi koodi
-          </Text>
-        </View>
-      </Pressable>
-
-      <Pressable
-        onPress={() => void handleShowQr()}
-        disabled={isLoading}
-        style={[
-          styles.button,
-          { borderColor: theme.border, opacity: isLoading ? 0.6 : 1 },
-        ]}
-      >
-        <Text style={[styles.buttonText, { color: theme.textPrimary }]}>
-          Näytä QR-koodi
-        </Text>
-      </Pressable>
-
-      <Pressable
-        onPress={() => {
-          setShowEmail(true);
-          setEmailSent(false);
-        }}
-        style={[styles.button, { borderColor: theme.border }]}
-      >
-        <Text style={[styles.buttonText, { color: theme.textPrimary }]}>
-          Lähetä sähköpostiin
-        </Text>
-      </Pressable>
-
-      {showQr && connectUrl ? (
-        <View style={styles.qrWrap}>
-          <QRCode value={connectUrl} size={180} />
-        </View>
-      ) : null}
-
-      {showEmail ? (
-        <View style={styles.emailWrap}>
+      {!isLinked ? (
+        <>
           <Text style={[styles.hint, { color: theme.textTertiary }]}>
-            Sanakenno.fi ei tallenna sähköpostiosoitettasi.
+            Synkronoi edistymisesi ja tilastosi muille laitteille.
           </Text>
-          <TextInput
-            value={emailInput}
-            onChangeText={(v) => {
-              setEmailInput(v);
-              if (error) useAuthStore.setState({ error: null });
-            }}
-            placeholder="sähköpostiosoite"
-            placeholderTextColor={theme.textTertiary}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            style={[
-              styles.input,
-              {
-                backgroundColor: theme.bgPrimary,
-                color: theme.textPrimary,
-                borderColor: theme.border,
-              },
-            ]}
-          />
           <Pressable
-            onPress={() => void handleSendEmail()}
-            disabled={isLoading || !emailInput.trim()}
+            onPress={() => void useAuthStore.getState().createTransfer()}
+            disabled={isLoading}
             style={[
               styles.primaryButton,
               {
                 backgroundColor: theme.accent,
-                opacity: isLoading || !emailInput.trim() ? 0.6 : 1,
+                opacity: isLoading ? 0.6 : 1,
               },
             ]}
           >
             {isLoading ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={styles.primaryButtonText}>Lähetä</Text>
+              <Text style={styles.primaryButtonText}>
+                Synkronoi muille laitteille
+              </Text>
             )}
           </Pressable>
-          {emailSent ? (
-            <Text style={[styles.hint, { color: theme.textSecondary }]}>
-              Tarkista sähköpostiosoite.
-            </Text>
-          ) : null}
-        </View>
-      ) : null}
-
-      {!isLinked ? (
-        <>
           <Text style={[styles.hint, { color: theme.textTertiary }]}>
             Syötä koodi toiselta laitteelta:
           </Text>
@@ -269,14 +175,129 @@ export function AuthSection({ theme }: AuthSectionProps) {
           </View>
         </>
       ) : (
-        <Pressable
-          onPress={() => void handleLogout()}
-          style={[styles.button, { borderColor: theme.border }]}
-        >
-          <Text style={[styles.buttonText, { color: theme.textPrimary }]}>
-            Kirjaudu ulos
-          </Text>
-        </Pressable>
+        <>
+          <Pressable
+            onPress={() => void handleCopyLink()}
+            disabled={isLoading}
+            style={[
+              styles.button,
+              { borderColor: theme.border, opacity: isLoading ? 0.6 : 1 },
+            ]}
+          >
+            <View style={styles.buttonRow}>
+              <Copy size={16} color={theme.textPrimary} />
+              <Text style={[styles.buttonText, { color: theme.textPrimary }]}>
+                Kopioi linkki
+              </Text>
+            </View>
+          </Pressable>
+
+          <Pressable
+            onPress={() => void handleCopyCode()}
+            disabled={isLoading}
+            style={[
+              styles.button,
+              { borderColor: theme.border, opacity: isLoading ? 0.6 : 1 },
+            ]}
+          >
+            <View style={styles.buttonRow}>
+              <Copy size={16} color={theme.textPrimary} />
+              <Text style={[styles.buttonText, { color: theme.textPrimary }]}>
+                Kopioi koodi
+              </Text>
+            </View>
+          </Pressable>
+
+          <Pressable
+            onPress={() => void handleShowQr()}
+            disabled={isLoading}
+            style={[
+              styles.button,
+              { borderColor: theme.border, opacity: isLoading ? 0.6 : 1 },
+            ]}
+          >
+            <Text style={[styles.buttonText, { color: theme.textPrimary }]}>
+              Näytä QR-koodi
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => {
+              setShowEmail(true);
+              setEmailSent(false);
+            }}
+            style={[styles.button, { borderColor: theme.border }]}
+          >
+            <Text style={[styles.buttonText, { color: theme.textPrimary }]}>
+              Lähetä sähköpostiin
+            </Text>
+          </Pressable>
+
+          {showQr && connectUrl ? (
+            <View style={styles.qrWrap}>
+              <QRCode value={connectUrl} size={180} />
+            </View>
+          ) : null}
+
+          {showEmail ? (
+            <View style={styles.emailWrap}>
+              <Text style={[styles.hint, { color: theme.textTertiary }]}>
+                Sanakenno.fi ei tallenna sähköpostiosoitettasi.
+              </Text>
+              <TextInput
+                value={emailInput}
+                onChangeText={(v) => {
+                  setEmailInput(v);
+                  if (error) useAuthStore.setState({ error: null });
+                }}
+                placeholder="sähköpostiosoite"
+                placeholderTextColor={theme.textTertiary}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: theme.bgPrimary,
+                    color: theme.textPrimary,
+                    borderColor: theme.border,
+                  },
+                ]}
+              />
+              <Pressable
+                onPress={() => void handleSendEmail()}
+                disabled={isLoading || !emailInput.trim()}
+                style={[
+                  styles.primaryButton,
+                  {
+                    backgroundColor: theme.accent,
+                    opacity: isLoading || !emailInput.trim() ? 0.6 : 1,
+                  },
+                ]}
+              >
+                {isLoading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.primaryButtonText}>Lähetä</Text>
+                )}
+              </Pressable>
+              {emailSent ? (
+                <Text style={[styles.hint, { color: theme.textSecondary }]}>
+                  Tarkista sähköpostiosoite.
+                </Text>
+              ) : null}
+            </View>
+          ) : null}
+
+          <Pressable
+            onPress={() => void handleLogout()}
+            style={[styles.button, { borderColor: theme.border }]}
+          >
+            <Text style={[styles.buttonText, { color: theme.textPrimary }]}>
+              Kirjaudu ulos
+            </Text>
+          </Pressable>
+        </>
       )}
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}

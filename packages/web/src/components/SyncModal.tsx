@@ -35,10 +35,10 @@ export function SyncModal({
       useAuthStore.getState().clearTransferToken();
       return;
     }
-    if (!transferToken) {
+    if (isLinked && !transferToken) {
       void useAuthStore.getState().createTransfer();
     }
-  }, [show, transferToken]);
+  }, [show, isLinked, transferToken]);
 
   useEffect(() => {
     if (!show) return;
@@ -118,7 +118,61 @@ export function SyncModal({
           </button>
         </div>
 
-        {mode === 'options' && (
+        {mode === 'options' && !isLinked && (
+          <div className="space-y-3">
+            <p style={{ color: 'var(--color-text-secondary)' }}>
+              Synkronoi edistymisesi ja tilastosi muille laitteille.
+            </p>
+            <button
+              type="button"
+              onClick={() => void useAuthStore.getState().createTransfer()}
+              className="w-full py-2 px-4 rounded-lg cursor-pointer border-none font-medium"
+              style={{
+                backgroundColor: 'var(--color-accent)',
+                color: '#fff',
+                opacity: isLoading ? 0.6 : 1,
+              }}
+              disabled={isLoading}
+            >
+              Synkronoi muille laitteille
+            </button>
+            <hr style={{ borderColor: 'var(--color-text-tertiary)' }} />
+            <p style={{ color: 'var(--color-text-secondary)' }}>
+              Sinulla on koodi?
+            </p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={codeInput}
+                onChange={(e) => {
+                  setCodeInput(e.target.value);
+                  if (error) useAuthStore.setState({ error: null });
+                }}
+                className="flex-1 px-3 py-2 rounded-lg border text-sm"
+                style={{
+                  backgroundColor: 'var(--color-bg-secondary)',
+                  borderColor: 'var(--color-text-tertiary)',
+                  color: 'var(--color-text-primary)',
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => void handleUseCode()}
+                className="py-2 px-3 rounded-lg font-medium cursor-pointer border-none"
+                style={{
+                  backgroundColor: 'var(--color-accent)',
+                  color: '#fff',
+                  opacity: isLoading || !codeInput.trim() ? 0.6 : 1,
+                }}
+                disabled={isLoading || !codeInput.trim()}
+              >
+                Yhdistä
+              </button>
+            </div>
+          </div>
+        )}
+
+        {mode === 'options' && isLinked && (
           <div className="space-y-3">
             <p style={{ color: 'var(--color-text-secondary)' }}>
               Avaa Sanakenno toisella laitteella ja käytä alla olevaa linkkiä
@@ -176,58 +230,19 @@ export function SyncModal({
             >
               Lähetä sähköpostiin →
             </button>
-
             <hr style={{ borderColor: 'var(--color-text-tertiary)' }} />
-
-            {!isLinked ? (
-              <>
-                <p style={{ color: 'var(--color-text-secondary)' }}>
-                  Sinulla on koodi?
-                </p>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={codeInput}
-                    onChange={(e) => {
-                      setCodeInput(e.target.value);
-                      if (error) useAuthStore.setState({ error: null });
-                    }}
-                    className="flex-1 px-3 py-2 rounded-lg border text-sm"
-                    style={{
-                      backgroundColor: 'var(--color-bg-secondary)',
-                      borderColor: 'var(--color-text-tertiary)',
-                      color: 'var(--color-text-primary)',
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => void handleUseCode()}
-                    className="py-2 px-3 rounded-lg font-medium cursor-pointer border-none"
-                    style={{
-                      backgroundColor: 'var(--color-accent)',
-                      color: '#fff',
-                      opacity: isLoading || !codeInput.trim() ? 0.6 : 1,
-                    }}
-                    disabled={isLoading || !codeInput.trim()}
-                  >
-                    Yhdistä
-                  </button>
-                </div>
-              </>
-            ) : (
-              <button
-                type="button"
-                onClick={() => void handleLogout()}
-                className="w-full py-2 px-4 rounded-lg border cursor-pointer"
-                style={{
-                  backgroundColor: 'transparent',
-                  borderColor: 'var(--color-text-tertiary)',
-                  color: 'var(--color-text-primary)',
-                }}
-              >
-                Kirjaudu ulos
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => void handleLogout()}
+              className="w-full py-2 px-4 rounded-lg border cursor-pointer"
+              style={{
+                backgroundColor: 'transparent',
+                borderColor: 'var(--color-text-tertiary)',
+                color: 'var(--color-text-primary)',
+              }}
+            >
+              Kirjaudu ulos
+            </button>
           </div>
         )}
 

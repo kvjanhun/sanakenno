@@ -204,7 +204,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         );
       }
       const body = (await res.json()) as { transfer_token: string };
-      set({ transferToken: body.transfer_token, isLoading: false });
+      authService.setToken({ ...stored, linked: true });
+      set({
+        transferToken: body.transfer_token,
+        isLinked: true,
+        isLoading: false,
+      });
     } catch (err) {
       set({
         error:
