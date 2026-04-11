@@ -170,6 +170,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
         const payload = (await syncRes.json()) as SyncBody;
         const changed = get().pullAndMerge(payload);
+
+        // Push local data so the server has our latest (handles the case
+        // where this device has more progress than the server).
+        const local = gatherLocalData();
+        for (const record of local.stats.records) {
+          void get().syncStatsRecord(record);
+        }
+        for (const state of local.puzzle_states) {
+          void get().syncPuzzleState(state);
+        }
+
         if (changed) window.location.reload();
       })
       .catch(() => {
