@@ -1,4 +1,3 @@
-
 ## Privacy-First Device Sync (replaces magic-link auth)
 
 ### Background
@@ -16,11 +15,11 @@ The key is stored locally (localStorage / MMKV). The server stores only SHA-256(
 Cross-device transfer is always initiated from an **authenticated** device. Four delivery
 options for the one-time transfer token (15-min TTL):
 
-| UI label | Mechanism |
-|---|---|
-| Kopioi linkki | Copies `https://sanakenno.fi/connect?connect=<token>` to clipboard |
-| Kopioi koodi | Copies the raw token string (user types it on new device) |
-| Näytä QR-koodi | Renders the URL as a QR code inside the modal |
+| UI label            | Mechanism                                                               |
+| ------------------- | ----------------------------------------------------------------------- |
+| Kopioi linkki       | Copies `https://sanakenno.fi/connect?connect=<token>` to clipboard      |
+| Kopioi koodi        | Copies the raw token string (user types it on new device)               |
+| Näytä QR-koodi      | Renders the URL as a QR code inside the modal                           |
 | Lähetä sähköpostiin | Emails the URL; inline disclaimer "Sähköpostiosoitettasi ei tallenneta" |
 
 If a player loses all devices and has no backup of their key, the account is unrecoverable.
@@ -69,6 +68,7 @@ Keep unchanged: `GET /api/player/me`, `POST /api/player/auth/logout`, all sync r
 ### Shared types
 
 Remove `email` from `AuthToken`:
+
 ```ts
 export interface AuthToken {
   token: string;
@@ -82,6 +82,7 @@ export interface AuthToken {
 Remove: `requestLink`, `verifyToken`, `pendingEmail`
 
 Add:
+
 ```ts
 transferToken: string | null;            // set after createTransfer(), cleared on close
 initPlayer(): Promise<void>;             // silent first-launch, no-op if already authed
@@ -107,11 +108,13 @@ if (connectToken) {
 ### Web — SyncModal (replaces AuthModal)
 
 Three views:
+
 1. **Transfer options** (default) — four buttons + "Syötä koodi" input at bottom
 2. **Email input** — appears after tapping "Lähetä sähköpostiin"
 3. **Sent confirmation** — "Tarkista sähköpostisi"
 
 Layout:
+
 ```
 ┌──────────────────────────────────┐
 │  Lisää laite               [×]   │
@@ -144,6 +147,7 @@ QR scanning (optional, Phase 4+): `expo-camera` with barcode scanner.
 `server/email/send-magic-link.ts` → `server/email/send-transfer-link.ts`
 
 Body copy:
+
 > Joku (sinä?) haluaa yhdistää Sanakenno-tilisi uudelle laitteelle.
 > [Yhdistä laite]
 > Linkki vanhenee 15 minuutissa.
@@ -152,6 +156,7 @@ Body copy:
 ### Feature files
 
 `features/player-auth.feature` — full rewrite:
+
 - New player created silently on first launch
 - Transfer token created while authenticated
 - Transfer token used on new device → session + data merge

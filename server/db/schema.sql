@@ -97,26 +97,25 @@ CREATE INDEX IF NOT EXISTS idx_failed_guesses_date ON failed_guesses(puzzle_date
 -- Player accounts and authentication (separate from admin auth)
 -- -------------------------------------------------------------------------
 
--- Player accounts (email-only, no passwords)
+-- Player accounts keyed by SHA-256(player_key)
 CREATE TABLE IF NOT EXISTS players (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    email      TEXT NOT NULL UNIQUE,
+    player_key_hash TEXT NOT NULL UNIQUE,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
-CREATE INDEX IF NOT EXISTS idx_players_email ON players(email);
 
--- One-time magic link tokens (15-min TTL, single use)
-CREATE TABLE IF NOT EXISTS player_magic_tokens (
+-- One-time transfer tokens (15-min TTL, single use)
+CREATE TABLE IF NOT EXISTS player_transfer_tokens (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     player_id   INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
-    token_hash  TEXT NOT NULL UNIQUE,   -- SHA-256 of raw token sent in URL
+    token_hash  TEXT NOT NULL UNIQUE,   -- SHA-256 of raw token
     expires_at  TEXT NOT NULL,          -- 15 min from creation
     used        INTEGER NOT NULL DEFAULT 0,
     created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
-CREATE INDEX IF NOT EXISTS idx_magic_tokens_hash    ON player_magic_tokens(token_hash);
-CREATE INDEX IF NOT EXISTS idx_magic_tokens_expires ON player_magic_tokens(expires_at);
+CREATE INDEX IF NOT EXISTS idx_transfer_tokens_hash    ON player_transfer_tokens(token_hash);
+CREATE INDEX IF NOT EXISTS idx_transfer_tokens_expires ON player_transfer_tokens(expires_at);
 
 -- Player sessions (Bearer tokens, 90-day TTL)
 CREATE TABLE IF NOT EXISTS player_sessions (

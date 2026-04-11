@@ -15,7 +15,6 @@ export const AUTH_TOKEN_STORAGE_KEY = 'sanakenno_auth_token';
 export interface AuthToken {
   token: string;
   playerId: number;
-  email: string;
   expiresAt: string; // ISO 8601
 }
 
@@ -30,7 +29,7 @@ export interface SyncPuzzleState {
   score_before_hints: number | null;
 }
 
-/** Full sync payload returned by GET /api/player/sync and POST /api/player/auth/verify. */
+/** Full sync payload returned by GET /api/player/sync and POST /api/player/auth/transfer/use. */
 export interface SyncPayload {
   stats: PlayerStats;
   puzzle_states: SyncPuzzleState[];

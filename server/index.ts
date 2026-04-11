@@ -16,8 +16,9 @@
  *   GET  /api/auth/session        - Check session validity
  *   POST /api/auth/change-password - Change admin password
  *   /api/admin/*                  - Admin API (auth required)
- *   POST /api/player/auth/request - Request magic link email
- *   POST /api/player/auth/verify  - Exchange magic link token for Bearer session
+ *   POST /api/player/auth/init            - Create player identity + session
+ *   POST /api/player/auth/transfer/create - Create transfer token
+ *   POST /api/player/auth/transfer/use    - Exchange transfer token for Bearer session
  *   POST /api/player/auth/logout  - Invalidate player session
  *   GET  /api/player/me           - Current player identity
  *   GET  /api/player/sync         - Pull all server data for authenticated player

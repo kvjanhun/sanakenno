@@ -4,7 +4,7 @@ Feature: Cross-device progress sync
   Sync is offline-safe: fire-and-forget pushes, pull on login.
 
   Background:
-    Given a registered player with email "sync@example.com" and a valid Bearer token
+    Given a registered player identity and a valid Bearer token
 
   # --- Full pull ---
 
@@ -80,10 +80,10 @@ Feature: Cross-device progress sync
     When a POST is made to /api/player/sync/state with an invalid body
     Then the response status should be 400
 
-  # --- First-time registration upload ---
+  # --- First-time transfer upload ---
 
-  Scenario: Verifying a magic link with local stats uploads them to the server
-    Given a new player "upload@example.com" who has not yet verified any token
+  Scenario: Using a transfer token with local stats uploads them to the server
+    Given a new player identity with an unused transfer token
     And the player has 5 local stats records
-    When the player verifies their magic link with the local stats included
+    When the player uses their transfer token with the local stats included
     Then the server should have 5 stats records for that player

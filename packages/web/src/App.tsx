@@ -28,8 +28,7 @@ import { GameControls } from './components/GameControls';
 import { HintPanels } from './components/HintPanels';
 import { ArchiveModal } from './components/ArchiveModal';
 import { StatsModal } from './components/StatsModal';
-import { AuthModal } from './components/AuthModal';
-import { AuthLinkModal } from './components/AuthLinkModal';
+import { SyncModal } from './components/SyncModal';
 import {
   CalendarIcon,
   StatsIcon,
@@ -69,7 +68,6 @@ const useShowStats = () => useGameStore((s) => s.showStats);
 const useViewingPuzzleDate = () => useGameStore((s) => s.viewingPuzzleDate);
 
 const useAuthIsLoggedIn = () => useAuthStore((s) => s.isLoggedIn);
-const useAuthEmail = () => useAuthStore((s) => s.email);
 
 /* Stable action references — these don't change between renders */
 const actions = () => {
@@ -103,9 +101,7 @@ function App() {
   const puzzle = usePuzzle();
   const loading = useLoading();
   const authIsLoggedIn = useAuthIsLoggedIn();
-  const authEmail = useAuthEmail();
   const [showAuth, setShowAuth] = useState(false);
-  const [pendingLinkToken, setPendingLinkToken] = useState<string | null>(null);
   const fetchError = useFetchError();
   const currentWord = useCurrentWord();
   const score = useScore();
@@ -157,15 +153,15 @@ function App() {
     fetchPuzzle();
   }, [fetchPuzzle]);
 
-  // Restore auth session on mount and intercept magic link token from URL
+  // Restore auth session on mount and intercept transfer token from URL.
   useEffect(() => {
     useAuthStore.getState().initialize();
 
     const params = new URLSearchParams(window.location.search);
-    const token = params.get('token');
-    if (token) {
+    const connectToken = params.get('connect');
+    if (connectToken) {
       window.history.replaceState({}, '', '/');
-      setPendingLinkToken(token);
+      void useAuthStore.getState().useTransfer(connectToken);
     }
   }, []);
 
@@ -230,11 +226,7 @@ function App() {
               className="py-2 pr-1 rounded-lg bg-transparent border-none cursor-pointer"
               style={{ color: 'var(--color-text-primary)' }}
               aria-label={authIsLoggedIn ? 'Oma tili' : 'Kirjaudu'}
-              title={
-                authIsLoggedIn
-                  ? (authEmail ?? 'Kirjautunut')
-                  : 'Kirjaudu sisään'
-              }
+              title={authIsLoggedIn ? 'Kirjautunut' : 'Kirjaudu sisään'}
             >
               <UserIcon loggedIn={authIsLoggedIn} />
             </button>
@@ -329,17 +321,7 @@ function App() {
 
       {/* Rules modal */}
       <RulesModal show={showRules} onClose={() => setShowRules(false)} />
-      <AuthModal show={showAuth} onClose={() => setShowAuth(false)} />
-      {pendingLinkToken && (
-        <AuthLinkModal
-          token={pendingLinkToken}
-          onLoginWeb={() => {
-            const t = pendingLinkToken;
-            setPendingLinkToken(null);
-            void useAuthStore.getState().verifyToken(t);
-          }}
-        />
-      )}
+      <SyncModal show={showAuth} onClose={() => setShowAuth(false)} />
       <ArchiveModal
         show={showArchive}
         onClose={() => setShowArchive(false)}

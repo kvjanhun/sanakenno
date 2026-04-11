@@ -47,7 +47,6 @@ export function StatsModal({
 }: StatsModalProps): React.JSX.Element | null {
   const [stats, setStats] = useState<PlayerStats>(emptyStats());
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
-  const authEmail = useAuthStore((s) => s.email);
 
   useEffect(() => {
     if (show) {
@@ -114,7 +113,7 @@ export function StatsModal({
             className="text-xs mb-3"
             style={{ color: 'var(--color-text-tertiary)' }}
           >
-            ✓ Synkronoitu · {authEmail}
+            ✓ Synkronoitu
           </p>
         )}
 

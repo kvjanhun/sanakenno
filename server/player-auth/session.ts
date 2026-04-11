@@ -14,14 +14,12 @@ import { getDb } from '../db/connection';
 /** Player data returned after successful token validation. */
 export interface PlayerSessionData {
   playerId: number;
-  email: string;
 }
 
 interface PlayerSessionRow {
   id: string;
   player_id: number;
   expires_at: string;
-  email: string;
 }
 
 /** Session lifetime: 90 days in milliseconds. */
@@ -52,9 +50,8 @@ export function validatePlayerToken(token: string): PlayerSessionData | null {
   const db = getDb();
   const row = db
     .prepare(
-      `SELECT ps.id, ps.player_id, ps.expires_at, p.email
+      `SELECT ps.id, ps.player_id, ps.expires_at
        FROM player_sessions ps
-       JOIN players p ON p.id = ps.player_id
        WHERE ps.id = ? AND ps.expires_at > datetime('now')`,
     )
     .get(token) as PlayerSessionRow | undefined;
@@ -63,7 +60,6 @@ export function validatePlayerToken(token: string): PlayerSessionData | null {
 
   return {
     playerId: row.player_id,
-    email: row.email,
   };
 }
 

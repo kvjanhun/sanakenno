@@ -36,15 +36,15 @@ export default function RootLayout() {
     useAuthStore.getState().initialize();
   }, []);
 
-  // Handle magic link deep links: sanakenno://auth?token=xxx
+  // Handle transfer deep links: sanakenno://auth?connect=xxx
   const incomingUrl = Linking.useURL();
   useEffect(() => {
     if (!incomingUrl) return;
     const { path, queryParams } = Linking.parse(incomingUrl);
     if (path === 'auth') {
-      const token = queryParams?.token;
-      if (typeof token === 'string') {
-        void useAuthStore.getState().verifyToken(token);
+      const connect = queryParams?.connect;
+      if (typeof connect === 'string') {
+        void useAuthStore.getState().useTransfer(connect);
       }
     }
   }, [incomingUrl]);

@@ -1,8 +1,8 @@
 /**
- * Deep link landing screen for magic link auth.
+ * Deep link landing screen for transfer auth.
  *
- * Expo Router matches sanakenno://auth?token=xxx to this file and provides
- * the token via useLocalSearchParams. Verifies the token then immediately
+ * Expo Router matches sanakenno://auth?connect=xxx to this file and provides
+ * the token via useLocalSearchParams. Uses transfer token then immediately
  * navigates to the main tabs.
  *
  * @module app/auth
@@ -13,17 +13,17 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useAuthStore } from '../src/store/useAuthStore';
 
 export default function AuthCallback() {
-  const { token } = useLocalSearchParams<{ token: string }>();
+  const { connect } = useLocalSearchParams<{ connect: string }>();
 
   useEffect(() => {
     const go = async () => {
-      if (typeof token === 'string') {
-        await useAuthStore.getState().verifyToken(token);
+      if (typeof connect === 'string') {
+        await useAuthStore.getState().useTransfer(connect);
       }
       router.replace('/(tabs)');
     };
     void go();
-  }, [token]);
+  }, [connect]);
 
   return null;
 }

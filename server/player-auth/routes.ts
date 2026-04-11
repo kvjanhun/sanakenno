@@ -2,22 +2,18 @@
  * Player authentication routes.
  *
  * Endpoints:
- *   POST /api/player/auth/request - Request a magic link email
- *   POST /api/player/auth/verify  - Exchange magic link token for Bearer session
- *   POST /api/player/auth/logout  - Invalidate current session
- *   GET  /api/player/me           - Return current player info
- *
- * Authentication is entirely separate from admin auth (server/auth/routes.ts).
- * No passwords are stored — players authenticate via one-time email links.
- *
- * @module server/player-auth/routes
+ *   POST /api/player/auth/init            - Create player key identity + session
+ *   POST /api/player/auth/transfer/create - Create one-time transfer token
+ *   POST /api/player/auth/transfer/use    - Exchange transfer token for session
+ *   POST /api/player/auth/logout          - Invalidate current session
+ *   GET  /api/player/me                   - Return current player info
  */
 
 import { Hono } from 'hono';
 import type { Context, Next } from 'hono';
 import { createHash, randomBytes } from 'node:crypto';
 import { getDb } from '../db/connection';
-import { sendMagicLink } from '../email/send-magic-link';
+import { sendTransferLink } from '../email/send-transfer-link';
 import {
   createPlayerSession,
   deletePlayerSession,
@@ -33,28 +29,21 @@ import type {
 
 const player = new Hono<{ Variables: PlayerVariables }>();
 
-// --- Rate limiting for auth/request ---
+const transferCreateRateLimitMap = new Map<string, number>();
+const TRANSFER_CREATE_RATE_LIMIT = 3;
 
-const requestRateLimitMap = new Map<string, number>();
-const REQUEST_RATE_LIMIT = 3;
-
-const requestRateLimitInterval = setInterval(() => {
-  requestRateLimitMap.clear();
+const transferCreateRateLimitInterval = setInterval(() => {
+  transferCreateRateLimitMap.clear();
 }, 60_000);
 
 if (typeof globalThis !== 'undefined') {
-  (globalThis as Record<string, unknown>).__playerRequestRateLimitInterval =
-    requestRateLimitInterval;
+  (
+    globalThis as Record<string, unknown>
+  ).__playerTransferCreateRateLimitInterval = transferCreateRateLimitInterval;
 }
 
-/** Clear rate limit map. Exposed for testing. */
-export function resetRequestRateLimit(): void {
-  requestRateLimitMap.clear();
-}
-
-/** Stop the rate limit reset interval. */
-export function stopRequestRateLimitInterval(): void {
-  clearInterval(requestRateLimitInterval);
+export function resetTransferCreateRateLimit(): void {
+  transferCreateRateLimitMap.clear();
 }
 
 function getClientIp(c: Context): string {
@@ -65,33 +54,22 @@ function getClientIp(c: Context): string {
   );
 }
 
-function requestRateLimit(c: Context, next: Next) {
+function transferCreateRateLimit(c: Context, next: Next) {
   const ip = getClientIp(c);
-  const count = requestRateLimitMap.get(ip) || 0;
-
-  if (count >= REQUEST_RATE_LIMIT) {
+  const count = transferCreateRateLimitMap.get(ip) || 0;
+  if (count >= TRANSFER_CREATE_RATE_LIMIT) {
     return c.json({ error: 'Liian monta yritystä, odota hetki' }, 429);
   }
-
-  requestRateLimitMap.set(ip, count + 1);
+  transferCreateRateLimitMap.set(ip, count + 1);
   return next();
 }
 
-/** Hash a raw token with SHA-256, returning a hex digest. */
 function hashToken(raw: string): string {
   return createHash('sha256').update(raw).digest('hex');
 }
 
-/** Magic link TTL: 15 minutes. */
-const MAGIC_TOKEN_TTL_MS = 15 * 60 * 1000;
+const TRANSFER_TOKEN_TTL_MS = 15 * 60 * 1000;
 
-/**
- * Merge-upsert player stats records and puzzle states uploaded at login.
- *
- * Stats: MAX strategy on all numeric fields, best rank wins.
- * Puzzle states: union found_words + hints_unlocked, MAX score, MIN started_at.
- * Never discards data already on the server.
- */
 function bulkUpsertLocalData(
   playerId: number,
   stats: PlayerStats | undefined,
@@ -248,14 +226,18 @@ function bulkUpsertLocalData(
   }
 }
 
-/** Fetch all server-side data for a player (for return after verify). */
 function fetchPlayerData(playerId: number): {
   stats: PlayerStats;
   puzzle_states: SyncPuzzleState[];
 } {
   const db = getDb();
-
-  interface StatRow {
+  const statsRows = db
+    .prepare(
+      `SELECT puzzle_number, date, best_rank, best_score, max_score,
+              words_found, hints_used, elapsed_ms
+       FROM player_stats WHERE player_id = ?`,
+    )
+    .all(playerId) as Array<{
     puzzle_number: number;
     date: string;
     best_rank: string;
@@ -264,17 +246,14 @@ function fetchPlayerData(playerId: number): {
     words_found: number;
     hints_used: number;
     elapsed_ms: number;
-  }
-
-  const statsRows = db
+  }>;
+  const stateRows = db
     .prepare(
-      `SELECT puzzle_number, date, best_rank, best_score, max_score,
-              words_found, hints_used, elapsed_ms
-       FROM player_stats WHERE player_id = ?`,
+      `SELECT puzzle_number, found_words, score, hints_unlocked,
+              started_at, total_paused_ms, score_before_hints
+       FROM player_puzzle_states WHERE player_id = ?`,
     )
-    .all(playerId) as StatRow[];
-
-  interface StateRow {
+    .all(playerId) as Array<{
     puzzle_number: number;
     found_words: string;
     score: number;
@@ -282,15 +261,7 @@ function fetchPlayerData(playerId: number): {
     started_at: number;
     total_paused_ms: number;
     score_before_hints: number | null;
-  }
-
-  const stateRows = db
-    .prepare(
-      `SELECT puzzle_number, found_words, score, hints_unlocked,
-              started_at, total_paused_ms, score_before_hints
-       FROM player_puzzle_states WHERE player_id = ?`,
-    )
-    .all(playerId) as StateRow[];
+  }>;
 
   return {
     stats: {
@@ -318,171 +289,121 @@ function fetchPlayerData(playerId: number): {
   };
 }
 
-// ---------------------------------------------------------------------------
-
-/**
- * POST /auth/request
- *
- * Request a magic link. Always returns 200 regardless of whether the email
- * address is known (prevents email enumeration).
- * Rate-limited to 3 requests per minute per IP.
- */
-player.post('/auth/request', requestRateLimit, async (c) => {
-  let body: Record<string, unknown> = {};
-  try {
-    body = await c.req.json();
-  } catch {
-    /* ignore */
-  }
-  const email = typeof body['email'] === 'string' ? body['email'].trim() : '';
-
-  // Basic email validation
-  if (!email || !email.includes('@') || !email.includes('.')) {
-    return c.json({ error: 'Virheellinen sähköpostiosoite' }, 400);
-  }
-
+player.post('/auth/init', (c) => {
+  const playerKey = randomBytes(32).toString('hex');
+  const playerKeyHash = hashToken(playerKey);
   const db = getDb();
-
-  // Auto-create player account on first request
-  db.prepare('INSERT OR IGNORE INTO players (email) VALUES (?)').run(email);
-
-  interface PlayerRow {
-    id: number;
-  }
+  db.prepare('INSERT INTO players (player_key_hash) VALUES (?)').run(
+    playerKeyHash,
+  );
   const row = db
-    .prepare('SELECT id FROM players WHERE email = ?')
-    .get(email) as PlayerRow;
-
-  // Generate and store magic token
-  const rawToken = randomBytes(32).toString('hex');
-  const tokenHash = hashToken(rawToken);
-  const expiresAt = new Date(Date.now() + MAGIC_TOKEN_TTL_MS).toISOString();
-
-  db.prepare(
-    'INSERT INTO player_magic_tokens (player_id, token_hash, expires_at) VALUES (?, ?, ?)',
-  ).run(row.id, tokenHash, expiresAt);
-
-  // Clean up expired tokens opportunistically
-  cleanupExpiredPlayerSessions();
-  db.prepare(
-    "DELETE FROM player_magic_tokens WHERE expires_at <= datetime('now')",
-  ).run();
-
-  // Send email (fire-and-forget error logging — don't reveal failures to client)
-  const baseUrl = process.env.BASE_URL || 'https://sanakenno.fi';
-  await sendMagicLink(email, rawToken, baseUrl).catch((err: unknown) => {
-    console.error(
-      JSON.stringify({
-        level: 'error',
-        message: 'Magic link email failed',
-        email,
-        error: err instanceof Error ? err.message : String(err),
-      }),
-    );
-  });
-
-  return c.json({ status: 'sent' });
+    .prepare('SELECT id FROM players WHERE player_key_hash = ?')
+    .get(playerKeyHash) as { id: number };
+  const token = createPlayerSession(row.id);
+  return c.json({ player_key: playerKey, token, player_id: row.id });
 });
 
-/**
- * POST /auth/verify
- *
- * Exchange a magic link token for a Bearer session token.
- * Optionally accepts local stats and puzzle states to bulk-upload on first use.
- */
-player.post('/auth/verify', async (c) => {
+player.post(
+  '/auth/transfer/create',
+  requirePlayer,
+  transferCreateRateLimit,
+  async (c) => {
+    const { playerId } = c.get('player');
+    let body: Record<string, unknown> = {};
+    try {
+      body = await c.req.json();
+    } catch {
+      // Ignore malformed body and treat as empty.
+    }
+
+    const rawToken = randomBytes(32).toString('hex');
+    const tokenHash = hashToken(rawToken);
+    const expiresAt = new Date(
+      Date.now() + TRANSFER_TOKEN_TTL_MS,
+    ).toISOString();
+    const db = getDb();
+    db.prepare(
+      'INSERT INTO player_transfer_tokens (player_id, token_hash, expires_at) VALUES (?, ?, ?)',
+    ).run(playerId, tokenHash, expiresAt);
+    cleanupExpiredPlayerSessions();
+    db.prepare(
+      "DELETE FROM player_transfer_tokens WHERE expires_at <= datetime('now')",
+    ).run();
+
+    const email = typeof body['email'] === 'string' ? body['email'].trim() : '';
+    if (email) {
+      const baseUrl = process.env.BASE_URL || 'https://sanakenno.fi';
+      await sendTransferLink(email, rawToken, baseUrl).catch((err: unknown) => {
+        console.error(
+          JSON.stringify({
+            level: 'error',
+            message: 'Transfer link email failed',
+            error: err instanceof Error ? err.message : String(err),
+          }),
+        );
+      });
+    }
+
+    return c.json({ transfer_token: rawToken });
+  },
+);
+
+player.post('/auth/transfer/use', async (c) => {
   let body: Record<string, unknown> = {};
   try {
     body = await c.req.json();
   } catch {
-    /* ignore */
+    // Ignore malformed body and validate token below.
   }
-
   const rawToken =
     typeof body['token'] === 'string' ? body['token'].trim() : '';
   if (!rawToken) {
     return c.json({ error: 'Token puuttuu' }, 400);
   }
 
-  const tokenHash = hashToken(rawToken);
   const db = getDb();
-
-  interface MagicTokenRow {
-    id: number;
-    player_id: number;
-    expires_at: string;
-    used: number;
-  }
-
   const tokenRow = db
     .prepare(
       `SELECT id, player_id, expires_at, used
-       FROM player_magic_tokens
+       FROM player_transfer_tokens
        WHERE token_hash = ?`,
     )
-    .get(tokenHash) as MagicTokenRow | undefined;
-
-  if (!tokenRow) {
+    .get(hashToken(rawToken)) as
+    | { id: number; player_id: number; expires_at: string; used: number }
+    | undefined;
+  if (!tokenRow || new Date(tokenRow.expires_at) <= new Date()) {
     return c.json({ error: 'Virheellinen tai vanhentunut linkki' }, 400);
   }
   if (tokenRow.used) {
     return c.json({ error: 'Linkki on jo käytetty' }, 400);
   }
-  if (new Date(tokenRow.expires_at) <= new Date()) {
-    return c.json({ error: 'Virheellinen tai vanhentunut linkki' }, 400);
-  }
 
-  // Mark token as used
-  db.prepare('UPDATE player_magic_tokens SET used = 1 WHERE id = ?').run(
+  db.prepare('UPDATE player_transfer_tokens SET used = 1 WHERE id = ?').run(
     tokenRow.id,
   );
 
   const playerId = tokenRow.player_id;
-
-  // Upload local data if provided (first-time registration)
   bulkUpsertLocalData(
     playerId,
     body['stats'] as PlayerStats | undefined,
     body['puzzle_states'] as SyncPuzzleState[] | undefined,
   );
-
-  const sessionToken = createPlayerSession(playerId);
-  const serverData = fetchPlayerData(playerId);
-
-  interface PlayerEmailRow {
-    email: string;
-  }
-  const playerRow = db
-    .prepare('SELECT email FROM players WHERE id = ?')
-    .get(playerId) as PlayerEmailRow;
-
+  const token = createPlayerSession(playerId);
   return c.json({
-    token: sessionToken,
+    token,
     player_id: playerId,
-    email: playerRow.email,
-    ...serverData,
+    ...fetchPlayerData(playerId),
   });
 });
 
-/**
- * POST /auth/logout
- *
- * Invalidate the current Bearer session.
- */
 player.post('/auth/logout', requirePlayer, (c) => {
-  const token = c.get('playerToken');
-  deletePlayerSession(token);
+  deletePlayerSession(c.get('playerToken'));
   return c.json({ status: 'ok' });
 });
 
-/**
- * GET /me
- *
- * Return current player identity. Used to validate a stored token on app mount.
- */
 player.get('/me', requirePlayer, (c) => {
-  const { playerId, email } = c.get('player');
-  return c.json({ player_id: playerId, email });
+  const { playerId } = c.get('player');
+  return c.json({ player_id: playerId });
 });
 
 export default player;

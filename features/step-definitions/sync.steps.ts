@@ -40,14 +40,18 @@ function sha256(input: string): string {
 }
 
 /** Insert a player directly and return their id. */
-function insertPlayer(email: string): number {
+function insertPlayer(playerKeyHash: string): number {
   const db = getDb();
-  db.prepare('INSERT OR IGNORE INTO players (email) VALUES (?)').run(email);
+  db.prepare('INSERT OR IGNORE INTO players (player_key_hash) VALUES (?)').run(
+    playerKeyHash,
+  );
   interface Row {
     id: number;
   }
   return (
-    db.prepare('SELECT id FROM players WHERE email = ?').get(email) as Row
+    db
+      .prepare('SELECT id FROM players WHERE player_key_hash = ?')
+      .get(playerKeyHash) as Row
   ).id;
 }
 
@@ -99,9 +103,9 @@ After(function (scenario: ITestCaseHookParameter) {
 // ---------------------------------------------------------------------------
 
 Given(
-  'a registered player with email {string} and a valid Bearer token',
-  function (this: SyncWorld, email: string) {
-    const playerId = insertPlayer(email);
+  'a registered player identity and a valid Bearer token',
+  function (this: SyncWorld) {
+    const playerId = insertPlayer(sha256(`player-${Date.now()}`));
     const token = createPlayerSession(playerId);
     this.playerBearerToken = token;
     this.lastPlayerId = playerId;
@@ -214,18 +218,18 @@ Given(
 );
 
 Given(
-  'a new player {string} who has not yet verified any token',
-  function (this: SyncWorld, email: string) {
-    const playerId = insertPlayer(email);
+  'a new player identity with an unused transfer token',
+  function (this: SyncWorld) {
+    const playerId = insertPlayer(sha256(`upload-${Date.now()}`));
     this.lastPlayerId = playerId;
 
-    // Create a known magic token so the When step can use it
+    // Create a known transfer token so the When step can use it
     const rawToken = randomBytes(16).toString('hex');
     const tokenHash = sha256(rawToken);
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
     const db = getDb();
     db.prepare(
-      'INSERT INTO player_magic_tokens (player_id, token_hash, expires_at) VALUES (?, ?, ?)',
+      'INSERT INTO player_transfer_tokens (player_id, token_hash, expires_at) VALUES (?, ?, ?)',
     ).run(playerId, tokenHash, expiresAt);
     this._uploadRawToken = rawToken;
   },
@@ -404,7 +408,7 @@ When(
 );
 
 When(
-  'the player verifies their magic link with the local stats included',
+  'the player uses their transfer token with the local stats included',
   async function (this: SyncWorld) {
     const rawToken = this._uploadRawToken;
     assert.ok(rawToken, 'No upload token in context');
@@ -423,7 +427,7 @@ When(
       version: 1,
     };
 
-    this.response = await app.request('/api/player/auth/verify', {
+    this.response = await app.request('/api/player/auth/transfer/use', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token: rawToken, stats, puzzle_states: [] }),

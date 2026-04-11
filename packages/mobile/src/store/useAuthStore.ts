@@ -1,15 +1,3 @@
-/**
- * Player authentication store (mobile).
- *
- * Manages the magic link auth flow and incremental server sync.
- * Works in concert with useGameStore: after each word is accepted,
- * useGameStore calls syncStatsRecord and syncPuzzleState (fire-and-forget).
- *
- * The store persists its auth token via the platform AuthService (MMKV).
- *
- * @module src/store/useAuthStore
- */
-
 import { create } from 'zustand';
 import {
   STATS_STORAGE_KEY,
@@ -28,38 +16,22 @@ import type {
 } from '@sanakenno/shared';
 import { auth as authService, storage, config } from '../platform';
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
 export interface AuthState {
   isLoggedIn: boolean;
-  email: string | null;
   playerId: number | null;
-  /** Set after requestLink(); cleared after verifyToken() or logout(). */
-  pendingEmail: string | null;
+  transferToken: string | null;
   isLoading: boolean;
   error: string | null;
-
-  /** Restore token from storage on app mount. */
   initialize(): void;
-  /** POST /api/player/auth/request — sends magic link email. */
-  requestLink(email: string): Promise<void>;
-  /** POST /api/player/auth/verify — exchanges token for session. */
-  verifyToken(token: string): Promise<void>;
-  /** POST /api/player/auth/logout — invalidates session. */
+  initPlayer(): Promise<void>;
+  createTransfer(email?: string): Promise<void>;
+  useTransfer(token: string): Promise<void>;
+  clearTransferToken(): void;
   logout(): Promise<void>;
-  /** Merge server data into local storage. Returns true if local data changed. */
   pullAndMerge(payload: SyncPayload): boolean;
-  /** Fire-and-forget push of a stats record. Only fires when logged in. */
   syncStatsRecord(record: StatsRecord): Promise<void>;
-  /** Fire-and-forget push of a puzzle state. Only fires when logged in. */
   syncPuzzleState(state: SyncPuzzleState): Promise<void>;
 }
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 function apiUrl(path: string): string {
   return `${config.apiBase}${path}`;
@@ -72,7 +44,6 @@ function authHeader(token: string): Record<string, string> {
   };
 }
 
-/** Read all puzzle state keys referenced by the current stats records. */
 function gatherLocalData(): {
   stats: PlayerStats;
   puzzle_states: SyncPuzzleState[];
@@ -85,15 +56,14 @@ function gatherLocalData(): {
     const raw = storage.getRaw(key);
     if (!raw) continue;
     try {
-      interface PersistedState {
+      const saved = JSON.parse(raw) as {
         foundWords: string[];
         score: number;
         hintsUnlocked: string[];
         startedAt: number;
         totalPausedMs: number;
         scoreBeforeHints: number | null;
-      }
-      const saved = JSON.parse(raw) as PersistedState;
+      };
       puzzle_states.push({
         puzzle_number: record.puzzle_number,
         found_words: saved.foundWords ?? [],
@@ -104,14 +74,12 @@ function gatherLocalData(): {
         score_before_hints: saved.scoreBeforeHints ?? null,
       });
     } catch {
-      // Ignore unparseable state
+      // Ignore unparseable state.
     }
   }
-
   return { stats, puzzle_states };
 }
 
-/** Safely extract an error message from a failed response body. */
 async function safeErrorMessage(
   res: Response,
   fallback: string,
@@ -124,52 +92,43 @@ async function safeErrorMessage(
   }
 }
 
-// ---------------------------------------------------------------------------
-// Store
-// ---------------------------------------------------------------------------
-
 export const useAuthStore = create<AuthState>((set, get) => ({
   isLoggedIn: false,
-  email: null,
   playerId: null,
-  pendingEmail: null,
+  transferToken: null,
   isLoading: false,
   error: null,
 
   initialize() {
     const stored = authService.getToken();
-    if (!stored) return;
+    if (!stored) {
+      void get().initPlayer();
+      return;
+    }
 
-    // Token exists — verify it's still valid, then pull latest server data
     fetch(apiUrl('/api/player/me'), {
       headers: { Authorization: `Bearer ${stored.token}` },
     })
       .then(async (res) => {
         if (!res.ok) {
           authService.clearToken();
+          storage.remove(AUTH_TOKEN_STORAGE_KEY);
+          await get().initPlayer();
           return;
         }
-        interface MeBody {
-          player_id: number;
-          email: string;
-        }
-        const body = (await res.json()) as MeBody;
-        set({ isLoggedIn: true, email: body.email, playerId: body.player_id });
+        const body = (await res.json()) as { player_id: number };
+        set({ isLoggedIn: true, playerId: body.player_id });
 
-        // Pull latest server data and merge into local storage
         const syncRes = await fetch(apiUrl('/api/player/sync'), {
           headers: { Authorization: `Bearer ${stored.token}` },
         });
         if (!syncRes.ok) return;
-        interface SyncBody {
+        const payload = (await syncRes.json()) as {
           stats: PlayerStats;
           puzzle_states: SyncPuzzleState[];
-        }
-        const payload = (await syncRes.json()) as SyncBody;
+        };
         const changed = get().pullAndMerge(payload);
 
-        // Push local data so the server has our latest (handles the case
-        // where this device has more progress than the server).
         const local = gatherLocalData();
         for (const record of local.stats.records) {
           void get().syncStatsRecord(record);
@@ -179,65 +138,96 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
 
         if (changed) {
-          // Refresh in-memory game state from the newly merged MMKV data
           const { useGameStore } = await import('./useGameStore');
           useGameStore.getState().reloadStateFromStorage();
         }
       })
       .catch(() => {
-        // Network error — assume still logged in (offline-first)
-        set({
-          isLoggedIn: true,
-          email: stored.email,
-          playerId: stored.playerId,
-        });
+        set({ isLoggedIn: true, playerId: stored.playerId });
       });
   },
 
-  async requestLink(email: string) {
+  async initPlayer() {
+    if (authService.getToken()) return;
     set({ isLoading: true, error: null });
     try {
-      const res = await fetch(apiUrl('/api/player/auth/request'), {
+      const res = await fetch(apiUrl('/api/player/auth/init'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
       });
       if (!res.ok) {
-        throw new Error(await safeErrorMessage(res, 'Pyyntö epäonnistui'));
+        throw new Error(await safeErrorMessage(res, 'Alustus epäonnistui'));
       }
-      set({ pendingEmail: email, isLoading: false });
+      const body = (await res.json()) as {
+        token: string;
+        player_id: number;
+        player_key: string;
+      };
+      const authToken: AuthToken = {
+        token: body.token,
+        playerId: body.player_id,
+        expiresAt: new Date(
+          Date.now() + 90 * 24 * 60 * 60 * 1000,
+        ).toISOString(),
+      };
+      authService.setToken(authToken);
+      set({ isLoggedIn: true, playerId: body.player_id, isLoading: false });
     } catch (err) {
       set({
-        error: err instanceof Error ? err.message : 'Pyyntö epäonnistui',
+        error: err instanceof Error ? err.message : 'Alustus epäonnistui',
         isLoading: false,
       });
     }
   },
 
-  async verifyToken(token: string) {
+  async createTransfer(email?: string) {
+    const stored = authService.getToken();
+    if (!stored) return;
+    set({ isLoading: true, error: null });
+    try {
+      const res = await fetch(apiUrl('/api/player/auth/transfer/create'), {
+        method: 'POST',
+        headers: authHeader(stored.token),
+        body: JSON.stringify(email ? { email } : {}),
+      });
+      if (!res.ok) {
+        throw new Error(
+          await safeErrorMessage(res, 'Laitteen lisäys epäonnistui'),
+        );
+      }
+      const body = (await res.json()) as { transfer_token: string };
+      set({ transferToken: body.transfer_token, isLoading: false });
+    } catch (err) {
+      set({
+        error:
+          err instanceof Error ? err.message : 'Laitteen lisäys epäonnistui',
+        isLoading: false,
+      });
+    }
+  },
+
+  async useTransfer(token: string) {
     set({ isLoading: true, error: null });
     try {
       const { stats, puzzle_states } = gatherLocalData();
-      const res = await fetch(apiUrl('/api/player/auth/verify'), {
+      const res = await fetch(apiUrl('/api/player/auth/transfer/use'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, stats, puzzle_states }),
       });
       if (!res.ok) {
-        throw new Error(await safeErrorMessage(res, 'Vahvistus epäonnistui'));
+        throw new Error(
+          await safeErrorMessage(res, 'Yhdistäminen epäonnistui'),
+        );
       }
-      interface VerifyBody {
+      const body = (await res.json()) as {
         token: string;
         player_id: number;
-        email: string;
         stats: PlayerStats;
         puzzle_states: SyncPuzzleState[];
-      }
-      const body = (await res.json()) as VerifyBody;
+      };
       const authToken: AuthToken = {
         token: body.token,
         playerId: body.player_id,
-        email: body.email,
         expiresAt: new Date(
           Date.now() + 90 * 24 * 60 * 60 * 1000,
         ).toISOString(),
@@ -245,21 +235,26 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       authService.setToken(authToken);
       set({
         isLoggedIn: true,
-        email: body.email,
         playerId: body.player_id,
-        pendingEmail: null,
+        transferToken: null,
         isLoading: false,
       });
       get().pullAndMerge({
         stats: body.stats,
         puzzle_states: body.puzzle_states,
       });
+      const { useGameStore } = await import('./useGameStore');
+      useGameStore.getState().reloadStateFromStorage();
     } catch (err) {
       set({
-        error: err instanceof Error ? err.message : 'Vahvistus epäonnistui',
+        error: err instanceof Error ? err.message : 'Yhdistäminen epäonnistui',
         isLoading: false,
       });
     }
+  },
+
+  clearTransferToken() {
+    set({ transferToken: null, error: null });
   },
 
   async logout() {
@@ -272,13 +267,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
     authService.clearToken();
     storage.remove(AUTH_TOKEN_STORAGE_KEY);
-    set({ isLoggedIn: false, email: null, playerId: null, pendingEmail: null });
+    set({ isLoggedIn: false, playerId: null, transferToken: null });
+    await get().initPlayer();
   },
 
   pullAndMerge(payload: SyncPayload): boolean {
     let changed = false;
-
-    // Merge server stats into local stats (MAX strategy)
     const localStats =
       storage.load<PlayerStats>(STATS_STORAGE_KEY) ?? emptyStats();
     let mergedStats = localStats;
@@ -305,11 +299,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
     storage.save(STATS_STORAGE_KEY, mergedStats);
 
-    // Merge server puzzle states into local
     for (const serverState of payload.puzzle_states) {
       const localKey = `game_state_${serverState.puzzle_number}`;
       const rawLocal = storage.getRaw(localKey);
-
       if (!rawLocal) {
         storage.save(localKey, {
           foundWords: serverState.found_words,
@@ -324,15 +316,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
 
       try {
-        interface PersistedState {
+        const saved = JSON.parse(rawLocal) as {
           foundWords: string[];
           score: number;
           hintsUnlocked: string[];
           startedAt: number;
           totalPausedMs: number;
           scoreBeforeHints: number | null;
-        }
-        const saved = JSON.parse(rawLocal) as PersistedState;
+        };
         const localSyncState: SyncPuzzleState = {
           puzzle_number: serverState.puzzle_number,
           found_words: saved.foundWords ?? [],
@@ -354,7 +345,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           totalPausedMs: merged.total_paused_ms,
           scoreBeforeHints: merged.score_before_hints,
         });
-        // Keep local stats up-to-date from merged puzzle state
+
         const currentStats =
           storage.load<PlayerStats>(STATS_STORAGE_KEY) ?? emptyStats();
         const existingRecord = currentStats.records.find(
@@ -368,19 +359,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           storage.save(STATS_STORAGE_KEY, updatedWithMergedWords);
         }
       } catch {
-        // Ignore parse errors — local state wins
+        // Ignore parse errors.
       }
     }
-
     return changed;
   },
 
   async syncStatsRecord(record: StatsRecord) {
-    const { isLoggedIn } = get();
-    if (!isLoggedIn) return;
     const stored = authService.getToken();
-    if (!stored) return;
-
+    if (!get().isLoggedIn || !stored) return;
     fetch(apiUrl('/api/player/sync/stats'), {
       method: 'POST',
       headers: authHeader(stored.token),
@@ -389,11 +376,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   async syncPuzzleState(state: SyncPuzzleState) {
-    const { isLoggedIn } = get();
-    if (!isLoggedIn) return;
     const stored = authService.getToken();
-    if (!stored) return;
-
+    if (!get().isLoggedIn || !stored) return;
     fetch(apiUrl('/api/player/sync/state'), {
       method: 'POST',
       headers: authHeader(stored.token),

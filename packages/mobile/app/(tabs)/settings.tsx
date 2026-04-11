@@ -1,4 +1,11 @@
-import { View, Text, Switch, StyleSheet, Pressable } from 'react-native';
+import {
+  View,
+  Text,
+  Switch,
+  StyleSheet,
+  Pressable,
+  ScrollView,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
 import { useBottomTabBarHeight } from 'react-native-bottom-tabs';
@@ -155,75 +162,82 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView
       edges={['top']}
-      style={[
-        styles.container,
-        { backgroundColor: theme.bgPrimary, paddingBottom: tabBarHeight },
-      ]}
+      style={[styles.container, { backgroundColor: theme.bgPrimary }]}
     >
-      <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
-        Teema
-      </Text>
-      <SettingGroup backgroundColor={theme.bgSecondary}>
-        <SettingRow
-          label="Tumma teema"
-          value={followSystem ? false : darkMode}
-          onValueChange={(v) => setThemePreference(v ? 'dark' : 'light')}
-          disabled={followSystem}
-          accentColor={theme.accent}
-          labelColor={theme.textPrimary}
-          borderColor={theme.border}
-        />
-        <SettingRow
-          label="Seuraa laitteen asetusta"
-          value={followSystem}
-          onValueChange={(v) => {
-            if (v) {
-              setThemePreference('system');
-            } else {
-              setThemePreference('light');
-            }
-          }}
-          accentColor={theme.accent}
-          labelColor={theme.textPrimary}
-          borderColor={theme.border}
-          isLast
-        />
-      </SettingGroup>
-
-      <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
-        Värinäpalaute
-      </Text>
-      <SettingGroup backgroundColor={theme.bgSecondary}>
-        <HapticsSegmentedControl
-          value={hapticsIntensity}
-          onChange={handleHapticsChange}
-          accentColor={theme.accent}
-          labelColor={theme.textPrimary}
-          bgColor={theme.bgSecondary}
-          borderColor={theme.border}
-        />
-      </SettingGroup>
-
-      <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
-        Tili
-      </Text>
-      <AuthSection theme={theme} />
-
-      <View style={{ flex: 1 }} />
-
-      <Pressable
-        style={[styles.licensesLink]}
-        onPress={() => router.push('/licenses')}
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: tabBarHeight + 12 },
+        ]}
+        showsVerticalScrollIndicator={false}
       >
-        <Text style={[styles.licensesText, { color: theme.textSecondary }]}>
-          Lisenssit
+        <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
+          Teema
         </Text>
-        <Ionicons name="chevron-forward" size={16} color={theme.textTertiary} />
-      </Pressable>
+        <SettingGroup backgroundColor={theme.bgSecondary}>
+          <SettingRow
+            label="Tumma teema"
+            value={followSystem ? false : darkMode}
+            onValueChange={(v) => setThemePreference(v ? 'dark' : 'light')}
+            disabled={followSystem}
+            accentColor={theme.accent}
+            labelColor={theme.textPrimary}
+            borderColor={theme.border}
+          />
+          <SettingRow
+            label="Seuraa laitteen asetusta"
+            value={followSystem}
+            onValueChange={(v) => {
+              if (v) {
+                setThemePreference('system');
+              } else {
+                setThemePreference('light');
+              }
+            }}
+            accentColor={theme.accent}
+            labelColor={theme.textPrimary}
+            borderColor={theme.border}
+            isLast
+          />
+        </SettingGroup>
 
-      <Text style={[styles.versionText, { color: theme.textTertiary }]}>
-        v{APP_VERSION}
-      </Text>
+        <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
+          Värinäpalaute
+        </Text>
+        <SettingGroup backgroundColor={theme.bgSecondary}>
+          <HapticsSegmentedControl
+            value={hapticsIntensity}
+            onChange={handleHapticsChange}
+            accentColor={theme.accent}
+            labelColor={theme.textPrimary}
+            bgColor={theme.bgSecondary}
+            borderColor={theme.border}
+          />
+        </SettingGroup>
+
+        <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
+          Tili
+        </Text>
+        <AuthSection theme={theme} />
+
+        <Pressable
+          style={[styles.licensesLink]}
+          onPress={() => router.push('/licenses')}
+        >
+          <Text style={[styles.licensesText, { color: theme.textSecondary }]}>
+            Lisenssit
+          </Text>
+          <Ionicons
+            name="chevron-forward"
+            size={16}
+            color={theme.textTertiary}
+          />
+        </Pressable>
+
+        <Text style={[styles.versionText, { color: theme.textTertiary }]}>
+          v{APP_VERSION}
+        </Text>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -231,6 +245,8 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  content: {
     padding: 20,
     gap: 8,
   },
