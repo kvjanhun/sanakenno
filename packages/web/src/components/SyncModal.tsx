@@ -138,9 +138,7 @@ export function SyncModal({
               Synkronoi muille laitteille
             </button>
             <hr style={{ borderColor: 'var(--color-text-tertiary)' }} />
-            <p style={{ color: 'var(--color-text-secondary)' }}>
-              Lisää koodi:
-            </p>
+            <p style={{ color: 'var(--color-text-secondary)' }}>Lisää koodi:</p>
             <div className="flex gap-2">
               <input
                 type="text"
