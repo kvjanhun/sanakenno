@@ -139,7 +139,7 @@ export function SyncModal({
             </button>
             <hr style={{ borderColor: 'var(--color-text-tertiary)' }} />
             <p style={{ color: 'var(--color-text-secondary)' }}>
-              Sinulla on koodi?
+              Lisää koodi:
             </p>
             <div className="flex gap-2">
               <input
