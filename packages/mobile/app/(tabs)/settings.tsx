@@ -170,6 +170,8 @@ export default function SettingsScreen() {
           { paddingBottom: tabBarHeight + 12 },
         ]}
         showsVerticalScrollIndicator={false}
+        automaticallyAdjustKeyboardInsets
+        keyboardShouldPersistTaps="handled"
       >
         <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
           Teema

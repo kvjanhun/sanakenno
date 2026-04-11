@@ -16,6 +16,8 @@ export interface AuthToken {
   token: string;
   playerId: number;
   expiresAt: string; // ISO 8601
+  /** True once the player has explicitly linked devices via useTransfer(). */
+  linked?: boolean;
 }
 
 /** Wire shape for a puzzle state in sync requests and responses. */

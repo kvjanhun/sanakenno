@@ -20,6 +20,7 @@ interface AuthSectionProps {
 
 export function AuthSection({ theme }: AuthSectionProps) {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
+  const isLinked = useAuthStore((s) => s.isLinked);
   const transferToken = useAuthStore((s) => s.transferToken);
   const isLoading = useAuthStore((s) => s.isLoading);
   const error = useAuthStore((s) => s.error);
@@ -229,52 +230,56 @@ export function AuthSection({ theme }: AuthSectionProps) {
         </View>
       ) : null}
 
-      <Text style={[styles.hint, { color: theme.textTertiary }]}>
-        Syötä koodi:
-      </Text>
-      <View style={styles.codeRow}>
-        <TextInput
-          value={codeInput}
-          onChangeText={(v) => {
-            setCodeInput(v);
-            if (error) useAuthStore.setState({ error: null });
-          }}
-          style={[
-            styles.input,
-            styles.codeInput,
-            {
-              backgroundColor: theme.bgPrimary,
-              color: theme.textPrimary,
-              borderColor: theme.border,
-            },
-          ]}
-        />
+      {!isLinked ? (
+        <>
+          <Text style={[styles.hint, { color: theme.textTertiary }]}>
+            Syötä koodi toiselta laitteelta:
+          </Text>
+          <View style={styles.codeRow}>
+            <TextInput
+              value={codeInput}
+              onChangeText={(v) => {
+                setCodeInput(v);
+                if (error) useAuthStore.setState({ error: null });
+              }}
+              style={[
+                styles.input,
+                styles.codeInput,
+                {
+                  backgroundColor: theme.bgPrimary,
+                  color: theme.textPrimary,
+                  borderColor: theme.border,
+                },
+              ]}
+            />
+            <Pressable
+              onPress={() => void handleUseCode()}
+              disabled={isLoading || !codeInput.trim()}
+              style={[
+                styles.primaryButton,
+                {
+                  backgroundColor: theme.accent,
+                  opacity: isLoading || !codeInput.trim() ? 0.6 : 1,
+                  paddingHorizontal: 14,
+                },
+              ]}
+            >
+              <Text style={styles.primaryButtonText}>Yhdistä</Text>
+            </Pressable>
+          </View>
+        </>
+      ) : (
         <Pressable
-          onPress={() => void handleUseCode()}
-          disabled={isLoading || !codeInput.trim()}
-          style={[
-            styles.primaryButton,
-            {
-              backgroundColor: theme.accent,
-              opacity: isLoading || !codeInput.trim() ? 0.6 : 1,
-              paddingHorizontal: 14,
-            },
-          ]}
+          onPress={() => void handleLogout()}
+          style={[styles.button, { borderColor: theme.border }]}
         >
-          <Text style={styles.primaryButtonText}>Yhdistä</Text>
+          <Text style={[styles.buttonText, { color: theme.textPrimary }]}>
+            Kirjaudu ulos
+          </Text>
         </Pressable>
-      </View>
+      )}
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-      <Pressable
-        onPress={() => void handleLogout()}
-        style={[styles.button, { borderColor: theme.border }]}
-      >
-        <Text style={[styles.buttonText, { color: theme.textPrimary }]}>
-          Kirjaudu ulos
-        </Text>
-      </Pressable>
     </View>
   );
 }

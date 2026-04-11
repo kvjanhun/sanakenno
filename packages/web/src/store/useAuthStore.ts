@@ -21,6 +21,7 @@ export interface AuthState {
   isLoggedIn: boolean;
   playerId: number | null;
   transferToken: string | null;
+  isLinked: boolean;
   isLoading: boolean;
   error: string | null;
   initialize(): void;
@@ -98,6 +99,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isLoggedIn: false,
   playerId: null,
   transferToken: null,
+  isLinked: false,
   isLoading: false,
   error: null,
 
@@ -119,7 +121,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           return;
         }
         const body = (await res.json()) as { player_id: number };
-        set({ isLoggedIn: true, playerId: body.player_id });
+        set({
+          isLoggedIn: true,
+          playerId: body.player_id,
+          isLinked: stored.linked ?? false,
+        });
 
         const syncRes = await fetch(apiUrl('/api/player/sync'), {
           headers: { Authorization: `Bearer ${stored.token}` },
@@ -142,7 +148,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         if (changed) window.location.reload();
       })
       .catch(() => {
-        set({ isLoggedIn: true, playerId: stored.playerId });
+        set({
+          isLoggedIn: true,
+          playerId: stored.playerId,
+          isLinked: stored.linked ?? false,
+        });
       });
   },
 
@@ -230,12 +240,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         expiresAt: new Date(
           Date.now() + 90 * 24 * 60 * 60 * 1000,
         ).toISOString(),
+        linked: true,
       };
       authService.setToken(authToken);
       set({
         isLoggedIn: true,
         playerId: body.player_id,
         transferToken: null,
+        isLinked: true,
         isLoading: false,
       });
       get().pullAndMerge({
@@ -265,7 +277,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
     authService.clearToken();
     storage.remove(AUTH_TOKEN_STORAGE_KEY);
-    set({ isLoggedIn: false, playerId: null, transferToken: null });
+    set({
+      isLoggedIn: false,
+      playerId: null,
+      transferToken: null,
+      isLinked: false,
+    });
     await get().initPlayer();
   },
 

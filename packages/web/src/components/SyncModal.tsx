@@ -14,6 +14,7 @@ export function SyncModal({
   onClose,
 }: SyncModalProps): React.JSX.Element | null {
   const transferToken = useAuthStore((s) => s.transferToken);
+  const isLinked = useAuthStore((s) => s.isLinked);
   const isLoading = useAuthStore((s) => s.isLoading);
   const error = useAuthStore((s) => s.error);
   const [mode, setMode] = useState<ViewMode>('options');
@@ -71,6 +72,11 @@ export function SyncModal({
     await useAuthStore.getState().useTransfer(token);
     if (!useAuthStore.getState().error) onClose();
   }, [codeInput, onClose]);
+
+  const handleLogout = useCallback(async () => {
+    await useAuthStore.getState().logout();
+    onClose();
+  }, [onClose]);
 
   const handleSendEmail = useCallback(async () => {
     const email = emailInput.trim();
@@ -173,38 +179,55 @@ export function SyncModal({
 
             <hr style={{ borderColor: 'var(--color-text-tertiary)' }} />
 
-            <p style={{ color: 'var(--color-text-secondary)' }}>
-              Sinulla on koodi?
-            </p>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={codeInput}
-                onChange={(e) => {
-                  setCodeInput(e.target.value);
-                  if (error) useAuthStore.setState({ error: null });
-                }}
-                className="flex-1 px-3 py-2 rounded-lg border text-sm"
+            {!isLinked ? (
+              <>
+                <p style={{ color: 'var(--color-text-secondary)' }}>
+                  Sinulla on koodi?
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={codeInput}
+                    onChange={(e) => {
+                      setCodeInput(e.target.value);
+                      if (error) useAuthStore.setState({ error: null });
+                    }}
+                    className="flex-1 px-3 py-2 rounded-lg border text-sm"
+                    style={{
+                      backgroundColor: 'var(--color-bg-secondary)',
+                      borderColor: 'var(--color-text-tertiary)',
+                      color: 'var(--color-text-primary)',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void handleUseCode()}
+                    className="py-2 px-3 rounded-lg font-medium cursor-pointer border-none"
+                    style={{
+                      backgroundColor: 'var(--color-accent)',
+                      color: '#fff',
+                      opacity: isLoading || !codeInput.trim() ? 0.6 : 1,
+                    }}
+                    disabled={isLoading || !codeInput.trim()}
+                  >
+                    Yhdistä
+                  </button>
+                </div>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => void handleLogout()}
+                className="w-full py-2 px-4 rounded-lg border cursor-pointer"
                 style={{
-                  backgroundColor: 'var(--color-bg-secondary)',
+                  backgroundColor: 'transparent',
                   borderColor: 'var(--color-text-tertiary)',
                   color: 'var(--color-text-primary)',
                 }}
-              />
-              <button
-                type="button"
-                onClick={() => void handleUseCode()}
-                className="py-2 px-3 rounded-lg font-medium cursor-pointer border-none"
-                style={{
-                  backgroundColor: 'var(--color-accent)',
-                  color: '#fff',
-                  opacity: isLoading || !codeInput.trim() ? 0.6 : 1,
-                }}
-                disabled={isLoading || !codeInput.trim()}
               >
-                Yhdistä
+                Kirjaudu ulos
               </button>
-            </div>
+            )}
           </div>
         )}
 

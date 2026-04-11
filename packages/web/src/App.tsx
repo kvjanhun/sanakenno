@@ -67,7 +67,7 @@ const useShowArchive = () => useGameStore((s) => s.showArchive);
 const useShowStats = () => useGameStore((s) => s.showStats);
 const useViewingPuzzleDate = () => useGameStore((s) => s.viewingPuzzleDate);
 
-const useAuthIsLoggedIn = () => useAuthStore((s) => s.isLoggedIn);
+const useAuthIsLinked = () => useAuthStore((s) => s.isLinked);
 
 /* Stable action references — these don't change between renders */
 const actions = () => {
@@ -100,8 +100,11 @@ const actions = () => {
 function App() {
   const puzzle = usePuzzle();
   const loading = useLoading();
-  const authIsLoggedIn = useAuthIsLoggedIn();
+  const authIsLinked = useAuthIsLinked();
   const [showAuth, setShowAuth] = useState(false);
+  const [connectBannerToken, setConnectBannerToken] = useState<string | null>(
+    null,
+  );
   const fetchError = useFetchError();
   const currentWord = useCurrentWord();
   const score = useScore();
@@ -161,7 +164,7 @@ function App() {
     const connectToken = params.get('connect');
     if (connectToken) {
       window.history.replaceState({}, '', '/');
-      void useAuthStore.getState().useTransfer(connectToken);
+      setConnectBannerToken(connectToken);
     }
   }, []);
 
@@ -225,10 +228,12 @@ function App() {
               onClick={() => setShowAuth(true)}
               className="py-2 pr-1 rounded-lg bg-transparent border-none cursor-pointer"
               style={{ color: 'var(--color-text-primary)' }}
-              aria-label={authIsLoggedIn ? 'Oma tili' : 'Kirjaudu'}
-              title={authIsLoggedIn ? 'Kirjautunut' : 'Kirjaudu sisään'}
+              aria-label={
+                authIsLinked ? 'Synkronointi aktiivinen' : 'Lisää laite'
+              }
+              title={authIsLinked ? 'Synkronointi aktiivinen' : 'Lisää laite'}
             >
-              <UserIcon loggedIn={authIsLoggedIn} />
+              <UserIcon loggedIn={authIsLinked} />
             </button>
             <button
               type="button"
@@ -318,6 +323,63 @@ function App() {
           </div>
         </div>
       </header>
+
+      {/* Connect-token banner — shown when a ?connect= URL is opened */}
+      {connectBannerToken && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+        >
+          <div
+            className="rounded-xl p-6 max-w-sm w-full mx-4 space-y-4"
+            style={{
+              backgroundColor: 'var(--color-bg-primary)',
+              color: 'var(--color-text-primary)',
+            }}
+          >
+            <h2 className="text-lg font-semibold">Yhdistä laite</h2>
+            <p
+              style={{
+                color: 'var(--color-text-secondary)',
+                fontSize: '0.9rem',
+              }}
+            >
+              Miten haluat yhdistää tämän laitteen?
+            </p>
+            <button
+              type="button"
+              className="w-full py-2 px-4 rounded-lg font-medium cursor-pointer border-none"
+              style={{ backgroundColor: 'var(--color-accent)', color: '#fff' }}
+              onClick={() => {
+                const t = connectBannerToken;
+                setConnectBannerToken(null);
+                void useAuthStore.getState().useTransfer(t);
+              }}
+            >
+              Yhdistä tähän selaimeen
+            </button>
+            <a
+              href={`sanakenno://auth?connect=${encodeURIComponent(connectBannerToken)}`}
+              className="block w-full py-2 px-4 rounded-lg border text-center cursor-pointer no-underline"
+              style={{
+                borderColor: 'var(--color-text-tertiary)',
+                color: 'var(--color-text-primary)',
+              }}
+              onClick={() => setConnectBannerToken(null)}
+            >
+              Avaa Sanakenno-sovelluksessa
+            </a>
+            <button
+              type="button"
+              className="w-full bg-transparent border-none cursor-pointer text-sm"
+              style={{ color: 'var(--color-text-tertiary)' }}
+              onClick={() => setConnectBannerToken(null)}
+            >
+              Peruuta
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Rules modal */}
       <RulesModal show={showRules} onClose={() => setShowRules(false)} />
