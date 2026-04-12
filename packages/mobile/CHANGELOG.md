@@ -1,5 +1,12 @@
 # @sanakenno/mobile
 
+## 0.4.2
+
+### Patch Changes
+
+- Archive: mark revealed puzzles in the archive list and show a clear no-stats notice in the puzzle action sheet
+- Archive: change puzzle action modal animation to fade so the dark overlay fades in instead of rolling up
+
 ## 0.4.0
 
 ### Minor Changes

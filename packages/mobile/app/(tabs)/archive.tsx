@@ -118,6 +118,16 @@ export default function ArchiveScreen() {
     return map;
   }, [entries]);
 
+  const revealedPuzzles = useMemo(() => {
+    const set = new Set<number>();
+    for (const entry of entries) {
+      if (storage.getRaw(`revealed_${entry.puzzle_number}`) === 'true') {
+        set.add(entry.puzzle_number);
+      }
+    }
+    return set;
+  }, [entries]);
+
   const handleTodayPress = useCallback(
     (puzzleNumber: number) => {
       fetchPuzzle(puzzleNumber);
@@ -250,6 +260,7 @@ export default function ArchiveScreen() {
         renderItem={({ item }) => {
           const isCurrent = item.puzzle_number === currentPuzzleNumber;
           const progress = savedProgress.get(item.puzzle_number);
+          const isRevealed = revealedPuzzles.has(item.puzzle_number);
           return (
             <Pressable
               onPress={() => handlePastPress(item)}
@@ -273,6 +284,26 @@ export default function ArchiveScreen() {
                 </Text>
               </View>
               <View style={styles.rowRight}>
+                {isRevealed && (
+                  <View
+                    style={[
+                      styles.revealedBadge,
+                      {
+                        backgroundColor: theme.bgPrimary,
+                        borderColor: theme.border,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.revealedText,
+                        { color: theme.textSecondary },
+                      ]}
+                    >
+                      Paljastettu
+                    </Text>
+                  </View>
+                )}
                 {progress && (
                   <View
                     style={[
@@ -305,7 +336,7 @@ export default function ArchiveScreen() {
       <Modal
         visible={selectedEntry !== null}
         transparent
-        animationType="slide"
+        animationType="fade"
         onRequestClose={() => setSelectedEntry(null)}
       >
         <TouchableWithoutFeedback onPress={() => setSelectedEntry(null)}>
@@ -320,6 +351,27 @@ export default function ArchiveScreen() {
                 Kenno #{selectedEntry.puzzle_number + 1} ·{' '}
                 {formatFinnishDate(selectedEntry.date)}
               </Text>
+              {revealedPuzzles.has(selectedEntry.puzzle_number) && (
+                <View
+                  style={[
+                    styles.sheetNotice,
+                    {
+                      backgroundColor: theme.bgSecondary,
+                      borderColor: theme.border,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.sheetNoticeText,
+                      { color: theme.textSecondary },
+                    ]}
+                  >
+                    Vastaukset on jo paljastettu. Tästä kennosta ei enää kerry
+                    tilastoja.
+                  </Text>
+                </View>
+              )}
               <Pressable
                 onPress={handlePlay}
                 style={[styles.sheetButton, { backgroundColor: theme.accent }]}
@@ -430,6 +482,16 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '500',
   },
+  revealedBadge: {
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  revealedText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
@@ -455,6 +517,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     marginBottom: 4,
+  },
+  sheetNotice: {
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 2,
+  },
+  sheetNoticeText: {
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 18,
   },
   sheetButton: {
     borderRadius: 12,
