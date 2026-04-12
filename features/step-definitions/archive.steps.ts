@@ -172,6 +172,23 @@ Then(
   },
 );
 
+Then(
+  'the last entry date should be the rotation epoch',
+  function (this: SanakennoWorld) {
+    const db = getDb();
+    const row = db
+      .prepare("SELECT value FROM config WHERE key = 'rotation_epoch'")
+      .get() as { value: string } | undefined;
+    const epochDate = row?.value ?? '2026-02-24';
+    const last = this.archiveEntries[this.archiveEntries.length - 1];
+    assert.equal(
+      last.date,
+      epochDate,
+      `Expected last entry to be epoch ${epochDate}, got ${last.date}`,
+    );
+  },
+);
+
 When(
   'a GET request is made to \\/api\\/puzzle\\/{int}\\/words',
   async function (this: SanakennoWorld, puzzleNumber: number) {

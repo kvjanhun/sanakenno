@@ -28,6 +28,11 @@ Feature: Puzzle archive
     Then the response status should be 200
     And the response should contain more than 7 entries
 
+  Scenario: Archive with all=true covers from today back to the rotation epoch
+    When a GET request is made to /api/archive?all=true
+    Then the first entry should have is_today true
+    And the last entry date should be the rotation epoch
+
   # --- Word list endpoint ---
 
   Scenario: Word list is available for a past puzzle

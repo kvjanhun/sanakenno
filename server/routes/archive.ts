@@ -12,7 +12,7 @@ import { Hono } from 'hono';
 import {
   getPuzzleForDate,
   getPuzzleBySlot,
-  totalPuzzles,
+  getRotationEpoch,
 } from '../puzzle-engine';
 
 interface ArchiveEntry {
@@ -36,9 +36,39 @@ const archive = new Hono();
 archive.get('/', (c) => {
   try {
     const allParam = c.req.query('all');
-    const total = totalPuzzles();
-    const days = allParam === 'true' ? Math.max(total, 7) : 7;
     const now = new Date();
+
+    let days: number;
+    if (allParam === 'true') {
+      // Compute the number of days since the rotation epoch in Helsinki time,
+      // so ?all=true returns exactly one entry per day the game has been live —
+      // no overflow into future slots, no underflow cutting off early history.
+      const helsinkiNow = new Date(
+        now.toLocaleString('en-US', { timeZone: 'Europe/Helsinki' }),
+      );
+      const epoch = getRotationEpoch();
+      const epochHelsinki = new Date(
+        epoch.toLocaleString('en-US', { timeZone: 'Europe/Helsinki' }),
+      );
+      const todayMidnight = new Date(
+        helsinkiNow.getFullYear(),
+        helsinkiNow.getMonth(),
+        helsinkiNow.getDate(),
+      );
+      const epochMidnight = new Date(
+        epochHelsinki.getFullYear(),
+        epochHelsinki.getMonth(),
+        epochHelsinki.getDate(),
+      );
+      const daysSinceEpoch = Math.round(
+        (todayMidnight.getTime() - epochMidnight.getTime()) /
+          (1000 * 60 * 60 * 24),
+      );
+      days = daysSinceEpoch + 1; // +1 to include today
+    } else {
+      days = 7;
+    }
+
     const entries: ArchiveEntry[] = [];
 
     for (let daysAgo = 0; daysAgo < days; daysAgo++) {
