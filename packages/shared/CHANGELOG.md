@@ -1,5 +1,11 @@
 # @sanakenno/shared
 
+## 1.2.0
+
+### Minor Changes
+
+- Add longest_word and pangrams_found per-puzzle stats fields; expand archive API with all=true param and puzzle words endpoint; update sync merge logic for new fields.
+
 ## 1.1.0
 
 ## 1.0.2

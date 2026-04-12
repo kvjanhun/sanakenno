@@ -6,6 +6,8 @@ import {
   Pressable,
   StyleSheet,
   ActivityIndicator,
+  Modal,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -36,6 +38,35 @@ function formatFinnishDate(dateStr: string): string {
   });
 }
 
+function LetterDisplay({
+  letters,
+  center,
+  theme,
+}: {
+  letters: string[];
+  center: string;
+  theme: ReturnType<typeof import('../../src/theme').useTheme>;
+}) {
+  return (
+    <Text style={[styles.letters, { color: theme.textSecondary }]}>
+      {letters
+        .map((l, i) =>
+          l === center ? (
+            <Text key={i} style={{ color: theme.accent }}>
+              {l.toUpperCase()}
+            </Text>
+          ) : (
+            l.toUpperCase()
+          ),
+        )
+        .reduce<React.ReactNode[]>((acc, el, i) => {
+          if (i === 0) return [el];
+          return [...acc, ' ', el];
+        }, [])}
+    </Text>
+  );
+}
+
 export default function ArchiveScreen() {
   const theme = useTheme();
   const router = useRouter();
@@ -44,13 +75,13 @@ export default function ArchiveScreen() {
   const [entries, setEntries] = useState<ArchiveEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selectedEntry, setSelectedEntry] = useState<ArchiveEntry | null>(null);
   const hasFetched = useRef(false);
 
   useFocusEffect(
     useCallback(() => {
-      // Show spinner only on first visit; silently update on subsequent focuses
       if (!hasFetched.current) setLoading(true);
-      fetch(`${config.apiBase}/api/archive`)
+      fetch(`${config.apiBase}/api/archive?all=true`)
         .then((res) => {
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           return res.json() as Promise<ArchiveEntry[]>;
@@ -69,10 +100,8 @@ export default function ArchiveScreen() {
     }, []),
   );
 
-  // Keep currentPuzzleNumber-dependent highlight fresh (no extra fetch needed)
   useEffect(() => {}, [currentPuzzleNumber]);
 
-  // Build a map of puzzleNumber → { score, rank } from local storage
   const savedProgress = useMemo(() => {
     const map = new Map<number, { score: number; rank: string }>();
     for (const entry of entries) {
@@ -89,13 +118,31 @@ export default function ArchiveScreen() {
     return map;
   }, [entries]);
 
-  const handlePress = useCallback(
+  const handleTodayPress = useCallback(
     (puzzleNumber: number) => {
       fetchPuzzle(puzzleNumber);
       router.back();
     },
     [fetchPuzzle, router],
   );
+
+  const handlePastPress = useCallback((entry: ArchiveEntry) => {
+    setSelectedEntry(entry);
+  }, []);
+
+  const handlePlay = useCallback(() => {
+    if (!selectedEntry) return;
+    setSelectedEntry(null);
+    fetchPuzzle(selectedEntry.puzzle_number);
+    router.back();
+  }, [selectedEntry, fetchPuzzle, router]);
+
+  const handleViewWords = useCallback(() => {
+    if (!selectedEntry) return;
+    const number = selectedEntry.puzzle_number;
+    setSelectedEntry(null);
+    router.push(`/puzzle-words?number=${number}`);
+  }, [selectedEntry, router]);
 
   if (loading) {
     return (
@@ -119,31 +166,96 @@ export default function ArchiveScreen() {
     );
   }
 
+  const today = entries.find((e) => e.is_today);
+  const pastEntries = entries.filter((e) => !e.is_today);
+
   return (
-    <FlatList
-      data={entries.filter((e) => !e.is_today)}
-      keyExtractor={(item) => String(item.puzzle_number)}
-      style={{ backgroundColor: theme.bgPrimary, flex: 1 }}
-      contentContainerStyle={styles.list}
-      contentInsetAdjustmentBehavior="automatic"
-      ListHeaderComponent={() => {
-        const today = entries.find((e) => e.is_today);
-        if (!today) return null;
-        const isCurrent = today.puzzle_number === currentPuzzleNumber;
-        const progress = savedProgress.get(today.puzzle_number);
-        return (
-          <>
-            <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>
-              Tänään
-            </Text>
+    <View style={[styles.flex, { backgroundColor: theme.bgPrimary }]}>
+      {/* Today's card — always visible, never scrolls away */}
+      {today && (
+        <View style={styles.todaySection}>
+          <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>
+            Tänään
+          </Text>
+          <Pressable
+            onPress={() => handleTodayPress(today.puzzle_number)}
+            style={[
+              styles.row,
+              {
+                backgroundColor: theme.bgSecondary,
+                borderColor:
+                  today.puzzle_number === currentPuzzleNumber
+                    ? theme.accent
+                    : theme.border,
+                borderWidth:
+                  today.puzzle_number === currentPuzzleNumber ? 2 : 1,
+              },
+            ]}
+          >
+            <View style={styles.rowLeft}>
+              <Text style={[styles.puzzleNum, { color: theme.textSecondary }]}>
+                #{today.puzzle_number + 1}
+              </Text>
+              <Text style={[styles.date, { color: theme.textPrimary }]}>
+                {formatFinnishDate(today.date)}
+              </Text>
+            </View>
+            <View style={styles.rowRight}>
+              {savedProgress.get(today.puzzle_number) && (
+                <View
+                  style={[
+                    styles.rankBadge,
+                    {
+                      backgroundColor: theme.bgPrimary,
+                      borderColor: theme.border,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[styles.rankText, { color: theme.textSecondary }]}
+                  >
+                    {savedProgress.get(today.puzzle_number)!.rank} ·{' '}
+                    {savedProgress.get(today.puzzle_number)!.score}p
+                  </Text>
+                </View>
+              )}
+              <LetterDisplay
+                letters={today.letters}
+                center={today.center}
+                theme={theme}
+              />
+            </View>
+          </Pressable>
+          <Text
+            style={[
+              styles.sectionLabel,
+              { color: theme.textSecondary, marginTop: 8 },
+            ]}
+          >
+            Arkisto
+          </Text>
+        </View>
+      )}
+
+      {/* Past puzzles list */}
+      <FlatList
+        data={pastEntries}
+        keyExtractor={(item) => String(item.puzzle_number)}
+        style={styles.flex}
+        contentContainerStyle={styles.list}
+        contentInsetAdjustmentBehavior="automatic"
+        renderItem={({ item }) => {
+          const isCurrent = item.puzzle_number === currentPuzzleNumber;
+          const progress = savedProgress.get(item.puzzle_number);
+          return (
             <Pressable
-              onPress={() => handlePress(today.puzzle_number)}
+              onPress={() => handlePastPress(item)}
               style={[
                 styles.row,
                 {
-                  backgroundColor: theme.bgSecondary,
                   borderColor: isCurrent ? theme.accent : theme.border,
                   borderWidth: isCurrent ? 2 : 1,
+                  backgroundColor: theme.bgSecondary,
                 },
               ]}
             >
@@ -151,10 +263,10 @@ export default function ArchiveScreen() {
                 <Text
                   style={[styles.puzzleNum, { color: theme.textSecondary }]}
                 >
-                  #{today.puzzle_number + 1}
+                  #{item.puzzle_number + 1}
                 </Text>
                 <Text style={[styles.date, { color: theme.textPrimary }]}>
-                  {formatFinnishDate(today.date)}
+                  {formatFinnishDate(item.date)}
                 </Text>
               </View>
               <View style={styles.rowRight}>
@@ -175,105 +287,93 @@ export default function ArchiveScreen() {
                     </Text>
                   </View>
                 )}
-                <Text style={[styles.letters, { color: theme.textSecondary }]}>
-                  {today.letters
-                    .map((l, i) =>
-                      l === today.center ? (
-                        <Text key={i} style={{ color: theme.accent }}>
-                          {l.toUpperCase()}
-                        </Text>
-                      ) : (
-                        l.toUpperCase()
-                      ),
-                    )
-                    .reduce<React.ReactNode[]>((acc, el, i) => {
-                      if (i === 0) return [el];
-                      return [...acc, ' ', el];
-                    }, [])}
-                </Text>
+                <LetterDisplay
+                  letters={item.letters}
+                  center={item.center}
+                  theme={theme}
+                />
               </View>
             </Pressable>
-            <Text
-              style={[
-                styles.sectionLabel,
-                { color: theme.textSecondary, marginTop: 8 },
-              ]}
-            >
-              Arkisto
-            </Text>
-          </>
-        );
-      }}
-      renderItem={({ item }) => {
-        const isCurrent = item.puzzle_number === currentPuzzleNumber;
-        const progress = savedProgress.get(item.puzzle_number);
-        return (
-          <Pressable
-            onPress={() => handlePress(item.puzzle_number)}
-            style={[
-              styles.row,
-              {
-                borderColor: isCurrent ? theme.accent : theme.border,
-                borderWidth: isCurrent ? 2 : 1,
-                backgroundColor: theme.bgSecondary,
-              },
-            ]}
-          >
-            <View style={styles.rowLeft}>
-              <Text style={[styles.puzzleNum, { color: theme.textSecondary }]}>
-                #{item.puzzle_number + 1}
+          );
+        }}
+      />
+
+      {/* Bottom sheet for past puzzle options */}
+      <Modal
+        visible={selectedEntry !== null}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setSelectedEntry(null)}
+      >
+        <TouchableWithoutFeedback onPress={() => setSelectedEntry(null)}>
+          <View style={styles.backdrop} />
+        </TouchableWithoutFeedback>
+        <View
+          style={[styles.bottomSheet, { backgroundColor: theme.bgPrimary }]}
+        >
+          {selectedEntry && (
+            <>
+              <Text style={[styles.sheetTitle, { color: theme.textSecondary }]}>
+                Kenno #{selectedEntry.puzzle_number + 1} ·{' '}
+                {formatFinnishDate(selectedEntry.date)}
               </Text>
-              <Text style={[styles.date, { color: theme.textPrimary }]}>
-                {formatFinnishDate(item.date)}
-              </Text>
-            </View>
-            <View style={styles.rowRight}>
-              {progress && (
-                <View
+              <Pressable
+                onPress={handlePlay}
+                style={[styles.sheetButton, { backgroundColor: theme.accent }]}
+              >
+                <Text
+                  style={[styles.sheetButtonText, { color: theme.onAccent }]}
+                >
+                  Pelaa
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={handleViewWords}
+                style={[
+                  styles.sheetButton,
+                  { backgroundColor: theme.bgSecondary },
+                ]}
+              >
+                <Text
+                  style={[styles.sheetButtonText, { color: theme.textPrimary }]}
+                >
+                  Näytä vastaukset
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setSelectedEntry(null)}
+                style={styles.sheetCancel}
+              >
+                <Text
                   style={[
-                    styles.rankBadge,
-                    {
-                      backgroundColor: theme.bgPrimary,
-                      borderColor: theme.border,
-                    },
+                    styles.sheetCancelText,
+                    { color: theme.textSecondary },
                   ]}
                 >
-                  <Text
-                    style={[styles.rankText, { color: theme.textSecondary }]}
-                  >
-                    {progress.rank} · {progress.score}p
-                  </Text>
-                </View>
-              )}
-              <Text style={[styles.letters, { color: theme.textSecondary }]}>
-                {item.letters
-                  .map((l, i) =>
-                    l === item.center ? (
-                      <Text key={i} style={{ color: theme.accent }}>
-                        {l.toUpperCase()}
-                      </Text>
-                    ) : (
-                      l.toUpperCase()
-                    ),
-                  )
-                  .reduce<React.ReactNode[]>((acc, el, i) => {
-                    if (i === 0) return [el];
-                    return [...acc, ' ', el];
-                  }, [])}
-              </Text>
-            </View>
-          </Pressable>
-        );
-      }}
-    />
+                  Peruuta
+                </Text>
+              </Pressable>
+            </>
+          )}
+        </View>
+      </Modal>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  todaySection: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 0,
   },
   list: {
     padding: 16,
@@ -325,5 +425,48 @@ const styles = StyleSheet.create({
   rankText: {
     fontSize: 11,
     fontWeight: '500',
+  },
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  bottomSheet: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 40,
+    gap: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: -4 },
+    elevation: 12,
+  },
+  sheetTitle: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  sheetButton: {
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  sheetButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  sheetCancel: {
+    paddingVertical: 10,
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  sheetCancelText: {
+    fontSize: 15,
   },
 });

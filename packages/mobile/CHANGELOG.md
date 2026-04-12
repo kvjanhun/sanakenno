@@ -1,5 +1,16 @@
 # @sanakenno/mobile
 
+## 0.4.0
+
+### Minor Changes
+
+- Archive: show all past puzzles (pinned today card above scrollable list); bottom sheet on past puzzle tap with Pelaa / Näytä vastaukset options
+- New puzzle-words screen: shows found vs missed words, sets revealed flag to freeze stats
+- Stats screen: longest word, total words, total pangrams summary rows
+- Hint panel: re-tapping active tab hides the panel; height reserved when hidden
+- Updated dependencies
+  - @sanakenno/shared@1.2.0
+
 ## 1.1.0
 
 ### Patch Changes

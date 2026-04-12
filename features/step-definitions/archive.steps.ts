@@ -14,7 +14,11 @@ import {
 import assert from 'node:assert/strict';
 import app from '../../server/index';
 import { getDb, closeDb, setDb } from '../../server/db/connection';
-import { setWordlist, invalidateAll } from '../../server/puzzle-engine';
+import {
+  setWordlist,
+  invalidateAll,
+  getPuzzleForDate,
+} from '../../server/puzzle-engine';
 import type { SanakennoWorld } from './types';
 
 interface ArchiveEntry {
@@ -146,5 +150,59 @@ Then(
       (e: ArchiveEntry) => e.is_today,
     ).length;
     assert.equal(todayCount, 1);
+  },
+);
+
+When(
+  /^a GET request is made to \/api\/archive\?all=true$/,
+  async function (this: SanakennoWorld) {
+    this.response = await app.request('/api/archive?all=true');
+    this.responseJson = await this.response.json();
+    this.archiveEntries = this.responseJson as unknown as ArchiveEntry[];
+  },
+);
+
+Then(
+  'the response should contain more than {int} entries',
+  function (this: SanakennoWorld, minCount: number) {
+    assert.ok(
+      this.archiveEntries.length > minCount,
+      `Expected more than ${minCount} entries, got ${this.archiveEntries.length}`,
+    );
+  },
+);
+
+When(
+  'a GET request is made to \\/api\\/puzzle\\/{int}\\/words',
+  async function (this: SanakennoWorld, puzzleNumber: number) {
+    this.response = await app.request(`/api/puzzle/${puzzleNumber}/words`);
+    this.responseJson = await this.response.clone().json();
+  },
+);
+
+When(
+  /^a GET request is made to \/api\/puzzle\/([a-zA-Z][a-zA-Z0-9]*)\/words$/,
+  async function (this: SanakennoWorld, identifier: string) {
+    if (identifier === 'today') {
+      const now = new Date();
+      const helsinki = new Date(
+        now.toLocaleString('en-US', { timeZone: 'Europe/Helsinki' }),
+      );
+      const todaySlot = getPuzzleForDate(helsinki);
+      this.response = await app.request(`/api/puzzle/${todaySlot}/words`);
+    } else {
+      this.response = await app.request(`/api/puzzle/${identifier}/words`);
+    }
+    this.responseJson = await this.response.clone().json();
+  },
+);
+
+Then(
+  'the response should contain a {string} array',
+  function (this: SanakennoWorld, field: string) {
+    assert.ok(
+      Array.isArray((this.responseJson as Record<string, unknown>)[field]),
+      `Expected "${field}" to be an array`,
+    );
   },
 );

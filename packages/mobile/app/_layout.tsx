@@ -112,6 +112,10 @@ export default function RootLayout() {
           name="licenses"
           options={{ presentation: 'modal', headerShown: false }}
         />
+        <Stack.Screen
+          name="puzzle-words"
+          options={{ presentation: 'modal', headerShown: false }}
+        />
       </Stack>
       {/* JS-level overlay that covers the skeleton/wireframe until the puzzle loads */}
       <Animated.View

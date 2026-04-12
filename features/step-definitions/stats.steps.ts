@@ -120,6 +120,140 @@ Then(
 );
 
 /* ------------------------------------------------------------------ */
+/*  longest_word and pangrams_found                                    */
+/* ------------------------------------------------------------------ */
+
+When(
+  'the player finds a word {string} on puzzle {int} dated {string}',
+  function (
+    this: SanakennoWorld,
+    word: string,
+    puzzleNum: number,
+    date: string,
+  ) {
+    this.playerStats = updateStatsRecord(
+      this.playerStats,
+      makeRecord({
+        puzzle_number: puzzleNum,
+        date,
+        best_rank: 'Hyvä alku',
+        best_score: 1,
+        words_found: 1,
+        longest_word: word,
+      }),
+    );
+  },
+);
+
+Given(
+  'a stats record for puzzle {int} with longest_word {string}',
+  function (this: SanakennoWorld, puzzleNum: number, word: string) {
+    this.playerStats = updateStatsRecord(
+      this.playerStats,
+      makeRecord({
+        puzzle_number: puzzleNum,
+        date: '2026-04-01',
+        best_rank: 'Onnistuja',
+        best_score: 20,
+        longest_word: word,
+      }),
+    );
+  },
+);
+
+When(
+  'the stats record is updated with longest_word {string} on puzzle {int}',
+  function (this: SanakennoWorld, word: string, puzzleNum: number) {
+    this.playerStats = updateStatsRecord(
+      this.playerStats,
+      makeRecord({
+        puzzle_number: puzzleNum,
+        date: '2026-04-01',
+        best_rank: 'Onnistuja',
+        best_score: 25,
+        longest_word: word,
+      }),
+    );
+  },
+);
+
+Then(
+  'the stats record for puzzle {int} should have longest_word {string}',
+  function (this: SanakennoWorld, puzzleNum: number, expected: string) {
+    const rec = this.playerStats.records.find(
+      (r) => r.puzzle_number === puzzleNum,
+    );
+    assert.ok(rec, `No record for puzzle ${puzzleNum}`);
+    assert.equal(rec.longest_word, expected);
+  },
+);
+
+Then(
+  'the stats record for puzzle {int} should still have longest_word {string}',
+  function (this: SanakennoWorld, puzzleNum: number, expected: string) {
+    const rec = this.playerStats.records.find(
+      (r) => r.puzzle_number === puzzleNum,
+    );
+    assert.ok(rec, `No record for puzzle ${puzzleNum}`);
+    assert.equal(rec.longest_word, expected);
+  },
+);
+
+Given(
+  'a stats record for puzzle {int} with pangrams_found {int}',
+  function (this: SanakennoWorld, puzzleNum: number, count: number) {
+    this.playerStats = updateStatsRecord(
+      this.playerStats,
+      makeRecord({
+        puzzle_number: puzzleNum,
+        date: '2026-04-01',
+        best_rank: 'Onnistuja',
+        best_score: 20,
+        pangrams_found: count,
+      }),
+    );
+  },
+);
+
+When(
+  'the stats record is updated with pangrams_found {int} on puzzle {int}',
+  function (this: SanakennoWorld, count: number, puzzleNum: number) {
+    this.playerStats = updateStatsRecord(
+      this.playerStats,
+      makeRecord({
+        puzzle_number: puzzleNum,
+        date: '2026-04-01',
+        best_rank: 'Onnistuja',
+        best_score: 25,
+        pangrams_found: count,
+      }),
+    );
+  },
+);
+
+Then(
+  'the stats record for puzzle {int} should have pangrams_found {int}',
+  function (this: SanakennoWorld, puzzleNum: number, expected: number) {
+    const rec = this.playerStats.records.find(
+      (r) => r.puzzle_number === puzzleNum,
+    );
+    assert.ok(rec, `No record for puzzle ${puzzleNum}`);
+    assert.equal(rec.pangrams_found ?? 0, expected);
+  },
+);
+
+Then(
+  'the stats record for puzzle {int} should still have pangrams_found {int}',
+  function (this: SanakennoWorld, puzzleNum: number, expected: number) {
+    const rec = this.playerStats.records.find(
+      (r) => r.puzzle_number === puzzleNum,
+    );
+    assert.ok(rec, `No record for puzzle ${puzzleNum}`);
+    assert.equal(rec.pangrams_found ?? 0, expected);
+  },
+);
+
+/* ------------------------------------------------------------------ */
 /*  Streaks                                                            */
 /* ------------------------------------------------------------------ */
 

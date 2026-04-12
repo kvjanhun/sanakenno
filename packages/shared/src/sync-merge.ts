@@ -29,6 +29,9 @@ export function mergeStatsRecord(
   const useIncomingRank =
     rankIndex(incoming.best_rank) > rankIndex(existing.best_rank);
 
+  const existingLW = existing.longest_word ?? '';
+  const incomingLW = incoming.longest_word ?? '';
+
   return {
     puzzle_number: existing.puzzle_number,
     date: existing.date,
@@ -38,6 +41,12 @@ export function mergeStatsRecord(
     words_found: Math.max(existing.words_found, incoming.words_found),
     hints_used: Math.max(existing.hints_used, incoming.hints_used),
     elapsed_ms: Math.max(existing.elapsed_ms, incoming.elapsed_ms),
+    longest_word:
+      existingLW.length >= incomingLW.length ? existingLW : incomingLW,
+    pangrams_found: Math.max(
+      existing.pangrams_found ?? 0,
+      incoming.pangrams_found ?? 0,
+    ),
   };
 }
 

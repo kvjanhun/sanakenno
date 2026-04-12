@@ -38,6 +38,8 @@ sync.get('/', (c) => {
     words_found: number;
     hints_used: number;
     elapsed_ms: number;
+    longest_word: string | null;
+    pangrams_found: number;
   }
 
   interface StateRow {
@@ -53,7 +55,7 @@ sync.get('/', (c) => {
   const statsRows = db
     .prepare(
       `SELECT puzzle_number, date, best_rank, best_score, max_score,
-              words_found, hints_used, elapsed_ms
+              words_found, hints_used, elapsed_ms, longest_word, pangrams_found
        FROM player_stats WHERE player_id = ?`,
     )
     .all(playerId) as StatRow[];
@@ -77,6 +79,8 @@ sync.get('/', (c) => {
         words_found: r.words_found,
         hints_used: r.hints_used,
         elapsed_ms: r.elapsed_ms,
+        longest_word: r.longest_word ?? undefined,
+        pangrams_found: r.pangrams_found,
       })),
       version: 1,
     },
@@ -113,6 +117,10 @@ sync.post('/stats', async (c) => {
   const words_found = body['words_found'] as number | undefined;
   const hints_used = body['hints_used'] as number | undefined;
   const elapsed_ms = body['elapsed_ms'] as number | undefined;
+  const longest_word =
+    typeof body['longest_word'] === 'string' ? body['longest_word'] : null;
+  const pangrams_found =
+    typeof body['pangrams_found'] === 'number' ? body['pangrams_found'] : 0;
 
   if (
     typeof puzzle_number !== 'number' ||
@@ -132,11 +140,14 @@ sync.post('/stats', async (c) => {
     words_found: number;
     hints_used: number;
     elapsed_ms: number;
+    longest_word: string | null;
+    pangrams_found: number;
   }
 
   const existing = db
     .prepare(
-      `SELECT best_rank, best_score, max_score, words_found, hints_used, elapsed_ms
+      `SELECT best_rank, best_score, max_score, words_found, hints_used, elapsed_ms,
+              longest_word, pangrams_found
        FROM player_stats WHERE player_id = ? AND puzzle_number = ?`,
     )
     .get(playerId, puzzle_number) as ExistingStatRow | undefined;
@@ -146,8 +157,8 @@ sync.post('/stats', async (c) => {
     db.prepare(
       `INSERT INTO player_stats
          (player_id, puzzle_number, date, best_rank, best_score,
-          max_score, words_found, hints_used, elapsed_ms)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          max_score, words_found, hints_used, elapsed_ms, longest_word, pangrams_found)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       playerId,
       puzzle_number,
@@ -158,6 +169,8 @@ sync.post('/stats', async (c) => {
       words_found ?? 0,
       hints_used ?? 0,
       elapsed_ms ?? 0,
+      longest_word,
+      pangrams_found,
     );
   } else {
     // Merge: take best of server and incoming
@@ -165,6 +178,10 @@ sync.post('/stats', async (c) => {
       rankIndex(best_rank) > rankIndex(existing.best_rank)
         ? best_rank
         : existing.best_rank;
+    const existingLW = existing.longest_word ?? '';
+    const incomingLW = longest_word ?? '';
+    const mergedLongestWord =
+      existingLW.length >= incomingLW.length ? existingLW || null : incomingLW;
 
     db.prepare(
       `UPDATE player_stats SET
@@ -174,6 +191,8 @@ sync.post('/stats', async (c) => {
          words_found = MAX(words_found, ?),
          hints_used = MAX(hints_used, ?),
          elapsed_ms = MAX(elapsed_ms, ?),
+         longest_word = ?,
+         pangrams_found = MAX(pangrams_found, ?),
          updated_at = datetime('now')
        WHERE player_id = ? AND puzzle_number = ?`,
     ).run(
@@ -183,6 +202,8 @@ sync.post('/stats', async (c) => {
       words_found ?? 0,
       hints_used ?? 0,
       elapsed_ms ?? 0,
+      mergedLongestWord || null,
+      pangrams_found,
       playerId,
       puzzle_number,
     );

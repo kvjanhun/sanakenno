@@ -19,6 +19,10 @@ export interface StatsRecord {
   words_found: number;
   hints_used: number;
   elapsed_ms: number;
+  /** Longest word found in this puzzle (empty string if none yet). */
+  longest_word?: string;
+  /** Number of pangrams found in this puzzle. */
+  pangrams_found?: number;
 }
 
 /** Top-level stats shape stored via platform storage. */
@@ -36,6 +40,13 @@ export function rankIndex(name: string): number {
   if (idx === -1) return -1;
   // Invert so higher rank = higher number
   return RANKS.length - 1 - idx;
+}
+
+/** Return whichever word is longer; prefers `a` on ties. */
+function longerWord(a: string | undefined, b: string | undefined): string {
+  const wa = a ?? '';
+  const wb = b ?? '';
+  return wa.length >= wb.length ? wa : wb;
 }
 
 /**
@@ -71,6 +82,11 @@ export function updateStatsRecord(
             words_found: Math.max(r.words_found, record.words_found),
             hints_used: Math.max(r.hints_used, record.hints_used),
             elapsed_ms: Math.max(r.elapsed_ms, record.elapsed_ms),
+            longest_word: longerWord(r.longest_word, record.longest_word),
+            pangrams_found: Math.max(
+              r.pangrams_found ?? 0,
+              record.pangrams_found ?? 0,
+            ),
           }
         : r,
     ),

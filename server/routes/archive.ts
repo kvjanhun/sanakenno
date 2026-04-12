@@ -2,13 +2,18 @@
  * Archive routes.
  *
  * Endpoints:
- *   GET /api/archive - Last 7 days of puzzle metadata (newest first)
+ *   GET /api/archive        - Last 7 days of puzzle metadata (newest first)
+ *   GET /api/archive?all=true - All past puzzle metadata (newest first)
  *
  * @module server/routes/archive
  */
 
 import { Hono } from 'hono';
-import { getPuzzleForDate, getPuzzleBySlot } from '../puzzle-engine';
+import {
+  getPuzzleForDate,
+  getPuzzleBySlot,
+  totalPuzzles,
+} from '../puzzle-engine';
 
 interface ArchiveEntry {
   date: string;
@@ -23,15 +28,20 @@ const archive = new Hono();
 
 /**
  * GET /api/archive
- * Returns the last 7 days of puzzle metadata, newest first.
+ * Returns puzzle metadata, newest first.
+ * With ?all=true, returns all unique past puzzle slots (up to totalPuzzles days).
+ * Without the param, returns only the last 7 days.
  * Dates are computed in Helsinki timezone to match puzzle rotation.
  */
 archive.get('/', (c) => {
   try {
+    const allParam = c.req.query('all');
+    const total = totalPuzzles();
+    const days = allParam === 'true' ? Math.max(total, 7) : 7;
     const now = new Date();
     const entries: ArchiveEntry[] = [];
 
-    for (let daysAgo = 0; daysAgo < 7; daysAgo++) {
+    for (let daysAgo = 0; daysAgo < days; daysAgo++) {
       const date = new Date(now);
       date.setDate(date.getDate() - daysAgo);
 

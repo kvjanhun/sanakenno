@@ -20,6 +20,31 @@ Feature: Player stats and history
     When the stats record is updated with rank "Onnistuja" on puzzle 5
     Then the stats record best_rank should still be "Sanavalmis"
 
+  Scenario: longest_word is recorded per puzzle
+    Given the player has no stats yet
+    When the player finds a word "sanake" on puzzle 7 dated "2026-04-01"
+    Then the stats record for puzzle 7 should have longest_word "sanake"
+
+  Scenario: longest_word is upgraded when a longer word is found
+    Given a stats record for puzzle 7 with longest_word "kala"
+    When the stats record is updated with longest_word "lakana" on puzzle 7
+    Then the stats record for puzzle 7 should have longest_word "lakana"
+
+  Scenario: longest_word is not downgraded
+    Given a stats record for puzzle 7 with longest_word "lakana"
+    When the stats record is updated with longest_word "kala" on puzzle 7
+    Then the stats record for puzzle 7 should still have longest_word "lakana"
+
+  Scenario: pangrams_found increments when a pangram is recorded
+    Given a stats record for puzzle 7 with pangrams_found 0
+    When the stats record is updated with pangrams_found 1 on puzzle 7
+    Then the stats record for puzzle 7 should have pangrams_found 1
+
+  Scenario: pangrams_found takes the maximum
+    Given a stats record for puzzle 7 with pangrams_found 2
+    When the stats record is updated with pangrams_found 1 on puzzle 7
+    Then the stats record for puzzle 7 should still have pangrams_found 2
+
   # --- Streak computation ---
 
   Scenario: Consecutive days form a streak

@@ -166,6 +166,60 @@ Given(
 );
 
 Given(
+  'the server has a stats record for puzzle {int} with longest_word {string}',
+  function (this: SyncWorld, puzzleNumber: number, word: string) {
+    assert.ok(this.lastPlayerId, 'No player in context');
+    const db = getDb();
+    db.prepare(
+      `
+      INSERT OR REPLACE INTO player_stats
+        (player_id, puzzle_number, date, best_rank, best_score,
+         max_score, words_found, hints_used, elapsed_ms, longest_word)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+    ).run(
+      this.lastPlayerId,
+      puzzleNumber,
+      '2026-04-10',
+      'Onnistuja',
+      30,
+      100,
+      5,
+      0,
+      60000,
+      word,
+    );
+  },
+);
+
+Given(
+  'the server has a stats record for puzzle {int} with pangrams_found {int}',
+  function (this: SyncWorld, puzzleNumber: number, count: number) {
+    assert.ok(this.lastPlayerId, 'No player in context');
+    const db = getDb();
+    db.prepare(
+      `
+      INSERT OR REPLACE INTO player_stats
+        (player_id, puzzle_number, date, best_rank, best_score,
+         max_score, words_found, hints_used, elapsed_ms, pangrams_found)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+    ).run(
+      this.lastPlayerId,
+      puzzleNumber,
+      '2026-04-10',
+      'Onnistuja',
+      30,
+      100,
+      5,
+      0,
+      60000,
+      count,
+    );
+  },
+);
+
+Given(
   'the server has a stats record for puzzle {int} with best_score {int}',
   function (this: SyncWorld, puzzleNumber: number, score: number) {
     assert.ok(this.lastPlayerId, 'No player in context');
@@ -286,6 +340,36 @@ When(
       method: 'POST',
       headers: bearerHeader(this.playerBearerToken),
       body: JSON.stringify(makeStatsRecord(puzzleNumber, { best_rank: rank })),
+    });
+    this.responseJson = await this.response.clone().json();
+  },
+);
+
+When(
+  /^a POST is made to \/api\/player\/sync\/stats with longest_word "([^"]*)" for puzzle (\d+)$/,
+  async function (this: SyncWorld, word: string, puzzleNumber: number) {
+    assert.ok(this.playerBearerToken, 'No Bearer token in context');
+    this.response = await app.request('/api/player/sync/stats', {
+      method: 'POST',
+      headers: bearerHeader(this.playerBearerToken),
+      body: JSON.stringify(
+        makeStatsRecord(puzzleNumber, { longest_word: word }),
+      ),
+    });
+    this.responseJson = await this.response.clone().json();
+  },
+);
+
+When(
+  /^a POST is made to \/api\/player\/sync\/stats with pangrams_found (\d+) for puzzle (\d+)$/,
+  async function (this: SyncWorld, count: number, puzzleNumber: number) {
+    assert.ok(this.playerBearerToken, 'No Bearer token in context');
+    this.response = await app.request('/api/player/sync/stats', {
+      method: 'POST',
+      headers: bearerHeader(this.playerBearerToken),
+      body: JSON.stringify(
+        makeStatsRecord(puzzleNumber, { pangrams_found: count }),
+      ),
     });
     this.responseJson = await this.response.clone().json();
   },
@@ -606,6 +690,78 @@ Then(
     assert.ok(row, `No puzzle state found for puzzle ${puzzleNumber}`);
     const words = JSON.parse(row.found_words) as string[];
     assert.equal(words.length, wordCount);
+  },
+);
+
+Then(
+  'the server stats for puzzle {int} should have longest_word {string}',
+  function (this: SyncWorld, puzzleNumber: number, word: string) {
+    assert.ok(this.lastPlayerId, 'No player in context');
+    const db = getDb();
+    interface Row {
+      longest_word: string | null;
+    }
+    const row = db
+      .prepare(
+        'SELECT longest_word FROM player_stats WHERE player_id = ? AND puzzle_number = ?',
+      )
+      .get(this.lastPlayerId, puzzleNumber) as Row | undefined;
+    assert.ok(row, `No stats record found for puzzle ${puzzleNumber}`);
+    assert.equal(row.longest_word, word);
+  },
+);
+
+Then(
+  'the server stats for puzzle {int} should still have longest_word {string}',
+  function (this: SyncWorld, puzzleNumber: number, word: string) {
+    assert.ok(this.lastPlayerId, 'No player in context');
+    const db = getDb();
+    interface Row {
+      longest_word: string | null;
+    }
+    const row = db
+      .prepare(
+        'SELECT longest_word FROM player_stats WHERE player_id = ? AND puzzle_number = ?',
+      )
+      .get(this.lastPlayerId, puzzleNumber) as Row | undefined;
+    assert.ok(row, `No stats record found for puzzle ${puzzleNumber}`);
+    assert.equal(row.longest_word, word);
+  },
+);
+
+Then(
+  'the server stats for puzzle {int} should have pangrams_found {int}',
+  function (this: SyncWorld, puzzleNumber: number, count: number) {
+    assert.ok(this.lastPlayerId, 'No player in context');
+    const db = getDb();
+    interface Row {
+      pangrams_found: number;
+    }
+    const row = db
+      .prepare(
+        'SELECT pangrams_found FROM player_stats WHERE player_id = ? AND puzzle_number = ?',
+      )
+      .get(this.lastPlayerId, puzzleNumber) as Row | undefined;
+    assert.ok(row, `No stats record found for puzzle ${puzzleNumber}`);
+    assert.equal(row.pangrams_found, count);
+  },
+);
+
+Then(
+  'the server stats for puzzle {int} should still have pangrams_found {int}',
+  function (this: SyncWorld, puzzleNumber: number, count: number) {
+    assert.ok(this.lastPlayerId, 'No player in context');
+    const db = getDb();
+    interface Row {
+      pangrams_found: number;
+    }
+    const row = db
+      .prepare(
+        'SELECT pangrams_found FROM player_stats WHERE player_id = ? AND puzzle_number = ?',
+      )
+      .get(this.lastPlayerId, puzzleNumber) as Row | undefined;
+    assert.ok(row, `No stats record found for puzzle ${puzzleNumber}`);
+    assert.equal(row.pangrams_found, count);
   },
 );
 

@@ -58,6 +58,10 @@ interface GameState {
   lastResubmittedWord: string | null;
   shareCopied: boolean;
   lastFetchedDate: string | null;
+  /** Longest word found in the current puzzle session. */
+  longestWord: string;
+  /** Number of pangrams found in the current puzzle session. */
+  pangramsFound: number;
 
   fetchPuzzle: (overrideNumber?: number) => Promise<void>;
   reloadStateFromStorage: () => void;
@@ -98,6 +102,8 @@ export const useGameStore = create<GameState>()((set, get) => ({
   lastResubmittedWord: null,
   shareCopied: false,
   lastFetchedDate: null,
+  longestWord: '',
+  pangramsFound: 0,
 
   fetchPuzzle: async (overrideNumber?: number) => {
     set({ loading: true, fetchError: '' });
@@ -127,6 +133,8 @@ export const useGameStore = create<GameState>()((set, get) => ({
         scoreBeforeHints: null,
         celebration: null,
         postedRanks: new Set<string>(),
+        longestWord: '',
+        pangramsFound: 0,
         ...(overrideNumber === undefined && {
           lastFetchedDate: new Date().toISOString().slice(0, 10),
         }),
@@ -140,6 +148,8 @@ export const useGameStore = create<GameState>()((set, get) => ({
         totalPausedMs?: number;
         hintsUnlocked?: string[];
         scoreBeforeHints?: number | null;
+        longestWord?: string;
+        pangramsFound?: number;
       }>(stateKey(data.puzzle_number));
       if (saved) {
         set({
@@ -149,6 +159,8 @@ export const useGameStore = create<GameState>()((set, get) => ({
           totalPausedMs: saved.totalPausedMs ?? 0,
           hintsUnlocked: new Set(saved.hintsUnlocked ?? []),
           scoreBeforeHints: saved.scoreBeforeHints ?? null,
+          longestWord: saved.longestWord ?? '',
+          pangramsFound: saved.pangramsFound ?? 0,
         });
       }
     } catch (err: unknown) {
@@ -167,6 +179,8 @@ export const useGameStore = create<GameState>()((set, get) => ({
       totalPausedMs?: number;
       hintsUnlocked?: string[];
       scoreBeforeHints?: number | null;
+      longestWord?: string;
+      pangramsFound?: number;
     }>(stateKey(puzzle.puzzle_number));
     if (saved) {
       set({
@@ -176,6 +190,8 @@ export const useGameStore = create<GameState>()((set, get) => ({
         totalPausedMs: saved.totalPausedMs ?? 0,
         hintsUnlocked: new Set(saved.hintsUnlocked ?? []),
         scoreBeforeHints: saved.scoreBeforeHints ?? null,
+        longestWord: saved.longestWord ?? '',
+        pangramsFound: saved.pangramsFound ?? 0,
       });
     }
   },
@@ -289,6 +305,11 @@ export const useGameStore = create<GameState>()((set, get) => ({
     const newScore = state.score + pts;
     const previousRank = rankForScore(state.score, puzzle.max_score);
     const newRank = rankForScore(newScore, puzzle.max_score);
+    const newLongestWord =
+      normalized.length > state.longestWord.length
+        ? normalized
+        : state.longestWord;
+    const newPangramsFound = state.pangramsFound + (isPangram ? 1 : 0);
 
     let msg: string;
     let msgType: MessageType = 'ok';
@@ -310,6 +331,8 @@ export const useGameStore = create<GameState>()((set, get) => ({
       message: msg,
       messageType: msgType,
       pointsBubble: isPangram || newRank !== previousRank ? `+${pts}` : null,
+      longestWord: newLongestWord,
+      pangramsFound: newPangramsFound,
     });
     PreparedHaptics.triggerNotification('success');
 
@@ -354,8 +377,15 @@ export const useGameStore = create<GameState>()((set, get) => ({
       }
     }
 
-    // Update player stats on rank change
-    if (newRank !== previousRank) {
+    // Update player stats on rank change, new pangram, or new longest word.
+    // Skip if this puzzle's answers have been revealed (revealed_N flag).
+    const isRevealed =
+      storage.getRaw(`revealed_${puzzle.puzzle_number}`) === 'true';
+    const statsChanged =
+      newRank !== previousRank ||
+      isPangram ||
+      newLongestWord !== state.longestWord;
+    if (!isRevealed && statsChanged) {
       const elapsed =
         state.startedAt != null
           ? Date.now() - state.startedAt - state.totalPausedMs
@@ -375,6 +405,8 @@ export const useGameStore = create<GameState>()((set, get) => ({
         words_found: newFoundWords.size,
         hints_used: state.hintsUnlocked.size,
         elapsed_ms: elapsed,
+        longest_word: newLongestWord,
+        pangrams_found: newPangramsFound,
       });
       storage.save(STATS_STORAGE_KEY, updated);
 
@@ -390,6 +422,8 @@ export const useGameStore = create<GameState>()((set, get) => ({
           words_found: newFoundWords.size,
           hints_used: state.hintsUnlocked.size,
           elapsed_ms: elapsed,
+          longest_word: newLongestWord,
+          pangrams_found: newPangramsFound,
         });
       }
     }
@@ -402,10 +436,12 @@ export const useGameStore = create<GameState>()((set, get) => ({
       totalPausedMs: state.totalPausedMs,
       hintsUnlocked: [...state.hintsUnlocked],
       scoreBeforeHints: state.scoreBeforeHints,
+      longestWord: newLongestWord,
+      pangramsFound: newPangramsFound,
     });
 
-    // Fire-and-forget state sync when player is logged in
-    {
+    // Fire-and-forget state sync when player is logged in (skip if revealed)
+    if (!isRevealed) {
       const { isLoggedIn, syncPuzzleState } = useAuthStore.getState();
       if (isLoggedIn) {
         void syncPuzzleState({
@@ -441,6 +477,8 @@ export const useGameStore = create<GameState>()((set, get) => ({
       totalPausedMs,
       hintsUnlocked,
       scoreBeforeHints,
+      longestWord,
+      pangramsFound,
     } = get();
     if (!puzzle) return;
     storage.save(stateKey(puzzle.puzzle_number), {
@@ -450,6 +488,8 @@ export const useGameStore = create<GameState>()((set, get) => ({
       totalPausedMs,
       hintsUnlocked: [...hintsUnlocked],
       scoreBeforeHints,
+      longestWord,
+      pangramsFound,
     });
   },
 

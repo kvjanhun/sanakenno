@@ -41,6 +41,15 @@ export default function StatsScreen() {
   const streak = computeStreak(stats.records);
   const rankDist = computeRankDistribution(stats.records);
   const avgCompletion = computeAverageCompletion(stats.records);
+  const totalWords = stats.records.reduce((s, r) => s + r.words_found, 0);
+  const totalPangrams = stats.records.reduce(
+    (s, r) => s + (r.pangrams_found ?? 0),
+    0,
+  );
+  const longestWord = stats.records.reduce((best, r) => {
+    const w = r.longest_word ?? '';
+    return w.length > best.length ? w : best;
+  }, '');
 
   return (
     <ScrollView
@@ -53,6 +62,32 @@ export default function StatsScreen() {
         <StatCard label="Pelattu" value={stats.records.length} theme={theme} />
         <StatCard label="Putki" value={streak.current} theme={theme} />
         <StatCard label="Paras putki" value={streak.best} theme={theme} />
+      </View>
+
+      {/* Lifetime totals */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
+          Kaikki pelit
+        </Text>
+        <View
+          style={[styles.totalsCard, { backgroundColor: theme.bgSecondary }]}
+        >
+          <TotalRow
+            label="Sanoja löydetty"
+            value={String(totalWords)}
+            theme={theme}
+          />
+          <TotalRow
+            label="Pangrammeja"
+            value={String(totalPangrams)}
+            theme={theme}
+          />
+          <TotalRow
+            label="Pisin sana"
+            value={longestWord || '—'}
+            theme={theme}
+          />
+        </View>
       </View>
 
       {/* Average completion */}
@@ -142,6 +177,27 @@ function StatCard({
   );
 }
 
+function TotalRow({
+  label,
+  value,
+  theme,
+}: {
+  label: string;
+  value: string;
+  theme: ReturnType<typeof useTheme>;
+}) {
+  return (
+    <View style={styles.totalRow}>
+      <Text style={[styles.totalLabel, { color: theme.textSecondary }]}>
+        {label}
+      </Text>
+      <Text style={[styles.totalValue, { color: theme.textPrimary }]}>
+        {value}
+      </Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   center: {
     flex: 1,
@@ -216,5 +272,22 @@ const styles = StyleSheet.create({
     width: 24,
     fontSize: 13,
     textAlign: 'right',
+  },
+  totalsCard: {
+    borderRadius: 12,
+    padding: 12,
+    gap: 10,
+  },
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  totalLabel: {
+    fontSize: 14,
+  },
+  totalValue: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

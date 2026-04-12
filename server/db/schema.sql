@@ -139,6 +139,8 @@ CREATE TABLE IF NOT EXISTS player_stats (
     words_found   INTEGER NOT NULL DEFAULT 0,
     hints_used    INTEGER NOT NULL DEFAULT 0,
     elapsed_ms    INTEGER NOT NULL DEFAULT 0,
+    longest_word  TEXT DEFAULT NULL,
+    pangrams_found INTEGER NOT NULL DEFAULT 0,
     updated_at    TEXT NOT NULL DEFAULT (datetime('now')),
     UNIQUE(player_id, puzzle_number)
 );

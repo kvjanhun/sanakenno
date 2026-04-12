@@ -52,6 +52,36 @@ Feature: Cross-device progress sync
     When a POST is made to /api/player/sync/stats with best_score 50 for puzzle 10
     Then the server stats for puzzle 10 should still have best_score 80
 
+  Scenario: Pushing a stats record with longest_word stores it
+    When a POST is made to /api/player/sync/stats with longest_word "sanake" for puzzle 42
+    Then the response status should be 200
+    And the server stats for puzzle 42 should have longest_word "sanake"
+
+  Scenario: Pushing with a longer word upgrades longest_word
+    Given the server has a stats record for puzzle 10 with longest_word "kala"
+    When a POST is made to /api/player/sync/stats with longest_word "lakana" for puzzle 10
+    Then the server stats for puzzle 10 should have longest_word "lakana"
+
+  Scenario: Pushing with a shorter word does not downgrade longest_word
+    Given the server has a stats record for puzzle 10 with longest_word "lakana"
+    When a POST is made to /api/player/sync/stats with longest_word "kala" for puzzle 10
+    Then the server stats for puzzle 10 should still have longest_word "lakana"
+
+  Scenario: Pushing a stats record with pangrams_found stores it
+    When a POST is made to /api/player/sync/stats with pangrams_found 2 for puzzle 42
+    Then the response status should be 200
+    And the server stats for puzzle 42 should have pangrams_found 2
+
+  Scenario: Pushing with higher pangrams_found upgrades the server record
+    Given the server has a stats record for puzzle 10 with pangrams_found 1
+    When a POST is made to /api/player/sync/stats with pangrams_found 3 for puzzle 10
+    Then the server stats for puzzle 10 should have pangrams_found 3
+
+  Scenario: Pushing with lower pangrams_found does not downgrade
+    Given the server has a stats record for puzzle 10 with pangrams_found 3
+    When a POST is made to /api/player/sync/stats with pangrams_found 1 for puzzle 10
+    Then the server stats for puzzle 10 should still have pangrams_found 3
+
   Scenario: Push stats requires authentication
     When a POST is made to /api/player/sync/stats without a token
     Then the response status should be 401

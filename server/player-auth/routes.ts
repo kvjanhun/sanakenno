@@ -153,16 +153,19 @@ function bulkUpsertLocalData(
       words_found: number;
       hints_used: number;
       elapsed_ms: number;
+      longest_word: string | null;
+      pangrams_found: number;
     }
     const selectStat = db.prepare(
-      `SELECT best_rank, best_score, max_score, words_found, hints_used, elapsed_ms
+      `SELECT best_rank, best_score, max_score, words_found, hints_used, elapsed_ms,
+              longest_word, pangrams_found
        FROM player_stats WHERE player_id = ? AND puzzle_number = ?`,
     );
     const insertStat = db.prepare(
       `INSERT INTO player_stats
          (player_id, puzzle_number, date, best_rank, best_score,
-          max_score, words_found, hints_used, elapsed_ms)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          max_score, words_found, hints_used, elapsed_ms, longest_word, pangrams_found)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     );
     const updateStat = db.prepare(
       `UPDATE player_stats SET
@@ -172,6 +175,8 @@ function bulkUpsertLocalData(
          words_found = MAX(words_found, ?),
          hints_used = MAX(hints_used, ?),
          elapsed_ms = MAX(elapsed_ms, ?),
+         longest_word = ?,
+         pangrams_found = MAX(pangrams_found, ?),
          updated_at = datetime('now')
        WHERE player_id = ? AND puzzle_number = ?`,
     );
@@ -191,12 +196,20 @@ function bulkUpsertLocalData(
             r.words_found,
             r.hints_used,
             r.elapsed_ms,
+            r.longest_word ?? null,
+            r.pangrams_found ?? 0,
           );
         } else {
           const mergedRank =
             rankIndex(r.best_rank) > rankIndex(existing.best_rank)
               ? r.best_rank
               : existing.best_rank;
+          const existingLW = existing.longest_word ?? '';
+          const incomingLW = r.longest_word ?? '';
+          const mergedLongestWord =
+            existingLW.length >= incomingLW.length
+              ? existingLW || null
+              : incomingLW;
           updateStat.run(
             mergedRank,
             r.best_score,
@@ -204,6 +217,8 @@ function bulkUpsertLocalData(
             r.words_found,
             r.hints_used,
             r.elapsed_ms,
+            mergedLongestWord,
+            r.pangrams_found ?? 0,
             playerId,
             r.puzzle_number,
           );
@@ -302,7 +317,7 @@ function fetchPlayerData(playerId: number): {
   const statsRows = db
     .prepare(
       `SELECT puzzle_number, date, best_rank, best_score, max_score,
-              words_found, hints_used, elapsed_ms
+              words_found, hints_used, elapsed_ms, longest_word, pangrams_found
        FROM player_stats WHERE player_id = ?`,
     )
     .all(playerId) as Array<{
@@ -314,6 +329,8 @@ function fetchPlayerData(playerId: number): {
     words_found: number;
     hints_used: number;
     elapsed_ms: number;
+    longest_word: string | null;
+    pangrams_found: number;
   }>;
   const stateRows = db
     .prepare(
@@ -342,6 +359,8 @@ function fetchPlayerData(playerId: number): {
         words_found: r.words_found,
         hints_used: r.hints_used,
         elapsed_ms: r.elapsed_ms,
+        longest_word: r.longest_word ?? undefined,
+        pangrams_found: r.pangrams_found,
       })),
       version: 1,
     },

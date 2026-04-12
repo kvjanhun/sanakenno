@@ -123,6 +123,59 @@ describe('mergeStatsRecord', () => {
     expect(ab.best_score).toBe(ba.best_score);
     expect(ab.words_found).toBe(ba.words_found);
   });
+
+  it('keeps the longer longest_word', () => {
+    const result = mergeStatsRecord(
+      makeRecord({ longest_word: 'kissa' }),
+      makeRecord({ longest_word: 'sanake' }),
+    );
+    expect(result.longest_word).toBe('sanake');
+  });
+
+  it('keeps existing longest_word when it is longer', () => {
+    const result = mergeStatsRecord(
+      makeRecord({ longest_word: 'pitkäsana' }),
+      makeRecord({ longest_word: 'lyhyt' }),
+    );
+    expect(result.longest_word).toBe('pitkäsana');
+  });
+
+  it('keeps existing longest_word on equal length', () => {
+    const result = mergeStatsRecord(
+      makeRecord({ longest_word: 'kissa' }),
+      makeRecord({ longest_word: 'koira' }),
+    );
+    expect(result.longest_word).toBe('kissa');
+  });
+
+  it('handles missing longest_word on both sides', () => {
+    const result = mergeStatsRecord(makeRecord(), makeRecord());
+    expect(result.longest_word).toBe('');
+  });
+
+  it('handles missing longest_word on one side', () => {
+    const result = mergeStatsRecord(
+      makeRecord({ longest_word: 'sana' }),
+      makeRecord(),
+    );
+    expect(result.longest_word).toBe('sana');
+  });
+
+  it('takes higher pangrams_found', () => {
+    const result = mergeStatsRecord(
+      makeRecord({ pangrams_found: 1 }),
+      makeRecord({ pangrams_found: 3 }),
+    );
+    expect(result.pangrams_found).toBe(3);
+  });
+
+  it('handles missing pangrams_found (treats as 0)', () => {
+    const result = mergeStatsRecord(
+      makeRecord({ pangrams_found: 2 }),
+      makeRecord(),
+    );
+    expect(result.pangrams_found).toBe(2);
+  });
 });
 
 // ---------------------------------------------------------------------------

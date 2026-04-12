@@ -1,6 +1,8 @@
-Feature: 7-day puzzle archive
-  Players can access the last 7 days of puzzles from a calendar-style
-  archive modal. Each past puzzle preserves independent progress.
+Feature: Puzzle archive
+  Players can access past puzzles from the archive.
+  Web shows the last 7 days; iOS shows all past puzzles with ?all=true.
+  Each past puzzle preserves independent progress.
+  The word list for each past puzzle is available via a dedicated endpoint.
 
   # --- Archive API ---
 
@@ -18,6 +20,28 @@ Feature: 7-day puzzle archive
   Scenario: Today's entry is flagged
     When a GET request is made to /api/archive
     Then exactly one entry should have is_today true
+
+  # --- All-puzzles param ---
+
+  Scenario: Archive with all=true returns more entries than without it
+    When a GET request is made to /api/archive?all=true
+    Then the response status should be 200
+    And the response should contain more than 7 entries
+
+  # --- Word list endpoint ---
+
+  Scenario: Word list is available for a past puzzle
+    When a GET request is made to /api/puzzle/0/words
+    Then the response status should be 200
+    And the response should contain a "words" array
+
+  Scenario: Word list is blocked for today's puzzle
+    When a GET request is made to /api/puzzle/today/words
+    Then the response status should be 403
+
+  Scenario: Word list returns 400 for invalid puzzle number
+    When a GET request is made to /api/puzzle/abc/words
+    Then the response status should be 400
 
   # --- Archive modal ---
 

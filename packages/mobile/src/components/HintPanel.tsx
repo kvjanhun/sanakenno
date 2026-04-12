@@ -12,7 +12,7 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]['id'];
 
-/** Fixed height of the content panel — never shifts regardless of tab or content. */
+/** Fixed height of the content panel — reserved even when hints are hidden. */
 const CONTENT_HEIGHT = 108;
 
 /** Height of each bar in the lengths chart. */
@@ -35,7 +35,7 @@ export function HintPanel({
   onUnlock,
   theme,
 }: Props) {
-  const [activeTab, setActiveTab] = useState<TabId>('overview');
+  const [activeTab, setActiveTab] = useState<TabId | null>(null);
   const derived = deriveHintData(hintData, foundWords, allLetters);
 
   return (
@@ -56,7 +56,9 @@ export function HintPanel({
             return (
               <Pressable
                 key={tab.id}
-                onPress={() => setActiveTab(tab.id)}
+                onPress={() =>
+                  setActiveTab((prev) => (prev === tab.id ? null : tab.id))
+                }
                 style={[
                   styles.segment,
                   isActive && [
@@ -98,33 +100,38 @@ export function HintPanel({
         </View>
       </View>
 
-      {/* Fixed-height content area — always the same size */}
+      {/* Fixed-height content area — always reserves space even when hidden */}
       <View
         style={[
           styles.contentArea,
-          { backgroundColor: theme.bgSecondary, borderColor: theme.border },
+          {
+            backgroundColor:
+              activeTab !== null ? theme.bgSecondary : 'transparent',
+            borderColor: activeTab !== null ? theme.border : 'transparent',
+          },
         ]}
       >
-        {hintsUnlocked.has(activeTab) ? (
-          <ScrollView
-            style={styles.scroll}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-          >
-            <TabContent tabId={activeTab} derived={derived} theme={theme} />
-          </ScrollView>
-        ) : (
-          <View style={styles.lockedOverlay}>
-            <Pressable
-              onPress={() => onUnlock(activeTab)}
-              style={[styles.unlockBtn, { backgroundColor: theme.accent }]}
+        {activeTab !== null &&
+          (hintsUnlocked.has(activeTab) ? (
+            <ScrollView
+              style={styles.scroll}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
             >
-              <Text style={[styles.unlockBtnText, { color: theme.onAccent }]}>
-                Aktivoi apu
-              </Text>
-            </Pressable>
-          </View>
-        )}
+              <TabContent tabId={activeTab} derived={derived} theme={theme} />
+            </ScrollView>
+          ) : (
+            <View style={styles.lockedOverlay}>
+              <Pressable
+                onPress={() => onUnlock(activeTab)}
+                style={[styles.unlockBtn, { backgroundColor: theme.accent }]}
+              >
+                <Text style={[styles.unlockBtnText, { color: theme.onAccent }]}>
+                  Aktivoi apu
+                </Text>
+              </Pressable>
+            </View>
+          ))}
       </View>
     </View>
   );
