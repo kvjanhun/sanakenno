@@ -178,7 +178,7 @@ export default function ArchiveScreen() {
       {today && (
         <View style={styles.todaySection}>
           <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>
-            Tänään
+            Tämänpäiväinen kenno
           </Text>
           <Pressable
             onPress={() => handleTodayPress(today.puzzle_number)}
@@ -232,10 +232,10 @@ export default function ArchiveScreen() {
           <Text
             style={[
               styles.sectionLabel,
-              { color: theme.textSecondary, marginTop: 8 },
+              { color: theme.textSecondary, marginTop: 30 },
             ]}
           >
-            Arkisto
+            Aikaisemmat kennot
           </Text>
         </View>
       )}
@@ -379,7 +379,8 @@ const styles = StyleSheet.create({
     paddingBottom: 0,
   },
   list: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
     gap: 10,
   },
   row: {
