@@ -4,9 +4,11 @@
 ```
 server/
   index.ts          entry point — mounts all routes, middleware
-  routes/           puzzle, achievement, admin, archive route files
-  auth/             session handling and auth routes
-  db/               SQLite connection and migrations
+  routes/           puzzle, archive, achievement, failed-guess, admin, player-sync route files
+  auth/             admin session middleware and routes (cookie-based)
+  player-auth/      player identity middleware and routes (Bearer token-based)
+  db/               SQLite connection, schema, and migration helpers
+  email/            transactional email helpers (transfer link)
   puzzle-engine.ts  pure puzzle logic (no I/O)
 ```
 
@@ -14,15 +16,17 @@ server/
 - Each route file starts with a header comment listing every endpoint it exposes and its purpose.
 - Every non-trivial handler and middleware gets a JSDoc block.
 - Complex logic (midnight rollover, scoring, auth checks) gets inline comments explaining *why*.
-
-## Hono Patterns
-- Use `hono/cors`, `hono/logger`, and custom `securityHeaders` middleware from `index.ts`.
 - Return structured JSON errors: `{ error: string }` with an appropriate HTTP status.
-- Auth-required routes go under `/api/admin/*` and are guarded by the `requireAuth` middleware.
+
+## Auth layers
+- **Admin** (`/api/admin/*`, `/api/auth/*`): cookie session via `requireAuth` + `requireCsrf` from `auth/middleware.ts`.
+- **Player** (`/api/player/*`): Bearer token via `requirePlayerAuth` from `player-auth/middleware.ts`.
+- **Public** (`/api/puzzle`, `/api/archive`, `/api/achievement`, `/api/failed-guess`): no auth, rate-limited where needed.
 
 ## Database
 - All queries go through the `getDb()` helper — never open a raw connection elsewhere.
 - Use parameterised queries; never interpolate user input into SQL.
+- Schema changes go in `db/schema.sql`; backwards-compatible column additions are applied as migrations in `db/connection.ts` via try/catch `ALTER TABLE`.
 
 ## Environment
 - Port: `process.env.PORT` (default `3001`).
