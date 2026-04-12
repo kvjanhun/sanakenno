@@ -8,6 +8,8 @@ import {
   ActivityIndicator,
   Modal,
   TouchableWithoutFeedback,
+  Animated,
+  Easing,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -77,6 +79,8 @@ export default function ArchiveScreen() {
   const [error, setError] = useState('');
   const [selectedEntry, setSelectedEntry] = useState<ArchiveEntry | null>(null);
   const hasFetched = useRef(false);
+  const backdropOpacity = useRef(new Animated.Value(0)).current;
+  const sheetTranslateY = useRef(new Animated.Value(24)).current;
 
   useFocusEffect(
     useCallback(() => {
@@ -101,6 +105,28 @@ export default function ArchiveScreen() {
   );
 
   useEffect(() => {}, [currentPuzzleNumber]);
+
+  useEffect(() => {
+    if (!selectedEntry) return;
+
+    backdropOpacity.setValue(0);
+    sheetTranslateY.setValue(24);
+
+    Animated.parallel([
+      Animated.timing(backdropOpacity, {
+        toValue: 1,
+        duration: 180,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(sheetTranslateY, {
+        toValue: 0,
+        duration: 240,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [selectedEntry, backdropOpacity, sheetTranslateY]);
 
   const savedProgress = useMemo(() => {
     const map = new Map<number, { score: number; rank: string }>();
@@ -140,19 +166,49 @@ export default function ArchiveScreen() {
     setSelectedEntry(entry);
   }, []);
 
+  const animateSheetOut = useCallback(
+    (onClosed?: () => void) => {
+      Animated.parallel([
+        Animated.timing(backdropOpacity, {
+          toValue: 0,
+          duration: 150,
+          easing: Easing.in(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(sheetTranslateY, {
+          toValue: 24,
+          duration: 180,
+          easing: Easing.in(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setSelectedEntry(null);
+        onClosed?.();
+      });
+    },
+    [backdropOpacity, sheetTranslateY],
+  );
+
+  const closeSheet = useCallback(() => {
+    animateSheetOut();
+  }, [animateSheetOut]);
+
   const handlePlay = useCallback(() => {
     if (!selectedEntry) return;
-    setSelectedEntry(null);
-    fetchPuzzle(selectedEntry.puzzle_number);
-    router.back();
-  }, [selectedEntry, fetchPuzzle, router]);
+    const puzzleNumber = selectedEntry.puzzle_number;
+    animateSheetOut(() => {
+      fetchPuzzle(puzzleNumber);
+      router.back();
+    });
+  }, [selectedEntry, animateSheetOut, fetchPuzzle, router]);
 
   const handleViewWords = useCallback(() => {
     if (!selectedEntry) return;
     const number = selectedEntry.puzzle_number;
-    setSelectedEntry(null);
-    router.push(`/puzzle-words?number=${number}`);
-  }, [selectedEntry, router]);
+    animateSheetOut(() => {
+      router.push(`/puzzle-words?number=${number}`);
+    });
+  }, [selectedEntry, animateSheetOut, router]);
 
   if (loading) {
     return (
@@ -336,14 +392,22 @@ export default function ArchiveScreen() {
       <Modal
         visible={selectedEntry !== null}
         transparent
-        animationType="fade"
-        onRequestClose={() => setSelectedEntry(null)}
+        animationType="none"
+        onRequestClose={closeSheet}
       >
-        <TouchableWithoutFeedback onPress={() => setSelectedEntry(null)}>
-          <View style={styles.backdrop} />
+        <TouchableWithoutFeedback onPress={closeSheet}>
+          <Animated.View
+            style={[styles.backdrop, { opacity: backdropOpacity }]}
+          />
         </TouchableWithoutFeedback>
-        <View
-          style={[styles.bottomSheet, { backgroundColor: theme.bgPrimary }]}
+        <Animated.View
+          style={[
+            styles.bottomSheet,
+            {
+              backgroundColor: theme.bgPrimary,
+              transform: [{ translateY: sheetTranslateY }],
+            },
+          ]}
         >
           {selectedEntry && (
             <>
@@ -395,10 +459,7 @@ export default function ArchiveScreen() {
                   Näytä vastaukset
                 </Text>
               </Pressable>
-              <Pressable
-                onPress={() => setSelectedEntry(null)}
-                style={styles.sheetCancel}
-              >
+              <Pressable onPress={closeSheet} style={styles.sheetCancel}>
                 <Text
                   style={[
                     styles.sheetCancelText,
@@ -410,7 +471,7 @@ export default function ArchiveScreen() {
               </Pressable>
             </>
           )}
-        </View>
+        </Animated.View>
       </Modal>
     </SafeAreaView>
   );
