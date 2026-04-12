@@ -11,22 +11,30 @@ sanakenno/
   packages/
     shared/   # Pure domain logic, types, platform interfaces (@sanakenno/shared)
     web/      # React 19 + Vite PWA frontend
-    mobile/   # Expo 55 / React Native app (iOS-first)
+    mobile/   # Expo / React Native app (iOS-first)
   server/     # Hono API server
   features/   # BDD specs (source of truth for behaviour)
 ```
 
-### Data Flow: User Finding a Word
+Current versions: web/server/shared **1.2.0**, mobile **0.4.0**.
+
+---
+
+## Data Flows
+
+### User Finding a Word
 
 1. **Input**: User types in `packages/web/src/components/WordInput.tsx` (web) or taps Honeycomb/keyboard in `packages/mobile/src/components/` (mobile).
-2. **Action**: Calls `addWord`/`addLetter` in the platform's `useGameStore.ts`.
+2. **Action**: Calls `submitWord` in the platform's `useGameStore.ts`.
 3. **Logic**: Store uses `@sanakenno/shared` (`scoreWord`, `recalcScore`) to calculate points and validate.
-4. **State**: Store updates `foundWords` and `score`.
+4. **State**: Store updates `foundWords`, `score`, `longestWord`, and `pangramsFound`.
 5. **Persistence**: Web syncs to `localStorage`; mobile syncs to MMKV.
-6. **Feedback**: `MessageBar` (web) / in-store `message` state (mobile) shows success/error messages.
-7. **Failed guesses**: After an "Ei sanakirjassa" rejection, both clients fire-and-forget a `POST /api/failed-guess` to record the attempt.
+6. **Stats**: `updateStatsRecord` (shared) updates the per-puzzle `StatsRecord` (rank, score, longest_word, pangrams_found). Skipped if the puzzle's `revealed_N` flag is set.
+7. **Sync**: If logged in, fires `POST /api/player/sync/stats` and `POST /api/player/sync/state` (fire-and-forget).
+8. **Feedback**: `MessageBar` (web) / in-store `message` state (mobile) shows success/error messages.
+9. **Failed guesses**: After an "Ei sanakirjassa" rejection, both clients fire-and-forget `POST /api/failed-guess`.
 
-### Data Flow: Daily Puzzle Fetching
+### Daily Puzzle Fetching
 
 1. **Request**: Frontend calls `GET /api/puzzle` on mount (or at midnight).
 2. **Route**: `server/routes/puzzle.ts` handles the request.
@@ -34,19 +42,37 @@ sanakenno/
 4. **Database**: Puzzles are fetched from SQLite via `server/db/connection.ts`.
 5. **Response**: JSON including letters, center letter, and pre-computed `hint_data`.
 
+### Archive & Word List (mobile)
+
+1. Mobile archive screen fetches `GET /api/archive?all=true` — returns all past puzzle slots.
+2. Today's card is pinned above a scrollable `FlatList` of past entries.
+3. Tapping a past card shows a bottom sheet: **Pelaa** (loads puzzle, navigates back) or **Näytä vastaukset** (navigates to `puzzle-words` screen).
+4. `puzzle-words` screen: sets `revealed_N = 'true'` in MMKV, fetches `GET /api/puzzle/:number/words`, displays found vs missed words. Once revealed, stats updates are frozen for that puzzle.
+
+### Cross-Device Sync
+
+1. On login, `useAuthStore.initialize()` calls `GET /api/player/sync` to pull all server records.
+2. `pullAndMerge` merges server data into local storage using `mergeStatsRecord` and `mergePuzzleState` from `@sanakenno/shared`.
+3. Only records absent from the server response are pushed back (avoids redundant POSTs on every load).
+4. During active play, stats and state are pushed fire-and-forget after each word.
+
+---
+
 ## Key Files & Directories
 
 ### Shared Domain (`packages/shared/src/`)
 
 - `scoring.ts`: Pure Finnish word scoring and pangram detection.
 - `hint-data.ts`: Pure hint-data derivation from word lists.
-- `stats.ts`: Pure stat computation (streaks, rank distribution, completion).
+- `stats.ts`: `StatsRecord` type (per-puzzle: rank, score, longest_word, pangrams_found, words_found); `updateStatsRecord`, `computeStreak`, `computeRankDistribution`, `computeAverageCompletion`.
+- `sync-merge.ts`: `mergeStatsRecord` and `mergePuzzleState` — conflict-free merge rules (best rank, highest score, longer word, max pangrams).
 - `kotus.ts`: Kotus dictionary URL builder for word definition links.
 - `platform/types.ts`: Platform service interfaces (storage, crypto, share, etc.).
 
 ### Web Frontend (`packages/web/src/`)
 
 - `store/useGameStore.ts`: **Source of Truth** for web game state.
+- `store/useAuthStore.ts`: Player auth, sync pull/push, transfer token flow.
 - `hooks/useMidnightRollover.ts`: Manages the transition between daily puzzles (browser reload).
 - `components/Honeycomb/`: The visual heart of the web game.
 - `components/ArchiveModal.tsx`: 7-day puzzle archive browser.
@@ -54,13 +80,17 @@ sanakenno/
 
 ### Mobile App (`packages/mobile/`)
 
-- `app/_layout.tsx`: Root layout — theme propagation, SplashScreen control, JS overlay.
+- `app/_layout.tsx`: Root Stack — declares all screens including modals.
 - `app/(tabs)/index.tsx`: Main game screen.
-- `app/(tabs)/archive.tsx`: Archive screen showing past puzzles + score/rank.
-- `app/(tabs)/settings.tsx`: Settings screen (theme + haptics intensity).
-- `src/store/useGameStore.ts`: Mobile game state (Zustand + MMKV).
-- `src/store/useSettingsStore.ts`: Theme preference and haptics intensity (`off/light/medium/heavy`).
+- `app/(tabs)/archive.tsx`: Archive screen — today's card pinned, all past puzzles in FlatList, bottom sheet for play/reveal choice.
+- `app/(tabs)/stats.tsx`: Stats screen — per-puzzle history + lifetime totals (longest word, total words, total pangrams).
+- `app/(tabs)/settings.tsx`: Theme + haptics settings.
+- `app/puzzle-words.tsx`: Word list for a past puzzle — found words highlighted, missed shown muted; sets revealed flag on first view.
+- `src/store/useGameStore.ts`: Mobile game state (Zustand + MMKV); tracks `longestWord` and `pangramsFound`; guards stats updates via `revealed_N` flag.
+- `src/store/useAuthStore.ts`: Player auth and sync (mirrors web).
+- `src/store/useSettingsStore.ts`: Theme preference and haptics intensity.
 - `src/components/Honeycomb.tsx`: SVG honeycomb using react-native-svg + Reanimated.
+- `src/components/HintPanel.tsx`: Hint tabs — tapping active tab hides the panel; height reserved when hidden.
 - `src/components/FoundWords.tsx`: Found words pill row + bottom sheet.
 - `src/components/RankProgress.tsx`: Rank chip + animated progress bar.
 - `src/hooks/useMidnightRollover.ts`: Single-shot setTimeout — refetches if date changed.
@@ -68,25 +98,30 @@ sanakenno/
 
 ### Backend (`server/`)
 
-- `index.ts`: API entry point and middleware configuration.
-- `puzzle-engine.ts`: **Core Logic** for puzzle rotation and hint generation.
-- `routes/archive.ts`: 7-day puzzle metadata endpoint (includes `max_score` per day).
-- `routes/failed-guess.ts`: `POST /api/failed-guess` — records non-dictionary guesses.
-- `db/schema.sql`: Database structure (puzzles, achievements, failed_guesses, config).
+- `index.ts`: API entry point — all routes and middleware mounted here; full endpoint list in header comment.
+- `puzzle-engine.ts`: **Core Logic** for puzzle rotation and word-list generation.
+- `routes/puzzle.ts`: `GET /api/puzzle`, `GET /api/puzzle/:number`, `GET /api/puzzle/:number/words` (words blocked for active puzzle slot).
+- `routes/archive.ts`: `GET /api/archive` — last 7 days; `?all=true` returns all past slots.
+- `routes/player-sync.ts`: `GET /api/player/sync`, `POST /api/player/sync/stats`, `POST /api/player/sync/state`.
+- `routes/admin.ts`: Admin dashboard endpoints (requires session auth).
+- `routes/failed-guess.ts`: `POST /api/failed-guess`.
+- `auth/`: Admin session middleware and routes (cookie-based, CSRF-protected).
+- `player-auth/`: Player identity middleware and routes (Bearer token-based).
+- `db/schema.sql`: Database structure (puzzles, player_stats, player_puzzle_states, achievements, failed_guesses, config).
+- `db/connection.ts`: `getDb()` helper + startup migrations (idempotent `ALTER TABLE` calls).
 
 ### Testing (`features/` & `tests/`)
 
-- `features/*.feature`: **Acceptance Criteria** for every feature.
-- `features/step-definitions/`: Integration tests for backend and domain logic.
-- `tests/e2e/`: Playwright specs for the full user journey (web).
+- `features/*.feature`: **Acceptance Criteria** — source of truth for every feature.
+- `features/step-definitions/`: Integration step definitions (hit real in-memory SQLite).
+- `tests/`: Vitest unit tests for shared logic and API routes.
+- `tests/e2e/`: Playwright specs for the full web user journey.
 
-## State Management (Zustand)
-
-- **Selectivity**: Always use specific selectors: `const score = useGameStore(s => s.score)`.
-- **Actions**: Destructure actions for stability: `const { addWord } = useGameStore()`.
+---
 
 ## Environment & Deployment
 
 - **Helsinki Time**: The game strictly follows `Europe/Helsinki` for puzzle rotation.
-- **Admin**: Admin features are behind `/api/admin/*` and require session-based auth.
-- **Mobile**: Uses MMKV for persistence and Expo SDK 55. iOS-first; Android is a later phase.
+- **Auth layers**: Admin — cookie session (`/api/admin/*`, `/api/auth/*`). Player — Bearer token (`/api/player/*`). Public — no auth.
+- **Mobile**: MMKV for persistence, iOS-first. Android is a later phase.
+- **Revealed flag**: `revealed_N` in MMKV (local-only, not synced) marks a puzzle whose answers have been viewed; stats updates are frozen for that puzzle number.
