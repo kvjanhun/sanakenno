@@ -18,7 +18,11 @@ import { createHash } from 'node:crypto';
 import app from '../../server/index';
 import { getDb, closeDb, setDb } from '../../server/db/connection';
 import { invalidateAll, setWordlist } from '../../server/puzzle-engine';
-import { resetTransferCreateRateLimit } from '../../server/player-auth/routes';
+import {
+  resetTransferCreateRateLimit,
+  resetEmailRateLimit,
+  setEmailRateLimitEntry,
+} from '../../server/player-auth/routes';
 import type { SanakennoWorld } from './types';
 
 interface PlayerAuthWorld extends SanakennoWorld {
@@ -83,6 +87,7 @@ Before(function (this: PlayerAuthWorld, scenario: ITestCaseHookParameter) {
   setDb(null);
   getDb({ inMemory: true });
   resetTransferCreateRateLimit();
+  resetEmailRateLimit();
   invalidateAll();
   setWordlist(new Set(['kala', 'sanka']));
 
@@ -108,6 +113,27 @@ Given(
   'the player auth rate limits are reset',
   function (this: PlayerAuthWorld) {
     resetTransferCreateRateLimit();
+    resetEmailRateLimit();
+  },
+);
+
+Given(
+  'a transfer email has just been sent to {string}',
+  async function (this: PlayerAuthWorld, email: string) {
+    if (!this.playerBearerToken) await initPlayer(this);
+    const res = await createTransfer(this, email);
+    assert.equal(res.status, 200, `First email send to ${email} failed`);
+  },
+);
+
+Given(
+  '{int} transfer emails have already been sent to {string} today',
+  function (this: PlayerAuthWorld, count: number, email: string) {
+    setEmailRateLimitEntry(email, {
+      lastSentMs: Date.now() - 11 * 60 * 1000, // 11 min ago — past the cooldown
+      dailyCount: count,
+      dailyDate: new Date().toISOString().slice(0, 10),
+    });
   },
 );
 

@@ -46,6 +46,74 @@ export function resetTransferCreateRateLimit(): void {
   transferCreateRateLimitMap.clear();
 }
 
+// Per-destination-address email rate limiting.
+// Keyed by SHA-256(lowercase(email)) to avoid storing addresses in memory.
+interface EmailRateEntry {
+  lastSentMs: number;
+  dailyCount: number;
+  dailyDate: string; // YYYY-MM-DD
+}
+
+const emailRateLimitMap = new Map<string, EmailRateEntry>();
+const EMAIL_COOLDOWN_MS = 10 * 60 * 1000; // 10 minutes between sends to same address
+const EMAIL_DAILY_LIMIT = 10; // max 10 emails to same address per day
+
+export function resetEmailRateLimit(): void {
+  emailRateLimitMap.clear();
+}
+
+/** For tests only: pre-seed a rate limit entry without making real requests. */
+export function setEmailRateLimitEntry(
+  email: string,
+  entry: { lastSentMs: number; dailyCount: number; dailyDate: string },
+): void {
+  emailRateLimitMap.set(
+    createHash('sha256').update(email.toLowerCase()).digest('hex'),
+    entry,
+  );
+}
+
+function checkEmailRateLimit(email: string): {
+  allowed: boolean;
+  error?: string;
+} {
+  const key = createHash('sha256').update(email.toLowerCase()).digest('hex');
+  const now = Date.now();
+  const today = new Date().toISOString().slice(0, 10);
+  const entry = emailRateLimitMap.get(key);
+
+  if (entry) {
+    if (now - entry.lastSentMs < EMAIL_COOLDOWN_MS) {
+      const waitMinutes = Math.ceil(
+        (EMAIL_COOLDOWN_MS - (now - entry.lastSentMs)) / 60_000,
+      );
+      return {
+        allowed: false,
+        error: `Odota ${waitMinutes} min ennen uuden linkin lähettämistä`,
+      };
+    }
+    const count = entry.dailyDate === today ? entry.dailyCount : 0;
+    if (count >= EMAIL_DAILY_LIMIT) {
+      return {
+        allowed: false,
+        error: 'Päivittäinen rajoitus täynnä, yritä huomenna',
+      };
+    }
+    emailRateLimitMap.set(key, {
+      lastSentMs: now,
+      dailyCount: count + 1,
+      dailyDate: today,
+    });
+  } else {
+    emailRateLimitMap.set(key, {
+      lastSentMs: now,
+      dailyCount: 1,
+      dailyDate: today,
+    });
+  }
+  return { allowed: true };
+}
+
 function getClientIp(c: Context): string {
   return (
     c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ||
@@ -328,6 +396,14 @@ player.post(
       // Ignore malformed body and treat as empty.
     }
 
+    const email = typeof body['email'] === 'string' ? body['email'].trim() : '';
+    if (email) {
+      const { allowed, error } = checkEmailRateLimit(email);
+      if (!allowed) {
+        return c.json({ error: error ?? 'Liian monta yritystä' }, 429);
+      }
+    }
+
     const rawToken = randomBytes(32).toString('hex');
     const tokenHash = hashToken(rawToken);
     const expiresAt = new Date(
@@ -342,7 +418,6 @@ player.post(
       "DELETE FROM player_transfer_tokens WHERE expires_at <= datetime('now')",
     ).run();
 
-    const email = typeof body['email'] === 'string' ? body['email'].trim() : '';
     if (email) {
       const baseUrl = process.env.BASE_URL || 'https://sanakenno.fi';
       await sendTransferLink(email, rawToken, baseUrl).catch((err: unknown) => {

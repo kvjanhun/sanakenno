@@ -36,6 +36,18 @@ Feature: Player authentication
     And the response should contain "transfer_token"
     And the players table should not contain the email "test@example.com"
 
+  Scenario: Sending a transfer email to the same address twice within 10 minutes is blocked
+    Given a player has initialized their identity
+    And a transfer email has just been sent to "cooldown@example.com"
+    When a POST is made to /api/player/auth/transfer/create with email "cooldown@example.com" and the Bearer token
+    Then the response status should be 429
+
+  Scenario: Sending more than 10 transfer emails to the same address in one day is blocked
+    Given a player has initialized their identity
+    And 10 transfer emails have already been sent to "daily@example.com" today
+    When a POST is made to /api/player/auth/transfer/create with email "daily@example.com" and the Bearer token
+    Then the response status should be 429
+
   # --- Transfer token use ---
 
   Scenario: A valid transfer token can be exchanged for a Bearer token
