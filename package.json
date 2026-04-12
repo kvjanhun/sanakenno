@@ -16,7 +16,7 @@
     "typecheck": "tsc --noEmit && pnpm --filter @sanakenno/web typecheck && pnpm --filter @sanakenno/mobile typecheck",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
-    "create-admin": "tsx scripts/create-admin.ts",
+    "create-admin": "tsx scripts/archive/create-admin.ts",
     "version:changeset": "changeset",
     "version:bump": "changeset version && node scripts/sync-versions.js"
   },
