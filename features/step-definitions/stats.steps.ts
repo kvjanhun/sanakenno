@@ -46,7 +46,7 @@ Given('the player has no stats yet', function (this: SanakennoWorld) {
 });
 
 When(
-  'the player finds their first word on puzzle {int} dated {string}',
+  'the player finds their first word on puzzle index {int} dated {string}',
   function (this: SanakennoWorld, puzzleNum: number, date: string) {
     this.playerStats = updateStatsRecord(
       this.playerStats,
@@ -62,7 +62,7 @@ When(
 );
 
 Then(
-  'a stats record should exist for puzzle {int}',
+  'a stats record should exist for puzzle index {int}',
   function (this: SanakennoWorld, puzzleNum: number) {
     const rec = this.playerStats.records.find(
       (r) => r.puzzle_number === puzzleNum,
@@ -72,7 +72,7 @@ Then(
 );
 
 Given(
-  'a stats record for puzzle {int} with best_rank {string}',
+  'a stats record for puzzle index {int} with best_rank {string}',
   function (this: SanakennoWorld, puzzleNum: number, rank: string) {
     this.playerStats = updateStatsRecord(
       this.playerStats,
@@ -87,7 +87,7 @@ Given(
 );
 
 When(
-  'the stats record is updated with rank {string} on puzzle {int}',
+  'the stats record is updated with rank {string} on puzzle index {int}',
   function (this: SanakennoWorld, rank: string, puzzleNum: number) {
     this.playerStats = updateStatsRecord(
       this.playerStats,
@@ -124,7 +124,7 @@ Then(
 /* ------------------------------------------------------------------ */
 
 When(
-  'the player finds a word {string} on puzzle {int} dated {string}',
+  'the player finds a word {string} on puzzle index {int} dated {string}',
   function (
     this: SanakennoWorld,
     word: string,
@@ -146,7 +146,7 @@ When(
 );
 
 Given(
-  'a stats record for puzzle {int} with longest_word {string}',
+  'a stats record for puzzle index {int} with longest_word {string}',
   function (this: SanakennoWorld, puzzleNum: number, word: string) {
     this.playerStats = updateStatsRecord(
       this.playerStats,
@@ -162,7 +162,7 @@ Given(
 );
 
 When(
-  'the stats record is updated with longest_word {string} on puzzle {int}',
+  'the stats record is updated with longest_word {string} on puzzle index {int}',
   function (this: SanakennoWorld, word: string, puzzleNum: number) {
     this.playerStats = updateStatsRecord(
       this.playerStats,
@@ -178,7 +178,7 @@ When(
 );
 
 Then(
-  'the stats record for puzzle {int} should have longest_word {string}',
+  'the stats record for puzzle index {int} should have longest_word {string}',
   function (this: SanakennoWorld, puzzleNum: number, expected: string) {
     const rec = this.playerStats.records.find(
       (r) => r.puzzle_number === puzzleNum,
@@ -189,7 +189,7 @@ Then(
 );
 
 Then(
-  'the stats record for puzzle {int} should still have longest_word {string}',
+  'the stats record for puzzle index {int} should still have longest_word {string}',
   function (this: SanakennoWorld, puzzleNum: number, expected: string) {
     const rec = this.playerStats.records.find(
       (r) => r.puzzle_number === puzzleNum,
@@ -200,7 +200,7 @@ Then(
 );
 
 Given(
-  'a stats record for puzzle {int} with pangrams_found {int}',
+  'a stats record for puzzle index {int} with pangrams_found {int}',
   function (this: SanakennoWorld, puzzleNum: number, count: number) {
     this.playerStats = updateStatsRecord(
       this.playerStats,
@@ -216,7 +216,7 @@ Given(
 );
 
 When(
-  'the stats record is updated with pangrams_found {int} on puzzle {int}',
+  'the stats record is updated with pangrams_found {int} on puzzle index {int}',
   function (this: SanakennoWorld, count: number, puzzleNum: number) {
     this.playerStats = updateStatsRecord(
       this.playerStats,
@@ -232,7 +232,7 @@ When(
 );
 
 Then(
-  'the stats record for puzzle {int} should have pangrams_found {int}',
+  'the stats record for puzzle index {int} should have pangrams_found {int}',
   function (this: SanakennoWorld, puzzleNum: number, expected: number) {
     const rec = this.playerStats.records.find(
       (r) => r.puzzle_number === puzzleNum,
@@ -243,7 +243,7 @@ Then(
 );
 
 Then(
-  'the stats record for puzzle {int} should still have pangrams_found {int}',
+  'the stats record for puzzle index {int} should still have pangrams_found {int}',
   function (this: SanakennoWorld, puzzleNum: number, expected: number) {
     const rec = this.playerStats.records.find(
       (r) => r.puzzle_number === puzzleNum,
@@ -370,7 +370,7 @@ Then(
 /* ------------------------------------------------------------------ */
 
 Given(
-  'the server has a stats record for puzzle {int} with best_rank {string}',
+  'the server has a stats record for puzzle index {int} with best_rank {string}',
   function (this: SanakennoWorld, puzzleNum: number, rank: string) {
     this.serverStatsRecord = makeRecord({
       puzzle_number: puzzleNum,
@@ -382,7 +382,7 @@ Given(
 );
 
 Given(
-  'the local device has a stats record for puzzle {int} with best_rank {string}',
+  'the local device has a stats record for puzzle index {int} with best_rank {string}',
   function (this: SanakennoWorld, puzzleNum: number, rank: string) {
     this.playerStats = updateStatsRecord(
       this.playerStats,
@@ -416,7 +416,7 @@ When(
 );
 
 Then(
-  'the local stats record for puzzle {int} should have best_rank {string}',
+  'the local stats record for puzzle index {int} should have best_rank {string}',
   function (this: SanakennoWorld, puzzleNum: number, expectedRank: string) {
     const rec = this.playerStats.records.find(
       (r) => r.puzzle_number === puzzleNum,

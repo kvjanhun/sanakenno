@@ -7,43 +7,43 @@ Feature: Player stats and history
 
   Scenario: Stats record is created on first word found
     Given the player has no stats yet
-    When the player finds their first word on puzzle 5 dated "2026-04-01"
-    Then a stats record should exist for puzzle 5
+    When the player finds their first word on puzzle index 5 dated "2026-04-01"
+    Then a stats record should exist for puzzle index 5
 
   Scenario: Best rank only upgrades
-    Given a stats record for puzzle 5 with best_rank "Onnistuja"
-    When the stats record is updated with rank "Sanavalmis" on puzzle 5
+    Given a stats record for puzzle index 5 with best_rank "Onnistuja"
+    When the stats record is updated with rank "Sanavalmis" on puzzle index 5
     Then the stats record best_rank should be "Sanavalmis"
 
   Scenario: Best rank never downgrades
-    Given a stats record for puzzle 5 with best_rank "Sanavalmis"
-    When the stats record is updated with rank "Onnistuja" on puzzle 5
+    Given a stats record for puzzle index 5 with best_rank "Sanavalmis"
+    When the stats record is updated with rank "Onnistuja" on puzzle index 5
     Then the stats record best_rank should still be "Sanavalmis"
 
   Scenario: longest_word is recorded per puzzle
     Given the player has no stats yet
-    When the player finds a word "sanake" on puzzle 7 dated "2026-04-01"
-    Then the stats record for puzzle 7 should have longest_word "sanake"
+    When the player finds a word "sanake" on puzzle index 7 dated "2026-04-01"
+    Then the stats record for puzzle index 7 should have longest_word "sanake"
 
   Scenario: longest_word is upgraded when a longer word is found
-    Given a stats record for puzzle 7 with longest_word "kala"
-    When the stats record is updated with longest_word "lakana" on puzzle 7
-    Then the stats record for puzzle 7 should have longest_word "lakana"
+    Given a stats record for puzzle index 7 with longest_word "kala"
+    When the stats record is updated with longest_word "lakana" on puzzle index 7
+    Then the stats record for puzzle index 7 should have longest_word "lakana"
 
   Scenario: longest_word is not downgraded
-    Given a stats record for puzzle 7 with longest_word "lakana"
-    When the stats record is updated with longest_word "kala" on puzzle 7
-    Then the stats record for puzzle 7 should still have longest_word "lakana"
+    Given a stats record for puzzle index 7 with longest_word "lakana"
+    When the stats record is updated with longest_word "kala" on puzzle index 7
+    Then the stats record for puzzle index 7 should still have longest_word "lakana"
 
   Scenario: pangrams_found increments when a pangram is recorded
-    Given a stats record for puzzle 7 with pangrams_found 0
-    When the stats record is updated with pangrams_found 1 on puzzle 7
-    Then the stats record for puzzle 7 should have pangrams_found 1
+    Given a stats record for puzzle index 7 with pangrams_found 0
+    When the stats record is updated with pangrams_found 1 on puzzle index 7
+    Then the stats record for puzzle index 7 should have pangrams_found 1
 
   Scenario: pangrams_found takes the maximum
-    Given a stats record for puzzle 7 with pangrams_found 2
-    When the stats record is updated with pangrams_found 1 on puzzle 7
-    Then the stats record for puzzle 7 should still have pangrams_found 2
+    Given a stats record for puzzle index 7 with pangrams_found 2
+    When the stats record is updated with pangrams_found 1 on puzzle index 7
+    Then the stats record for puzzle index 7 should still have pangrams_found 2
 
   # --- Streak computation ---
 
@@ -106,13 +106,13 @@ Feature: Player stats and history
   # --- Server-backed stats ---
 
   Scenario: Server stats are merged into local after login on a new device
-    Given the server has a stats record for puzzle 5 with best_rank "Ällistyttävä"
-    And the local device has a stats record for puzzle 5 with best_rank "Onnistuja"
+    Given the server has a stats record for puzzle index 5 with best_rank "Ällistyttävä"
+    And the local device has a stats record for puzzle index 5 with best_rank "Onnistuja"
     When pullAndMerge is called with the server record
-    Then the local stats record for puzzle 5 should have best_rank "Ällistyttävä"
+    Then the local stats record for puzzle index 5 should have best_rank "Ällistyttävä"
 
   Scenario: Local stats are not overwritten by weaker server stats
-    Given the server has a stats record for puzzle 5 with best_rank "Hyvä alku"
-    And the local device has a stats record for puzzle 5 with best_rank "Täysi kenno"
+    Given the server has a stats record for puzzle index 5 with best_rank "Hyvä alku"
+    And the local device has a stats record for puzzle index 5 with best_rank "Täysi kenno"
     When pullAndMerge is called with the server record
-    Then the local stats record for puzzle 5 should have best_rank "Täysi kenno"
+    Then the local stats record for puzzle index 5 should have best_rank "Täysi kenno"

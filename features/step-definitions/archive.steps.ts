@@ -173,18 +173,13 @@ Then(
 );
 
 Then(
-  'the last entry date should be the rotation epoch',
-  function (this: SanakennoWorld) {
-    const db = getDb();
-    const row = db
-      .prepare("SELECT value FROM config WHERE key = 'rotation_epoch'")
-      .get() as { value: string } | undefined;
-    const epochDate = row?.value ?? '2026-02-24';
+  'the last entry should be for puzzle index {int}',
+  function (this: SanakennoWorld, puzzleNumber: number) {
     const last = this.archiveEntries[this.archiveEntries.length - 1];
     assert.equal(
-      last.date,
-      epochDate,
-      `Expected last entry to be epoch ${epochDate}, got ${last.date}`,
+      last.puzzle_number,
+      puzzleNumber,
+      `Expected last entry to have puzzle_number ${puzzleNumber}, got ${last.puzzle_number}`,
     );
   },
 );

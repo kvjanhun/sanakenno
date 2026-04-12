@@ -12,7 +12,7 @@ import { Hono } from 'hono';
 import {
   getPuzzleForDate,
   getPuzzleBySlot,
-  getRotationEpoch,
+  totalPuzzles,
 } from '../puzzle-engine';
 
 interface ArchiveEntry {
@@ -29,7 +29,8 @@ const archive = new Hono();
 /**
  * GET /api/archive
  * Returns puzzle metadata, newest first.
- * With ?all=true, returns all unique past puzzle slots (up to totalPuzzles days).
+ * With ?all=true, returns entries from today back to the first occurrence of
+ * slot 0 (Kenno #1), so the oldest entry is always puzzle_number 0.
  * Without the param, returns only the last 7 days.
  * Dates are computed in Helsinki timezone to match puzzle rotation.
  */
@@ -40,31 +41,15 @@ archive.get('/', (c) => {
 
     let days: number;
     if (allParam === 'true') {
-      // Compute the number of days since the rotation epoch in Helsinki time,
-      // so ?all=true returns exactly one entry per day the game has been live —
-      // no overflow into future slots, no underflow cutting off early history.
+      // The slot sequence runs 1, 2, ..., N-1, 0, 1, 2, ...
+      // Today's slot number equals the number of days back to reach slot 0.
+      // When today IS slot 0, show one full cycle so all other slots appear.
       const helsinkiNow = new Date(
         now.toLocaleString('en-US', { timeZone: 'Europe/Helsinki' }),
       );
-      const epoch = getRotationEpoch();
-      const epochHelsinki = new Date(
-        epoch.toLocaleString('en-US', { timeZone: 'Europe/Helsinki' }),
-      );
-      const todayMidnight = new Date(
-        helsinkiNow.getFullYear(),
-        helsinkiNow.getMonth(),
-        helsinkiNow.getDate(),
-      );
-      const epochMidnight = new Date(
-        epochHelsinki.getFullYear(),
-        epochHelsinki.getMonth(),
-        epochHelsinki.getDate(),
-      );
-      const daysSinceEpoch = Math.round(
-        (todayMidnight.getTime() - epochMidnight.getTime()) /
-          (1000 * 60 * 60 * 24),
-      );
-      days = daysSinceEpoch + 1; // +1 to include today
+      const currentSlot = getPuzzleForDate(helsinkiNow);
+      const total = totalPuzzles();
+      days = currentSlot > 0 ? currentSlot + 1 : total;
     } else {
       days = 7;
     }

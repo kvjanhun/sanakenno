@@ -140,7 +140,7 @@ Given(
 );
 
 Given(
-  'the server has a stats record for puzzle {int} with rank {string}',
+  'the server has a stats record for puzzle index {int} with rank {string}',
   function (this: SyncWorld, puzzleNumber: number, rank: string) {
     assert.ok(this.lastPlayerId, 'No player in context');
     const db = getDb();
@@ -166,7 +166,7 @@ Given(
 );
 
 Given(
-  'the server has a stats record for puzzle {int} with longest_word {string}',
+  'the server has a stats record for puzzle index {int} with longest_word {string}',
   function (this: SyncWorld, puzzleNumber: number, word: string) {
     assert.ok(this.lastPlayerId, 'No player in context');
     const db = getDb();
@@ -193,7 +193,7 @@ Given(
 );
 
 Given(
-  'the server has a stats record for puzzle {int} with pangrams_found {int}',
+  'the server has a stats record for puzzle index {int} with pangrams_found {int}',
   function (this: SyncWorld, puzzleNumber: number, count: number) {
     assert.ok(this.lastPlayerId, 'No player in context');
     const db = getDb();
@@ -220,7 +220,7 @@ Given(
 );
 
 Given(
-  'the server has a stats record for puzzle {int} with best_score {int}',
+  'the server has a stats record for puzzle index {int} with best_score {int}',
   function (this: SyncWorld, puzzleNumber: number, score: number) {
     assert.ok(this.lastPlayerId, 'No player in context');
     const db = getDb();
@@ -246,7 +246,7 @@ Given(
 );
 
 Given(
-  'the server has a puzzle state for puzzle {int} with {int} found words',
+  'the server has a puzzle state for puzzle index {int} with {int} found words',
   function (this: SyncWorld, puzzleNumber: number, wordCount: number) {
     assert.ok(this.lastPlayerId, 'No player in context');
     const words = Array.from({ length: wordCount }, (_, i) => `word${i}`);
@@ -320,7 +320,7 @@ When(
 );
 
 When(
-  /^a POST is made to \/api\/player\/sync\/stats with a stats record for puzzle (\d+)$/,
+  /^a POST is made to \/api\/player\/sync\/stats with a stats record for puzzle index (\d+)$/,
   async function (this: SyncWorld, puzzleNumber: number) {
     assert.ok(this.playerBearerToken, 'No Bearer token in context');
     this.response = await app.request('/api/player/sync/stats', {
@@ -333,7 +333,7 @@ When(
 );
 
 When(
-  /^a POST is made to \/api\/player\/sync\/stats with rank "([^"]*)" for puzzle (\d+)$/,
+  /^a POST is made to \/api\/player\/sync\/stats with rank "([^"]*)" for puzzle index (\d+)$/,
   async function (this: SyncWorld, rank: string, puzzleNumber: number) {
     assert.ok(this.playerBearerToken, 'No Bearer token in context');
     this.response = await app.request('/api/player/sync/stats', {
@@ -346,7 +346,7 @@ When(
 );
 
 When(
-  /^a POST is made to \/api\/player\/sync\/stats with longest_word "([^"]*)" for puzzle (\d+)$/,
+  /^a POST is made to \/api\/player\/sync\/stats with longest_word "([^"]*)" for puzzle index (\d+)$/,
   async function (this: SyncWorld, word: string, puzzleNumber: number) {
     assert.ok(this.playerBearerToken, 'No Bearer token in context');
     this.response = await app.request('/api/player/sync/stats', {
@@ -361,7 +361,7 @@ When(
 );
 
 When(
-  /^a POST is made to \/api\/player\/sync\/stats with pangrams_found (\d+) for puzzle (\d+)$/,
+  /^a POST is made to \/api\/player\/sync\/stats with pangrams_found (\d+) for puzzle index (\d+)$/,
   async function (this: SyncWorld, count: number, puzzleNumber: number) {
     assert.ok(this.playerBearerToken, 'No Bearer token in context');
     this.response = await app.request('/api/player/sync/stats', {
@@ -376,7 +376,7 @@ When(
 );
 
 When(
-  /^a POST is made to \/api\/player\/sync\/stats with best_score (\d+) for puzzle (\d+)$/,
+  /^a POST is made to \/api\/player\/sync\/stats with best_score (\d+) for puzzle index (\d+)$/,
   async function (this: SyncWorld, score: number, puzzleNumber: number) {
     assert.ok(this.playerBearerToken, 'No Bearer token in context');
     this.response = await app.request('/api/player/sync/stats', {
@@ -416,7 +416,7 @@ When(
 );
 
 When(
-  /^a POST is made to \/api\/player\/sync\/state with a state for puzzle (\d+)$/,
+  /^a POST is made to \/api\/player\/sync\/state with a state for puzzle index (\d+)$/,
   async function (this: SyncWorld, puzzleNumber: number) {
     assert.ok(this.playerBearerToken, 'No Bearer token in context');
     this.response = await app.request('/api/player/sync/state', {
@@ -437,7 +437,7 @@ When(
 );
 
 When(
-  /^a POST is made to \/api\/player\/sync\/state with (\d+) found words for puzzle (\d+)$/,
+  /^a POST is made to \/api\/player\/sync\/state with (\d+) found words for puzzle index (\d+)$/,
   async function (this: SyncWorld, wordCount: number, puzzleNumber: number) {
     assert.ok(this.playerBearerToken, 'No Bearer token in context');
     const words = Array.from({ length: wordCount }, (_, i) => `word${i}`);
@@ -569,7 +569,7 @@ Then(
 );
 
 Then(
-  'the server should have a stats record for puzzle {int}',
+  'the server should have a stats record for puzzle index {int}',
   function (this: SyncWorld, puzzleNumber: number) {
     assert.ok(this.lastPlayerId, 'No player in context');
     const db = getDb();
@@ -586,7 +586,7 @@ Then(
 );
 
 Then(
-  'the server stats for puzzle {int} should have rank {string}',
+  'the server stats for puzzle index {int} should have rank {string}',
   function (this: SyncWorld, puzzleNumber: number, rank: string) {
     assert.ok(this.lastPlayerId, 'No player in context');
     const db = getDb();
@@ -604,7 +604,7 @@ Then(
 );
 
 Then(
-  'the server stats for puzzle {int} should still have rank {string}',
+  'the server stats for puzzle index {int} should still have rank {string}',
   function (this: SyncWorld, puzzleNumber: number, rank: string) {
     assert.ok(this.lastPlayerId, 'No player in context');
     const db = getDb();
@@ -622,7 +622,7 @@ Then(
 );
 
 Then(
-  'the server stats for puzzle {int} should have best_score {int}',
+  'the server stats for puzzle index {int} should have best_score {int}',
   function (this: SyncWorld, puzzleNumber: number, score: number) {
     assert.ok(this.lastPlayerId, 'No player in context');
     const db = getDb();
@@ -640,7 +640,7 @@ Then(
 );
 
 Then(
-  'the server stats for puzzle {int} should still have best_score {int}',
+  'the server stats for puzzle index {int} should still have best_score {int}',
   function (this: SyncWorld, puzzleNumber: number, score: number) {
     assert.ok(this.lastPlayerId, 'No player in context');
     const db = getDb();
@@ -658,7 +658,7 @@ Then(
 );
 
 Then(
-  'the server should have a puzzle state for puzzle {int}',
+  'the server should have a puzzle state for puzzle index {int}',
   function (this: SyncWorld, puzzleNumber: number) {
     assert.ok(this.lastPlayerId, 'No player in context');
     const db = getDb();
@@ -675,7 +675,7 @@ Then(
 );
 
 Then(
-  'the server should have {int} found words for puzzle {int}',
+  'the server should have {int} found words for puzzle index {int}',
   function (this: SyncWorld, wordCount: number, puzzleNumber: number) {
     assert.ok(this.lastPlayerId, 'No player in context');
     const db = getDb();
@@ -694,7 +694,7 @@ Then(
 );
 
 Then(
-  'the server stats for puzzle {int} should have longest_word {string}',
+  'the server stats for puzzle index {int} should have longest_word {string}',
   function (this: SyncWorld, puzzleNumber: number, word: string) {
     assert.ok(this.lastPlayerId, 'No player in context');
     const db = getDb();
@@ -712,7 +712,7 @@ Then(
 );
 
 Then(
-  'the server stats for puzzle {int} should still have longest_word {string}',
+  'the server stats for puzzle index {int} should still have longest_word {string}',
   function (this: SyncWorld, puzzleNumber: number, word: string) {
     assert.ok(this.lastPlayerId, 'No player in context');
     const db = getDb();
@@ -730,7 +730,7 @@ Then(
 );
 
 Then(
-  'the server stats for puzzle {int} should have pangrams_found {int}',
+  'the server stats for puzzle index {int} should have pangrams_found {int}',
   function (this: SyncWorld, puzzleNumber: number, count: number) {
     assert.ok(this.lastPlayerId, 'No player in context');
     const db = getDb();
@@ -748,7 +748,7 @@ Then(
 );
 
 Then(
-  'the server stats for puzzle {int} should still have pangrams_found {int}',
+  'the server stats for puzzle index {int} should still have pangrams_found {int}',
   function (this: SyncWorld, puzzleNumber: number, count: number) {
     assert.ok(this.lastPlayerId, 'No player in context');
     const db = getDb();
