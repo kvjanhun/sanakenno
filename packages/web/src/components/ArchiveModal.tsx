@@ -213,7 +213,7 @@ export function ArchiveModal({
 
                   {/* Letter preview */}
                   <div
-                    className="flex gap-0.5 text-xs font-[var(--font-mono)]"
+                    className="flex items-baseline gap-0.5 text-xs font-[var(--font-mono)]"
                     style={{ color: 'var(--color-text-secondary)' }}
                   >
                     {entry.letters.map((l, i) => (
