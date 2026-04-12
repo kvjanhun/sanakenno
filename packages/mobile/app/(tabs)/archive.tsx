@@ -170,7 +170,10 @@ export default function ArchiveScreen() {
   const pastEntries = entries.filter((e) => !e.is_today);
 
   return (
-    <View style={[styles.flex, { backgroundColor: theme.bgPrimary }]}>
+    <SafeAreaView
+      edges={['top']}
+      style={[styles.flex, { backgroundColor: theme.bgPrimary }]}
+    >
       {/* Today's card — always visible, never scrolls away */}
       {today && (
         <View style={styles.todaySection}>
@@ -357,7 +360,7 @@ export default function ArchiveScreen() {
           )}
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
