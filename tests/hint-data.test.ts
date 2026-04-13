@@ -97,6 +97,24 @@ describe('deriveHintData', () => {
     ]);
   });
 
+  it('treats decomposed Finnish letters as distinct in pair matching', () => {
+    // "a\u0308" is decomposed "ä" and should map to hint_data key "ää".
+    const found = new Set(['a\u0308a\u0308iti']);
+    const hintDataWithFinnishPair: HintData = {
+      ...HINT_DATA,
+      by_pair: {
+        ...HINT_DATA.by_pair,
+        ää: 2,
+      },
+    };
+
+    const result = deriveHintData(hintDataWithFinnishPair, found, ALL_LETTERS);
+    const aaDiaeresisEntry = result.pairMap.find((e) => e.pair === 'ää')!;
+
+    expect(aaDiaeresisEntry.found).toBe(1);
+    expect(aaDiaeresisEntry.remaining).toBe(1);
+  });
+
   it('reduces by_letter counts for found words', () => {
     const found = new Set(['kala', 'kana']); // Both start with 'k'
     const result = deriveHintData(HINT_DATA, found, ALL_LETTERS);

@@ -83,6 +83,10 @@ const FINNISH_SORT_ORDER = new Map(
   [...FINNISH_ALPHABET].map((char, index) => [char, index]),
 );
 
+function normalizeFinnishText(value: string): string {
+  return value.normalize('NFC').toLocaleLowerCase('fi');
+}
+
 function finnishSortWeight(char: string): number {
   const knownIndex = FINNISH_SORT_ORDER.get(char);
   if (knownIndex !== undefined) {
@@ -92,8 +96,8 @@ function finnishSortWeight(char: string): number {
 }
 
 function compareFinnishAlphabetically(a: string, b: string): number {
-  const left = a.toLocaleLowerCase('fi');
-  const right = b.toLocaleLowerCase('fi');
+  const left = Array.from(normalizeFinnishText(a));
+  const right = Array.from(normalizeFinnishText(b));
   const maxLen = Math.max(left.length, right.length);
 
   for (let i = 0; i < maxLen; i++) {
@@ -116,7 +120,9 @@ function compareFinnishAlphabetically(a: string, b: string): number {
 function countByLetter(foundWords: Set<string>): Record<string, number> {
   const map: Record<string, number> = {};
   for (const word of foundWords) {
-    const l = word[0];
+    const normalizedWord = normalizeFinnishText(word);
+    const l = Array.from(normalizedWord)[0];
+    if (!l) continue;
     map[l] = (map[l] ?? 0) + 1;
   }
   return map;
@@ -136,7 +142,9 @@ function countByLength(foundWords: Set<string>): Record<string, number> {
 function countByPair(foundWords: Set<string>): Record<string, number> {
   const map: Record<string, number> = {};
   for (const word of foundWords) {
-    const pair = word.slice(0, 2);
+    const normalizedWord = normalizeFinnishText(word);
+    const pair = Array.from(normalizedWord).slice(0, 2).join('');
+    if (pair.length === 0) continue;
     map[pair] = (map[pair] ?? 0) + 1;
   }
   return map;
@@ -184,7 +192,7 @@ export function deriveHintData(
 
   const letterMap: LetterEntry[] = Object.entries(hintData.by_letter)
     .map(([letter, total]) => {
-      const found = foundByLetter[letter] ?? 0;
+      const found = foundByLetter[normalizeFinnishText(letter)] ?? 0;
       return { letter, total, found, remaining: total - found };
     })
     .sort((a, b) => compareFinnishAlphabetically(a.letter, b.letter));
@@ -198,7 +206,7 @@ export function deriveHintData(
 
   const pairMap: PairEntry[] = Object.entries(hintData.by_pair)
     .map(([pair, total]) => {
-      const found = foundByPair[pair] ?? 0;
+      const found = foundByPair[normalizeFinnishText(pair)] ?? 0;
       return { pair, total, found, remaining: total - found };
     })
     .sort((a, b) => compareFinnishAlphabetically(a.pair, b.pair));
