@@ -18,6 +18,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ChevronUp } from 'lucide-react-native';
 import { buildKotusUrl } from '@sanakenno/shared';
 import type { Theme } from '../theme';
 
@@ -159,7 +160,7 @@ export function FoundWords({
         <Text style={[styles.headerText, { color: theme.textSecondary }]}>
           Löydetyt sanat ({foundWords.size})
         </Text>
-        <Text style={[styles.chevron, { color: theme.textTertiary }]}>▲</Text>
+        <ChevronUp size={14} strokeWidth={2.5} color={theme.textTertiary} />
       </Pressable>
 
       <ScrollView
@@ -311,9 +312,6 @@ const styles = StyleSheet.create({
   headerText: {
     fontSize: 13,
     fontWeight: '500',
-  },
-  chevron: {
-    fontSize: 11,
   },
   pillRow: {
     flexDirection: 'row',
