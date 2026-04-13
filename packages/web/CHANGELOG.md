@@ -1,5 +1,11 @@
 # @sanakenno/web
 
+## 1.2.6
+
+### Patch Changes
+
+- Email: redesign the device-transfer email — clearer subject, no repeated "Sanakenno.fi" branding, single privacy disclosure at the bottom, and a tighter validity-and-single-use note
+
 ## 1.2.0
 
 ### Minor Changes

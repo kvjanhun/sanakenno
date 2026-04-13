@@ -115,3 +115,15 @@ Feature: Player authentication
     Given a transfer token exists for the current authenticated player
     Then the player_transfer_tokens table should not contain the raw token
     And the player_transfer_tokens table should contain the SHA-256 hash of the token
+
+  # --- iOS device-link UI ---
+
+  @ios
+  Scenario: QR code toggles off when the show button is tapped again
+    Given the player is on the settings screen with a transfer token
+    When the player taps "Näytä QR-koodi"
+    Then the QR code should be visible
+    And the button label should change to "Piilota QR-koodi"
+    When the player taps "Piilota QR-koodi"
+    Then the QR code should be hidden
+    And the button label should change back to "Näytä QR-koodi"

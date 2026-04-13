@@ -45,26 +45,31 @@ export async function sendTransferLink(
   const { error } = await getResend().emails.send({
     from: 'Sanakenno <noreply@sanakenno.fi>',
     to: email,
-    subject: 'Sanakenno.fi - Yhdistä laite',
+    subject: 'Yhdistä Sanakenno uudelle laitteelle',
     html: `
-      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
-        <h2 style="color: #1a1a1a;">Sanakenno.fi</h2>
-        <p>Yhdistä Sanakenno-tilisi uudelle laitteelle klikkaamalla alla olevaa linkkiä.</p>
-        <p>Linkki on voimassa <strong>15 minuuttia</strong>.</p>
-        <p style="margin: 24px 0;">
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px; color: #1a1a1a;">
+        <h1 style="color: #ff643e; margin: 0 0 20px 0; font-size: 24px; font-weight: 700;">Sanakenno</h1>
+        <p style="font-size: 16px; line-height: 1.5; margin: 0 0 28px 0;">
+          Klikkaa alla olevaa painiketta yhdistääksesi tilisi tähän laitteeseen.
+        </p>
+        <p style="margin: 0 0 28px 0;">
           <a href="${link}"
-              style="background: #ff643e; color: #fff; padding: 12px 24px;
-                     border-radius: 6px; text-decoration: none; font-weight: 600;">
+             style="background: #ff643e; color: #fff; padding: 14px 28px;
+                    border-radius: 8px; text-decoration: none; font-weight: 600;
+                    display: inline-block; font-size: 16px;">
             Yhdistä laite
           </a>
         </p>
-        <p><strong>Sanakenno.fi ei tallenna sähköpostiosoitettasi.</strong></p>
-        <p style="color: #666; font-size: 14px;">
-          Jos et pyytänyt tätä viestiä, voit jättää sen huomiotta.
+        <p style="font-size: 14px; color: #666; line-height: 1.5; margin: 0;">
+          Linkki on voimassa 15 minuuttia ja sen voi käyttää vain kerran.
+        </p>
+        <hr style="border: none; border-top: 1px solid #eee; margin: 32px 0 20px 0;" />
+        <p style="font-size: 12px; color: #999; line-height: 1.6; margin: 0;">
+          Sähköpostiosoitettasi ei tallenneta. Jos et pyytänyt tätä viestiä, voit jättää sen huomiotta.
         </p>
       </div>
     `,
-    text: `Yhdistä Sanakenno-tilisi uudelle laitteelle klikkaamalla alla olevaa linkkiä.\n\nYhdistä laite:\n${link}\n\nLinkki on voimassa 15 minuuttia.\n\nSanakenno.fi ei tallenna sähköpostiosoitettasi.\n\nJos et pyytänyt tätä viestiä, voit jättää sen huomiotta.`,
+    text: `Sanakenno\n\nKlikkaa alla olevaa linkkiä yhdistääksesi tilisi tähän laitteeseen:\n\n${link}\n\nLinkki on voimassa 15 minuuttia ja sen voi käyttää vain kerran.\n\n—\nSähköpostiosoitettasi ei tallenneta. Jos et pyytänyt tätä viestiä, voit jättää sen huomiotta.`,
   });
 
   if (error) {

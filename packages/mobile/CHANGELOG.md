@@ -1,5 +1,13 @@
 # @sanakenno/mobile
 
+## 0.4.6
+
+### Patch Changes
+
+- Auth: tap "Näytä QR-koodi" again to hide the QR code; button label flips to "Piilota QR-koodi" while shown
+- Auth: scale + light haptic feedback on every action button (copy link, copy code, QR, send email, send, connect, logout) so taps feel responsive even when there's no visible result
+- Auth: fix misleading post-send confirmation — show "Sähköposti lähetetty!" in accent colour after a successful send, leaving "Tarkista sähköpostiosoite." reserved for invalid-format errors
+
 ## 0.4.2
 
 ### Patch Changes

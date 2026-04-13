@@ -6,16 +6,63 @@ import {
   Pressable,
   ActivityIndicator,
   StyleSheet,
+  type StyleProp,
+  type ViewStyle,
 } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import * as Clipboard from 'expo-clipboard';
 import { Copy, LogOut, Mail, QrCode } from 'lucide-react-native';
 import isEmail from 'validator/lib/isEmail';
 import QRCode from 'react-native-qrcode-svg';
+import * as PreparedHaptics from 'prepared-haptics';
 import { useAuthStore } from '../store/useAuthStore';
 import type { Theme } from '../theme';
 
 interface AuthSectionProps {
   theme: Theme;
+}
+
+/**
+ * Pressable that scales down + triggers a light haptic on touch-down,
+ * scales back to 1 on release. Used for all auth action buttons so they
+ * feel responsive (especially copy actions which have no visible result).
+ */
+function AnimatedButton({
+  onPress,
+  disabled,
+  style,
+  children,
+}: {
+  onPress: () => void;
+  disabled?: boolean;
+  style?: StyleProp<ViewStyle>;
+  children: React.ReactNode;
+}) {
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      onPressIn={() => {
+        if (disabled) return;
+        PreparedHaptics.triggerImpact('light');
+        scale.value = withTiming(0.96, { duration: 80 });
+      }}
+      onPressOut={() => {
+        scale.value = withTiming(1, { duration: 120 });
+      }}
+    >
+      <Animated.View style={[style, animatedStyle]}>{children}</Animated.View>
+    </Pressable>
+  );
 }
 
 export function AuthSection({ theme }: AuthSectionProps) {
@@ -54,10 +101,14 @@ export function AuthSection({ theme }: AuthSectionProps) {
     }
   }, [ensureToken, transferToken]);
 
-  const handleShowQr = useCallback(async () => {
+  const handleToggleQr = useCallback(async () => {
+    if (showQr) {
+      setShowQr(false);
+      return;
+    }
     await ensureToken();
     setShowQr(true);
-  }, [ensureToken]);
+  }, [ensureToken, showQr]);
 
   const handleSendEmail = useCallback(async () => {
     const email = emailInput.trim();
@@ -92,14 +143,14 @@ export function AuthSection({ theme }: AuthSectionProps) {
         {error ? (
           <>
             <Text style={styles.errorText}>{error}</Text>
-            <Pressable
+            <AnimatedButton
               onPress={() => void useAuthStore.getState().initPlayer()}
               style={[styles.button, { borderColor: theme.border }]}
             >
               <Text style={[styles.buttonText, { color: theme.textPrimary }]}>
                 Yritä uudelleen
               </Text>
-            </Pressable>
+            </AnimatedButton>
           </>
         ) : (
           <ActivityIndicator size="small" color={theme.textSecondary} />
@@ -119,7 +170,7 @@ export function AuthSection({ theme }: AuthSectionProps) {
           <Text style={[styles.hint, { color: theme.textTertiary }]}>
             Synkronoi edistymisesi ja tilastosi muille laitteille.
           </Text>
-          <Pressable
+          <AnimatedButton
             onPress={() => void useAuthStore.getState().createTransfer()}
             disabled={isLoading}
             style={[
@@ -137,7 +188,7 @@ export function AuthSection({ theme }: AuthSectionProps) {
                 Synkronoi muille laitteille
               </Text>
             )}
-          </Pressable>
+          </AnimatedButton>
           <Text style={[styles.hint, { color: theme.textTertiary }]}>
             Syötä koodi toiselta laitteelta:
           </Text>
@@ -158,7 +209,7 @@ export function AuthSection({ theme }: AuthSectionProps) {
                 },
               ]}
             />
-            <Pressable
+            <AnimatedButton
               onPress={() => void handleUseCode()}
               disabled={isLoading || !codeInput.trim()}
               style={[
@@ -171,12 +222,12 @@ export function AuthSection({ theme }: AuthSectionProps) {
               ]}
             >
               <Text style={styles.primaryButtonText}>Yhdistä</Text>
-            </Pressable>
+            </AnimatedButton>
           </View>
         </>
       ) : (
         <>
-          <Pressable
+          <AnimatedButton
             onPress={() => void handleCopyLink()}
             disabled={isLoading}
             style={[
@@ -190,9 +241,9 @@ export function AuthSection({ theme }: AuthSectionProps) {
                 Kopioi linkki
               </Text>
             </View>
-          </Pressable>
+          </AnimatedButton>
 
-          <Pressable
+          <AnimatedButton
             onPress={() => void handleCopyCode()}
             disabled={isLoading}
             style={[
@@ -206,10 +257,10 @@ export function AuthSection({ theme }: AuthSectionProps) {
                 Kopioi koodi
               </Text>
             </View>
-          </Pressable>
+          </AnimatedButton>
 
-          <Pressable
-            onPress={() => void handleShowQr()}
+          <AnimatedButton
+            onPress={() => void handleToggleQr()}
             disabled={isLoading}
             style={[
               styles.button,
@@ -219,12 +270,12 @@ export function AuthSection({ theme }: AuthSectionProps) {
             <View style={styles.buttonRow}>
               <QrCode size={16} color={theme.textPrimary} />
               <Text style={[styles.buttonText, { color: theme.textPrimary }]}>
-                Näytä QR-koodi
+                {showQr ? 'Piilota QR-koodi' : 'Näytä QR-koodi'}
               </Text>
             </View>
-          </Pressable>
+          </AnimatedButton>
 
-          <Pressable
+          <AnimatedButton
             onPress={() => {
               setShowEmail(true);
               setEmailSent(false);
@@ -237,7 +288,7 @@ export function AuthSection({ theme }: AuthSectionProps) {
                 Lähetä sähköpostiin
               </Text>
             </View>
-          </Pressable>
+          </AnimatedButton>
 
           {showQr && connectUrl ? (
             <View style={styles.qrWrap}>
@@ -270,7 +321,7 @@ export function AuthSection({ theme }: AuthSectionProps) {
                   },
                 ]}
               />
-              <Pressable
+              <AnimatedButton
                 onPress={() => void handleSendEmail()}
                 disabled={isLoading || !emailInput.trim()}
                 style={[
@@ -286,16 +337,16 @@ export function AuthSection({ theme }: AuthSectionProps) {
                 ) : (
                   <Text style={styles.primaryButtonText}>Lähetä</Text>
                 )}
-              </Pressable>
+              </AnimatedButton>
               {emailSent ? (
-                <Text style={[styles.hint, { color: theme.textSecondary }]}>
-                  Tarkista sähköpostiosoite.
+                <Text style={[styles.hint, { color: theme.accent }]}>
+                  Sähköposti lähetetty!
                 </Text>
               ) : null}
             </View>
           ) : null}
 
-          <Pressable
+          <AnimatedButton
             onPress={() => void handleLogout()}
             style={[styles.button, { borderColor: theme.border }]}
           >
@@ -305,7 +356,7 @@ export function AuthSection({ theme }: AuthSectionProps) {
                 Kirjaudu ulos
               </Text>
             </View>
-          </Pressable>
+          </AnimatedButton>
         </>
       )}
 
