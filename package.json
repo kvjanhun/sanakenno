@@ -33,10 +33,7 @@
       "argon2",
       "better-sqlite3",
       "esbuild"
-    ],
-    "patchedDependencies": {
-      "react-native": "patches/react-native.patch"
-    }
+    ]
   },
   "devDependencies": {
     "@changesets/cli": "^2.30.0",
