@@ -20,6 +20,8 @@ export interface Theme {
   hexStroke: string;
   /** Center hex text — always white. */
   hexCenterText: string;
+  /** Faded / inactive accent — used for disabled center hex fill. */
+  accentFaded: string;
   /** Text color on accent backgrounds. */
   onAccent: string;
   /** Error / destructive color. */
@@ -44,6 +46,7 @@ const light: Theme = {
   hexLo: '#ececec',
   hexStroke: '#e0e0e0',
   hexCenterText: '#ffffff',
+  accentFaded: '#ffb2a0',
   onAccent: '#ffffff',
   error: '#FF6B6B',
   golden: '#fbbf24',
@@ -63,6 +66,7 @@ const dark: Theme = {
   hexLo: '#252525',
   hexStroke: '#3e3e3e',
   hexCenterText: '#ffffff',
+  accentFaded: '#7d3525',
   onAccent: '#ffffff',
   error: '#FF6B6B',
   golden: '#fbbf24',
