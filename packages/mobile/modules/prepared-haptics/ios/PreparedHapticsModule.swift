@@ -16,19 +16,23 @@ public class PreparedHapticsModule: Module {
     Name("PreparedHaptics")
 
     OnCreate {
-      self.lightGenerator.prepare()
-      self.mediumGenerator.prepare()
-      self.heavyGenerator.prepare()
-      self.notificationGenerator.prepare()
-      self.selectionGenerator.prepare()
+      DispatchQueue.main.async {
+        self.lightGenerator.prepare()
+        self.mediumGenerator.prepare()
+        self.heavyGenerator.prepare()
+        self.notificationGenerator.prepare()
+        self.selectionGenerator.prepare()
+      }
     }
 
     Function("trigger") {
       let now = CACurrentMediaTime()
       guard now - self.lastImpactTime >= self.minimumInterval else { return }
       self.lastImpactTime = now
-      self.lightGenerator.impactOccurred()
-      self.lightGenerator.prepare()
+      DispatchQueue.main.async {
+        self.lightGenerator.impactOccurred()
+        self.lightGenerator.prepare()
+      }
     }
 
     Function("triggerImpact") { (style: String) in
@@ -36,16 +40,18 @@ public class PreparedHapticsModule: Module {
       guard now - self.lastImpactTime >= self.minimumInterval else { return }
       self.lastImpactTime = now
 
-      switch style {
-      case "medium":
-        self.mediumGenerator.impactOccurred()
-        self.mediumGenerator.prepare()
-      case "heavy":
-        self.heavyGenerator.impactOccurred()
-        self.heavyGenerator.prepare()
-      default:
-        self.lightGenerator.impactOccurred()
-        self.lightGenerator.prepare()
+      DispatchQueue.main.async {
+        switch style {
+        case "medium":
+          self.mediumGenerator.impactOccurred()
+          self.mediumGenerator.prepare()
+        case "heavy":
+          self.heavyGenerator.impactOccurred()
+          self.heavyGenerator.prepare()
+        default:
+          self.lightGenerator.impactOccurred()
+          self.lightGenerator.prepare()
+        }
       }
     }
 
@@ -53,14 +59,17 @@ public class PreparedHapticsModule: Module {
       let now = CACurrentMediaTime()
       guard now - self.lastImpactTime >= self.minimumInterval else { return }
       self.lastImpactTime = now
-      let feedbackType: UINotificationFeedbackGenerator.FeedbackType
-      switch type {
-      case "success": feedbackType = .success
-      case "error": feedbackType = .error
-      default: feedbackType = .warning
+
+      DispatchQueue.main.async {
+        let feedbackType: UINotificationFeedbackGenerator.FeedbackType
+        switch type {
+        case "success": feedbackType = .success
+        case "error": feedbackType = .error
+        default: feedbackType = .warning
+        }
+        self.notificationGenerator.notificationOccurred(feedbackType)
+        self.notificationGenerator.prepare()
       }
-      self.notificationGenerator.notificationOccurred(feedbackType)
-      self.notificationGenerator.prepare()
     }
   }
 }
