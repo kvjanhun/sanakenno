@@ -20,6 +20,9 @@ const LICENSES = [
     license: 'MIT',
     copyright: 'Anthony Fu',
   },
+  { name: 'Lucide Icons', license: 'MIT', copyright: 'Lucide Contributors' },
+  { name: 'qrcode', license: 'MIT', copyright: 'Ryan Day' },
+  { name: 'validator', license: 'MIT', copyright: "Chris O'Hara" },
 ];
 
 /** Props for {@link RulesModal}. */

@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { ChevronLeft } from 'lucide-react-native';
 import { useTheme } from '../src/theme';
 
 interface LicenseEntry {
@@ -32,15 +32,9 @@ const LICENSES: LicenseEntry[] = [
     copyright: 'Copyright (c) 650 Industries',
   },
   {
-    name: '@expo/vector-icons (Ionicons)',
+    name: 'Lucide Icons',
     license: 'MIT',
-    copyright:
-      'Copyright (c) 2015 Joel Arvidsson, Copyright (c) 2020 650 Industries',
-  },
-  {
-    name: 'Ionicons',
-    license: 'MIT',
-    copyright: 'Copyright (c) 2015-present Ionic',
+    copyright: 'Copyright (c) Lucide Contributors',
   },
   {
     name: 'Zustand',
@@ -82,6 +76,16 @@ const LICENSES: LicenseEntry[] = [
     license: 'MIT',
     copyright: 'Copyright (c) 2018 Software Mansion',
   },
+  {
+    name: 'react-native-qrcode-svg',
+    license: 'MIT',
+    copyright: 'Copyright (c) 2017 Tony Xia',
+  },
+  {
+    name: 'validator',
+    license: 'MIT',
+    copyright: "Copyright (c) 2018 Chris O'Hara",
+  },
 ];
 
 export default function LicensesScreen() {
@@ -94,7 +98,7 @@ export default function LicensesScreen() {
     >
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="chevron-back" size={24} color={theme.accent} />
+          <ChevronLeft size={24} strokeWidth={2} color={theme.accent} />
         </Pressable>
         <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>
           Lisenssit

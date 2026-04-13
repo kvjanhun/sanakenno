@@ -10,7 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
 import { useBottomTabBarHeight } from 'react-native-bottom-tabs';
 import { useRouter } from 'expo-router';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { ChevronRight } from 'lucide-react-native';
 import * as PreparedHaptics from 'prepared-haptics';
 import { useTheme } from '../../src/theme';
 import { useSettingsStore } from '../../src/store/useSettingsStore';
@@ -229,11 +229,7 @@ export default function SettingsScreen() {
           <Text style={[styles.licensesText, { color: theme.textSecondary }]}>
             Lisenssit
           </Text>
-          <Ionicons
-            name="chevron-forward"
-            size={16}
-            color={theme.textTertiary}
-          />
+          <ChevronRight size={16} strokeWidth={2} color={theme.textTertiary} />
         </Pressable>
 
         <Text style={[styles.versionText, { color: theme.textTertiary }]}>
