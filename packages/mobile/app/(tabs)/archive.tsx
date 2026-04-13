@@ -14,7 +14,13 @@ import {
 import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useBottomTabBarHeight } from 'react-native-bottom-tabs';
-import { Eye, ChevronLeft, ChevronRight } from 'lucide-react-native';
+import {
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from 'lucide-react-native';
 import { useTheme } from '../../src/theme';
 import { config, storage } from '../../src/platform';
 import { useGameStore } from '../../src/store/useGameStore';
@@ -323,7 +329,6 @@ export default function ArchiveScreen() {
 
       {/* Past puzzles — paginated */}
       <ScrollView
-        style={styles.flex}
         contentContainerStyle={styles.pageList}
         bounces={false}
         showsVerticalScrollIndicator={false}
@@ -388,12 +393,23 @@ export default function ArchiveScreen() {
       {pageCount > 1 && (
         <View style={styles.paginationBar}>
           <Pressable
+            onPress={() => setPage(0)}
+            disabled={page === 0}
+            hitSlop={12}
+          >
+            <ChevronsLeft
+              size={20}
+              strokeWidth={2}
+              color={page === 0 ? theme.border : theme.textSecondary}
+            />
+          </Pressable>
+          <Pressable
             onPress={() => setPage((p) => Math.max(0, p - 1))}
             disabled={page === 0}
             hitSlop={12}
           >
             <ChevronLeft
-              size={22}
+              size={20}
               strokeWidth={2}
               color={page === 0 ? theme.border : theme.textSecondary}
             />
@@ -407,7 +423,18 @@ export default function ArchiveScreen() {
             hitSlop={12}
           >
             <ChevronRight
-              size={22}
+              size={20}
+              strokeWidth={2}
+              color={page >= pageCount - 1 ? theme.border : theme.textSecondary}
+            />
+          </Pressable>
+          <Pressable
+            onPress={() => setPage(pageCount - 1)}
+            disabled={page >= pageCount - 1}
+            hitSlop={12}
+          >
+            <ChevronsRight
+              size={20}
               strokeWidth={2}
               color={page >= pageCount - 1 ? theme.border : theme.textSecondary}
             />
@@ -527,7 +554,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 24,
+    gap: 16,
     paddingVertical: 12,
   },
   pageIndicator: {
