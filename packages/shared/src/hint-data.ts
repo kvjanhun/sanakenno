@@ -58,11 +58,11 @@ export interface DerivedHintData {
   wordCount: number;
   wordsFound: number;
   wordsRemaining: number;
-  /** Per starting-letter breakdown, sorted alphabetically. */
+  /** Per starting-letter breakdown, sorted in Finnish alphabetical order. */
   letterMap: LetterEntry[];
   /** Per word-length breakdown, sorted ascending. */
   lengthDistribution: LengthEntry[];
-  /** Per two-letter prefix breakdown, sorted alphabetically. */
+  /** Per two-letter prefix breakdown, sorted in Finnish alphabetical order. */
   pairMap: PairEntry[];
   /** Pangram totals. */
   pangramStats: PangramStats;
@@ -71,6 +71,46 @@ export interface DerivedHintData {
 /* ------------------------------------------------------------------ */
 /*  Internal helpers                                                    */
 /* ------------------------------------------------------------------ */
+
+/**
+ * Deterministic Finnish alphabetical order: ...x y z å ä ö.
+ *
+ * We do not rely on environment locale defaults here, because they can sort
+ * Finnish letters differently depending on runtime configuration.
+ */
+const FINNISH_ALPHABET = 'abcdefghijklmnopqrstuvwxyzåäö';
+const FINNISH_SORT_ORDER = new Map(
+  [...FINNISH_ALPHABET].map((char, index) => [char, index]),
+);
+
+function finnishSortWeight(char: string): number {
+  const knownIndex = FINNISH_SORT_ORDER.get(char);
+  if (knownIndex !== undefined) {
+    return knownIndex;
+  }
+  return FINNISH_ALPHABET.length + char.codePointAt(0)!;
+}
+
+function compareFinnishAlphabetically(a: string, b: string): number {
+  const left = a.toLocaleLowerCase('fi');
+  const right = b.toLocaleLowerCase('fi');
+  const maxLen = Math.max(left.length, right.length);
+
+  for (let i = 0; i < maxLen; i++) {
+    const leftChar = left[i];
+    const rightChar = right[i];
+
+    if (leftChar === undefined) return -1;
+    if (rightChar === undefined) return 1;
+
+    const diff = finnishSortWeight(leftChar) - finnishSortWeight(rightChar);
+    if (diff !== 0) {
+      return diff;
+    }
+  }
+
+  return 0;
+}
 
 /** Count found words by starting letter. */
 function countByLetter(foundWords: Set<string>): Record<string, number> {
@@ -147,7 +187,7 @@ export function deriveHintData(
       const found = foundByLetter[letter] ?? 0;
       return { letter, total, found, remaining: total - found };
     })
-    .sort((a, b) => a.letter.localeCompare(b.letter));
+    .sort((a, b) => compareFinnishAlphabetically(a.letter, b.letter));
 
   const lengthDistribution: LengthEntry[] = Object.entries(hintData.by_length)
     .map(([len, total]) => {
@@ -161,7 +201,7 @@ export function deriveHintData(
       const found = foundByPair[pair] ?? 0;
       return { pair, total, found, remaining: total - found };
     })
-    .sort((a, b) => a.pair.localeCompare(b.pair));
+    .sort((a, b) => compareFinnishAlphabetically(a.pair, b.pair));
 
   const foundPangrams = countFoundPangrams(foundWords, allLetters);
   const pangramStats: PangramStats = {

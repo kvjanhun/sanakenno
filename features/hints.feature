@@ -29,6 +29,7 @@ Feature: Hint panels
   Scenario: Pairs hint shows remaining words by two-letter prefix
     When the player unlocks the "pairs" hint
     Then it should show each two-letter prefix with remaining count
+    And prefixes should be sorted in Finnish alphabetical order
     And found words should reduce the remaining count for their prefix
 
   # --- Unlock mechanics ---

@@ -12,9 +12,20 @@ const ALL_LETTERS = new Set(['a', 'e', 'k', 'l', 'n', 's', 't']);
 const HINT_DATA: HintData = {
   word_count: 12,
   pangram_count: 1,
-  by_letter: { k: 4, a: 3, t: 1, s: 2, l: 2 },
+  by_letter: { k: 4, a: 3, t: 1, s: 2, l: 2, z: 1, å: 1, ä: 1, ö: 1 },
   by_length: { '4': 7, '5': 3, '6': 1, '8': 1 },
-  by_pair: { ka: 4, ta: 1, al: 2, sa: 2, ak: 1, la: 2 },
+  by_pair: {
+    ka: 4,
+    ta: 1,
+    al: 2,
+    sa: 2,
+    ak: 1,
+    la: 2,
+    za: 1,
+    åa: 1,
+    äa: 1,
+    öa: 1,
+  },
 };
 
 describe('deriveHintData', () => {
@@ -54,11 +65,11 @@ describe('deriveHintData', () => {
     expect(result.pangramStats.remaining).toBe(1);
   });
 
-  it('sorts letterMap alphabetically', () => {
+  it('sorts letterMap in Finnish alphabetical order', () => {
     const result = deriveHintData(HINT_DATA, new Set(), ALL_LETTERS);
     const letters = result.letterMap.map((e) => e.letter);
 
-    expect(letters).toEqual([...letters].sort());
+    expect(letters).toEqual(['a', 'k', 'l', 's', 't', 'z', 'å', 'ä', 'ö']);
   });
 
   it('sorts lengthDistribution ascending by length', () => {
@@ -68,11 +79,22 @@ describe('deriveHintData', () => {
     expect(lens).toEqual([4, 5, 6, 8]);
   });
 
-  it('sorts pairMap alphabetically', () => {
+  it('sorts pairMap in Finnish alphabetical order', () => {
     const result = deriveHintData(HINT_DATA, new Set(), ALL_LETTERS);
     const pairs = result.pairMap.map((e) => e.pair);
 
-    expect(pairs).toEqual([...pairs].sort());
+    expect(pairs).toEqual([
+      'ak',
+      'al',
+      'ka',
+      'la',
+      'sa',
+      'ta',
+      'za',
+      'åa',
+      'äa',
+      'öa',
+    ]);
   });
 
   it('reduces by_letter counts for found words', () => {

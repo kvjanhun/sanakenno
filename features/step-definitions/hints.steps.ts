@@ -199,6 +199,17 @@ Then(
 );
 
 Then(
+  'prefixes should be sorted in Finnish alphabetical order',
+  function (this: SanakennoWorld) {
+    assert.ok(this.derivedHints);
+    const pairs = this.derivedHints!.pairMap.map((e) => e.pair);
+    const collator = new Intl.Collator('fi', { usage: 'sort' });
+    const sorted = [...pairs].sort((a, b) => collator.compare(a, b));
+    assert.deepEqual(pairs, sorted);
+  },
+);
+
+Then(
   'found words should reduce the remaining count for their prefix',
   function (this: SanakennoWorld) {
     const word = 'kissa'; // prefix 'ki'
