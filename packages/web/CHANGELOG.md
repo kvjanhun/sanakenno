@@ -5,6 +5,7 @@
 ### Patch Changes
 
 - Email: redesign the device-transfer email — clearer subject, no repeated "Sanakenno.fi" branding, single privacy disclosure at the bottom, and a tighter validity-and-single-use note
+- Email: show the Sanakenno app icon next to the heading for a cleaner, more recognisable header
 
 ## 1.2.0
 

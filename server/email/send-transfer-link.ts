@@ -48,7 +48,10 @@ export async function sendTransferLink(
     subject: 'Yhdistä Sanakenno uudelle laitteelle',
     html: `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px; color: #1a1a1a;">
-        <h1 style="color: #ff643e; margin: 0 0 20px 0; font-size: 24px; font-weight: 700;">Sanakenno</h1>
+        <h1 style="color: #ff643e; margin: 0 0 20px 0; font-size: 24px; font-weight: 700;">
+          <img src="${baseUrl}/icons/sanakenno-192x192.png" alt="" width="32" height="32" style="vertical-align: middle; margin-right: 10px; border-radius: 6px;" />
+          <span style="vertical-align: middle;">Sanakenno</span>
+        </h1>
         <p style="font-size: 16px; line-height: 1.5; margin: 0 0 28px 0;">
           Klikkaa alla olevaa painiketta yhdistääksesi tilisi tähän laitteeseen.
         </p>
