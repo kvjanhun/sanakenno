@@ -22,6 +22,7 @@ interface HoneycombProps {
   center: string;
   outerLetters: string[];
   onLetterPress: (letter: string) => void;
+  disabled?: boolean;
   theme: Theme;
 }
 
@@ -74,6 +75,7 @@ function HexButton({
   fillLo,
   strokeColor,
   textColor,
+  disabled,
 }: {
   hex: HexCell;
   index: number;
@@ -82,6 +84,7 @@ function HexButton({
   fillLo: string;
   strokeColor: string;
   textColor: string;
+  disabled: boolean;
 }) {
   const scale = useSharedValue(1);
   const gradId = `hex-grad-${index}`;
@@ -96,6 +99,7 @@ function HexButton({
 
   // Gesture.onBegin is the touch-down phase (Pressable onPressIn equivalent).
   const tap = Gesture.Tap()
+    .enabled(!disabled)
     .onBegin(() => {
       'worklet';
       runOnJS(handlePressHaptic)();
@@ -170,6 +174,7 @@ export function Honeycomb({
   center,
   outerLetters,
   onLetterPress,
+  disabled = false,
   theme,
 }: HoneycombProps) {
   const hexes = useMemo(
@@ -189,6 +194,7 @@ export function Honeycomb({
           fillLo={hex.isCenter ? theme.accent : theme.hexLo}
           strokeColor={hex.isCenter ? theme.accent : theme.hexStroke}
           textColor={hex.isCenter ? theme.hexCenterText : theme.textPrimary}
+          disabled={disabled}
         />
       ))}
     </View>

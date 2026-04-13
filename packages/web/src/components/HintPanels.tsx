@@ -47,10 +47,6 @@ function SummaryContent({
 }: {
   data: DerivedHintData;
 }): React.JSX.Element {
-  if (data.wordsRemaining === 0) {
-    return <div style={{ color: 'var(--color-accent)' }}>kaikki löydetty</div>;
-  }
-
   const pct = Math.round((data.wordsFound / data.wordCount) * 100);
   const { pangramStats } = data;
   const pangramLabel = pangramStats.total === 1 ? 'pangrammi' : 'pangrammia';

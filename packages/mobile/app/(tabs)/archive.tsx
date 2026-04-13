@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Eye } from 'lucide-react-native';
 import { useTheme } from '../../src/theme';
 import { config, storage } from '../../src/platform';
 import { useGameStore } from '../../src/store/useGameStore';
@@ -340,26 +341,7 @@ export default function ArchiveScreen() {
                 </Text>
               </View>
               <View style={styles.rowRight}>
-                {isRevealed && (
-                  <View
-                    style={[
-                      styles.revealedBadge,
-                      {
-                        backgroundColor: theme.bgPrimary,
-                        borderColor: theme.border,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.revealedText,
-                        { color: theme.textSecondary },
-                      ]}
-                    >
-                      Paljastettu
-                    </Text>
-                  </View>
-                )}
+                {isRevealed && <Eye size={16} color={theme.accent} />}
                 {progress && (
                   <View
                     style={[
@@ -542,16 +524,6 @@ const styles = StyleSheet.create({
   rankText: {
     fontSize: 11,
     fontWeight: '500',
-  },
-  revealedBadge: {
-    borderRadius: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  revealedText: {
-    fontSize: 11,
-    fontWeight: '600',
   },
   backdrop: {
     flex: 1,

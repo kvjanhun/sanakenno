@@ -95,6 +95,17 @@ Feature: Game interaction
     Then the rejected word should be cleared
     And the new input should be processed normally
 
+  # --- All words found ---
+
+  Scenario: Cursor is hidden when all words are found
+    Given the player has found all words in the puzzle
+    Then the blinking cursor should not be visible in the word input
+
+  Scenario: Honeycomb ignores taps when all words are found
+    Given the player has found all words in the puzzle
+    When the player taps any hexagon
+    Then no letter should be added to the current word
+
   # --- Honeycomb ---
 
   Scenario: Honeycomb displays 7 hexagons in a flower pattern

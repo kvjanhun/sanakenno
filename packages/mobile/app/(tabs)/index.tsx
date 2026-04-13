@@ -86,6 +86,9 @@ export default function GameScreen() {
   const rankLabel = rankForScore(score, puzzle.max_score);
   const progress = progressToNextRank(score, puzzle.max_score);
   const allLetters = new Set([...puzzle.letters, puzzle.center]);
+  const allFound = puzzle.hint_data
+    ? foundWords.size >= puzzle.hint_data.word_count
+    : false;
 
   return (
     <GestureHandlerRootView style={styles.flex}>
@@ -131,6 +134,7 @@ export default function GameScreen() {
           wordRejected={wordRejected}
           center={puzzle.center}
           allLetters={allLetters}
+          allFound={allFound}
           theme={theme}
         />
 
@@ -138,6 +142,7 @@ export default function GameScreen() {
           center={puzzle.center}
           outerLetters={outerLetters}
           onLetterPress={addLetter}
+          disabled={allFound}
           theme={theme}
         />
 

@@ -160,14 +160,6 @@ function OverviewContent({
   derived: DerivedHintData;
   theme: Theme;
 }) {
-  if (derived.wordsRemaining === 0) {
-    return (
-      <Text style={[styles.allFoundText, { color: theme.accent }]}>
-        kaikki löydetty
-      </Text>
-    );
-  }
-
   const pct = Math.round((derived.wordsFound / derived.wordCount) * 100);
   const { pangramStats } = derived;
   const pangramLabel = pangramStats.total === 1 ? 'pangrammi' : 'pangrammia';
@@ -380,10 +372,6 @@ const styles = StyleSheet.create({
   },
 
   // --- Overview ---
-  allFoundText: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
   overviewRows: {
     gap: 6,
   },

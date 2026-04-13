@@ -16,6 +16,7 @@ interface WordInputProps {
   wordRejected: boolean;
   center: string;
   allLetters: Set<string>;
+  allFound: boolean;
   theme: Theme;
 }
 
@@ -49,6 +50,7 @@ export function WordInput({
   wordRejected,
   center,
   allLetters,
+  allFound,
   theme,
 }: WordInputProps) {
   const shakeX = useSharedValue(0);
@@ -92,9 +94,9 @@ export function WordInput({
             </Text>
           ))}
         </View>
-      ) : (
+      ) : !allFound ? (
         <BlinkingCursor color={theme.textTertiary} />
-      )}
+      ) : null}
     </Animated.View>
   );
 }
