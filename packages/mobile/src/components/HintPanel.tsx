@@ -160,6 +160,7 @@ function OverviewContent({
   derived: DerivedHintData;
   theme: Theme;
 }) {
+  const allFound = derived.wordsRemaining === 0;
   const pct = Math.round((derived.wordsFound / derived.wordCount) * 100);
   const { pangramStats } = derived;
   const pangramLabel = pangramStats.total === 1 ? 'pangrammi' : 'pangrammia';
@@ -167,18 +168,18 @@ function OverviewContent({
   const longest =
     unfound.length > 0 ? Math.max(...unfound.map((e) => e.len)) : 0;
 
+  const mainColor = allFound ? theme.textTertiary : theme.textPrimary;
+  const subColor = allFound ? theme.textTertiary : theme.textSecondary;
+
   return (
     <View style={styles.overviewRows}>
       <View style={styles.overviewLine}>
-        <Text style={[styles.overviewMain, { color: theme.textPrimary }]}>
+        <Text style={[styles.overviewMain, { color: mainColor }]}>
           {derived.wordsRemaining}/{derived.wordCount} sanaa löytämättä
         </Text>
-        <Text style={[styles.overviewSub, { color: theme.textSecondary }]}>
-          {' '}
-          ({pct}%)
-        </Text>
+        <Text style={[styles.overviewSub, { color: subColor }]}> ({pct}%)</Text>
       </View>
-      <Text style={[styles.overviewDetail, { color: theme.textSecondary }]}>
+      <Text style={[styles.overviewDetail, { color: subColor }]}>
         {pangramStats.remaining}/{pangramStats.total} {pangramLabel}
         {' · '}pisin jäljellä {longest} kirj.
       </Text>
