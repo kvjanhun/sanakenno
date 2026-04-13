@@ -13,6 +13,7 @@ interface MessageBarProps {
   message: string;
   messageType: MessageType;
   pointsBubble?: string | null;
+  allFound?: boolean;
   theme: Theme;
 }
 
@@ -41,6 +42,7 @@ export function MessageBar({
   message,
   messageType,
   pointsBubble,
+  allFound = false,
   theme,
 }: MessageBarProps) {
   const opacity = useSharedValue(0);
@@ -65,7 +67,7 @@ export function MessageBar({
 
   return (
     <View style={styles.container}>
-      {chip && (
+      {chip ? (
         <Animated.View style={[styles.content, animatedStyle]}>
           <View
             style={[
@@ -82,7 +84,11 @@ export function MessageBar({
             </Text>
           ) : null}
         </Animated.View>
-      )}
+      ) : allFound ? (
+        <Text style={[styles.allFoundText, { color: theme.textTertiary }]}>
+          Kaikki sanat löydetty, huomenna lisää!
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -111,5 +117,9 @@ const styles = StyleSheet.create({
   pointsText: {
     fontSize: 14,
     fontWeight: '500',
+  },
+  allFoundText: {
+    fontSize: 13,
+    textAlign: 'center',
   },
 });

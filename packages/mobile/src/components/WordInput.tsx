@@ -96,11 +96,7 @@ export function WordInput({
         </View>
       ) : !allFound ? (
         <BlinkingCursor color={theme.textTertiary} />
-      ) : (
-        <Text style={[styles.allFoundText, { color: theme.textTertiary }]}>
-          Kaikki sanat löydetty, huomenna lisää!
-        </Text>
-      )}
+      ) : null}
     </Animated.View>
   );
 }
@@ -124,9 +120,5 @@ const styles = StyleSheet.create({
   cursor: {
     fontSize: 26,
     fontWeight: '300',
-  },
-  allFoundText: {
-    fontSize: 13,
-    textAlign: 'center',
   },
 });

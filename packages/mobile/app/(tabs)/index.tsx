@@ -124,6 +124,7 @@ export default function GameScreen() {
           message={message}
           messageType={messageType}
           pointsBubble={pointsBubble}
+          allFound={allFound}
           theme={theme}
         />
 
