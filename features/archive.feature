@@ -95,3 +95,22 @@ Feature: Puzzle archive
     Given the archive modal is open
     When the player presses Escape
     Then the archive modal should close
+
+  # --- iOS past puzzles pagination ---
+
+  @ios
+  Scenario: Past puzzles are shown one page at a time
+    Given the archive has more than 8 past puzzles
+    Then the past puzzles list should show at most 8 entries at once
+
+  @ios
+  Scenario: Pagination controls navigate between pages
+    Given the archive has more than 8 past puzzles
+    When the player taps the next page button
+    Then the next page of past puzzles should be shown
+    And the previous page button should become active
+
+  @ios
+  Scenario: Pagination controls are hidden when all puzzles fit on one page
+    Given the archive has 8 or fewer past puzzles
+    Then no pagination controls should be visible

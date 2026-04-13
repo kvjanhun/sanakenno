@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
-  FlatList,
+  ScrollView,
   Pressable,
   StyleSheet,
   ActivityIndicator,
@@ -13,7 +13,8 @@ import {
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Eye } from 'lucide-react-native';
+import { useBottomTabBarHeight } from 'react-native-bottom-tabs';
+import { Eye, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { useTheme } from '../../src/theme';
 import { config, storage } from '../../src/platform';
 import { useGameStore } from '../../src/store/useGameStore';
@@ -70,15 +71,19 @@ function LetterDisplay({
   );
 }
 
+const PAGE_SIZE = 8;
+
 export default function ArchiveScreen() {
   const theme = useTheme();
   const router = useRouter();
+  const tabBarHeight = useBottomTabBarHeight();
   const fetchPuzzle = useGameStore((s) => s.fetchPuzzle);
   const currentPuzzleNumber = useGameStore((s) => s.puzzle?.puzzle_number);
   const [entries, setEntries] = useState<ArchiveEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedEntry, setSelectedEntry] = useState<ArchiveEntry | null>(null);
+  const [page, setPage] = useState(0);
   const hasFetched = useRef(false);
   const backdropOpacity = useRef(new Animated.Value(0)).current;
   const sheetTranslateY = useRef(new Animated.Value(24)).current;
@@ -93,6 +98,7 @@ export default function ArchiveScreen() {
         })
         .then((data) => {
           setEntries(data);
+          setPage(0);
           setLoading(false);
           hasFetched.current = true;
         })
@@ -235,11 +241,19 @@ export default function ArchiveScreen() {
 
   const today = entries.find((e) => e.is_today);
   const pastEntries = entries.filter((e) => !e.is_today);
+  const pageCount = Math.max(1, Math.ceil(pastEntries.length / PAGE_SIZE));
+  const pageEntries = pastEntries.slice(
+    page * PAGE_SIZE,
+    (page + 1) * PAGE_SIZE,
+  );
 
   return (
     <SafeAreaView
       edges={['top']}
-      style={[styles.flex, { backgroundColor: theme.bgPrimary }]}
+      style={[
+        styles.flex,
+        { backgroundColor: theme.bgPrimary, paddingBottom: tabBarHeight },
+      ]}
     >
       {/* Today's card — always visible, never scrolls away */}
       {today && (
@@ -307,19 +321,20 @@ export default function ArchiveScreen() {
         </View>
       )}
 
-      {/* Past puzzles list */}
-      <FlatList
-        data={pastEntries}
-        keyExtractor={(item) => String(item.puzzle_number)}
+      {/* Past puzzles — paginated */}
+      <ScrollView
         style={styles.flex}
-        contentContainerStyle={styles.list}
-        contentInsetAdjustmentBehavior="automatic"
-        renderItem={({ item }) => {
+        contentContainerStyle={styles.pageList}
+        bounces={false}
+        showsVerticalScrollIndicator={false}
+      >
+        {pageEntries.map((item) => {
           const isCurrent = item.puzzle_number === currentPuzzleNumber;
           const progress = savedProgress.get(item.puzzle_number);
           const isRevealed = revealedPuzzles.has(item.puzzle_number);
           return (
             <Pressable
+              key={item.puzzle_number}
               onPress={() => handlePastPress(item)}
               style={[
                 styles.row,
@@ -367,8 +382,38 @@ export default function ArchiveScreen() {
               </View>
             </Pressable>
           );
-        }}
-      />
+        })}
+      </ScrollView>
+
+      {pageCount > 1 && (
+        <View style={styles.paginationBar}>
+          <Pressable
+            onPress={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0}
+            hitSlop={12}
+          >
+            <ChevronLeft
+              size={22}
+              strokeWidth={2}
+              color={page === 0 ? theme.border : theme.textSecondary}
+            />
+          </Pressable>
+          <Text style={[styles.pageIndicator, { color: theme.textSecondary }]}>
+            {page + 1} / {pageCount}
+          </Text>
+          <Pressable
+            onPress={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+            disabled={page >= pageCount - 1}
+            hitSlop={12}
+          >
+            <ChevronRight
+              size={22}
+              strokeWidth={2}
+              color={page >= pageCount - 1 ? theme.border : theme.textSecondary}
+            />
+          </Pressable>
+        </View>
+      )}
 
       {/* Bottom sheet for past puzzle options */}
       <Modal
@@ -473,10 +518,23 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 0,
   },
-  list: {
+  pageList: {
     paddingHorizontal: 16,
     paddingBottom: 16,
     gap: 10,
+  },
+  paginationBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 24,
+    paddingVertical: 12,
+  },
+  pageIndicator: {
+    fontSize: 14,
+    fontWeight: '500',
+    minWidth: 48,
+    textAlign: 'center',
   },
   row: {
     flexDirection: 'row',
