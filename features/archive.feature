@@ -116,6 +116,14 @@ Feature: Puzzle archive
     Then no pagination controls should be visible
 
   @ios
+  Scenario: Past puzzle pages form a continuous horizontal plane
+    Given the archive has more than 8 past puzzles
+    When the player drags the past puzzles list horizontally
+    Then the adjacent page should peek in from the edge as the finger moves
+    And releasing past the halfway point should snap to the adjacent page
+    And releasing before the halfway point should snap back to the current page
+
+  @ios
   Scenario: Swiping left advances to the next page of past puzzles
     Given the archive has more than 8 past puzzles
     And the player is on the first page of past puzzles

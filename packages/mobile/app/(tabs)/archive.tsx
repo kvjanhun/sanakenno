@@ -10,16 +10,13 @@ import {
   TouchableWithoutFeedback,
   Animated,
   Easing,
+  type LayoutChangeEvent,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useBottomTabBarHeight } from 'react-native-bottom-tabs';
-import {
-  Gesture,
-  GestureDetector,
-  GestureHandlerRootView,
-} from 'react-native-gesture-handler';
-import { runOnJS } from 'react-native-reanimated';
 import {
   Eye,
   ChevronLeft,
@@ -185,31 +182,51 @@ export default function ArchiveScreen() {
     setSelectedEntry(entry);
   }, []);
 
+  const pagerRef = useRef<ScrollView>(null);
   const pageCountRef = useRef(1);
-  const goPrevPage = useCallback(() => {
-    setPage((p) => Math.max(0, p - 1));
-  }, []);
-  const goNextPage = useCallback(() => {
-    setPage((p) => Math.min(pageCountRef.current - 1, p + 1));
+  const pageRef = useRef(0);
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  useEffect(() => {
+    pageRef.current = page;
+  }, [page]);
+
+  const onContainerLayout = useCallback((e: LayoutChangeEvent) => {
+    setContainerWidth(e.nativeEvent.layout.width);
   }, []);
 
-  const swipeGesture = useMemo(
-    () =>
-      Gesture.Pan()
-        .activeOffsetX([-20, 20])
-        .failOffsetY([-15, 15])
-        .onEnd((e) => {
-          'worklet';
-          const fastEnough = Math.abs(e.velocityX) > 400;
-          const farEnough = Math.abs(e.translationX) > 60;
-          if (!fastEnough && !farEnough) return;
-          if (e.translationX < 0) {
-            runOnJS(goNextPage)();
-          } else {
-            runOnJS(goPrevPage)();
-          }
-        }),
-    [goNextPage, goPrevPage],
+  // Keep the pager aligned with the current page when the container width
+  // changes (first measurement, rotation). Intentionally not reacting to
+  // `page` — intentional page changes go through scrollToPage below.
+  useEffect(() => {
+    if (containerWidth === 0) return;
+    pagerRef.current?.scrollTo({
+      x: pageRef.current * containerWidth,
+      animated: false,
+    });
+  }, [containerWidth]);
+
+  const scrollToPage = useCallback(
+    (n: number) => {
+      const clamped = Math.max(0, Math.min(pageCountRef.current - 1, n));
+      if (containerWidth > 0) {
+        pagerRef.current?.scrollTo({
+          x: clamped * containerWidth,
+          animated: true,
+        });
+      }
+      setPage(clamped);
+    },
+    [containerWidth],
+  );
+
+  const handleMomentumEnd = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      if (containerWidth === 0) return;
+      const next = Math.round(e.nativeEvent.contentOffset.x / containerWidth);
+      setPage(next);
+    },
+    [containerWidth],
   );
 
   const animateSheetOut = useCallback(
@@ -280,311 +297,313 @@ export default function ArchiveScreen() {
 
   const today = entries.find((e) => e.is_today);
   const pastEntries = entries.filter((e) => !e.is_today);
-  const pageCount = Math.max(1, Math.ceil(pastEntries.length / PAGE_SIZE));
+  const pages: ArchiveEntry[][] = [];
+  for (let i = 0; i < pastEntries.length; i += PAGE_SIZE) {
+    pages.push(pastEntries.slice(i, i + PAGE_SIZE));
+  }
+  if (pages.length === 0) pages.push([]);
+  const pageCount = pages.length;
   pageCountRef.current = pageCount;
-  const pageEntries = pastEntries.slice(
-    page * PAGE_SIZE,
-    (page + 1) * PAGE_SIZE,
-  );
 
   return (
-    <GestureHandlerRootView style={styles.flex}>
-      <SafeAreaView
-        edges={['top']}
-        style={[
-          styles.flex,
-          { backgroundColor: theme.bgPrimary, paddingBottom: tabBarHeight },
-        ]}
-      >
-        {/* Today's card — always visible, never scrolls away */}
-        {today && (
-          <View style={styles.todaySection}>
-            <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>
-              Tämänpäiväinen kenno
-            </Text>
-            <Pressable
-              onPress={() => handleTodayPress(today.puzzle_number)}
-              style={[
-                styles.row,
-                {
-                  backgroundColor: theme.bgSecondary,
-                  borderColor:
-                    today.puzzle_number === currentPuzzleNumber
-                      ? theme.accent
-                      : theme.border,
-                  borderWidth:
-                    today.puzzle_number === currentPuzzleNumber ? 2 : 1,
-                },
-              ]}
-            >
-              <View style={styles.rowLeft}>
-                <Text
-                  style={[styles.puzzleNum, { color: theme.textSecondary }]}
-                >
-                  #{today.puzzle_number + 1}
-                </Text>
-                <Text style={[styles.date, { color: theme.textPrimary }]}>
-                  {formatFinnishDate(today.date)}
-                </Text>
-              </View>
-              <View style={styles.rowRight}>
-                {savedProgress.get(today.puzzle_number) && (
-                  <View
-                    style={[
-                      styles.rankBadge,
-                      {
-                        backgroundColor: theme.bgPrimary,
-                        borderColor: theme.border,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[styles.rankText, { color: theme.textSecondary }]}
-                    >
-                      {savedProgress.get(today.puzzle_number)!.rank} ·{' '}
-                      {savedProgress.get(today.puzzle_number)!.score}p
-                    </Text>
-                  </View>
-                )}
-                <LetterDisplay
-                  letters={today.letters}
-                  center={today.center}
-                  theme={theme}
-                />
-              </View>
-            </Pressable>
-            <Text
-              style={[
-                styles.sectionLabel,
-                { color: theme.textSecondary, marginTop: 30 },
-              ]}
-            >
-              Aikaisemmat kennot
-            </Text>
-          </View>
-        )}
-
-        {/* Past puzzles — paginated, swipe horizontally to change page */}
-        <GestureDetector gesture={swipeGesture}>
-          <ScrollView
-            contentContainerStyle={styles.pageList}
-            bounces={false}
-            showsVerticalScrollIndicator={false}
-          >
-            {pageEntries.map((item) => {
-              const isCurrent = item.puzzle_number === currentPuzzleNumber;
-              const progress = savedProgress.get(item.puzzle_number);
-              const isRevealed = revealedPuzzles.has(item.puzzle_number);
-              return (
-                <Pressable
-                  key={item.puzzle_number}
-                  onPress={() => handlePastPress(item)}
-                  style={[
-                    styles.row,
-                    {
-                      borderColor: isCurrent ? theme.accent : theme.border,
-                      borderWidth: isCurrent ? 2 : 1,
-                      backgroundColor: theme.bgSecondary,
-                    },
-                  ]}
-                >
-                  <View style={styles.rowLeft}>
-                    <Text
-                      style={[styles.puzzleNum, { color: theme.textSecondary }]}
-                    >
-                      #{item.puzzle_number + 1}
-                    </Text>
-                    <Text style={[styles.date, { color: theme.textPrimary }]}>
-                      {formatFinnishDate(item.date)}
-                    </Text>
-                  </View>
-                  <View style={styles.rowRight}>
-                    {isRevealed && <Eye size={16} color={theme.accent} />}
-                    {progress && (
-                      <View
-                        style={[
-                          styles.rankBadge,
-                          {
-                            backgroundColor: theme.bgPrimary,
-                            borderColor: theme.border,
-                          },
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.rankText,
-                            { color: theme.textSecondary },
-                          ]}
-                        >
-                          {progress.rank} · {progress.score}p
-                        </Text>
-                      </View>
-                    )}
-                    <LetterDisplay
-                      letters={item.letters}
-                      center={item.center}
-                      theme={theme}
-                    />
-                  </View>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        </GestureDetector>
-
-        {pageCount > 1 && (
-          <View style={styles.paginationBar}>
-            <Pressable
-              onPress={() => setPage(0)}
-              disabled={page === 0}
-              hitSlop={12}
-            >
-              <ChevronsLeft
-                size={20}
-                strokeWidth={2}
-                color={page === 0 ? theme.border : theme.textSecondary}
-              />
-            </Pressable>
-            <Pressable
-              onPress={() => setPage((p) => Math.max(0, p - 1))}
-              disabled={page === 0}
-              hitSlop={12}
-            >
-              <ChevronLeft
-                size={20}
-                strokeWidth={2}
-                color={page === 0 ? theme.border : theme.textSecondary}
-              />
-            </Pressable>
-            <Text
-              style={[styles.pageIndicator, { color: theme.textSecondary }]}
-            >
-              {page + 1} / {pageCount}
-            </Text>
-            <Pressable
-              onPress={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
-              disabled={page >= pageCount - 1}
-              hitSlop={12}
-            >
-              <ChevronRight
-                size={20}
-                strokeWidth={2}
-                color={
-                  page >= pageCount - 1 ? theme.border : theme.textSecondary
-                }
-              />
-            </Pressable>
-            <Pressable
-              onPress={() => setPage(pageCount - 1)}
-              disabled={page >= pageCount - 1}
-              hitSlop={12}
-            >
-              <ChevronsRight
-                size={20}
-                strokeWidth={2}
-                color={
-                  page >= pageCount - 1 ? theme.border : theme.textSecondary
-                }
-              />
-            </Pressable>
-          </View>
-        )}
-
-        {/* Bottom sheet for past puzzle options */}
-        <Modal
-          visible={selectedEntry !== null}
-          transparent
-          animationType="none"
-          onRequestClose={closeSheet}
-        >
-          <TouchableWithoutFeedback onPress={closeSheet}>
-            <Animated.View
-              style={[styles.backdrop, { opacity: backdropOpacity }]}
-            />
-          </TouchableWithoutFeedback>
-          <Animated.View
+    <SafeAreaView
+      edges={['top']}
+      style={[
+        styles.flex,
+        { backgroundColor: theme.bgPrimary, paddingBottom: tabBarHeight },
+      ]}
+    >
+      {/* Today's card — always visible, never scrolls away */}
+      {today && (
+        <View style={styles.todaySection}>
+          <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>
+            Tämänpäiväinen kenno
+          </Text>
+          <Pressable
+            onPress={() => handleTodayPress(today.puzzle_number)}
             style={[
-              styles.bottomSheet,
+              styles.row,
               {
-                backgroundColor: theme.bgPrimary,
-                transform: [{ translateY: sheetTranslateY }],
+                backgroundColor: theme.bgSecondary,
+                borderColor:
+                  today.puzzle_number === currentPuzzleNumber
+                    ? theme.accent
+                    : theme.border,
+                borderWidth:
+                  today.puzzle_number === currentPuzzleNumber ? 2 : 1,
               },
             ]}
           >
-            {selectedEntry && (
-              <>
-                <Text
-                  style={[styles.sheetTitle, { color: theme.textSecondary }]}
+            <View style={styles.rowLeft}>
+              <Text style={[styles.puzzleNum, { color: theme.textSecondary }]}>
+                #{today.puzzle_number + 1}
+              </Text>
+              <Text style={[styles.date, { color: theme.textPrimary }]}>
+                {formatFinnishDate(today.date)}
+              </Text>
+            </View>
+            <View style={styles.rowRight}>
+              {savedProgress.get(today.puzzle_number) && (
+                <View
+                  style={[
+                    styles.rankBadge,
+                    {
+                      backgroundColor: theme.bgPrimary,
+                      borderColor: theme.border,
+                    },
+                  ]}
                 >
-                  Kenno #{selectedEntry.puzzle_number + 1} ·{' '}
-                  {formatFinnishDate(selectedEntry.date)}
-                </Text>
-                {revealedPuzzles.has(selectedEntry.puzzle_number) && (
-                  <View
-                    style={[
-                      styles.sheetNotice,
-                      {
-                        backgroundColor: theme.bgSecondary,
-                        borderColor: theme.border,
-                      },
-                    ]}
+                  <Text
+                    style={[styles.rankText, { color: theme.textSecondary }]}
                   >
-                    <Text
+                    {savedProgress.get(today.puzzle_number)!.rank} ·{' '}
+                    {savedProgress.get(today.puzzle_number)!.score}p
+                  </Text>
+                </View>
+              )}
+              <LetterDisplay
+                letters={today.letters}
+                center={today.center}
+                theme={theme}
+              />
+            </View>
+          </Pressable>
+          <Text
+            style={[
+              styles.sectionLabel,
+              { color: theme.textSecondary, marginTop: 30 },
+            ]}
+          >
+            Aikaisemmat kennot
+          </Text>
+        </View>
+      )}
+
+      {/* Past puzzles — horizontal pager; each page holds PAGE_SIZE rows. */}
+      <View style={styles.flex} onLayout={onContainerLayout}>
+        {containerWidth > 0 && (
+          <ScrollView
+            ref={pagerRef}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onMomentumScrollEnd={handleMomentumEnd}
+            scrollEventThrottle={16}
+          >
+            {pages.map((entriesOnPage, pageIdx) => (
+              <ScrollView
+                key={pageIdx}
+                style={{ width: containerWidth }}
+                contentContainerStyle={styles.pageList}
+                showsVerticalScrollIndicator={false}
+              >
+                {entriesOnPage.map((item) => {
+                  const isCurrent = item.puzzle_number === currentPuzzleNumber;
+                  const progress = savedProgress.get(item.puzzle_number);
+                  const isRevealed = revealedPuzzles.has(item.puzzle_number);
+                  return (
+                    <Pressable
+                      key={item.puzzle_number}
+                      onPress={() => handlePastPress(item)}
                       style={[
-                        styles.sheetNoticeText,
-                        { color: theme.textSecondary },
+                        styles.row,
+                        {
+                          borderColor: isCurrent ? theme.accent : theme.border,
+                          borderWidth: isCurrent ? 2 : 1,
+                          backgroundColor: theme.bgSecondary,
+                        },
                       ]}
                     >
-                      Vastaukset on jo paljastettu. Tästä kennosta ei enää kerry
-                      tilastoja.
-                    </Text>
-                  </View>
-                )}
-                <Pressable
-                  onPress={handlePlay}
+                      <View style={styles.rowLeft}>
+                        <Text
+                          style={[
+                            styles.puzzleNum,
+                            { color: theme.textSecondary },
+                          ]}
+                        >
+                          #{item.puzzle_number + 1}
+                        </Text>
+                        <Text
+                          style={[styles.date, { color: theme.textPrimary }]}
+                        >
+                          {formatFinnishDate(item.date)}
+                        </Text>
+                      </View>
+                      <View style={styles.rowRight}>
+                        {isRevealed && <Eye size={16} color={theme.accent} />}
+                        {progress && (
+                          <View
+                            style={[
+                              styles.rankBadge,
+                              {
+                                backgroundColor: theme.bgPrimary,
+                                borderColor: theme.border,
+                              },
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.rankText,
+                                { color: theme.textSecondary },
+                              ]}
+                            >
+                              {progress.rank} · {progress.score}p
+                            </Text>
+                          </View>
+                        )}
+                        <LetterDisplay
+                          letters={item.letters}
+                          center={item.center}
+                          theme={theme}
+                        />
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            ))}
+          </ScrollView>
+        )}
+      </View>
+
+      {pageCount > 1 && (
+        <View style={styles.paginationBar}>
+          <Pressable
+            onPress={() => scrollToPage(0)}
+            disabled={page === 0}
+            hitSlop={12}
+          >
+            <ChevronsLeft
+              size={20}
+              strokeWidth={2}
+              color={page === 0 ? theme.border : theme.textSecondary}
+            />
+          </Pressable>
+          <Pressable
+            onPress={() => scrollToPage(page - 1)}
+            disabled={page === 0}
+            hitSlop={12}
+          >
+            <ChevronLeft
+              size={20}
+              strokeWidth={2}
+              color={page === 0 ? theme.border : theme.textSecondary}
+            />
+          </Pressable>
+          <Text style={[styles.pageIndicator, { color: theme.textSecondary }]}>
+            {page + 1} / {pageCount}
+          </Text>
+          <Pressable
+            onPress={() => scrollToPage(page + 1)}
+            disabled={page >= pageCount - 1}
+            hitSlop={12}
+          >
+            <ChevronRight
+              size={20}
+              strokeWidth={2}
+              color={page >= pageCount - 1 ? theme.border : theme.textSecondary}
+            />
+          </Pressable>
+          <Pressable
+            onPress={() => scrollToPage(pageCount - 1)}
+            disabled={page >= pageCount - 1}
+            hitSlop={12}
+          >
+            <ChevronsRight
+              size={20}
+              strokeWidth={2}
+              color={page >= pageCount - 1 ? theme.border : theme.textSecondary}
+            />
+          </Pressable>
+        </View>
+      )}
+
+      {/* Bottom sheet for past puzzle options */}
+      <Modal
+        visible={selectedEntry !== null}
+        transparent
+        animationType="none"
+        onRequestClose={closeSheet}
+      >
+        <TouchableWithoutFeedback onPress={closeSheet}>
+          <Animated.View
+            style={[styles.backdrop, { opacity: backdropOpacity }]}
+          />
+        </TouchableWithoutFeedback>
+        <Animated.View
+          style={[
+            styles.bottomSheet,
+            {
+              backgroundColor: theme.bgPrimary,
+              transform: [{ translateY: sheetTranslateY }],
+            },
+          ]}
+        >
+          {selectedEntry && (
+            <>
+              <Text style={[styles.sheetTitle, { color: theme.textSecondary }]}>
+                Kenno #{selectedEntry.puzzle_number + 1} ·{' '}
+                {formatFinnishDate(selectedEntry.date)}
+              </Text>
+              {revealedPuzzles.has(selectedEntry.puzzle_number) && (
+                <View
                   style={[
-                    styles.sheetButton,
-                    { backgroundColor: theme.accent },
-                  ]}
-                >
-                  <Text
-                    style={[styles.sheetButtonText, { color: theme.onAccent }]}
-                  >
-                    Pelaa
-                  </Text>
-                </Pressable>
-                <Pressable
-                  onPress={handleViewWords}
-                  style={[
-                    styles.sheetButton,
-                    { backgroundColor: theme.bgSecondary },
+                    styles.sheetNotice,
+                    {
+                      backgroundColor: theme.bgSecondary,
+                      borderColor: theme.border,
+                    },
                   ]}
                 >
                   <Text
                     style={[
-                      styles.sheetButtonText,
-                      { color: theme.textPrimary },
-                    ]}
-                  >
-                    Näytä vastaukset
-                  </Text>
-                </Pressable>
-                <Pressable onPress={closeSheet} style={styles.sheetCancel}>
-                  <Text
-                    style={[
-                      styles.sheetCancelText,
+                      styles.sheetNoticeText,
                       { color: theme.textSecondary },
                     ]}
                   >
-                    Peruuta
+                    Vastaukset on jo paljastettu. Tästä kennosta ei enää kerry
+                    tilastoja.
                   </Text>
-                </Pressable>
-              </>
-            )}
-          </Animated.View>
-        </Modal>
-      </SafeAreaView>
-    </GestureHandlerRootView>
+                </View>
+              )}
+              <Pressable
+                onPress={handlePlay}
+                style={[styles.sheetButton, { backgroundColor: theme.accent }]}
+              >
+                <Text
+                  style={[styles.sheetButtonText, { color: theme.onAccent }]}
+                >
+                  Pelaa
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={handleViewWords}
+                style={[
+                  styles.sheetButton,
+                  { backgroundColor: theme.bgSecondary },
+                ]}
+              >
+                <Text
+                  style={[styles.sheetButtonText, { color: theme.textPrimary }]}
+                >
+                  Näytä vastaukset
+                </Text>
+              </Pressable>
+              <Pressable onPress={closeSheet} style={styles.sheetCancel}>
+                <Text
+                  style={[
+                    styles.sheetCancelText,
+                    { color: theme.textSecondary },
+                  ]}
+                >
+                  Peruuta
+                </Text>
+              </Pressable>
+            </>
+          )}
+        </Animated.View>
+      </Modal>
+    </SafeAreaView>
   );
 }
 
