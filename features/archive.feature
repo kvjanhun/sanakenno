@@ -114,3 +114,37 @@ Feature: Puzzle archive
   Scenario: Pagination controls are hidden when all puzzles fit on one page
     Given the archive has 8 or fewer past puzzles
     Then no pagination controls should be visible
+
+  @ios
+  Scenario: Swiping left advances to the next page of past puzzles
+    Given the archive has more than 8 past puzzles
+    And the player is on the first page of past puzzles
+    When the player swipes left on the past puzzles list
+    Then the next page of past puzzles should be shown
+
+  @ios
+  Scenario: Swiping right returns to the previous page of past puzzles
+    Given the archive has more than 8 past puzzles
+    And the player is on the second page of past puzzles
+    When the player swipes right on the past puzzles list
+    Then the first page of past puzzles should be shown
+
+  @ios
+  Scenario: Swiping left on the last page does nothing
+    Given the archive has more than 8 past puzzles
+    And the player is on the last page of past puzzles
+    When the player swipes left on the past puzzles list
+    Then the last page of past puzzles should still be shown
+
+  @ios
+  Scenario: Swiping right on the first page does nothing
+    Given the archive has more than 8 past puzzles
+    And the player is on the first page of past puzzles
+    When the player swipes right on the past puzzles list
+    Then the first page of past puzzles should still be shown
+
+  @ios
+  Scenario: Vertical scroll is preserved on the past puzzles list
+    Given the archive has more than 8 past puzzles
+    When the player scrolls the past puzzles list vertically
+    Then the page should not change
