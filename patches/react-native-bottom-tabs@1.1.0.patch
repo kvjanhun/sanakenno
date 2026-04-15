@@ -1,0 +1,12 @@
+diff --git a/ios/TabViewProvider.swift b/ios/TabViewProvider.swift
+index 013032f098e5a3217f30ff94282d2238640e215e..7977d9922b778289f031f4f9add3adf5146cf147 100644
+--- a/ios/TabViewProvider.swift
++++ b/ios/TabViewProvider.swift
+@@ -240,6 +240,7 @@ public final class TabInfo: NSObject {
+     if let imageSources = icons as? [RCTImageSource?] {
+       for (index, imageSource) in imageSources.enumerated() {
+         guard let imageSource else { continue }
++        guard let url = imageSource.request.url, !url.absoluteString.isEmpty else { continue }
+         imageLoader.loadImage(
+           with: imageSource.request,
+           size: imageSource.size,

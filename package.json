@@ -33,7 +33,10 @@
       "argon2",
       "better-sqlite3",
       "esbuild"
-    ]
+    ],
+    "patchedDependencies": {
+      "react-native-bottom-tabs@1.1.0": "patches/react-native-bottom-tabs@1.1.0.patch"
+    }
   },
   "devDependencies": {
     "@changesets/cli": "^2.30.0",
