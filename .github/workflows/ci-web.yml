@@ -1,10 +1,16 @@
-name: CI
+name: CI — Web & Server
 
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - 'packages/mobile/**'
+      - 'patches/**'
   pull_request:
     branches: [main]
+    paths-ignore:
+      - 'packages/mobile/**'
+      - 'patches/**'
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -25,8 +31,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Typecheck
+      - name: Typecheck server
         run: pnpm run typecheck
+
+      - name: Typecheck packages
+        run: pnpm turbo run typecheck --filter=!@sanakenno/mobile
 
       - name: Lint
         run: pnpm run lint

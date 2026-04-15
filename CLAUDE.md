@@ -12,6 +12,7 @@ See `src/CLAUDE.md` for frontend rules, `server/CLAUDE.md` for backend rules.
 | Storage | SQLite |
 | Testing | Vitest · Cucumber.js (BDD) · Playwright (E2E) |
 | PWA | vite-plugin-pwa |
+| Monorepo | Turborepo (task orchestration) |
 
 ## BDD-First Development
 Feature files in `features/` are the source of truth for behaviour.
@@ -62,14 +63,32 @@ This updates both `package.json` and `app.json` is overridden at build time via 
 - **minor** (0.X.0): new features, new screens, notable UX changes
 - **major** (X.0.0): breaking changes, major redesigns, first stable release
 
+## CI Pipelines
+
+Two separate GitHub Actions workflows handle web/server and mobile independently.
+
+| Workflow | File | Triggers on | What it does |
+|---|---|---|---|
+| Web & Server | `ci-web.yml` | Any push/PR **except** `packages/mobile/**` and `patches/**` | typecheck (excl. mobile), lint, unit, BDD, E2E, build, deploy |
+| Mobile (iOS) | `ci-mobile.yml` | Push/PR touching `packages/mobile/**`, `patches/**`, or `pnpm-lock.yaml` | typecheck (mobile + shared), lint |
+
+The typecheck step uses Turborepo to run each package's own `tsc --noEmit` respecting dependency order (`shared` → `web`/`mobile`). The root package (server) is not a turbo workspace package, so it is checked separately via `pnpm run typecheck`.
+
+- `ci-web.yml`: `pnpm run typecheck` (server) + `pnpm turbo run typecheck --filter=!@sanakenno/mobile` (shared, web)
+- `ci-mobile.yml`: `pnpm turbo run typecheck --filter=@sanakenno/mobile` (shared + mobile, via `dependsOn`)
+
+When Android is added as a separate target, add a `ci-android.yml` following the same pattern as `ci-mobile.yml`.
+
 ## Commands
 ```
-pnpm install           install dependencies
-pnpm run dev           start dev server + API (localhost:5173 → proxy :3001)
-pnpm run typecheck     tsc --noEmit
-pnpm run lint          eslint + prettier check
-pnpm run test:unit     vitest
-pnpm run test:bdd      cucumber.js
-pnpm exec playwright test    E2E tests (requires dev server running)
-pnpm run build         production build → dist/
+pnpm install                              install dependencies
+pnpm run dev                              start dev server + API (localhost:5173 → proxy :3001)
+pnpm run typecheck                        typecheck server (root) only
+pnpm turbo run typecheck                  typecheck all packages via Turborepo
+pnpm turbo run typecheck --filter=<pkg>   typecheck a specific package (and its deps)
+pnpm run lint                             eslint + prettier check
+pnpm run test:unit                        vitest
+pnpm run test:bdd                         cucumber.js
+pnpm exec playwright test                 E2E tests (requires dev server running)
+pnpm run build                            production build → dist/
 ```
