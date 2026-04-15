@@ -120,13 +120,15 @@ export default function GameScreen() {
           />
         )}
 
-        <MessageBar
-          message={message}
-          messageType={messageType}
-          pointsBubble={pointsBubble}
-          allFound={allFound}
-          theme={theme}
-        />
+        <View style={styles.messageBarWrap}>
+          <MessageBar
+            message={message}
+            messageType={messageType}
+            pointsBubble={pointsBubble}
+            allFound={allFound}
+            theme={theme}
+          />
+        </View>
 
         <View style={styles.spacer} />
 
@@ -138,6 +140,8 @@ export default function GameScreen() {
           allFound={allFound}
           theme={theme}
         />
+
+        <View style={styles.wordInputGap} />
 
         <Honeycomb
           center={puzzle.center}
@@ -194,5 +198,11 @@ const styles = StyleSheet.create({
   error: {
     fontSize: 16,
     textAlign: 'center',
+  },
+  messageBarWrap: {
+    marginTop: 10,
+  },
+  wordInputGap: {
+    height: 10,
   },
 });

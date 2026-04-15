@@ -105,20 +105,20 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 8,
+    paddingTop: 2,
     paddingBottom: 2,
-    minHeight: 40,
+    minHeight: 44,
   },
   charRow: {
     flexDirection: 'row',
   },
   char: {
-    fontSize: 26,
+    fontSize: 30,
     fontWeight: '600',
     marginHorizontal: 1,
   },
   cursor: {
-    fontSize: 26,
+    fontSize: 30,
     fontWeight: '300',
   },
 });
