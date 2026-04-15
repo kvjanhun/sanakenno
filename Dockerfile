@@ -8,6 +8,7 @@ WORKDIR /app
 
 # Copy workspace config and all package.json files first for layer caching
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY patches ./patches
 COPY packages/shared/package.json packages/shared/
 COPY packages/web/package.json packages/web/
 
@@ -28,6 +29,7 @@ WORKDIR /app
 
 # Copy workspace config and root + server package.json for production deps
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY patches ./patches
 COPY packages/shared/package.json packages/shared/
 COPY packages/web/package.json packages/web/
 
