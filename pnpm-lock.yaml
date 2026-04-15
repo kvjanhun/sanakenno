@@ -6,7 +6,7 @@ settings:
 
 patchedDependencies:
   react-native-bottom-tabs@1.1.0:
-    hash: f2b8f10f5fec812bfd7cffd4331508ad26c69e5936dbdd10aa89ebc9b620307b
+    hash: d61a1ab2b9530344a41ead5ed7581cf539fb221fc46894286ed6bf65148bcfac
     path: patches/react-native-bottom-tabs@1.1.0.patch
 
 importers:
@@ -106,7 +106,7 @@ importers:
     dependencies:
       '@bottom-tabs/react-navigation':
         specifier: ^1.1.0
-        version: 1.1.0(@react-navigation/native@7.2.2(react-native@0.83.4(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0))(react@19.2.0))(react-native-bottom-tabs@1.1.0(patch_hash=f2b8f10f5fec812bfd7cffd4331508ad26c69e5936dbdd10aa89ebc9b620307b)(react-native@0.83.4(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0))(react@19.2.0))(react-native@0.83.4(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0))(react@19.2.0)
+        version: 1.1.0(@react-navigation/native@7.2.2(react-native@0.83.4(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0))(react@19.2.0))(react-native-bottom-tabs@1.1.0(patch_hash=d61a1ab2b9530344a41ead5ed7581cf539fb221fc46894286ed6bf65148bcfac)(react-native@0.83.4(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0))(react@19.2.0))(react-native@0.83.4(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0))(react@19.2.0)
       '@expo/vector-icons':
         specifier: ^15.1.1
         version: 15.1.1(expo-font@55.0.6)(react-native@0.83.4(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0))(react@19.2.0)
@@ -160,7 +160,7 @@ importers:
         version: 0.83.4(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0)
       react-native-bottom-tabs:
         specifier: ^1.1.0
-        version: 1.1.0(patch_hash=f2b8f10f5fec812bfd7cffd4331508ad26c69e5936dbdd10aa89ebc9b620307b)(react-native@0.83.4(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0))(react@19.2.0)
+        version: 1.1.0(patch_hash=d61a1ab2b9530344a41ead5ed7581cf539fb221fc46894286ed6bf65148bcfac)(react-native@0.83.4(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0))(react@19.2.0)
       react-native-gesture-handler:
         specifier: ~2.30.1
         version: 2.30.1(react-native@0.83.4(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0))(react@19.2.0)
@@ -7122,13 +7122,13 @@ snapshots:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
 
-  '@bottom-tabs/react-navigation@1.1.0(@react-navigation/native@7.2.2(react-native@0.83.4(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0))(react@19.2.0))(react-native-bottom-tabs@1.1.0(patch_hash=f2b8f10f5fec812bfd7cffd4331508ad26c69e5936dbdd10aa89ebc9b620307b)(react-native@0.83.4(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0))(react@19.2.0))(react-native@0.83.4(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0))(react@19.2.0)':
+  '@bottom-tabs/react-navigation@1.1.0(@react-navigation/native@7.2.2(react-native@0.83.4(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0))(react@19.2.0))(react-native-bottom-tabs@1.1.0(patch_hash=d61a1ab2b9530344a41ead5ed7581cf539fb221fc46894286ed6bf65148bcfac)(react-native@0.83.4(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0))(react@19.2.0))(react-native@0.83.4(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0))(react@19.2.0)':
     dependencies:
       '@react-navigation/native': 7.2.2(react-native@0.83.4(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0))(react@19.2.0)
       color: 5.0.3
       react: 19.2.0
       react-native: 0.83.4(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0)
-      react-native-bottom-tabs: 1.1.0(patch_hash=f2b8f10f5fec812bfd7cffd4331508ad26c69e5936dbdd10aa89ebc9b620307b)(react-native@0.83.4(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0))(react@19.2.0)
+      react-native-bottom-tabs: 1.1.0(patch_hash=d61a1ab2b9530344a41ead5ed7581cf539fb221fc46894286ed6bf65148bcfac)(react-native@0.83.4(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0))(react@19.2.0)
 
   '@bramus/specificity@2.4.2':
     dependencies:
@@ -11564,7 +11564,7 @@ snapshots:
 
   react-is@19.2.4: {}
 
-  react-native-bottom-tabs@1.1.0(patch_hash=f2b8f10f5fec812bfd7cffd4331508ad26c69e5936dbdd10aa89ebc9b620307b)(react-native@0.83.4(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0))(react@19.2.0):
+  react-native-bottom-tabs@1.1.0(patch_hash=d61a1ab2b9530344a41ead5ed7581cf539fb221fc46894286ed6bf65148bcfac)(react-native@0.83.4(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0))(react@19.2.0):
     dependencies:
       react: 19.2.0
       react-freeze: 1.0.4(react@19.2.0)

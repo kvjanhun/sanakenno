@@ -10,3 +10,39 @@ index 013032f098e5a3217f30ff94282d2238640e215e..7977d9922b778289f031f4f9add3adf5
          imageLoader.loadImage(
            with: imageSource.request,
            size: imageSource.size,
+diff --git a/src/TabView.tsx b/src/TabView.tsx
+index 41b9cb370edbf77f2fa3caadc4bef109279f5b53..8e62d547b7041aa4a1217e0afa02758385d9934c 100644
+--- a/src/TabView.tsx
++++ b/src/TabView.tsx
+@@ -326,14 +326,15 @@ const TabView = <Route extends BaseRoute>({
+     ]
+   );
+ 
+-  const resolvedIconAssets: ImageSource[] = React.useMemo(
++  const resolvedIconAssets: (ImageSource | null)[] = React.useMemo(
+     () =>
+-      // Pass empty object for icons that are not provided to avoid index mismatch on native side.
++      // Pass null for icons that are not provided (e.g. SF symbol slots) to
++      // avoid index mismatch while also not triggering a native image load.
+       icons.map((icon) =>
+         icon && !isAppleSymbol(icon)
+           ? // @ts-expect-error: TODO: Migrate of deep imports
+             Image.resolveAssetSource(icon)
+-          : { uri: '' }
++          : null
+       ),
+     [icons]
+   );
+@@ -390,7 +391,11 @@ const TabView = <Route extends BaseRoute>({
+         style={styles.fullWidth}
+         items={items}
+         // When rendering a custom tab bar, icons can be React elements, which will not be properly resolved.
+-        icons={renderCustomTabBar ? undefined : resolvedIconAssets}
++        icons={
++          renderCustomTabBar
++            ? undefined
++            : (resolvedIconAssets as unknown as ReadonlyArray<ImageSource>)
++        }
+         selectedPage={focusedKey}
+         tabBarHidden={!!renderCustomTabBar}
+         onTabLongPress={handleTabLongPress}
