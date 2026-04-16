@@ -1,5 +1,12 @@
 # @sanakenno/web
 
+## 1.2.7
+
+### Patch Changes
+
+- Align stats + sync behavior across web and mobile, and use Helsinki date for failed-guess POSTs.
+  - @sanakenno/shared@1.2.7
+
 ## 1.2.6
 
 ### Patch Changes

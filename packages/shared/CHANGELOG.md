@@ -1,5 +1,7 @@
 # @sanakenno/shared
 
+## 1.2.7
+
 ## 1.2.0
 
 ### Minor Changes
