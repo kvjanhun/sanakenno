@@ -52,6 +52,55 @@ export function createMockPuzzle() {
 }
 
 /**
+ * Stub all `/api/player/**` endpoints so App.tsx's on-mount
+ * `useAuthStore.initialize()` doesn't spam the Vite proxy with
+ * ECONNREFUSED noise when no backend is running in E2E.
+ * Must be called BEFORE page.goto().
+ */
+export async function mockPlayerApi(page: Page) {
+  // Playwright matches the most-recently-registered route first, so the
+  // catch-all is installed first and the specific handlers override it.
+  await page.route('**/api/player/**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true }),
+    });
+  });
+
+  await page.route('**/api/player/auth/init', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        token: 'e2e-test-token',
+        player_id: 1,
+        player_key: 'e2e-test-key',
+      }),
+    });
+  });
+
+  await page.route('**/api/player/me', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ player_id: 1 }),
+    });
+  });
+
+  await page.route('**/api/player/sync', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        stats: { records: [], version: 1 },
+        puzzle_states: [],
+      }),
+    });
+  });
+}
+
+/**
  * Intercept API routes with mock responses.
  * Must be called BEFORE page.goto().
  */
@@ -77,6 +126,8 @@ export async function mockPuzzleApi(page: Page) {
       body: JSON.stringify({ ok: true }),
     });
   });
+
+  await mockPlayerApi(page);
 
   return puzzle;
 }
@@ -130,6 +181,8 @@ export async function mockArchiveApi(page: Page) {
       await route.continue();
     }
   });
+
+  await mockPlayerApi(page);
 
   return archive;
 }
