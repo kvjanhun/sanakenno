@@ -8,9 +8,21 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { submitWord, mockPuzzleApi, createMockPuzzle } from './helpers';
+import {
+  submitWord,
+  mockPuzzleApi,
+  mockPlayerApi,
+  createMockPuzzle,
+} from './helpers';
 
 test.describe('Network errors', () => {
+  test.beforeEach(async ({ page }) => {
+    // Stub player endpoints so on-mount useAuthStore.initialize() doesn't
+    // leak to the Vite proxy. These tests override /api/puzzle themselves
+    // and don't call mockPuzzleApi, which normally installs the player mock.
+    await mockPlayerApi(page);
+  });
+
   test('shows error message and retry button when API is unreachable', async ({
     page,
   }) => {
