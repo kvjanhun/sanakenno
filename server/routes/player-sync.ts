@@ -213,7 +213,7 @@ sync.post('/stats', async (c) => {
 });
 
 // ---------------------------------------------------------------------------
-// POST /api/player/sync/state — upsert a puzzle state (last-write-wins)
+// POST /api/player/sync/state — upsert a puzzle state (merged with any existing row)
 // ---------------------------------------------------------------------------
 
 sync.post('/state', async (c) => {

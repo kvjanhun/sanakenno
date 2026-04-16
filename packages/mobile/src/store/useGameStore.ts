@@ -286,7 +286,9 @@ export const useGameStore = create<GameState>()((set, get) => ({
     if (!hashSet.has(wordHash)) {
       showError('Ei sanakirjassa');
       // Fire-and-forget: record non-dictionary guess on server
-      const today = new Date().toISOString().slice(0, 10);
+      const today = new Date().toLocaleDateString('en-CA', {
+        timeZone: 'Europe/Helsinki',
+      });
       fetch(`${config.apiBase}/api/failed-guess`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -377,15 +379,11 @@ export const useGameStore = create<GameState>()((set, get) => ({
       }
     }
 
-    // Update player stats on rank change, new pangram, or new longest word.
+    // Record stats on every accepted word (matches web).
     // Skip if this puzzle's answers have been revealed (revealed_N flag).
     const isRevealed =
       storage.getRaw(`revealed_${puzzle.puzzle_number}`) === 'true';
-    const statsChanged =
-      newRank !== previousRank ||
-      isPangram ||
-      newLongestWord !== state.longestWord;
-    if (!isRevealed && statsChanged) {
+    if (!isRevealed) {
       const elapsed =
         state.startedAt != null
           ? Date.now() - state.startedAt - state.totalPausedMs
@@ -514,6 +512,8 @@ export const useGameStore = create<GameState>()((set, get) => ({
         totalPausedMs: state.totalPausedMs,
         hintsUnlocked: [...state.hintsUnlocked],
         scoreBeforeHints: state.scoreBeforeHints,
+        longestWord: state.longestWord,
+        pangramsFound: state.pangramsFound,
       });
     }
   },

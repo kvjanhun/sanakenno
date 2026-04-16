@@ -108,7 +108,7 @@ Current versions: web/server/shared **1.2.0**, mobile **0.4.0**.
 - `auth/`: Admin session middleware and routes (cookie-based, CSRF-protected).
 - `player-auth/`: Player identity middleware and routes (Bearer token-based).
 - `db/schema.sql`: Database structure (puzzles, player_stats, player_puzzle_states, achievements, failed_guesses, config).
-- `db/connection.ts`: `getDb()` helper + startup migrations (idempotent `ALTER TABLE` calls).
+- `db/connection.ts`: `getDb()` helper — opens the SQLite file, enables WAL, and applies `schema.sql`.
 
 ### Testing (`features/` & `tests/`)
 

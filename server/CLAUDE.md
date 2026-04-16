@@ -7,7 +7,7 @@ server/
   routes/           puzzle, archive, achievement, failed-guess, admin, player-sync route files
   auth/             admin session middleware and routes (cookie-based)
   player-auth/      player identity middleware and routes (Bearer token-based)
-  db/               SQLite connection, schema, and migration helpers
+  db/               SQLite connection + schema
   email/            transactional email helpers (transfer link)
   puzzle-engine.ts  pure puzzle logic (no I/O)
 ```
@@ -26,7 +26,7 @@ server/
 ## Database
 - All queries go through the `getDb()` helper — never open a raw connection elsewhere.
 - Use parameterised queries; never interpolate user input into SQL.
-- Schema changes go in `db/schema.sql`; backwards-compatible column additions are applied as migrations in `db/connection.ts` via try/catch `ALTER TABLE`.
+- Schema lives in `db/schema.sql` and is applied on startup via `applySchema`. Existing prod databases are already populated; if you add a column, apply it by hand to any live DB before shipping.
 
 ## Environment
 - Port: `process.env.PORT` (default `3001`).

@@ -135,12 +135,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         };
         const changed = get().pullAndMerge(payload);
 
+        // Only push records the server didn't return — the server already
+        // has everything it sent us, so pushing those again is wasted work.
+        const serverPuzzleNumbers = new Set(
+          payload.stats.records.map((r) => r.puzzle_number),
+        );
+        const serverStatePuzzleNumbers = new Set(
+          payload.puzzle_states.map((s) => s.puzzle_number),
+        );
         const local = gatherLocalData();
         for (const record of local.stats.records) {
-          void get().syncStatsRecord(record);
+          if (!serverPuzzleNumbers.has(record.puzzle_number)) {
+            void get().syncStatsRecord(record);
+          }
         }
         for (const state of local.puzzle_states) {
-          void get().syncPuzzleState(state);
+          if (!serverStatePuzzleNumbers.has(state.puzzle_number)) {
+            void get().syncPuzzleState(state);
+          }
         }
 
         if (changed) {

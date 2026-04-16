@@ -388,7 +388,9 @@ export const useGameStore = create<GameState>()((set, get) => ({
       setTimeout(() => set({ wordShake: false }), 400);
 
       // Fire-and-forget: record non-dictionary guess on server
-      const today = new Date().toISOString().slice(0, 10);
+      const today = new Date().toLocaleDateString('en-CA', {
+        timeZone: 'Europe/Helsinki',
+      });
       fetch(`${API_BASE}/api/failed-guess`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -454,6 +456,19 @@ export const useGameStore = create<GameState>()((set, get) => ({
         new Date().toLocaleString('en-US', { timeZone: 'Europe/Helsinki' }),
       );
       const dateStr = `${helsinkiDate.getFullYear()}-${String(helsinkiDate.getMonth() + 1).padStart(2, '0')}-${String(helsinkiDate.getDate()).padStart(2, '0')}`;
+      let longestWord = '';
+      let pangramsFound = 0;
+      for (const w of newFoundWords) {
+        if (w.length > longestWord.length) longestWord = w;
+        let isP = true;
+        for (const c of validLetters) {
+          if (!w.includes(c)) {
+            isP = false;
+            break;
+          }
+        }
+        if (isP) pangramsFound++;
+      }
       const existing =
         loadFromStorage<PlayerStats>(STATS_STORAGE_KEY) ?? emptyStats();
       const updated = updateStatsRecord(existing, {
@@ -465,6 +480,8 @@ export const useGameStore = create<GameState>()((set, get) => ({
         words_found: newFoundWords.size,
         hints_used: state.hintsUnlocked.size,
         elapsed_ms: elapsed,
+        longest_word: longestWord,
+        pangrams_found: pangramsFound,
       });
       saveToStorage(STATS_STORAGE_KEY, updated);
 
@@ -481,6 +498,8 @@ export const useGameStore = create<GameState>()((set, get) => ({
           words_found: newFoundWords.size,
           hints_used: state.hintsUnlocked.size,
           elapsed_ms: elapsed,
+          longest_word: longestWord,
+          pangrams_found: pangramsFound,
         });
         void syncPuzzleState({
           puzzle_number: puzzle.puzzle_number,
