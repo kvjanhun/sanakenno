@@ -2,11 +2,11 @@
   "$schema": "https://unpkg.com/@changesets/config@3.1.3/schema.json",
   "changelog": "@changesets/cli/changelog",
   "commit": false,
-  "fixed": [["@sanakenno/shared", "@sanakenno/web", "@sanakenno/mobile"]],
+  "fixed": [["@sanakenno/shared", "@sanakenno/web"]],
   "linked": [],
   "access": "restricted",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": [],
+  "ignore": ["@sanakenno/mobile"],
   "privatePackages": { "version": true, "tag": false }
 }
