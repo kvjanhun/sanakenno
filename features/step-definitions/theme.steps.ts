@@ -66,7 +66,7 @@ Then('the theme should remain dark', function (this: SanakennoWorld) {
 });
 
 Then(
-  'accent-colored controls should use the palette\'s on-accent text color',
+  "accent-colored controls should use the palette's on-accent text color",
   function (this: SanakennoWorld) {
     return 'pending';
   },

@@ -1,0 +1,4 @@
+interface:
+  display_name: 'UI Parity'
+  short_description: 'Keep web and mobile behavior aligned'
+  default_prompt: 'Use $cross-platform-ui-parity to make this Sanakenno UI change consistent on web and mobile.'

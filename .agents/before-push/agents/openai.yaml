@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Before Push'
+  short_description: 'Run checks before pushing to GitHub'
+  default_prompt: 'Use $before-push before pushing this Sanakenno branch.'

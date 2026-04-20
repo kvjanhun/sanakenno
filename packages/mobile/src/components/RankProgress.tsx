@@ -120,11 +120,7 @@ export function RankProgress({
               >
                 {rankLabel}
               </Text>
-              <ChevronDown
-                size={14}
-                strokeWidth={2.5}
-                color={theme.onAccent}
-              />
+              <ChevronDown size={14} strokeWidth={2.5} color={theme.onAccent} />
             </View>
           </Pressable>
         </View>

@@ -184,9 +184,7 @@ export function AuthSection({ theme }: AuthSectionProps) {
               },
             ]}
           >
-            <Text
-              style={[styles.primaryButtonText, { color: theme.onAccent }]}
-            >
+            <Text style={[styles.primaryButtonText, { color: theme.onAccent }]}>
               Synkronoi muille laitteille
             </Text>
           </AnimatedButton>

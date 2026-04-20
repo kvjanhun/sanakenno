@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Release Version'
+  short_description: 'Version web and mobile correctly'
+  default_prompt: 'Use $release-and-version to bump versions and prepare a Sanakenno release safely.'

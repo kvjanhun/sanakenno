@@ -1,0 +1,4 @@
+interface:
+  display_name: 'BDD Change'
+  short_description: 'Spec-first workflow for repo changes'
+  default_prompt: 'Use $bdd-change to implement this behavior change in Sanakenno.'

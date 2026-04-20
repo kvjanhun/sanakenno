@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Theme Audit'
+  short_description: 'Audit palettes, dark mode, contrast'
+  default_prompt: 'Use $theme-audit to fix or review a theme or palette issue in Sanakenno.'
