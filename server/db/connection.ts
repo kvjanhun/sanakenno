@@ -43,6 +43,11 @@ function applySchema(db: BetterSqlite3.Database): void {
   // Idempotent column additions for pre-existing databases.
   // SQLite has no ADD COLUMN IF NOT EXISTS, so introspect via PRAGMA.
   ensureColumn(db, 'players', 'preferences', 'TEXT');
+
+  // The pairing model no longer uses per-transfer tokens — the stable
+  // player_key is the pairing code. Drop the old table from live DBs; rows
+  // (if any remain) are short-lived by construction.
+  db.exec('DROP TABLE IF EXISTS player_transfer_tokens');
 }
 
 function ensureColumn(

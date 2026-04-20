@@ -1,7 +1,8 @@
 Feature: Player authentication
-  Players get a private device identity key on first launch.
-  Cross-device access uses one-time transfer tokens, optionally delivered by email.
-  No personal data is stored for player authentication.
+  Every player has a stable pairing code (player_key) minted silently on first launch.
+  The server only stores a SHA-256 hash; the raw key lives on each paired device and
+  is the pairing code shown in the UI. Devices are paired by pasting the code,
+  optionally delivered by email. Rotation mints a new code and drops other devices.
 
   Background:
     Given the player auth rate limits are reset
@@ -16,74 +17,100 @@ Feature: Player authentication
     And the response should contain "player_key"
     And the players table should store only the player key hash
 
-  # --- Transfer token creation ---
+  # --- Email delivery of the pairing code ---
 
-  Scenario: Creating a transfer token while authenticated succeeds
+  Scenario: Email delivery sends the pairing code without storing the email
     Given a player has initialized their identity
-    When a POST is made to /api/player/auth/transfer/create with the Bearer token
+    When a POST is made to /api/player/auth/transfer/create with email "test@example.com" and the Bearer token
     Then the response status should be 200
-    And the response should contain "transfer_token"
+    And the response should contain "status"
+    And the players table should not contain the email "test@example.com"
 
-  Scenario: Transfer token create is rate-limited
+  Scenario: Email delivery is rate-limited per IP
     Given a player has initialized their identity
     When 3 POST requests are made to /api/player/auth/transfer/create from the same IP with the Bearer token
     Then the 4th transfer create request should return 429
 
-  Scenario: Transfer email sends token without storing email
-    Given a player has initialized their identity
-    When a POST is made to /api/player/auth/transfer/create with email "test@example.com" and the Bearer token
-    Then the response status should be 200
-    And the response should contain "transfer_token"
-    And the players table should not contain the email "test@example.com"
-
-  Scenario: Sending a transfer email to the same address twice within 10 minutes is blocked
+  Scenario: Sending a pairing email to the same address twice within 10 minutes is blocked
     Given a player has initialized their identity
     And a transfer email has just been sent to "cooldown@example.com"
     When a POST is made to /api/player/auth/transfer/create with email "cooldown@example.com" and the Bearer token
     Then the response status should be 429
 
-  Scenario: Sending more than 10 transfer emails to the same address in one day is blocked
+  Scenario: Sending more than 10 pairing emails to the same address in one day is blocked
     Given a player has initialized their identity
     And 10 transfer emails have already been sent to "daily@example.com" today
     When a POST is made to /api/player/auth/transfer/create with email "daily@example.com" and the Bearer token
     Then the response status should be 429
 
-  # --- Transfer token use ---
+  Scenario: Email delivery without a player_key is rejected
+    Given a player has initialized their identity
+    When a POST is made to /api/player/auth/transfer/create with email "missing-key@example.com" and no player_key and the Bearer token
+    Then the response status should be 400
 
-  Scenario: A valid transfer token can be exchanged for a Bearer token
-    Given a transfer token exists for the current authenticated player
-    When a POST is made to /api/player/auth/transfer/use with the transfer token
+  Scenario: Email delivery with a mismatched player_key is rejected
+    Given a player has initialized their identity
+    When a POST is made to /api/player/auth/transfer/create with email "mismatch@example.com" and a wrong player_key and the Bearer token
+    Then the response status should be 400
+
+  # --- Pairing (transfer/use) ---
+
+  Scenario: A valid pairing code can be exchanged for a Bearer token
+    Given a player has initialized their identity
+    When a POST is made to /api/player/auth/transfer/use with the player key
     Then the response status should be 200
     And the response should contain a "token" field
     And the response should contain "player_id"
     And the response should contain "stats"
     And the response should contain "puzzle_states"
 
-  Scenario: Transfer token use returns merged stats and puzzle states
-    Given a transfer token exists for the current authenticated player
-    When a POST is made to /api/player/auth/transfer/use with the transfer token and local stats
+  Scenario: Pairing merges local stats and puzzle states into the player account
+    Given a player has initialized their identity
+    When a POST is made to /api/player/auth/transfer/use with the player key and local stats
     Then the response status should be 200
     And the response should contain "stats"
     And the response should contain "puzzle_states"
 
-  Scenario: An already-used transfer token is rejected
-    Given a transfer token exists for the current authenticated player
-    And the transfer token has already been used
-    When a POST is made to /api/player/auth/transfer/use with the transfer token
-    Then the response status should be 400
+  Scenario: The pairing code can be reused across multiple pairings
+    Given a player has initialized their identity
+    When a POST is made to /api/player/auth/transfer/use with the player key
+    Then the response status should be 200
+    When a POST is made to /api/player/auth/transfer/use with the player key
+    Then the response status should be 200
 
-  Scenario: An expired transfer token is rejected
-    Given an expired transfer token exists for the current authenticated player
-    When a POST is made to /api/player/auth/transfer/use with the transfer token
-    Then the response status should be 400
-
-  Scenario: A completely invalid transfer token is rejected
+  Scenario: A completely invalid pairing code is rejected
     When a POST is made to /api/player/auth/transfer/use with token "totally-fake-token"
     Then the response status should be 400
 
-  Scenario: A missing transfer token body returns 400
+  Scenario: A missing pairing code returns 400
     When a POST is made to /api/player/auth/transfer/use with an empty body
     Then the response status should be 400
+
+  # --- Rotation ---
+
+  Scenario: Rotating the pairing code mints a new key and keeps the current session
+    Given a player has initialized their identity
+    When a POST is made to /api/player/auth/rotate with the Bearer token
+    Then the response status should be 200
+    And the response should contain "player_key"
+    And the new player_key should differ from the old one
+    And the current Bearer token should still be valid on /api/player/me
+
+  Scenario: Rotating invalidates sessions on other paired devices
+    Given a player has initialized their identity
+    And a second device has paired using the pairing code
+    When a POST is made to /api/player/auth/rotate with the Bearer token
+    Then the second device's Bearer token should no longer be valid
+
+  Scenario: Rotating invalidates the previous pairing code
+    Given a player has initialized their identity
+    When a POST is made to /api/player/auth/rotate with the Bearer token
+    And a POST is made to /api/player/auth/transfer/use with the previous player key
+    Then the response status should be 400
+
+  Scenario: Rotation requires authentication
+    When a POST is made to /api/player/auth/rotate without a Bearer token
+    Then the response status should be 401
 
   # --- Authenticated endpoints ---
 
@@ -109,18 +136,11 @@ Feature: Player authentication
     Then the response status should be 200
     And the token should no longer be valid on /api/player/me
 
-  # --- Security ---
-
-  Scenario: Transfer tokens are stored as SHA-256 hashes, not plaintext
-    Given a transfer token exists for the current authenticated player
-    Then the player_transfer_tokens table should not contain the raw token
-    And the player_transfer_tokens table should contain the SHA-256 hash of the token
-
   # --- iOS device-link UI ---
 
   @ios
   Scenario: QR code toggles off when the show button is tapped again
-    Given the player is on the settings screen with a transfer token
+    Given the player is on the settings screen with a pairing code
     When the player taps "Näytä QR-koodi"
     Then the QR code should be visible
     And the button label should change to "Piilota QR-koodi"

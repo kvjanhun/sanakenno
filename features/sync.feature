@@ -110,10 +110,10 @@ Feature: Cross-device progress sync
     When a POST is made to /api/player/sync/state with an invalid body
     Then the response status should be 400
 
-  # --- First-time transfer upload ---
+  # --- First-time pair upload ---
 
-  Scenario: Using a transfer token with local stats uploads them to the server
-    Given a new player identity with an unused transfer token
+  Scenario: Pairing with the pairing code uploads local stats to the server
+    Given a new player identity with a known pairing code
     And the player has 5 local stats records
-    When the player uses their transfer token with the local stats included
+    When the player pairs this device with the pairing code and the local stats included
     Then the server should have 5 stats records for that player

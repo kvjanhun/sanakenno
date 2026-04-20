@@ -1,10 +1,17 @@
 /**
  * Player authentication routes.
  *
+ * Pairing model: every player has a stable, random 64-hex `player_key` minted
+ * at /auth/init. The server only stores `player_key_hash`; the raw key lives
+ * on each paired device's local storage and is the pairing code shown in the
+ * UI. To add a device, paste the key on the target device — no expiry, no
+ * single-use. To revoke (fork progress away from other devices), rotate.
+ *
  * Endpoints:
  *   POST /api/player/auth/init            - Create player key identity + session
- *   POST /api/player/auth/transfer/create - Create one-time transfer token
- *   POST /api/player/auth/transfer/use    - Exchange transfer token for session
+ *   POST /api/player/auth/transfer/create - Email the pairing code (player_key)
+ *   POST /api/player/auth/transfer/use    - Exchange player_key for a new session
+ *   POST /api/player/auth/rotate          - Rotate player_key + drop other sessions
  *   POST /api/player/auth/logout          - Invalidate current session
  *   GET  /api/player/me                   - Return current player info
  */
@@ -136,8 +143,6 @@ function transferCreateRateLimit(c: Context, next: Next) {
 function hashToken(raw: string): string {
   return createHash('sha256').update(raw).digest('hex');
 }
-
-const TRANSFER_TOKEN_TTL_MS = 15 * 60 * 1000;
 
 function bulkUpsertLocalData(
   playerId: number,
@@ -418,6 +423,12 @@ player.post('/auth/init', (c) => {
   return c.json({ player_key: playerKey, token, player_id: row.id });
 });
 
+/**
+ * Email the pairing code to the given address. The authenticated device must
+ * include its locally-stored `player_key` so the server can verify (via hash)
+ * that the sender actually holds the current key, then embed the raw key in
+ * the outgoing email. The server never stores the raw key.
+ */
 player.post(
   '/auth/transfer/create',
   requirePlayer,
@@ -428,48 +439,54 @@ player.post(
     try {
       body = await c.req.json();
     } catch {
-      // Ignore malformed body and treat as empty.
+      // Ignore malformed body and validate below.
     }
 
     const email = typeof body['email'] === 'string' ? body['email'].trim() : '';
-    if (email) {
-      const { allowed, error } = checkEmailRateLimit(email);
-      if (!allowed) {
-        return c.json({ error: error ?? 'Liian monta yritystä' }, 429);
-      }
+    const playerKey =
+      typeof body['player_key'] === 'string' ? body['player_key'].trim() : '';
+
+    if (!playerKey) {
+      return c.json({ error: 'Tunniste puuttuu' }, 400);
     }
 
-    const rawToken = randomBytes(32).toString('hex');
-    const tokenHash = hashToken(rawToken);
-    const expiresAt = new Date(
-      Date.now() + TRANSFER_TOKEN_TTL_MS,
-    ).toISOString();
     const db = getDb();
-    db.prepare(
-      'INSERT INTO player_transfer_tokens (player_id, token_hash, expires_at) VALUES (?, ?, ?)',
-    ).run(playerId, tokenHash, expiresAt);
-    cleanupExpiredPlayerSessions();
-    db.prepare(
-      "DELETE FROM player_transfer_tokens WHERE expires_at <= datetime('now')",
-    ).run();
-
-    if (email) {
-      const baseUrl = process.env.BASE_URL || 'https://sanakenno.fi';
-      await sendTransferLink(email, rawToken, baseUrl).catch((err: unknown) => {
-        console.error(
-          JSON.stringify({
-            level: 'error',
-            message: 'Transfer link email failed',
-            error: err instanceof Error ? err.message : String(err),
-          }),
-        );
-      });
+    const row = db
+      .prepare('SELECT player_key_hash FROM players WHERE id = ?')
+      .get(playerId) as { player_key_hash: string } | undefined;
+    if (!row || row.player_key_hash !== hashToken(playerKey)) {
+      return c.json({ error: 'Virheellinen tunniste' }, 400);
     }
 
-    return c.json({ transfer_token: rawToken });
+    if (!email) {
+      return c.json({ error: 'Sähköpostiosoite puuttuu' }, 400);
+    }
+
+    const { allowed, error } = checkEmailRateLimit(email);
+    if (!allowed) {
+      return c.json({ error: error ?? 'Liian monta yritystä' }, 429);
+    }
+
+    const baseUrl = process.env.BASE_URL || 'https://sanakenno.fi';
+    await sendTransferLink(email, playerKey, baseUrl).catch((err: unknown) => {
+      console.error(
+        JSON.stringify({
+          level: 'error',
+          message: 'Transfer link email failed',
+          error: err instanceof Error ? err.message : String(err),
+        }),
+      );
+    });
+
+    return c.json({ status: 'ok' });
   },
 );
 
+/**
+ * Pair this (unauthenticated) device to an existing player by its stable
+ * player_key. Verifies by hash, upserts any local data the client is bringing
+ * in, and mints a fresh 90-day session for the new device.
+ */
 player.post('/auth/transfer/use', async (c) => {
   let body: Record<string, unknown> = {};
   try {
@@ -480,42 +497,52 @@ player.post('/auth/transfer/use', async (c) => {
   const rawToken =
     typeof body['token'] === 'string' ? body['token'].trim() : '';
   if (!rawToken) {
-    return c.json({ error: 'Token puuttuu' }, 400);
+    return c.json({ error: 'Tunniste puuttuu' }, 400);
   }
 
   const db = getDb();
-  const tokenRow = db
-    .prepare(
-      `SELECT id, player_id, expires_at, used
-       FROM player_transfer_tokens
-       WHERE token_hash = ?`,
-    )
-    .get(hashToken(rawToken)) as
-    | { id: number; player_id: number; expires_at: string; used: number }
-    | undefined;
-  if (!tokenRow || new Date(tokenRow.expires_at) <= new Date()) {
-    return c.json({ error: 'Virheellinen tai vanhentunut linkki' }, 400);
-  }
-  if (tokenRow.used) {
-    return c.json({ error: 'Linkki on jo käytetty' }, 400);
+  const row = db
+    .prepare('SELECT id FROM players WHERE player_key_hash = ?')
+    .get(hashToken(rawToken)) as { id: number } | undefined;
+  if (!row) {
+    return c.json({ error: 'Virheellinen tunniste' }, 400);
   }
 
-  db.prepare('UPDATE player_transfer_tokens SET used = 1 WHERE id = ?').run(
-    tokenRow.id,
-  );
-
-  const playerId = tokenRow.player_id;
+  const playerId = row.id;
   bulkUpsertLocalData(
     playerId,
     body['stats'] as PlayerStats | undefined,
     body['puzzle_states'] as SyncPuzzleState[] | undefined,
   );
+  cleanupExpiredPlayerSessions();
   const token = createPlayerSession(playerId);
   return c.json({
     token,
     player_id: playerId,
     ...fetchPlayerData(playerId),
   });
+});
+
+/**
+ * Rotate the authenticated player's pairing code. Generates a new player_key,
+ * updates the hash, and deletes all other sessions for this player so that
+ * previously-paired devices fall back to anonymous init on their next request.
+ * The current session is preserved.
+ */
+player.post('/auth/rotate', requirePlayer, (c) => {
+  const { playerId } = c.get('player');
+  const currentToken = c.get('playerToken');
+  const newKey = randomBytes(32).toString('hex');
+  const newHash = hashToken(newKey);
+  const db = getDb();
+  db.prepare(
+    "UPDATE players SET player_key_hash = ?, updated_at = datetime('now') WHERE id = ?",
+  ).run(newHash, playerId);
+  db.prepare('DELETE FROM player_sessions WHERE player_id = ? AND id != ?').run(
+    playerId,
+    currentToken,
+  );
+  return c.json({ player_key: newKey });
 });
 
 player.post('/auth/logout', requirePlayer, (c) => {

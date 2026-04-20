@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Check, Copy, LogOut, Mail, QrCode } from 'lucide-react';
+import { Check, Copy, LogOut, Mail, QrCode, RefreshCw } from 'lucide-react';
 import isEmail from 'validator/lib/isEmail';
 import { THEME_IDS } from '@sanakenno/shared';
 import type { ThemeId } from '@sanakenno/shared';
@@ -103,13 +103,13 @@ export interface SyncModalProps {
   onClose: () => void;
 }
 
-type ViewMode = 'options' | 'email' | 'sent' | 'qr';
+type ViewMode = 'options' | 'email' | 'sent' | 'qr' | 'confirmRotate';
 
 export function SyncModal({
   show,
   onClose,
 }: SyncModalProps): React.JSX.Element | null {
-  const transferToken = useAuthStore((s) => s.transferToken);
+  const playerKey = useAuthStore((s) => s.playerKey);
   const isLinked = useAuthStore((s) => s.isLinked);
   const isLoading = useAuthStore((s) => s.isLoading);
   const error = useAuthStore((s) => s.error);
@@ -119,22 +119,18 @@ export function SyncModal({
   const qrCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const connectUrl = useMemo(() => {
-    if (!transferToken) return '';
-    return `https://sanakenno.fi/connect?connect=${encodeURIComponent(transferToken)}`;
-  }, [transferToken]);
+    if (!playerKey) return '';
+    return `https://sanakenno.fi/connect?connect=${encodeURIComponent(playerKey)}`;
+  }, [playerKey]);
 
   useEffect(() => {
     if (!show) {
       setMode('options');
       setCodeInput('');
       setEmailInput('');
-      useAuthStore.getState().clearTransferToken();
-      return;
+      useAuthStore.getState().clearError();
     }
-    if (isLinked && !transferToken) {
-      void useAuthStore.getState().createTransfer();
-    }
-  }, [show, isLinked, transferToken]);
+  }, [show]);
 
   useEffect(() => {
     if (!show) return;
@@ -180,9 +176,14 @@ export function SyncModal({
       useAuthStore.setState({ error: 'Tarkista sähköpostiosoite.' });
       return;
     }
-    await useAuthStore.getState().createTransfer(email);
+    await useAuthStore.getState().sendTransferEmail(email);
     if (!useAuthStore.getState().error) setMode('sent');
   }, [emailInput]);
+
+  const handleConfirmRotate = useCallback(async () => {
+    await useAuthStore.getState().rotatePlayerKey();
+    if (!useAuthStore.getState().error) setMode('options');
+  }, []);
 
   if (!show) return null;
 
@@ -221,7 +222,7 @@ export function SyncModal({
             </p>
             <button
               type="button"
-              onClick={() => void useAuthStore.getState().createTransfer()}
+              onClick={() => useAuthStore.getState().revealShareOptions()}
               className="w-full py-2 px-4 rounded-lg cursor-pointer border-none font-medium"
               style={{
                 backgroundColor: 'var(--color-accent)',
@@ -268,10 +269,17 @@ export function SyncModal({
 
         {mode === 'options' && isLinked && (
           <div className="space-y-3">
-            <p style={{ color: 'var(--color-text-secondary)' }}>
-              Avaa Sanakenno toisella laitteella ja käytä alla olevaa linkkiä
-              tai koodia.
-            </p>
+            {playerKey ? (
+              <p style={{ color: 'var(--color-text-secondary)' }}>
+                Avaa Sanakenno toisella laitteella ja käytä alla olevaa linkkiä
+                tai koodia.
+              </p>
+            ) : (
+              <p style={{ color: 'var(--color-text-secondary)' }}>
+                Tältä laitteelta ei vielä löydy pysyvää tunnistetta. Paina
+                "Vaihda tunniste" luodaksesi uuden.
+              </p>
+            )}
             <button
               type="button"
               onClick={() => void copyText(connectUrl)}
@@ -288,14 +296,14 @@ export function SyncModal({
             </button>
             <button
               type="button"
-              onClick={() => void copyText(transferToken ?? '')}
+              onClick={() => void copyText(playerKey ?? '')}
               className="w-full py-2 px-4 rounded-lg border cursor-pointer flex items-center justify-center gap-2"
               style={{
                 backgroundColor: 'transparent',
                 borderColor: 'var(--color-text-tertiary)',
                 color: 'var(--color-text-primary)',
               }}
-              disabled={isLoading || !transferToken}
+              disabled={isLoading || !playerKey}
             >
               <Copy size={16} />
               Kopioi koodi
@@ -323,7 +331,7 @@ export function SyncModal({
                 borderColor: 'var(--color-text-tertiary)',
                 color: 'var(--color-text-primary)',
               }}
-              disabled={isLoading}
+              disabled={isLoading || !playerKey}
             >
               <Mail size={16} />
               Lähetä sähköpostiin
@@ -331,6 +339,20 @@ export function SyncModal({
             <hr style={{ borderColor: 'var(--color-text-tertiary)' }} />
             <PalettePicker />
             <hr style={{ borderColor: 'var(--color-text-tertiary)' }} />
+            <button
+              type="button"
+              onClick={() => setMode('confirmRotate')}
+              className="w-full py-2 px-4 rounded-lg border cursor-pointer flex items-center justify-center gap-2"
+              style={{
+                backgroundColor: 'transparent',
+                borderColor: 'var(--color-text-tertiary)',
+                color: 'var(--color-text-primary)',
+              }}
+              disabled={isLoading}
+            >
+              <RefreshCw size={16} />
+              Vaihda tunniste
+            </button>
             <button
               type="button"
               onClick={() => void handleLogout()}
@@ -344,6 +366,42 @@ export function SyncModal({
               <LogOut size={16} />
               Kirjaudu ulos
             </button>
+          </div>
+        )}
+
+        {mode === 'confirmRotate' && (
+          <div className="space-y-3">
+            <p style={{ color: 'var(--color-text-secondary)' }}>
+              Tunnisteen vaihtamisen jälkeen käyttämäsi laitteet pitää
+              synkronoida uudelleen uudella tunnisteella. Jatka silti?
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setMode('options')}
+                className="w-1/2 py-2 px-4 rounded-lg border cursor-pointer"
+                style={{
+                  backgroundColor: 'transparent',
+                  borderColor: 'var(--color-text-tertiary)',
+                  color: 'var(--color-text-primary)',
+                }}
+              >
+                Peruuta
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleConfirmRotate()}
+                className="w-1/2 py-2 px-4 rounded-lg font-medium cursor-pointer border-none"
+                style={{
+                  backgroundColor: 'var(--color-accent)',
+                  color: 'var(--color-on-accent)',
+                  opacity: isLoading ? 0.6 : 1,
+                }}
+                disabled={isLoading}
+              >
+                Vaihda tunniste
+              </button>
+            </div>
           </div>
         )}
 

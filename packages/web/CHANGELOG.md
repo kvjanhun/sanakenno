@@ -1,5 +1,24 @@
 # @sanakenno/web
 
+## 1.3.0
+
+### Minor Changes
+
+- Stable pairing codes and light/dark theme preference sync
+  - Pairing no longer uses one-shot, 15-minute transfer tokens. Every player has a
+    stable `player_key` minted at first launch; pasting it on another device pairs
+    them. The same code can be reused across devices and delivered by email
+    without expiry. Rotating the code (via "Vaihda tunniste") mints a new one and
+    drops other devices' sessions, allowing progress to be forked intentionally.
+  - The light/dark theme preference (light / dark / system) now round-trips
+    between web and mobile via the account sync channel, so a paired browser and
+    phone share one setting.
+
+### Patch Changes
+
+- Updated dependencies
+  - @sanakenno/shared@1.3.0
+
 ## 1.2.7
 
 ### Patch Changes

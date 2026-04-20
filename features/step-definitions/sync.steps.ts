@@ -272,20 +272,12 @@ Given(
 );
 
 Given(
-  'a new player identity with an unused transfer token',
+  'a new player identity with a known pairing code',
   function (this: SyncWorld) {
-    const playerId = insertPlayer(sha256(`upload-${Date.now()}`));
+    const rawKey = randomBytes(32).toString('hex');
+    const playerId = insertPlayer(sha256(rawKey));
     this.lastPlayerId = playerId;
-
-    // Create a known transfer token so the When step can use it
-    const rawToken = randomBytes(16).toString('hex');
-    const tokenHash = sha256(rawToken);
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-    const db = getDb();
-    db.prepare(
-      'INSERT INTO player_transfer_tokens (player_id, token_hash, expires_at) VALUES (?, ?, ?)',
-    ).run(playerId, tokenHash, expiresAt);
-    this._uploadRawToken = rawToken;
+    this._uploadRawToken = rawKey;
   },
 );
 
@@ -492,10 +484,10 @@ When(
 );
 
 When(
-  'the player uses their transfer token with the local stats included',
+  'the player pairs this device with the pairing code and the local stats included',
   async function (this: SyncWorld) {
     const rawToken = this._uploadRawToken;
-    assert.ok(rawToken, 'No upload token in context');
+    assert.ok(rawToken, 'No pairing code in context');
 
     const stats = {
       records: Array.from({ length: 5 }, (_, i) => ({

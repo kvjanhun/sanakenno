@@ -23,15 +23,21 @@ const PREFERENCES_UPDATED_AT_KEY = 'sanakenno_preferences_updated_at';
 export interface AuthState {
   isLoggedIn: boolean;
   playerId: number | null;
-  transferToken: string | null;
+  /** Stable pairing code for this player. Null during init or for legacy clients that haven't rotated yet. */
+  playerKey: string | null;
   isLinked: boolean;
   isLoading: boolean;
   error: string | null;
   initialize(): void;
   initPlayer(): Promise<void>;
-  createTransfer(email?: string): Promise<void>;
+  /** Mark this device as "shared" — reveals share UI. No server call. */
+  revealShareOptions(): void;
+  /** Send the stable pairing code to an email address. */
+  sendTransferEmail(email: string): Promise<void>;
   useTransfer(token: string): Promise<void>;
-  clearTransferToken(): void;
+  /** Regenerate the player_key and invalidate other paired devices. */
+  rotatePlayerKey(): Promise<void>;
+  clearError(): void;
   logout(): Promise<void>;
   pullAndMerge(payload: SyncPayload): boolean;
   syncStatsRecord(record: StatsRecord): Promise<void>;
@@ -148,7 +154,7 @@ async function safeErrorMessage(
 export const useAuthStore = create<AuthState>((set, get) => ({
   isLoggedIn: false,
   playerId: null,
-  transferToken: null,
+  playerKey: null,
   isLinked: false,
   isLoading: false,
   error: null,
@@ -174,6 +180,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({
           isLoggedIn: true,
           playerId: body.player_id,
+          playerKey: stored.playerKey ?? null,
           isLinked: stored.linked ?? false,
         });
 
@@ -220,6 +227,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({
           isLoggedIn: true,
           playerId: stored.playerId,
+          playerKey: stored.playerKey ?? null,
           isLinked: stored.linked ?? false,
         });
       });
@@ -243,12 +251,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const authToken: AuthToken = {
         token: body.token,
         playerId: body.player_id,
+        playerKey: body.player_key,
         expiresAt: new Date(
           Date.now() + 90 * 24 * 60 * 60 * 1000,
         ).toISOString(),
       };
       authService.setToken(authToken);
-      set({ isLoggedIn: true, playerId: body.player_id, isLoading: false });
+      set({
+        isLoggedIn: true,
+        playerId: body.player_id,
+        playerKey: body.player_key,
+        isLoading: false,
+      });
     } catch (err) {
       set({
         error: err instanceof Error ? err.message : 'Alustus epäonnistui',
@@ -257,32 +271,43 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  async createTransfer(email?: string) {
+  revealShareOptions() {
+    const stored = authService.getToken();
+    if (stored) authService.setToken({ ...stored, linked: true });
+    set({ isLinked: true });
+  },
+
+  async sendTransferEmail(email: string) {
     const stored = authService.getToken();
     if (!stored) return;
+    const playerKey = stored.playerKey ?? get().playerKey;
+    if (!playerKey) {
+      set({
+        error:
+          'Luo ensin tunniste painamalla "Vaihda tunniste" tallentaaksesi laitekoodin.',
+      });
+      return;
+    }
     set({ isLoading: true, error: null });
     try {
       const res = await fetch(apiUrl('/api/player/auth/transfer/create'), {
         method: 'POST',
         headers: authHeader(stored.token),
-        body: JSON.stringify(email ? { email } : {}),
+        body: JSON.stringify({ email, player_key: playerKey }),
       });
       if (!res.ok) {
         throw new Error(
-          await safeErrorMessage(res, 'Laitteen lisäys epäonnistui'),
+          await safeErrorMessage(res, 'Sähköpostin lähetys epäonnistui'),
         );
       }
-      const body = (await res.json()) as { transfer_token: string };
       authService.setToken({ ...stored, linked: true });
-      set({
-        transferToken: body.transfer_token,
-        isLinked: true,
-        isLoading: false,
-      });
+      set({ isLoading: false, isLinked: true });
     } catch (err) {
       set({
         error:
-          err instanceof Error ? err.message : 'Laitteen lisäys epäonnistui',
+          err instanceof Error
+            ? err.message
+            : 'Sähköpostin lähetys epäonnistui',
         isLoading: false,
       });
     }
@@ -309,9 +334,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         puzzle_states: SyncPuzzleState[];
         preferences?: PlayerPreferences | null;
       };
+      // The pasted token IS this player's stable player_key — persist it so
+      // this device can also share it onward without a round-trip.
       const authToken: AuthToken = {
         token: body.token,
         playerId: body.player_id,
+        playerKey: token,
         expiresAt: new Date(
           Date.now() + 90 * 24 * 60 * 60 * 1000,
         ).toISOString(),
@@ -321,7 +349,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({
         isLoggedIn: true,
         playerId: body.player_id,
-        transferToken: null,
+        playerKey: token,
         isLinked: true,
         isLoading: false,
       });
@@ -342,8 +370,38 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  clearTransferToken() {
-    set({ transferToken: null, error: null });
+  async rotatePlayerKey() {
+    const stored = authService.getToken();
+    if (!stored) return;
+    set({ isLoading: true, error: null });
+    try {
+      const res = await fetch(apiUrl('/api/player/auth/rotate'), {
+        method: 'POST',
+        headers: authHeader(stored.token),
+      });
+      if (!res.ok) {
+        throw new Error(
+          await safeErrorMessage(res, 'Tunnisteen vaihto epäonnistui'),
+        );
+      }
+      const body = (await res.json()) as { player_key: string };
+      authService.setToken({
+        ...stored,
+        playerKey: body.player_key,
+        linked: true,
+      });
+      set({ playerKey: body.player_key, isLinked: true, isLoading: false });
+    } catch (err) {
+      set({
+        error:
+          err instanceof Error ? err.message : 'Tunnisteen vaihto epäonnistui',
+        isLoading: false,
+      });
+    }
+  },
+
+  clearError() {
+    set({ error: null });
   },
 
   async logout() {
@@ -359,7 +417,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({
       isLoggedIn: false,
       playerId: null,
-      transferToken: null,
+      playerKey: null,
       isLinked: false,
     });
     await get().initPlayer();

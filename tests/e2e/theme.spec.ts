@@ -6,32 +6,38 @@
  * Corresponds to: theme.feature
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { loadGame } from './helpers';
+
+/** Return the resolved light/dark scheme, whether set explicitly or inherited from the OS. */
+async function effectiveScheme(page: Page): Promise<'light' | 'dark'> {
+  return page.evaluate(() => {
+    const explicit = document.documentElement.getAttribute('data-theme');
+    if (explicit === 'light' || explicit === 'dark') return explicit;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light';
+  });
+}
 
 test.describe('Theme toggle', () => {
   test('defaults to system preference', async ({ page }) => {
-    // Emulate dark mode preference
     await page.emulateMedia({ colorScheme: 'dark' });
     await loadGame(page);
 
-    const theme = await page.getAttribute('html', 'data-theme');
-    expect(theme).toBe('dark');
+    expect(await effectiveScheme(page)).toBe('dark');
   });
 
   test('toggle switches from light to dark', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'light' });
     await loadGame(page);
 
-    const themeBefore = await page.getAttribute('html', 'data-theme');
-    expect(themeBefore).toBe('light');
+    expect(await effectiveScheme(page)).toBe('light');
 
-    // Click theme toggle button
     const toggleButton = page.locator('button[aria-label*="teemaan"]');
     await toggleButton.click();
 
-    const themeAfter = await page.getAttribute('html', 'data-theme');
-    expect(themeAfter).toBe('dark');
+    expect(await effectiveScheme(page)).toBe('dark');
   });
 
   test('theme preference persists in localStorage', async ({ page }) => {
@@ -53,13 +59,11 @@ test.describe('Theme toggle', () => {
     await page.emulateMedia({ colorScheme: 'light' });
     await loadGame(page);
 
-    // Toggle to dark
     await page.locator('button[aria-label*="teemaan"]').click();
-    expect(await page.getAttribute('html', 'data-theme')).toBe('dark');
+    expect(await effectiveScheme(page)).toBe('dark');
 
-    // Reload
     await loadGame(page);
 
-    expect(await page.getAttribute('html', 'data-theme')).toBe('dark');
+    expect(await effectiveScheme(page)).toBe('dark');
   });
 });

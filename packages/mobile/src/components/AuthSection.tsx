@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import {
+  Alert,
   View,
   Text,
   TextInput,
@@ -15,7 +16,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import * as Clipboard from 'expo-clipboard';
-import { Copy, LogOut, Mail, QrCode } from 'lucide-react-native';
+import { Copy, LogOut, Mail, QrCode, RefreshCw } from 'lucide-react-native';
 import isEmail from 'validator/lib/isEmail';
 import QRCode from 'react-native-qrcode-svg';
 import * as PreparedHaptics from 'prepared-haptics';
@@ -68,7 +69,7 @@ function AnimatedButton({
 export function AuthSection({ theme }: AuthSectionProps) {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
   const isLinked = useAuthStore((s) => s.isLinked);
-  const transferToken = useAuthStore((s) => s.transferToken);
+  const playerKey = useAuthStore((s) => s.playerKey);
   const isLoading = useAuthStore((s) => s.isLoading);
   const error = useAuthStore((s) => s.error);
   const [codeInput, setCodeInput] = useState('');
@@ -77,38 +78,25 @@ export function AuthSection({ theme }: AuthSectionProps) {
   const [showQr, setShowQr] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
 
-  const connectUrl = transferToken
-    ? `https://sanakenno.fi/connect?connect=${encodeURIComponent(transferToken)}`
+  const connectUrl = playerKey
+    ? `https://sanakenno.fi/connect?connect=${encodeURIComponent(playerKey)}`
     : '';
 
-  const ensureToken = useCallback(async () => {
-    if (!transferToken) {
-      await useAuthStore.getState().createTransfer();
-    }
-  }, [transferToken]);
-
   const handleCopyLink = useCallback(async () => {
-    await ensureToken();
     if (connectUrl) {
       await Clipboard.setStringAsync(connectUrl);
     }
-  }, [ensureToken, connectUrl]);
+  }, [connectUrl]);
 
   const handleCopyCode = useCallback(async () => {
-    await ensureToken();
-    if (transferToken) {
-      await Clipboard.setStringAsync(transferToken);
+    if (playerKey) {
+      await Clipboard.setStringAsync(playerKey);
     }
-  }, [ensureToken, transferToken]);
+  }, [playerKey]);
 
-  const handleToggleQr = useCallback(async () => {
-    if (showQr) {
-      setShowQr(false);
-      return;
-    }
-    await ensureToken();
-    setShowQr(true);
-  }, [ensureToken, showQr]);
+  const handleToggleQr = useCallback(() => {
+    setShowQr((v) => !v);
+  }, []);
 
   const handleSendEmail = useCallback(async () => {
     const email = emailInput.trim();
@@ -116,11 +104,26 @@ export function AuthSection({ theme }: AuthSectionProps) {
       useAuthStore.setState({ error: 'Tarkista sähköpostiosoite.' });
       return;
     }
-    await useAuthStore.getState().createTransfer(email);
+    await useAuthStore.getState().sendTransferEmail(email);
     if (!useAuthStore.getState().error) {
       setEmailSent(true);
     }
   }, [emailInput]);
+
+  const handleRotate = useCallback(() => {
+    Alert.alert(
+      'Vaihda tunniste',
+      'Tunnisteen vaihtamisen jälkeen käyttämäsi laitteet pitää synkronoida uudelleen uudella tunnisteella. Jatka silti?',
+      [
+        { text: 'Peruuta', style: 'cancel' },
+        {
+          text: 'Vaihda tunniste',
+          style: 'destructive',
+          onPress: () => void useAuthStore.getState().rotatePlayerKey(),
+        },
+      ],
+    );
+  }, []);
 
   const handleUseCode = useCallback(async () => {
     const token = codeInput.trim();
@@ -171,7 +174,7 @@ export function AuthSection({ theme }: AuthSectionProps) {
             Synkronoi edistymisesi ja tilastosi muille laitteille.
           </Text>
           <AnimatedButton
-            onPress={() => void useAuthStore.getState().createTransfer()}
+            onPress={() => useAuthStore.getState().revealShareOptions()}
             disabled={isLoading}
             style={[
               styles.primaryButton,
@@ -181,13 +184,9 @@ export function AuthSection({ theme }: AuthSectionProps) {
               },
             ]}
           >
-            {isLoading ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={styles.primaryButtonText}>
-                Synkronoi muille laitteille
-              </Text>
-            )}
+            <Text style={styles.primaryButtonText}>
+              Synkronoi muille laitteille
+            </Text>
           </AnimatedButton>
           <Text style={[styles.hint, { color: theme.textTertiary }]}>
             Syötä koodi toiselta laitteelta:
@@ -227,12 +226,22 @@ export function AuthSection({ theme }: AuthSectionProps) {
         </>
       ) : (
         <>
+          {!playerKey ? (
+            <Text style={[styles.hint, { color: theme.textTertiary }]}>
+              Tältä laitteelta ei vielä löydy pysyvää tunnistetta. Paina "Vaihda
+              tunniste" luodaksesi uuden.
+            </Text>
+          ) : null}
+
           <AnimatedButton
             onPress={() => void handleCopyLink()}
-            disabled={isLoading}
+            disabled={isLoading || !playerKey}
             style={[
               styles.button,
-              { borderColor: theme.border, opacity: isLoading ? 0.6 : 1 },
+              {
+                borderColor: theme.border,
+                opacity: isLoading || !playerKey ? 0.6 : 1,
+              },
             ]}
           >
             <View style={styles.buttonRow}>
@@ -245,10 +254,13 @@ export function AuthSection({ theme }: AuthSectionProps) {
 
           <AnimatedButton
             onPress={() => void handleCopyCode()}
-            disabled={isLoading}
+            disabled={isLoading || !playerKey}
             style={[
               styles.button,
-              { borderColor: theme.border, opacity: isLoading ? 0.6 : 1 },
+              {
+                borderColor: theme.border,
+                opacity: isLoading || !playerKey ? 0.6 : 1,
+              },
             ]}
           >
             <View style={styles.buttonRow}>
@@ -260,11 +272,14 @@ export function AuthSection({ theme }: AuthSectionProps) {
           </AnimatedButton>
 
           <AnimatedButton
-            onPress={() => void handleToggleQr()}
-            disabled={isLoading}
+            onPress={handleToggleQr}
+            disabled={isLoading || !playerKey}
             style={[
               styles.button,
-              { borderColor: theme.border, opacity: isLoading ? 0.6 : 1 },
+              {
+                borderColor: theme.border,
+                opacity: isLoading || !playerKey ? 0.6 : 1,
+              },
             ]}
           >
             <View style={styles.buttonRow}>
@@ -280,12 +295,38 @@ export function AuthSection({ theme }: AuthSectionProps) {
               setShowEmail(true);
               setEmailSent(false);
             }}
-            style={[styles.button, { borderColor: theme.border }]}
+            disabled={!playerKey}
+            style={[
+              styles.button,
+              {
+                borderColor: theme.border,
+                opacity: !playerKey ? 0.6 : 1,
+              },
+            ]}
           >
             <View style={styles.buttonRow}>
               <Mail size={16} color={theme.textPrimary} />
               <Text style={[styles.buttonText, { color: theme.textPrimary }]}>
                 Lähetä sähköpostiin
+              </Text>
+            </View>
+          </AnimatedButton>
+
+          <AnimatedButton
+            onPress={handleRotate}
+            disabled={isLoading}
+            style={[
+              styles.button,
+              {
+                borderColor: theme.border,
+                opacity: isLoading ? 0.6 : 1,
+              },
+            ]}
+          >
+            <View style={styles.buttonRow}>
+              <RefreshCw size={16} color={theme.textPrimary} />
+              <Text style={[styles.buttonText, { color: theme.textPrimary }]}>
+                Vaihda tunniste
               </Text>
             </View>
           </AnimatedButton>

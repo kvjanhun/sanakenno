@@ -1,9 +1,9 @@
 /**
  * Transfer link email sender.
  *
- * Sends a one-time device transfer link to a player's email address via the
- * Resend API. The raw token is embedded in the URL; the server only stores
- * the SHA-256 hash.
+ * Sends the player's stable pairing code (player_key) to an email address
+ * via the Resend API. The code is embedded in the URL; the server only
+ * stores the SHA-256 hash.
  *
  * Requires RESEND_API_KEY and BASE_URL environment variables.
  * In test environments, set RESEND_API_KEY=test to skip actual sending.
@@ -64,7 +64,7 @@ export async function sendTransferLink(
           </a>
         </p>
         <p style="font-size: 14px; color: #666; line-height: 1.5; margin: 0;">
-          Linkki on voimassa 15 minuuttia ja sen voi käyttää vain kerran.
+          Linkki toimii kaikilla laitteilla kunnes vaihdat tunnisteen.
         </p>
         <hr style="border: none; border-top: 1px solid #eee; margin: 32px 0 20px 0;" />
         <p style="font-size: 12px; color: #999; line-height: 1.6; margin: 0;">
@@ -72,7 +72,7 @@ export async function sendTransferLink(
         </p>
       </div>
     `,
-    text: `Sanakenno\n\nKlikkaa alla olevaa linkkiä yhdistääksesi tilisi tähän laitteeseen:\n\n${link}\n\nLinkki on voimassa 15 minuuttia ja sen voi käyttää vain kerran.\n\n—\nSähköpostiosoitettasi ei tallenneta. Jos et pyytänyt tätä viestiä, voit jättää sen huomiotta.`,
+    text: `Sanakenno\n\nKlikkaa alla olevaa linkkiä yhdistääksesi tilisi tähän laitteeseen:\n\n${link}\n\nLinkki toimii kaikilla laitteilla kunnes vaihdat tunnisteen.\n\n—\nSähköpostiosoitettasi ei tallenneta. Jos et pyytänyt tätä viestiä, voit jättää sen huomiotta.`,
   });
 
   if (error) {

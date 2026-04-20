@@ -106,18 +106,6 @@ CREATE TABLE IF NOT EXISTS players (
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- One-time transfer tokens (15-min TTL, single use)
-CREATE TABLE IF NOT EXISTS player_transfer_tokens (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    player_id   INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
-    token_hash  TEXT NOT NULL UNIQUE,   -- SHA-256 of raw token
-    expires_at  TEXT NOT NULL,          -- 15 min from creation
-    used        INTEGER NOT NULL DEFAULT 0,
-    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
-);
-CREATE INDEX IF NOT EXISTS idx_transfer_tokens_hash    ON player_transfer_tokens(token_hash);
-CREATE INDEX IF NOT EXISTS idx_transfer_tokens_expires ON player_transfer_tokens(expires_at);
-
 -- Player sessions (Bearer tokens, 90-day TTL)
 CREATE TABLE IF NOT EXISTS player_sessions (
     id         TEXT PRIMARY KEY,        -- 64-hex opaque token returned to client

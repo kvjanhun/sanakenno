@@ -1,8 +1,10 @@
 /**
  * BDD step definitions for player-auth.feature.
  *
- * Tests privacy-first player auth: init, transfer token create/use, logout,
- * and token hashing. Uses in-memory SQLite and test email mode.
+ * Tests the stable pairing model: every player has a random player_key (64-hex)
+ * minted at /auth/init and only stored as SHA-256 hash on the server. Pairing
+ * uses the raw key directly — no expiry, no single-use. Rotation mints a new
+ * key and drops other devices' sessions.
  */
 
 import {
@@ -29,7 +31,8 @@ interface PlayerAuthWorld extends SanakennoWorld {
   playerBearerToken: string | null;
   playerId: number | null;
   playerKey: string | null;
-  transferToken: string | null;
+  previousPlayerKey: string | null;
+  secondDeviceToken: string | null;
 }
 
 function bearerHeader(token: string): Record<string, string> {
@@ -56,24 +59,27 @@ async function initPlayer(
   return body;
 }
 
-async function createTransfer(
+async function postTransferCreate(
   world: PlayerAuthWorld,
-  email?: string,
+  body: Record<string, unknown>,
 ): Promise<Response> {
   assert.ok(world.playerBearerToken, 'No Bearer token in context');
-  const res = await app.request('/api/player/auth/transfer/create', {
+  return app.request('/api/player/auth/transfer/create', {
     method: 'POST',
     headers: {
       ...bearerHeader(world.playerBearerToken),
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(email ? { email } : {}),
+    body: JSON.stringify(body),
   });
-  if (res.status === 200) {
-    const body = (await res.clone().json()) as { transfer_token: string };
-    world.transferToken = body.transfer_token;
-  }
-  return res;
+}
+
+async function sendPairingEmail(
+  world: PlayerAuthWorld,
+  email: string,
+): Promise<Response> {
+  assert.ok(world.playerKey, 'No player_key in context');
+  return postTransferCreate(world, { email, player_key: world.playerKey });
 }
 
 // ---------------------------------------------------------------------------
@@ -94,7 +100,8 @@ Before(function (this: PlayerAuthWorld, scenario: ITestCaseHookParameter) {
   this.playerBearerToken = null;
   this.playerId = null;
   this.playerKey = null;
-  this.transferToken = null;
+  this.previousPlayerKey = null;
+  this.secondDeviceToken = null;
   this.responses = [];
 });
 
@@ -121,7 +128,7 @@ Given(
   'a transfer email has just been sent to {string}',
   async function (this: PlayerAuthWorld, email: string) {
     if (!this.playerBearerToken) await initPlayer(this);
-    const res = await createTransfer(this, email);
+    const res = await sendPairingEmail(this, email);
     assert.equal(res.status, 200, `First email send to ${email} failed`);
   },
 );
@@ -145,41 +152,17 @@ Given(
 );
 
 Given(
-  'a transfer token exists for the current authenticated player',
+  'a second device has paired using the pairing code',
   async function (this: PlayerAuthWorld) {
-    if (!this.playerBearerToken) {
-      await initPlayer(this);
-    }
-    const res = await createTransfer(this);
-    assert.equal(res.status, 200, 'transfer/create failed in Given step');
-    assert.ok(this.transferToken, 'Transfer token missing after create');
-  },
-);
-
-Given(
-  'the transfer token has already been used',
-  function (this: PlayerAuthWorld) {
-    assert.ok(this.transferToken, 'No transfer token in context');
-    const db = getDb();
-    db.prepare(
-      'UPDATE player_transfer_tokens SET used = 1 WHERE token_hash = ?',
-    ).run(sha256(this.transferToken));
-  },
-);
-
-Given(
-  'an expired transfer token exists for the current authenticated player',
-  async function (this: PlayerAuthWorld) {
-    if (!this.playerBearerToken) {
-      await initPlayer(this);
-    }
-    const res = await createTransfer(this);
-    assert.equal(res.status, 200, 'transfer/create failed in Given step');
-    assert.ok(this.transferToken, 'Transfer token missing after create');
-    const db = getDb();
-    db.prepare(
-      "UPDATE player_transfer_tokens SET expires_at = datetime('now', '-1 minute') WHERE token_hash = ?",
-    ).run(sha256(this.transferToken));
+    assert.ok(this.playerKey, 'No player_key in context');
+    const res = await app.request('/api/player/auth/transfer/use', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: this.playerKey }),
+    });
+    assert.equal(res.status, 200, 'Second device pair failed');
+    const body = (await res.json()) as { token: string };
+    this.secondDeviceToken = body.token;
   },
 );
 
@@ -208,17 +191,28 @@ When(
 );
 
 When(
-  /^a POST is made to \/api\/player\/auth\/transfer\/create with the Bearer token$/,
-  async function (this: PlayerAuthWorld) {
-    this.response = await createTransfer(this);
+  /^a POST is made to \/api\/player\/auth\/transfer\/create with email "([^"]*)" and the Bearer token$/,
+  async function (this: PlayerAuthWorld, email: string) {
+    this.response = await sendPairingEmail(this, email);
     this.responseJson = await this.response.clone().json();
   },
 );
 
 When(
-  /^a POST is made to \/api\/player\/auth\/transfer\/create with email "([^"]*)" and the Bearer token$/,
+  /^a POST is made to \/api\/player\/auth\/transfer\/create with email "([^"]*)" and no player_key and the Bearer token$/,
   async function (this: PlayerAuthWorld, email: string) {
-    this.response = await createTransfer(this, email);
+    this.response = await postTransferCreate(this, { email });
+    this.responseJson = await this.response.clone().json();
+  },
+);
+
+When(
+  /^a POST is made to \/api\/player\/auth\/transfer\/create with email "([^"]*)" and a wrong player_key and the Bearer token$/,
+  async function (this: PlayerAuthWorld, email: string) {
+    this.response = await postTransferCreate(this, {
+      email,
+      player_key: 'f'.repeat(64),
+    });
     this.responseJson = await this.response.clone().json();
   },
 );
@@ -227,7 +221,7 @@ When(
   /^3 POST requests are made to \/api\/player\/auth\/transfer\/create from the same IP with the Bearer token$/,
   async function (this: PlayerAuthWorld) {
     for (let i = 0; i < 3; i++) {
-      this.response = await createTransfer(this, `rate-${i}@example.com`);
+      this.response = await sendPairingEmail(this, `rate-${i}@example.com`);
     }
   },
 );
@@ -235,19 +229,19 @@ When(
 Then(
   /^the 4th transfer create request should return 429$/,
   async function (this: PlayerAuthWorld) {
-    const res = await createTransfer(this, 'rate-4@example.com');
+    const res = await sendPairingEmail(this, 'rate-4@example.com');
     assert.equal(res.status, 429);
   },
 );
 
 When(
-  /^a POST is made to \/api\/player\/auth\/transfer\/use with the transfer token$/,
+  /^a POST is made to \/api\/player\/auth\/transfer\/use with the player key$/,
   async function (this: PlayerAuthWorld) {
-    assert.ok(this.transferToken, 'No transfer token in context');
+    assert.ok(this.playerKey, 'No player_key in context');
     this.response = await app.request('/api/player/auth/transfer/use', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: this.transferToken }),
+      body: JSON.stringify({ token: this.playerKey }),
     });
     this.responseJson = await this.response.clone().json();
     if (this.response.status === 200) {
@@ -259,9 +253,9 @@ When(
 );
 
 When(
-  /^a POST is made to \/api\/player\/auth\/transfer\/use with the transfer token and local stats$/,
+  /^a POST is made to \/api\/player\/auth\/transfer\/use with the player key and local stats$/,
   async function (this: PlayerAuthWorld) {
-    assert.ok(this.transferToken, 'No transfer token in context');
+    assert.ok(this.playerKey, 'No player_key in context');
     const stats = {
       records: [
         {
@@ -281,10 +275,23 @@ When(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        token: this.transferToken,
+        token: this.playerKey,
         stats,
         puzzle_states: [],
       }),
+    });
+    this.responseJson = await this.response.clone().json();
+  },
+);
+
+When(
+  /^a POST is made to \/api\/player\/auth\/transfer\/use with the previous player key$/,
+  async function (this: PlayerAuthWorld) {
+    assert.ok(this.previousPlayerKey, 'No previous player_key in context');
+    this.response = await app.request('/api/player/auth/transfer/use', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: this.previousPlayerKey }),
     });
     this.responseJson = await this.response.clone().json();
   },
@@ -309,6 +316,33 @@ When(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({}),
+    });
+    this.responseJson = await this.response.clone().json();
+  },
+);
+
+When(
+  /^a POST is made to \/api\/player\/auth\/rotate with the Bearer token$/,
+  async function (this: PlayerAuthWorld) {
+    assert.ok(this.playerBearerToken, 'No Bearer token in context');
+    this.previousPlayerKey = this.playerKey;
+    this.response = await app.request('/api/player/auth/rotate', {
+      method: 'POST',
+      headers: bearerHeader(this.playerBearerToken),
+    });
+    this.responseJson = await this.response.clone().json();
+    if (this.response.status === 200) {
+      const body = this.responseJson as { player_key: string };
+      this.playerKey = body.player_key;
+    }
+  },
+);
+
+When(
+  /^a POST is made to \/api\/player\/auth\/rotate without a Bearer token$/,
+  async function (this: PlayerAuthWorld) {
+    this.response = await app.request('/api/player/auth/rotate', {
+      method: 'POST',
     });
     this.responseJson = await this.response.clone().json();
   },
@@ -391,6 +425,37 @@ Then(
 );
 
 Then(
+  /^the current Bearer token should still be valid on \/api\/player\/me$/,
+  async function (this: PlayerAuthWorld) {
+    assert.ok(this.playerBearerToken, 'No Bearer token in context');
+    const res = await app.request('/api/player/me', {
+      headers: bearerHeader(this.playerBearerToken),
+    });
+    assert.equal(res.status, 200);
+  },
+);
+
+Then(
+  /^the second device's Bearer token should no longer be valid$/,
+  async function (this: PlayerAuthWorld) {
+    assert.ok(this.secondDeviceToken, 'No second device token in context');
+    const res = await app.request('/api/player/me', {
+      headers: bearerHeader(this.secondDeviceToken),
+    });
+    assert.equal(res.status, 401);
+  },
+);
+
+Then(
+  /^the new player_key should differ from the old one$/,
+  function (this: PlayerAuthWorld) {
+    assert.ok(this.playerKey, 'No current player_key in context');
+    assert.ok(this.previousPlayerKey, 'No previous player_key in context');
+    assert.notEqual(this.playerKey, this.previousPlayerKey);
+  },
+);
+
+Then(
   'the players table should store only the player key hash',
   function (this: PlayerAuthWorld) {
     assert.ok(this.playerId, 'No player id in context');
@@ -413,32 +478,5 @@ Then(
       .prepare('SELECT 1 as present FROM players WHERE player_key_hash = ?')
       .get(email) as { present: number } | undefined;
     assert.equal(row, undefined);
-  },
-);
-
-Then(
-  'the player_transfer_tokens table should not contain the raw token',
-  function (this: PlayerAuthWorld) {
-    assert.ok(this.transferToken, 'No transfer token in context');
-    const db = getDb();
-    const rows = db
-      .prepare('SELECT token_hash FROM player_transfer_tokens')
-      .all() as Array<{ token_hash: string }>;
-    const found = rows.some((r) => r.token_hash === this.transferToken);
-    assert.ok(!found, 'Raw token found in DB (should only store hash)');
-  },
-);
-
-Then(
-  'the player_transfer_tokens table should contain the SHA-256 hash of the token',
-  function (this: PlayerAuthWorld) {
-    assert.ok(this.transferToken, 'No transfer token in context');
-    const expected = sha256(this.transferToken);
-    const db = getDb();
-    const rows = db
-      .prepare('SELECT token_hash FROM player_transfer_tokens')
-      .all() as Array<{ token_hash: string }>;
-    const found = rows.some((r) => r.token_hash === expected);
-    assert.ok(found, 'SHA-256 hash of token not found in DB');
   },
 );

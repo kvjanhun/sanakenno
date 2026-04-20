@@ -16,6 +16,13 @@ export interface AuthToken {
   token: string;
   playerId: number;
   expiresAt: string; // ISO 8601
+  /**
+   * Stable pairing code: the raw `player_key` returned by /auth/init (or a
+   * subsequent /auth/rotate). Used to pair additional devices. Optional
+   * because legacy clients upgrading from the one-shot transfer-token flow
+   * won't have it until they rotate once.
+   */
+  playerKey?: string;
   /** True once the player has explicitly linked devices via useTransfer(). */
   linked?: boolean;
 }
