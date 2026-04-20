@@ -63,7 +63,10 @@ export function HintPanel({
                   styles.segment,
                   isActive && [
                     styles.segmentActive,
-                    { backgroundColor: theme.bgPrimary },
+                    {
+                      backgroundColor: theme.bgPrimary,
+                      shadowColor: theme.backdrop,
+                    },
                   ],
                 ]}
               >
@@ -322,7 +325,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   segmentActive: {
-    shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 2,
     shadowOffset: { width: 0, height: 1 },

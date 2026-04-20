@@ -145,7 +145,9 @@ export function AuthSection({ theme }: AuthSectionProps) {
         </Text>
         {error ? (
           <>
-            <Text style={styles.errorText}>{error}</Text>
+            <Text style={[styles.errorText, { color: theme.error }]}>
+              {error}
+            </Text>
             <AnimatedButton
               onPress={() => void useAuthStore.getState().initPlayer()}
               style={[styles.button, { borderColor: theme.border }]}
@@ -412,7 +414,9 @@ export function AuthSection({ theme }: AuthSectionProps) {
         </>
       )}
 
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      {error ? (
+        <Text style={[styles.errorText, { color: theme.error }]}>{error}</Text>
+      ) : null}
     </View>
   );
 }
@@ -478,7 +482,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   errorText: {
-    color: '#ef4444',
     fontSize: 13,
   },
 });

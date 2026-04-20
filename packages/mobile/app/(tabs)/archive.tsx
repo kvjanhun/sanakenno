@@ -24,7 +24,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
 } from 'lucide-react-native';
-import { useTheme } from '../../src/theme';
+import { useTheme, withOpacity } from '../../src/theme';
 import { config, storage } from '../../src/platform';
 import { useGameStore } from '../../src/store/useGameStore';
 import { rankForScore } from '@sanakenno/shared';
@@ -119,8 +119,6 @@ export default function ArchiveScreen() {
         });
     }, []),
   );
-
-  useEffect(() => {}, [currentPuzzleNumber]);
 
   useEffect(() => {
     if (!selectedEntry) return;
@@ -525,7 +523,13 @@ export default function ArchiveScreen() {
       >
         <TouchableWithoutFeedback onPress={closeSheet}>
           <Animated.View
-            style={[styles.backdrop, { opacity: backdropOpacity }]}
+            style={[
+              styles.backdrop,
+              {
+                backgroundColor: withOpacity(theme.backdrop, 0.4),
+                opacity: backdropOpacity,
+              },
+            ]}
           />
         </TouchableWithoutFeedback>
         <Animated.View
@@ -533,6 +537,7 @@ export default function ArchiveScreen() {
             styles.bottomSheet,
             {
               backgroundColor: theme.bgPrimary,
+              shadowColor: theme.backdrop,
               transform: [{ translateY: sheetTranslateY }],
             },
           ]}
@@ -686,7 +691,6 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
   },
   bottomSheet: {
     position: 'absolute',
@@ -699,7 +703,6 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 40,
     gap: 10,
-    shadowColor: '#000',
     shadowOpacity: 0.15,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: -4 },

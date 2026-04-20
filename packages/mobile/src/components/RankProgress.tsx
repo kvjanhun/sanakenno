@@ -15,7 +15,7 @@ import Animated, {
 import { useEffect, useRef, useState } from 'react';
 import { Info, ChevronDown } from 'lucide-react-native';
 import { rankThresholds } from '@sanakenno/shared';
-import type { Theme } from '../theme';
+import { withOpacity, type Theme } from '../theme';
 
 interface RankProgressProps {
   rankLabel: string;
@@ -153,11 +153,21 @@ export function RankProgress({
         animationType="fade"
         onRequestClose={() => setRankOpen(false)}
       >
-        <Pressable style={styles.backdrop} onPress={() => setRankOpen(false)}>
+        <Pressable
+          style={[
+            styles.backdrop,
+            { backgroundColor: withOpacity(theme.backdrop, 0.45) },
+          ]}
+          onPress={() => setRankOpen(false)}
+        >
           <Pressable
             style={[
               styles.overlayCard,
-              { backgroundColor: theme.bgPrimary, borderColor: theme.border },
+              {
+                backgroundColor: theme.bgPrimary,
+                borderColor: theme.border,
+                shadowColor: theme.backdrop,
+              },
             ]}
             onPress={() => {}}
           >
@@ -223,12 +233,22 @@ export function RankProgress({
         animationType="fade"
         onRequestClose={() => setScoreOpen(false)}
       >
-        <Pressable style={styles.backdrop} onPress={() => setScoreOpen(false)}>
+        <Pressable
+          style={[
+            styles.backdrop,
+            { backgroundColor: withOpacity(theme.backdrop, 0.45) },
+          ]}
+          onPress={() => setScoreOpen(false)}
+        >
           <Pressable
             style={[
               styles.overlayCard,
               styles.scoreCard,
-              { backgroundColor: theme.bgPrimary, borderColor: theme.border },
+              {
+                backgroundColor: theme.bgPrimary,
+                borderColor: theme.border,
+                shadowColor: theme.backdrop,
+              },
             ]}
             onPress={() => {}}
           >
@@ -332,7 +352,6 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
@@ -344,7 +363,6 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     padding: 16,
     gap: 8,
-    shadowColor: '#000',
     shadowOpacity: 0.15,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },

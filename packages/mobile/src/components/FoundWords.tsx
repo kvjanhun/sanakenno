@@ -20,7 +20,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChevronUp } from 'lucide-react-native';
 import { buildKotusUrl } from '@sanakenno/shared';
-import type { Theme } from '../theme';
+import { withOpacity, type Theme } from '../theme';
 
 // How far the sheet extends below the visible screen edge to prevent gaps
 const OVERHANG = 40;
@@ -203,7 +203,11 @@ export function FoundWords({
       >
         {/* Animated dim layer — pointer-events off so touches fall through to sheet or backdrop Pressable */}
         <Animated.View
-          style={[styles.dimLayer, backdropStyle]}
+          style={[
+            styles.dimLayer,
+            { backgroundColor: withOpacity(theme.backdrop, 0.4) },
+            backdropStyle,
+          ]}
           pointerEvents="none"
         />
 
@@ -333,7 +337,6 @@ const styles = StyleSheet.create({
   },
   dimLayer: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.4)',
   },
   sheet: {
     position: 'absolute',

@@ -6,14 +6,15 @@
  *   - palette: ThemeId           — user-selected color palette ("Väriteema")
  *
  * Neutral tokens (text, bg, border, hex cells) are shared across palettes.
- * Only `accent` and `accentFaded` vary per palette.
+ * Accent colors vary per palette; `onAccent` may also be overridden to keep
+ * accent text/icons readable in high-contrast palettes such as monochrome.
  */
 
 import { useColorScheme } from 'react-native';
-import type { ThemeId } from '@sanakenno/shared';
+import { DEFAULT_THEME_ID, type ThemeId } from '@sanakenno/shared';
 import { useSettingsStore } from './store/useSettingsStore';
 
-export type { ThemeId };
+export { DEFAULT_THEME_ID, type ThemeId };
 
 export interface Theme {
   accent: string;
@@ -26,8 +27,6 @@ export interface Theme {
   hexHi: string;
   hexLo: string;
   hexStroke: string;
-  /** Center hex text — always white. */
-  hexCenterText: string;
   /** Faded / inactive accent — used for disabled center hex fill. */
   accentFaded: string;
   /** Text color on accent backgrounds. */
@@ -55,8 +54,6 @@ export const PALETTE_ORDER: ReadonlyArray<PaletteMeta> = [
   { id: 'aamu', label: 'Aamu' },
   { id: 'mono', label: 'Mustavalko' },
 ];
-
-export const DEFAULT_THEME_ID: ThemeId = 'hehku';
 
 interface PaletteOverride {
   accent: string;
@@ -105,7 +102,6 @@ const baseLight: Omit<Theme, 'accent' | 'accentFaded'> = {
   hexHi: '#fbfbfb',
   hexLo: '#ececec',
   hexStroke: '#e0e0e0',
-  hexCenterText: '#ffffff',
   onAccent: '#ffffff',
   error: '#FF6B6B',
   golden: '#fbbf24',
@@ -123,7 +119,6 @@ const baseDark: Omit<Theme, 'accent' | 'accentFaded'> = {
   hexHi: '#343434',
   hexLo: '#252525',
   hexStroke: '#3e3e3e',
-  hexCenterText: '#ffffff',
   onAccent: '#ffffff',
   error: '#FF6B6B',
   golden: '#fbbf24',
@@ -148,6 +143,38 @@ export function getPaletteAccent(
   scheme: SchemeKey,
 ): string {
   return PALETTES[paletteId][scheme].accent;
+}
+
+/** Returns the foreground color to use on a palette accent in the given scheme. */
+export function getPaletteOnAccent(
+  paletteId: ThemeId,
+  scheme: SchemeKey,
+): string {
+  const base = scheme === 'dark' ? baseDark : baseLight;
+  return PALETTES[paletteId][scheme].onAccent ?? base.onAccent;
+}
+
+/** Apply an opacity multiplier to a hex color and return #RRGGBBAA. */
+export function withOpacity(color: string, opacity: number): string {
+  if (!color.startsWith('#')) return color;
+
+  let hex = color.slice(1);
+  if (hex.length === 3) {
+    hex = hex
+      .split('')
+      .map((char) => char + char)
+      .join('');
+  } else if (hex.length === 8) {
+    hex = hex.slice(0, 6);
+  }
+
+  if (hex.length !== 6) return color;
+
+  const alpha = Math.round(Math.min(Math.max(opacity, 0), 1) * 255)
+    .toString(16)
+    .padStart(2, '0');
+
+  return `#${hex}${alpha}`;
 }
 
 export function useTheme(): Theme {

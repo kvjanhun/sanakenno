@@ -16,6 +16,7 @@ import {
   useTheme,
   useResolvedScheme,
   getPaletteAccent,
+  getPaletteOnAccent,
   PALETTE_ORDER,
   type ThemeId,
 } from '../../src/theme';
@@ -66,8 +67,8 @@ function SettingRow({
         value={value}
         onValueChange={onValueChange}
         disabled={disabled}
-        trackColor={{ false: '#767577', true: accentColor }}
-        ios_backgroundColor="#3e3e3e"
+        trackColor={{ false: borderColor, true: accentColor }}
+        ios_backgroundColor={borderColor}
       />
     </View>
   );
@@ -85,6 +86,7 @@ function HapticsSegmentedControl({
   onChange,
   accentColor,
   labelColor,
+  selectedLabelColor,
   bgColor,
   borderColor,
 }: {
@@ -92,6 +94,7 @@ function HapticsSegmentedControl({
   onChange: (v: HapticsIntensity) => void;
   accentColor: string;
   labelColor: string;
+  selectedLabelColor: string;
   bgColor: string;
   borderColor: string;
 }) {
@@ -123,7 +126,9 @@ function HapticsSegmentedControl({
               <Text
                 style={[
                   styles.segmentText,
-                  { color: isSelected ? '#fff' : labelColor },
+                  {
+                    color: isSelected ? selectedLabelColor : labelColor,
+                  },
                 ]}
               >
                 {opt.label}
@@ -154,6 +159,7 @@ function PalettePicker({
       {PALETTE_ORDER.map((palette) => {
         const isSelected = palette.id === value;
         const accent = getPaletteAccent(palette.id, scheme);
+        const onAccent = getPaletteOnAccent(palette.id, scheme);
         return (
           <Pressable
             key={palette.id}
@@ -174,7 +180,7 @@ function PalettePicker({
               ]}
             >
               {isSelected ? (
-                <Check size={18} strokeWidth={3} color="#fff" />
+                <Check size={18} strokeWidth={3} color={onAccent} />
               ) : null}
             </View>
             <Text
@@ -301,6 +307,7 @@ export default function SettingsScreen() {
             onChange={handleHapticsChange}
             accentColor={theme.accent}
             labelColor={theme.textPrimary}
+            selectedLabelColor={theme.onAccent}
             bgColor={theme.bgSecondary}
             borderColor={theme.border}
           />

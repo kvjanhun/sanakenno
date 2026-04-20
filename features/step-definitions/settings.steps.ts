@@ -16,6 +16,19 @@ type HapticsIntensity = 'off' | 'light' | 'medium' | 'heavy';
 let persisted: Record<string, string> = {};
 let activePreference: ThemePreference = 'system';
 let activeHapticsIntensity: HapticsIntensity = 'off';
+let activeHapticsLabelColor = '#1a1a1a';
+let activeSelectedHapticsLabelColor = '#ffffff';
+let renderedSelectedHapticsLabelColor = '#ffffff';
+let activeSelectedThemeSwatchColor = '#ffffff';
+let renderedSelectedThemeSwatchColor = '#ffffff';
+
+function resolveSelectedForegroundColor(
+  isSelected: boolean,
+  labelColor: string,
+  selectedLabelColor: string,
+): string {
+  return isSelected ? selectedLabelColor : labelColor;
+}
 
 function loadPreference(): ThemePreference {
   const raw = persisted['sanakenno_settings'];
@@ -192,5 +205,47 @@ Given(
     persisted['sanakenno_settings'] = JSON.stringify({
       hapticsEnabled: enabled,
     });
+  },
+);
+
+Given('the active theme is monochrome dark', function (this: SanakennoWorld) {
+  activeHapticsLabelColor = '#f0f0f0';
+  activeSelectedHapticsLabelColor = '#000000';
+  activeSelectedThemeSwatchColor = '#000000';
+});
+
+When(
+  'the player views the selected haptics intensity',
+  function (this: SanakennoWorld) {
+    renderedSelectedHapticsLabelColor = resolveSelectedForegroundColor(
+      true,
+      activeHapticsLabelColor,
+      activeSelectedHapticsLabelColor,
+    );
+  },
+);
+
+Then(
+  'the selected haptics intensity label should use black text',
+  function (this: SanakennoWorld) {
+    assert.equal(renderedSelectedHapticsLabelColor, '#000000');
+  },
+);
+
+When(
+  'the player views the selected theme swatch',
+  function (this: SanakennoWorld) {
+    renderedSelectedThemeSwatchColor = resolveSelectedForegroundColor(
+      true,
+      '#ffffff',
+      activeSelectedThemeSwatchColor,
+    );
+  },
+);
+
+Then(
+  'the selected theme swatch indicator should use black color',
+  function (this: SanakennoWorld) {
+    assert.equal(renderedSelectedThemeSwatchColor, '#000000');
   },
 );

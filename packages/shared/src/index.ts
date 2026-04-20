@@ -56,7 +56,11 @@ export type {
 } from './platform-types';
 
 // Auth and sync types
-export { AUTH_TOKEN_STORAGE_KEY, THEME_IDS } from './auth-types';
+export {
+  AUTH_TOKEN_STORAGE_KEY,
+  DEFAULT_THEME_ID,
+  THEME_IDS,
+} from './auth-types';
 export type {
   AuthToken,
   SyncPuzzleState,

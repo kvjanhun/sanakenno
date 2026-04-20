@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { THEME_IDS } from '@sanakenno/shared';
+import { DEFAULT_THEME_ID, THEME_IDS } from '@sanakenno/shared';
 import type { ThemeId, ThemePreference } from '@sanakenno/shared';
 import { storage } from '../platform';
 import * as PreparedHaptics from 'prepared-haptics';
@@ -10,7 +10,6 @@ export type HapticsIntensity = 'off' | 'light' | 'medium' | 'heavy';
 const SETTINGS_KEY = 'sanakenno_settings';
 
 const VALID_THEME_IDS: readonly ThemeId[] = THEME_IDS;
-const DEFAULT_THEME_ID: ThemeId = 'hehku';
 
 interface PersistedSettings {
   themePreference?: ThemePreference;

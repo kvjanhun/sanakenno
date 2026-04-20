@@ -48,6 +48,7 @@ export const THEME_IDS = [
   'mono',
 ] as const;
 export type ThemeId = (typeof THEME_IDS)[number];
+export const DEFAULT_THEME_ID: ThemeId = 'hehku';
 
 export type ThemePreference = 'light' | 'dark' | 'system';
 

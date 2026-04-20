@@ -10,7 +10,7 @@ import Animated, {
   runOnJS,
   Easing,
 } from 'react-native-reanimated';
-import type { Theme } from '../theme';
+import { withOpacity, type Theme } from '../theme';
 import type { CelebrationType } from '../store/useGameStore';
 
 interface Props {
@@ -114,7 +114,13 @@ export function Celebration({
           <Text style={[styles.score, { color: theme.onAccent }]}>
             {score} pistettä
           </Text>
-          <Pressable onPress={onShare} style={styles.shareBtn}>
+          <Pressable
+            onPress={onShare}
+            style={[
+              styles.shareBtn,
+              { backgroundColor: withOpacity(theme.onAccent, 0.25) },
+            ]}
+          >
             <Text style={[styles.shareText, { color: theme.onAccent }]}>
               Jaa
             </Text>
@@ -154,7 +160,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     minHeight: 44,
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.25)',
   },
   shareText: {
     fontWeight: '600',

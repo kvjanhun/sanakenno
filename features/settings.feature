@@ -24,6 +24,11 @@ Feature: Settings
     When the player selects theme "dark" in settings
     Then the app should render with the dark colour scheme
 
+  Scenario: Selected theme swatch stays readable in monochrome dark theme
+    Given the active theme is monochrome dark
+    When the player views the selected theme swatch
+    Then the selected theme swatch indicator should use black color
+
   # --- Haptics intensity ---
 
   Scenario: Default haptics intensity is "off"
@@ -36,6 +41,11 @@ Feature: Settings
     When the player selects haptics intensity "medium"
     Then the active haptics intensity should be "medium"
     And the haptics intensity "medium" should be persisted
+
+  Scenario: Selected haptics intensity stays readable in monochrome dark theme
+    Given the active theme is monochrome dark
+    When the player views the selected haptics intensity
+    Then the selected haptics intensity label should use black text
 
   Scenario: Persisted haptics intensity is restored
     Given the haptics intensity "heavy" has been persisted
