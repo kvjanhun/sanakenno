@@ -25,6 +25,7 @@ import type {
   StatsRecord,
   PlayerStats,
   SyncPuzzleState,
+  PlayerPreferences,
 } from '@sanakenno/shared';
 
 const player = new Hono<{ Variables: PlayerVariables }>();
@@ -312,6 +313,7 @@ function bulkUpsertLocalData(
 function fetchPlayerData(playerId: number): {
   stats: PlayerStats;
   puzzle_states: SyncPuzzleState[];
+  preferences: PlayerPreferences | null;
 } {
   const db = getDb();
   const statsRows = db
@@ -373,7 +375,21 @@ function fetchPlayerData(playerId: number): {
       total_paused_ms: r.total_paused_ms,
       score_before_hints: r.score_before_hints,
     })),
+    preferences: readPlayerPreferences(playerId),
   };
+}
+
+function readPlayerPreferences(playerId: number): PlayerPreferences | null {
+  const db = getDb();
+  const row = db
+    .prepare('SELECT preferences FROM players WHERE id = ?')
+    .get(playerId) as { preferences: string | null } | undefined;
+  if (!row?.preferences) return null;
+  try {
+    return JSON.parse(row.preferences) as PlayerPreferences;
+  } catch {
+    return null;
+  }
 }
 
 player.post('/auth/init', (c) => {

@@ -31,8 +31,34 @@ export interface SyncPuzzleState {
   score_before_hints: number | null;
 }
 
+/** Valid identifiers for the color palette ("Väriteema") selection. */
+export const THEME_IDS = [
+  'hehku',
+  'meri',
+  'metsa',
+  'yo',
+  'aamu',
+  'mono',
+] as const;
+export type ThemeId = (typeof THEME_IDS)[number];
+
+export type ThemePreference = 'light' | 'dark' | 'system';
+
+/**
+ * Player-scoped display preferences, synced across devices via the account.
+ *
+ * `updated_at` is an ISO 8601 timestamp used for last-writer-wins resolution
+ * when reconciling client and server values.
+ */
+export interface PlayerPreferences {
+  themeId?: ThemeId;
+  themePreference?: ThemePreference;
+  updated_at: string;
+}
+
 /** Full sync payload returned by GET /api/player/sync and POST /api/player/auth/transfer/use. */
 export interface SyncPayload {
   stats: PlayerStats;
   puzzle_states: SyncPuzzleState[];
+  preferences?: PlayerPreferences | null;
 }

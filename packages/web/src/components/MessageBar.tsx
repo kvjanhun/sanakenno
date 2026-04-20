@@ -26,7 +26,7 @@ const CHIP: Record<'ok' | 'error' | 'special', ChipStyle> = {
   },
   special: {
     background: 'var(--color-accent)',
-    color: '#ffffff',
+    color: 'var(--color-on-accent)',
   },
   error: {
     background: 'var(--color-text-primary)',

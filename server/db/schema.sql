@@ -101,6 +101,7 @@ CREATE INDEX IF NOT EXISTS idx_failed_guesses_date ON failed_guesses(puzzle_date
 CREATE TABLE IF NOT EXISTS players (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     player_key_hash TEXT NOT NULL UNIQUE,
+    preferences TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

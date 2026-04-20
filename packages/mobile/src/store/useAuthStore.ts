@@ -13,8 +13,12 @@ import type {
   SyncPuzzleState,
   SyncPayload,
   AuthToken,
+  PlayerPreferences,
 } from '@sanakenno/shared';
 import { auth as authService, storage, config } from '../platform';
+import { useSettingsStore } from './useSettingsStore';
+
+const PREFERENCES_UPDATED_AT_KEY = 'sanakenno_preferences_updated_at';
 
 export interface AuthState {
   isLoggedIn: boolean;
@@ -32,6 +36,7 @@ export interface AuthState {
   pullAndMerge(payload: SyncPayload): boolean;
   syncStatsRecord(record: StatsRecord): Promise<void>;
   syncPuzzleState(state: SyncPuzzleState): Promise<void>;
+  syncPreferences(): Promise<void>;
 }
 
 function apiUrl(path: string): string {
@@ -79,6 +84,53 @@ function gatherLocalData(): {
     }
   }
   return { stats, puzzle_states };
+}
+
+function buildLocalPreferences(): PlayerPreferences {
+  const s = useSettingsStore.getState();
+  return {
+    themeId: s.themeId,
+    themePreference: s.themePreference,
+    updated_at:
+      storage.getRaw(PREFERENCES_UPDATED_AT_KEY) ?? new Date(0).toISOString(),
+  };
+}
+
+/**
+ * Reconcile a server preferences record with the local one. Newer timestamp
+ * wins; if local is newer, we push; if server is newer, we apply via the
+ * non-echoing `setLocal` setters and advance our local timestamp.
+ */
+function applyServerPreferences(
+  server: PlayerPreferences | null | undefined,
+  syncPush: () => void,
+): void {
+  const localTs =
+    storage.getRaw(PREFERENCES_UPDATED_AT_KEY) ?? new Date(0).toISOString();
+
+  if (!server) {
+    if (Date.parse(localTs) > 0) syncPush();
+    return;
+  }
+
+  if (Date.parse(localTs) >= Date.parse(server.updated_at)) {
+    if (Date.parse(localTs) > Date.parse(server.updated_at)) syncPush();
+    return;
+  }
+
+  const s = useSettingsStore.getState();
+  if (server.themeId) s.setThemeIdLocal(server.themeId);
+  if (server.themePreference) s.setThemePreferenceLocal(server.themePreference);
+  storage.setRaw(PREFERENCES_UPDATED_AT_KEY, server.updated_at);
+}
+
+/**
+ * Mark local preferences as changed now and trigger a push. Called from the
+ * settings store setters whenever the player changes a value locally.
+ */
+export function markLocalPreferencesUpdated(): void {
+  storage.setRaw(PREFERENCES_UPDATED_AT_KEY, new Date().toISOString());
+  void useAuthStore.getState().syncPreferences();
 }
 
 async function safeErrorMessage(
@@ -132,7 +184,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const payload = (await syncRes.json()) as {
           stats: PlayerStats;
           puzzle_states: SyncPuzzleState[];
+          preferences?: PlayerPreferences | null;
         };
+        applyServerPreferences(payload.preferences, () => {
+          void get().syncPreferences();
+        });
         const changed = get().pullAndMerge(payload);
 
         // Only push records the server didn't return — the server already
@@ -251,6 +307,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         player_id: number;
         stats: PlayerStats;
         puzzle_states: SyncPuzzleState[];
+        preferences?: PlayerPreferences | null;
       };
       const authToken: AuthToken = {
         token: body.token,
@@ -267,6 +324,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         transferToken: null,
         isLinked: true,
         isLoading: false,
+      });
+      applyServerPreferences(body.preferences, () => {
+        void get().syncPreferences();
       });
       get().pullAndMerge({
         stats: body.stats,
@@ -416,6 +476,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       method: 'POST',
       headers: authHeader(stored.token),
       body: JSON.stringify(state),
+    }).catch(() => {});
+  },
+
+  async syncPreferences() {
+    const stored = authService.getToken();
+    if (!get().isLoggedIn || !stored) return;
+    const prefs = buildLocalPreferences();
+    fetch(apiUrl('/api/player/sync/preferences'), {
+      method: 'POST',
+      headers: authHeader(stored.token),
+      body: JSON.stringify(prefs),
     }).catch(() => {});
   },
 }));

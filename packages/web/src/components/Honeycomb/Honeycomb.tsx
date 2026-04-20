@@ -162,7 +162,9 @@ export function Honeycomb({
             textAnchor="middle"
             dominantBaseline="central"
             style={{
-              fill: hex.isCenter ? '#ffffff' : 'var(--color-text-primary)',
+              fill: hex.isCenter
+                ? 'var(--color-on-accent)'
+                : 'var(--color-text-primary)',
               fontSize: '24px',
               fontWeight: 600,
               fontFamily: 'var(--font-sans)',

@@ -1,8 +1,18 @@
 @import 'tailwindcss';
 
-/* Light theme (default) */
+/* ------------------------------------------------------------------------ */
+/* Design tokens                                                            */
+/*                                                                          */
+/* Two dimensions of variation:                                             */
+/*   - data-theme:   light | dark   (explicit) or system (media query)      */
+/*   - data-palette: hehku | meri | metsa | yo | aamu | mono                */
+/*                                                                          */
+/* Neutral tokens (text, bg, border, hex cells) vary only by theme.         */
+/* Accent tokens (accent / accent-faded / on-accent) vary by both.          */
+/* ------------------------------------------------------------------------ */
+
+/* Light neutrals (default) */
 :root {
-  --color-accent: #ff643e;
   --color-text-primary: #1a1a1a;
   --color-text-secondary: #4a4a4a;
   --color-text-tertiary: #8a8a8a;
@@ -12,14 +22,19 @@
   --color-hex-hi: #fbfbfb;
   --color-hex-lo: #ececec;
   --color-hex-stroke: #e0e0e0;
+  --color-on-accent: #ffffff;
+
+  /* Default accent = hehku, light */
+  --color-accent: #ff643e;
+  --color-accent-faded: #ffb2a0;
+
   --font-mono: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', monospace;
   --font-sans: 'Inter', 'Helvetica Neue', Arial, sans-serif;
 }
 
-/* Dark theme via system preference */
+/* Dark neutrals via system preference (unless overridden) */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --color-accent: #e05030;
     --color-text-primary: #f0f0f0;
     --color-text-secondary: #b0b0b0;
     --color-text-tertiary: #707070;
@@ -29,12 +44,14 @@
     --color-hex-hi: #343434;
     --color-hex-lo: #252525;
     --color-hex-stroke: #3e3e3e;
+    /* Default accent = hehku, dark */
+    --color-accent: #e05030;
+    --color-accent-faded: #7d3525;
   }
 }
 
-/* Dark theme via explicit attribute */
+/* Dark neutrals via explicit attribute */
 [data-theme='dark'] {
-  --color-accent: #e05030;
   --color-text-primary: #f0f0f0;
   --color-text-secondary: #b0b0b0;
   --color-text-tertiary: #707070;
@@ -44,6 +61,97 @@
   --color-hex-hi: #343434;
   --color-hex-lo: #252525;
   --color-hex-stroke: #3e3e3e;
+  --color-accent: #e05030;
+  --color-accent-faded: #7d3525;
+}
+
+/* ------------------------------------------------------------------------ */
+/* Palette overrides — accent only; neutrals are palette-agnostic.          */
+/* Ordering matters: palette rules must come AFTER the default accent so    */
+/* they win when both apply.                                                */
+/* ------------------------------------------------------------------------ */
+
+/* meri — teal (sea: blue + green harmony) */
+[data-palette='meri'] {
+  --color-accent: #0d9488;
+  --color-accent-faded: #99e3d9;
+}
+@media (prefers-color-scheme: dark) {
+  [data-palette='meri']:not([data-theme='light']) {
+    --color-accent: #2dd4bf;
+    --color-accent-faded: #115e57;
+  }
+}
+[data-theme='dark'][data-palette='meri'] {
+  --color-accent: #2dd4bf;
+  --color-accent-faded: #115e57;
+}
+
+/* metsa — forest green */
+[data-palette='metsa'] {
+  --color-accent: #15803d;
+  --color-accent-faded: #a7dcba;
+}
+@media (prefers-color-scheme: dark) {
+  [data-palette='metsa']:not([data-theme='light']) {
+    --color-accent: #22c55e;
+    --color-accent-faded: #14452a;
+  }
+}
+[data-theme='dark'][data-palette='metsa'] {
+  --color-accent: #22c55e;
+  --color-accent-faded: #14452a;
+}
+
+/* yo — indigo night */
+[data-palette='yo'] {
+  --color-accent: #6366f1;
+  --color-accent-faded: #c7c8f7;
+}
+@media (prefers-color-scheme: dark) {
+  [data-palette='yo']:not([data-theme='light']) {
+    --color-accent: #818cf8;
+    --color-accent-faded: #353680;
+  }
+}
+[data-theme='dark'][data-palette='yo'] {
+  --color-accent: #818cf8;
+  --color-accent-faded: #353680;
+}
+
+/* aamu — amber sunrise */
+[data-palette='aamu'] {
+  --color-accent: #d97706;
+  --color-accent-faded: #fad591;
+}
+@media (prefers-color-scheme: dark) {
+  [data-palette='aamu']:not([data-theme='light']) {
+    --color-accent: #f59e0b;
+    --color-accent-faded: #78350f;
+  }
+}
+[data-theme='dark'][data-palette='aamu'] {
+  --color-accent: #f59e0b;
+  --color-accent-faded: #78350f;
+}
+
+/* mono — black/white; inverts on-accent because a white accent needs dark text */
+[data-palette='mono'] {
+  --color-accent: #111827;
+  --color-accent-faded: #9ca3af;
+  --color-on-accent: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  [data-palette='mono']:not([data-theme='light']) {
+    --color-accent: #f3f4f6;
+    --color-accent-faded: #4b5563;
+    --color-on-accent: #000000;
+  }
+}
+[data-theme='dark'][data-palette='mono'] {
+  --color-accent: #f3f4f6;
+  --color-accent-faded: #4b5563;
+  --color-on-accent: #000000;
 }
 
 body {

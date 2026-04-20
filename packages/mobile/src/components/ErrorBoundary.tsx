@@ -26,8 +26,9 @@ interface State {
 export function ErrorBoundary({ children }: Props) {
   const systemScheme = useColorScheme();
   const pref = useSettingsStore((s) => s.themePreference);
+  const themeId = useSettingsStore((s) => s.themeId);
   const scheme = pref === 'system' ? systemScheme : pref;
-  const theme = getTheme(scheme === 'dark' ? 'dark' : 'light');
+  const theme = getTheme(scheme === 'dark' ? 'dark' : 'light', themeId);
 
   return <ErrorBoundaryInner theme={theme}>{children}</ErrorBoundaryInner>;
 }

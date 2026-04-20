@@ -10,9 +10,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
 import { useBottomTabBarHeight } from 'react-native-bottom-tabs';
 import { useRouter } from 'expo-router';
-import { ChevronRight } from 'lucide-react-native';
+import { Check, ChevronRight } from 'lucide-react-native';
 import * as PreparedHaptics from 'prepared-haptics';
-import { useTheme } from '../../src/theme';
+import {
+  useTheme,
+  useResolvedScheme,
+  getPaletteAccent,
+  PALETTE_ORDER,
+  type ThemeId,
+} from '../../src/theme';
 import { useSettingsStore } from '../../src/store/useSettingsStore';
 import { AuthSection } from '../../src/components/AuthSection';
 import type { HapticsIntensity } from '../../src/store/useSettingsStore';
@@ -130,6 +136,66 @@ function HapticsSegmentedControl({
   );
 }
 
+function PalettePicker({
+  value,
+  onChange,
+  scheme,
+  labelColor,
+  borderColor,
+}: {
+  value: ThemeId;
+  onChange: (id: ThemeId) => void;
+  scheme: 'light' | 'dark';
+  labelColor: string;
+  borderColor: string;
+}) {
+  return (
+    <View style={styles.paletteRow}>
+      {PALETTE_ORDER.map((palette) => {
+        const isSelected = palette.id === value;
+        const accent = getPaletteAccent(palette.id, scheme);
+        return (
+          <Pressable
+            key={palette.id}
+            onPress={() => onChange(palette.id)}
+            accessibilityRole="button"
+            accessibilityLabel={palette.label}
+            accessibilityState={{ selected: isSelected }}
+            style={styles.paletteItem}
+          >
+            <View
+              style={[
+                styles.swatch,
+                {
+                  backgroundColor: accent,
+                  borderColor: isSelected ? labelColor : borderColor,
+                  borderWidth: isSelected ? 2 : StyleSheet.hairlineWidth,
+                },
+              ]}
+            >
+              {isSelected ? (
+                <Check size={18} strokeWidth={3} color="#fff" />
+              ) : null}
+            </View>
+            <Text
+              style={[
+                styles.paletteLabel,
+                {
+                  color: labelColor,
+                  fontWeight: isSelected ? '600' : '400',
+                },
+              ]}
+              numberOfLines={1}
+            >
+              {palette.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 function SettingGroup({
   children,
   backgroundColor,
@@ -142,10 +208,13 @@ function SettingGroup({
 
 export default function SettingsScreen() {
   const theme = useTheme();
+  const scheme = useResolvedScheme();
   const router = useRouter();
   const themePreference = useSettingsStore((s) => s.themePreference);
+  const themeId = useSettingsStore((s) => s.themeId);
   const hapticsIntensity = useSettingsStore((s) => s.hapticsIntensity);
   const setThemePreference = useSettingsStore((s) => s.setThemePreference);
+  const setThemeId = useSettingsStore((s) => s.setThemeId);
   const setHapticsIntensity = useSettingsStore((s) => s.setHapticsIntensity);
 
   const tabBarHeight = useBottomTabBarHeight();
@@ -173,6 +242,26 @@ export default function SettingsScreen() {
         automaticallyAdjustKeyboardInsets
         keyboardShouldPersistTaps="handled"
       >
+        <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
+          Väriteema
+        </Text>
+        <SettingGroup backgroundColor={theme.bgSecondary}>
+          <View style={styles.paletteContainer}>
+            <PalettePicker
+              value={themeId}
+              onChange={(id) => {
+                setThemeId(id);
+                if (hapticsIntensity !== 'off') {
+                  PreparedHaptics.trigger();
+                }
+              }}
+              scheme={scheme}
+              labelColor={theme.textPrimary}
+              borderColor={theme.border}
+            />
+          </View>
+        </SettingGroup>
+
         <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
           Teema
         </Text>
@@ -293,6 +382,32 @@ const styles = StyleSheet.create({
   segmentText: {
     fontSize: 13,
     fontWeight: '500',
+  },
+  paletteContainer: {
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+  },
+  paletteRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 4,
+  },
+  paletteItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 6,
+  },
+  swatch: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  paletteLabel: {
+    fontSize: 12,
+    textAlign: 'center',
   },
   licensesLink: {
     flexDirection: 'row',

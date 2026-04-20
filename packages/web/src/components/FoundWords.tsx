@@ -133,7 +133,7 @@ export function FoundWords({
                       : 'var(--color-bg-secondary)',
                   color:
                     word === lastResubmittedWord
-                      ? '#ffffff'
+                      ? 'var(--color-on-accent)'
                       : 'var(--color-text-primary)',
                   border: '1px solid var(--color-border)',
                 }}

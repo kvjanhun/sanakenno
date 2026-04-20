@@ -13,9 +13,14 @@ import type {
   SyncPuzzleState,
   SyncPayload,
   AuthToken,
+  PlayerPreferences,
 } from '@sanakenno/shared';
 import { auth as authService, storage, config } from '../platform';
 import { loadFromStorage, saveToStorage } from '../utils/storage';
+import { usePaletteStore } from './usePaletteStore';
+import { useThemePreferenceStore } from './useThemePreferenceStore';
+
+const PREFERENCES_UPDATED_AT_KEY = 'sanakenno_preferences_updated_at';
 
 export interface AuthState {
   isLoggedIn: boolean;
@@ -33,6 +38,7 @@ export interface AuthState {
   pullAndMerge(payload: SyncPayload): boolean;
   syncStatsRecord(record: StatsRecord): Promise<void>;
   syncPuzzleState(state: SyncPuzzleState): Promise<void>;
+  syncPreferences(): Promise<void>;
 }
 
 function apiUrl(path: string): string {
@@ -81,6 +87,59 @@ function gatherLocalData(): {
   }
 
   return { stats, puzzle_states };
+}
+
+function buildLocalPreferences(): PlayerPreferences {
+  return {
+    themeId: usePaletteStore.getState().themeId,
+    themePreference: useThemePreferenceStore.getState().preference,
+    updated_at:
+      loadFromStorage<string>(PREFERENCES_UPDATED_AT_KEY) ??
+      new Date(0).toISOString(),
+  };
+}
+
+/**
+ * Reconcile a server preferences record with the local one. Newer timestamp
+ * wins; if local is newer, we push; if server is newer, we apply via the
+ * non-echoing `setLocal` setters and advance our local timestamp.
+ */
+function applyServerPreferences(
+  server: PlayerPreferences | null | undefined,
+  syncPush: () => void,
+): void {
+  const localTs =
+    loadFromStorage<string>(PREFERENCES_UPDATED_AT_KEY) ??
+    new Date(0).toISOString();
+
+  if (!server) {
+    // Server has nothing yet — seed it with whatever we have locally.
+    if (Date.parse(localTs) > 0) syncPush();
+    return;
+  }
+
+  if (Date.parse(localTs) >= Date.parse(server.updated_at)) {
+    // Local is at least as fresh — push the local snapshot.
+    if (Date.parse(localTs) > Date.parse(server.updated_at)) syncPush();
+    return;
+  }
+
+  // Server is newer — apply without re-pushing.
+  if (server.themeId) usePaletteStore.getState().setLocal(server.themeId);
+  if (server.themePreference) {
+    useThemePreferenceStore.getState().setLocal(server.themePreference);
+  }
+  saveToStorage(PREFERENCES_UPDATED_AT_KEY, server.updated_at);
+}
+
+/**
+ * Mark local preferences as changed at `now` and trigger a push. Called from
+ * the palette / theme-preference store setters whenever the player changes a
+ * value locally.
+ */
+export function markLocalPreferencesUpdated(): void {
+  saveToStorage(PREFERENCES_UPDATED_AT_KEY, new Date().toISOString());
+  void useAuthStore.getState().syncPreferences();
 }
 
 async function safeErrorMessage(
@@ -134,7 +193,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const payload = (await syncRes.json()) as {
           stats: PlayerStats;
           puzzle_states: SyncPuzzleState[];
+          preferences?: PlayerPreferences | null;
         };
+        applyServerPreferences(payload.preferences, () => {
+          void get().syncPreferences();
+        });
         const changed = get().pullAndMerge(payload);
 
         // Only push records the server didn't return — the server already
@@ -250,6 +313,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         player_id: number;
         stats: PlayerStats;
         puzzle_states: SyncPuzzleState[];
+        preferences?: PlayerPreferences | null;
       };
       const authToken: AuthToken = {
         token: body.token,
@@ -266,6 +330,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         transferToken: null,
         isLinked: true,
         isLoading: false,
+      });
+      applyServerPreferences(body.preferences, () => {
+        void get().syncPreferences();
       });
       get().pullAndMerge({
         stats: body.stats,
@@ -419,6 +486,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       method: 'POST',
       headers: authHeader(stored.token),
       body: JSON.stringify(state),
+    }).catch(() => {});
+  },
+
+  async syncPreferences() {
+    const { isLoggedIn } = get();
+    if (!isLoggedIn) return;
+    const stored = authService.getToken();
+    if (!stored) return;
+    const prefs = buildLocalPreferences();
+    fetch(apiUrl('/api/player/sync/preferences'), {
+      method: 'POST',
+      headers: authHeader(stored.token),
+      body: JSON.stringify(prefs),
     }).catch(() => {});
   },
 }));

@@ -4,9 +4,10 @@
  * All endpoints require a valid Bearer token (requirePlayer middleware).
  *
  * Endpoints:
- *   GET  /api/player/sync         - Pull all server data for this player
- *   POST /api/player/sync/stats   - Push a single stats record (upsert with merge)
- *   POST /api/player/sync/state   - Push a single puzzle state (upsert)
+ *   GET  /api/player/sync             - Pull all server data for this player
+ *   POST /api/player/sync/stats       - Push a single stats record (upsert with merge)
+ *   POST /api/player/sync/state       - Push a single puzzle state (upsert)
+ *   POST /api/player/sync/preferences - Push display preferences (last-write-wins)
  *
  * @module server/routes/player-sync
  */
@@ -14,7 +15,62 @@
 import { Hono } from 'hono';
 import { getDb } from '../db/connection';
 import { requirePlayer, type PlayerVariables } from '../player-auth/middleware';
-import { rankIndex } from '@sanakenno/shared';
+import {
+  rankIndex,
+  THEME_IDS,
+  type PlayerPreferences,
+  type ThemeId,
+  type ThemePreference,
+} from '@sanakenno/shared';
+
+function readPreferences(
+  db: ReturnType<typeof getDb>,
+  playerId: number,
+): PlayerPreferences | null {
+  const row = db
+    .prepare('SELECT preferences FROM players WHERE id = ?')
+    .get(playerId) as { preferences: string | null } | undefined;
+  if (!row?.preferences) return null;
+  try {
+    return JSON.parse(row.preferences) as PlayerPreferences;
+  } catch {
+    return null;
+  }
+}
+
+function sanitizePreferences(
+  body: Record<string, unknown>,
+): PlayerPreferences | null {
+  const themeIdRaw = body['themeId'];
+  const themePrefRaw = body['themePreference'];
+  const updatedAtRaw = body['updated_at'];
+
+  let themeId: ThemeId | undefined;
+  if (
+    typeof themeIdRaw === 'string' &&
+    (THEME_IDS as readonly string[]).includes(themeIdRaw)
+  ) {
+    themeId = themeIdRaw as ThemeId;
+  }
+
+  let themePreference: ThemePreference | undefined;
+  if (
+    themePrefRaw === 'light' ||
+    themePrefRaw === 'dark' ||
+    themePrefRaw === 'system'
+  ) {
+    themePreference = themePrefRaw;
+  }
+
+  if (typeof updatedAtRaw !== 'string') return null;
+  if (Number.isNaN(Date.parse(updatedAtRaw))) return null;
+
+  return {
+    themeId,
+    themePreference,
+    updated_at: updatedAtRaw,
+  };
+}
 
 const sync = new Hono<{ Variables: PlayerVariables }>();
 
@@ -68,6 +124,8 @@ sync.get('/', (c) => {
     )
     .all(playerId) as StateRow[];
 
+  const preferences = readPreferences(db, playerId);
+
   return c.json({
     stats: {
       records: statsRows.map((r) => ({
@@ -93,6 +151,7 @@ sync.get('/', (c) => {
       total_paused_ms: r.total_paused_ms,
       score_before_hints: r.score_before_hints,
     })),
+    preferences,
   });
 });
 
@@ -318,6 +377,43 @@ sync.post('/state', async (c) => {
   }
 
   return c.json({ status: 'synced' });
+});
+
+// ---------------------------------------------------------------------------
+// POST /api/player/sync/preferences — upsert display preferences
+// Last-write-wins by `updated_at`; server silently keeps its value when newer.
+// ---------------------------------------------------------------------------
+
+sync.post('/preferences', async (c) => {
+  const { playerId } = c.get('player');
+  let body: Record<string, unknown> = {};
+  try {
+    body = await c.req.json();
+  } catch {
+    /* ignore */
+  }
+
+  const incoming = sanitizePreferences(body);
+  if (!incoming) {
+    return c.json({ error: 'Virheellinen pyyntö' }, 400);
+  }
+
+  const db = getDb();
+  const existing = readPreferences(db, playerId);
+
+  // Keep the server value if it is newer than the incoming one.
+  if (
+    existing &&
+    Date.parse(existing.updated_at) > Date.parse(incoming.updated_at)
+  ) {
+    return c.json({ status: 'kept', preferences: existing });
+  }
+
+  db.prepare(
+    `UPDATE players SET preferences = ?, updated_at = datetime('now') WHERE id = ?`,
+  ).run(JSON.stringify(incoming), playerId);
+
+  return c.json({ status: 'synced', preferences: incoming });
 });
 
 export default sync;

@@ -56,8 +56,15 @@ export type {
 } from './platform-types';
 
 // Auth and sync types
-export { AUTH_TOKEN_STORAGE_KEY } from './auth-types';
-export type { AuthToken, SyncPuzzleState, SyncPayload } from './auth-types';
+export { AUTH_TOKEN_STORAGE_KEY, THEME_IDS } from './auth-types';
+export type {
+  AuthToken,
+  SyncPuzzleState,
+  SyncPayload,
+  PlayerPreferences,
+  ThemeId,
+  ThemePreference,
+} from './auth-types';
 
 // Sync merge utilities
 export { mergeStatsRecord, mergePuzzleState } from './sync-merge';

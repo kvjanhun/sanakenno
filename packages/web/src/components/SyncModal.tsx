@@ -1,7 +1,102 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Copy, LogOut, Mail, QrCode } from 'lucide-react';
+import { Check, Copy, LogOut, Mail, QrCode } from 'lucide-react';
 import isEmail from 'validator/lib/isEmail';
+import { THEME_IDS } from '@sanakenno/shared';
+import type { ThemeId } from '@sanakenno/shared';
 import { useAuthStore } from '../store/useAuthStore';
+import { usePaletteStore } from '../store/usePaletteStore';
+import {
+  useThemePreferenceStore,
+  resolveScheme,
+} from '../store/useThemePreferenceStore';
+
+/** Mirrors the mobile PALETTE_ORDER for consistent UI across platforms. */
+const PALETTE_LABELS: Record<ThemeId, string> = {
+  hehku: 'Hehku',
+  meri: 'Meri',
+  metsa: 'Metsä',
+  yo: 'Yö',
+  aamu: 'Aamu',
+  mono: 'Mustavalko',
+};
+
+/** Accent swatch colour for a palette in the resolved scheme. */
+function paletteAccent(id: ThemeId, scheme: 'light' | 'dark'): string {
+  const map: Record<ThemeId, { light: string; dark: string }> = {
+    hehku: { light: '#ff643e', dark: '#e05030' },
+    meri: { light: '#0d9488', dark: '#2dd4bf' },
+    metsa: { light: '#15803d', dark: '#22c55e' },
+    yo: { light: '#6366f1', dark: '#818cf8' },
+    aamu: { light: '#d97706', dark: '#f59e0b' },
+    mono: { light: '#111827', dark: '#f3f4f6' },
+  };
+  return map[id][scheme];
+}
+
+function PalettePicker(): React.JSX.Element {
+  const themeId = usePaletteStore((s) => s.themeId);
+  const setThemeId = usePaletteStore((s) => s.setThemeId);
+  const preference = useThemePreferenceStore((s) => s.preference);
+  const scheme = resolveScheme(preference);
+
+  return (
+    <div>
+      <p
+        className="text-xs font-semibold uppercase tracking-wide mb-2"
+        style={{ color: 'var(--color-text-secondary)' }}
+      >
+        Väriteema
+      </p>
+      <div className="flex justify-between gap-2">
+        {THEME_IDS.map((id) => {
+          const isSelected = id === themeId;
+          const accent = paletteAccent(id, scheme);
+          const isMonoDark = id === 'mono' && scheme === 'dark';
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setThemeId(id)}
+              aria-label={PALETTE_LABELS[id]}
+              aria-pressed={isSelected}
+              className="flex-1 flex flex-col items-center gap-1 bg-transparent border-none cursor-pointer p-0"
+            >
+              <span
+                className="flex items-center justify-center rounded-full"
+                style={{
+                  width: 36,
+                  height: 36,
+                  backgroundColor: accent,
+                  border: isSelected
+                    ? '2px solid var(--color-text-primary)'
+                    : '1px solid var(--color-border)',
+                  boxSizing: 'border-box',
+                }}
+              >
+                {isSelected ? (
+                  <Check
+                    size={16}
+                    strokeWidth={3}
+                    color={isMonoDark ? '#000' : '#fff'}
+                  />
+                ) : null}
+              </span>
+              <span
+                style={{
+                  fontSize: 11,
+                  color: 'var(--color-text-primary)',
+                  fontWeight: isSelected ? 600 : 400,
+                }}
+              >
+                {PALETTE_LABELS[id]}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export interface SyncModalProps {
   show: boolean;
@@ -130,7 +225,7 @@ export function SyncModal({
               className="w-full py-2 px-4 rounded-lg cursor-pointer border-none font-medium"
               style={{
                 backgroundColor: 'var(--color-accent)',
-                color: '#fff',
+                color: 'var(--color-on-accent)',
                 opacity: isLoading ? 0.6 : 1,
               }}
               disabled={isLoading}
@@ -160,7 +255,7 @@ export function SyncModal({
                 className="py-2 px-3 rounded-lg font-medium cursor-pointer border-none"
                 style={{
                   backgroundColor: 'var(--color-accent)',
-                  color: '#fff',
+                  color: 'var(--color-on-accent)',
                   opacity: isLoading || !codeInput.trim() ? 0.6 : 1,
                 }}
                 disabled={isLoading || !codeInput.trim()}
@@ -234,6 +329,8 @@ export function SyncModal({
               Lähetä sähköpostiin
             </button>
             <hr style={{ borderColor: 'var(--color-text-tertiary)' }} />
+            <PalettePicker />
+            <hr style={{ borderColor: 'var(--color-text-tertiary)' }} />
             <button
               type="button"
               onClick={() => void handleLogout()}
@@ -297,7 +394,7 @@ export function SyncModal({
                 className="w-1/2 py-2 px-4 rounded-lg font-medium cursor-pointer border-none"
                 style={{
                   backgroundColor: 'var(--color-accent)',
-                  color: '#fff',
+                  color: 'var(--color-on-accent)',
                   opacity: isLoading || !emailInput.trim() ? 0.6 : 1,
                 }}
                 disabled={isLoading || !emailInput.trim()}

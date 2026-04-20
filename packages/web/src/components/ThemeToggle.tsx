@@ -1,53 +1,32 @@
 /**
- * Button that toggles between light and dark colour themes.
- * Persists the choice to localStorage and applies it via the
- * `data-theme` attribute on `<html>`.
+ * Button that flips between light and dark colour schemes.
+ *
+ * Reads / writes the shared {@link useThemePreferenceStore} so the preference
+ * round-trips with mobile via cross-device sync. Clicking the toggle always
+ * resolves to an explicit `'light'` or `'dark'` value — the `'system'` state
+ * is reachable only by receiving a synced value from another device.
  *
  * @module src/components/ThemeToggle
  */
 
-import { useCallback, useEffect, useState } from 'react';
-import { loadFromStorage, saveToStorage } from '../utils/storage';
+import { useCallback } from 'react';
+import {
+  useThemePreferenceStore,
+  resolveScheme,
+} from '../store/useThemePreferenceStore';
 import { SunIcon, MoonIcon } from './icons';
-
-const STORAGE_KEY = 'sanakenno_theme';
-type Theme = 'light' | 'dark';
-
-/** Apply a theme to the document root element. */
-function applyTheme(theme: Theme): void {
-  document.documentElement.setAttribute('data-theme', theme);
-}
-
-/**
- * Read the persisted theme, or fall back to the system preference.
- *
- * @returns The resolved theme.
- */
-function resolveInitialTheme(): Theme {
-  const stored = loadFromStorage<string>(STORAGE_KEY);
-  if (stored === 'dark' || stored === 'light') return stored;
-  return window.matchMedia('(prefers-color-scheme: dark)').matches
-    ? 'dark'
-    : 'light';
-}
 
 /**
  * Render a small icon button that toggles dark/light mode.
  */
 export function ThemeToggle(): React.JSX.Element {
-  const [theme, setTheme] = useState<Theme>(resolveInitialTheme);
-
-  useEffect(() => {
-    applyTheme(theme);
-  }, [theme]);
+  const preference = useThemePreferenceStore((s) => s.preference);
+  const setPreference = useThemePreferenceStore((s) => s.setPreference);
+  const resolved = resolveScheme(preference);
 
   const toggle = useCallback(() => {
-    setTheme((prev) => {
-      const next: Theme = prev === 'light' ? 'dark' : 'light';
-      saveToStorage(STORAGE_KEY, next);
-      return next;
-    });
-  }, []);
+    setPreference(resolved === 'light' ? 'dark' : 'light');
+  }, [resolved, setPreference]);
 
   return (
     <button
@@ -56,10 +35,12 @@ export function ThemeToggle(): React.JSX.Element {
       className="bg-transparent border-none cursor-pointer p-1 leading-none flex items-center"
       style={{ color: 'var(--color-text-primary)' }}
       aria-label={
-        theme === 'dark' ? 'Vaihda vaaleaan teemaan' : 'Vaihda tummaan teemaan'
+        resolved === 'dark'
+          ? 'Vaihda vaaleaan teemaan'
+          : 'Vaihda tummaan teemaan'
       }
     >
-      {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+      {resolved === 'dark' ? <SunIcon /> : <MoonIcon />}
     </button>
   );
 }

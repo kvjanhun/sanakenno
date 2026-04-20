@@ -39,6 +39,23 @@ function applySchema(db: BetterSqlite3.Database): void {
   const schemaPath = join(__dirname, 'schema.sql');
   const schema = readFileSync(schemaPath, 'utf-8');
   db.exec(schema);
+
+  // Idempotent column additions for pre-existing databases.
+  // SQLite has no ADD COLUMN IF NOT EXISTS, so introspect via PRAGMA.
+  ensureColumn(db, 'players', 'preferences', 'TEXT');
+}
+
+function ensureColumn(
+  db: BetterSqlite3.Database,
+  table: string,
+  column: string,
+  decl: string,
+): void {
+  const rows = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{
+    name: string;
+  }>;
+  if (rows.some((r) => r.name === column)) return;
+  db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${decl}`);
 }
 
 /**

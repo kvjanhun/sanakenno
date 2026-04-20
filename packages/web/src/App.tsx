@@ -349,7 +349,10 @@ function App() {
             <button
               type="button"
               className="w-full py-2 px-4 rounded-lg font-medium cursor-pointer border-none"
-              style={{ backgroundColor: 'var(--color-accent)', color: '#fff' }}
+              style={{
+                backgroundColor: 'var(--color-accent)',
+                color: 'var(--color-on-accent)',
+              }}
               onClick={() => {
                 const t = connectBannerToken;
                 setConnectBannerToken(null);
