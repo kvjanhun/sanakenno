@@ -4,6 +4,7 @@ import isEmail from 'validator/lib/isEmail';
 import { THEME_IDS } from '@sanakenno/shared';
 import type { ThemeId } from '@sanakenno/shared';
 import { useAuthStore } from '../store/useAuthStore';
+import { share } from '../platform';
 import { usePaletteStore } from '../store/usePaletteStore';
 import {
   useThemePreferenceStore,
@@ -155,7 +156,10 @@ export function SyncModal({
 
   const copyText = useCallback(async (text: string) => {
     if (!text) return;
-    await navigator.clipboard.writeText(text);
+    const copied = await share.copyToClipboard(text);
+    if (!copied) {
+      useAuthStore.setState({ error: 'Tekstin kopiointi epäonnistui.' });
+    }
   }, []);
 
   const handleUseCode = useCallback(async () => {

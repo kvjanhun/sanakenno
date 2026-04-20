@@ -21,6 +21,7 @@ import { usePaletteStore } from './usePaletteStore';
 import { useThemePreferenceStore } from './useThemePreferenceStore';
 
 const PREFERENCES_UPDATED_AT_KEY = 'sanakenno_preferences_updated_at';
+const LINKED_STATE_STORAGE_KEY = 'sanakenno_device_linked';
 
 export interface AuthState {
   isLoggedIn: boolean;
@@ -160,6 +161,22 @@ async function safeErrorMessage(
   }
 }
 
+function persistLinkedState(value: boolean): void {
+  storage.setRaw(LINKED_STATE_STORAGE_KEY, value ? 'true' : 'false');
+}
+
+function readLinkedState(stored: AuthToken): boolean {
+  const persisted = storage.getRaw(LINKED_STATE_STORAGE_KEY);
+  if (persisted === 'true') return true;
+  if (persisted === 'false') return false;
+
+  // Older builds stored this UI-only flag inside the auth token object.
+  // Backfill the dedicated key once so later auth-token writes can't drop it.
+  const linked = stored.linked ?? false;
+  persistLinkedState(linked);
+  return linked;
+}
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   isLoggedIn: false,
   playerId: null,
@@ -174,6 +191,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       void get().initPlayer();
       return;
     }
+    const isLinked = readLinkedState(stored);
 
     fetch(apiUrl('/api/player/me'), {
       headers: { Authorization: `Bearer ${stored.token}` },
@@ -190,7 +208,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           isLoggedIn: true,
           playerId: body.player_id,
           playerKey: stored.playerKey ?? null,
-          isLinked: stored.linked ?? false,
+          isLinked,
+          isLoading: false,
         });
 
         const syncRes = await fetch(apiUrl('/api/player/sync'), {
@@ -233,7 +252,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({
           isLoggedIn: true,
           playerId: stored.playerId,
-          isLinked: stored.linked ?? false,
+          playerKey: stored.playerKey ?? null,
+          isLinked,
+          isLoading: false,
         });
       });
   },
@@ -262,10 +283,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         ).toISOString(),
       };
       authService.setToken(authToken);
+      persistLinkedState(false);
       set({
         isLoggedIn: true,
         playerId: body.player_id,
         playerKey: body.player_key,
+        isLinked: false,
         isLoading: false,
       });
     } catch (err) {
@@ -277,8 +300,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   revealShareOptions() {
-    const stored = authService.getToken();
-    if (stored) authService.setToken({ ...stored, linked: true });
+    persistLinkedState(true);
     set({ isLinked: true });
   },
 
@@ -305,8 +327,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           await safeErrorMessage(res, 'Sähköpostin lähetys epäonnistui'),
         );
       }
+      persistLinkedState(true);
       set({ isLoading: false, isLinked: true });
-      authService.setToken({ ...stored, linked: true });
     } catch (err) {
       set({
         error:
@@ -348,9 +370,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         expiresAt: new Date(
           Date.now() + 90 * 24 * 60 * 60 * 1000,
         ).toISOString(),
-        linked: true,
       };
       authService.setToken(authToken);
+      persistLinkedState(true);
       set({
         isLoggedIn: true,
         playerId: body.player_id,
@@ -392,8 +414,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       authService.setToken({
         ...stored,
         playerKey: body.player_key,
-        linked: true,
       });
+      persistLinkedState(true);
       set({ playerKey: body.player_key, isLinked: true, isLoading: false });
     } catch (err) {
       set({
@@ -418,6 +440,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
     authService.clearToken();
     storage.remove(AUTH_TOKEN_STORAGE_KEY);
+    persistLinkedState(false);
     set({
       isLoggedIn: false,
       playerId: null,

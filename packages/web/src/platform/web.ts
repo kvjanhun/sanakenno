@@ -14,6 +14,36 @@ import type {
 import { AUTH_TOKEN_STORAGE_KEY } from '@sanakenno/shared';
 import type { AuthToken } from '@sanakenno/shared';
 
+function fallbackCopyToClipboard(text: string): boolean {
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'fixed';
+  textarea.style.top = '0';
+  textarea.style.left = '-9999px';
+
+  const selection = document.getSelection();
+  const previousRange =
+    selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+  textarea.setSelectionRange(0, text.length);
+
+  try {
+    return document.execCommand('copy');
+  } catch {
+    return false;
+  } finally {
+    document.body.removeChild(textarea);
+    if (selection) {
+      selection.removeAllRanges();
+      if (previousRange) selection.addRange(previousRange);
+    }
+  }
+}
+
 export const webStorage: StorageService = {
   save<T>(key: string, data: T): void {
     try {
@@ -77,11 +107,14 @@ export const webCrypto: CryptoService = {
 export const webShare: ShareService = {
   async copyToClipboard(text: string): Promise<boolean> {
     try {
-      await navigator.clipboard.writeText(text);
-      return true;
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
     } catch {
-      return false;
+      // Fall back to the older execCommand path below.
     }
+    return fallbackCopyToClipboard(text);
   },
 };
 

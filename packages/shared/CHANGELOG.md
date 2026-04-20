@@ -1,5 +1,11 @@
 # @sanakenno/shared
 
+## 1.3.2
+
+### Patch Changes
+
+- Fix auth-linked state persistence and clipboard/theme regressions.
+
 ## 1.3.1
 
 ## 1.3.0

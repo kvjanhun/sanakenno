@@ -190,42 +190,10 @@ export function Honeycomb({
           hex={hex}
           index={i}
           onPress={onLetterPress}
-          fillHi={
-            disabled
-              ? hex.isCenter
-                ? theme.accent
-                : theme.hexLo
-              : hex.isCenter
-                ? theme.accent
-                : theme.hexHi
-          }
-          fillLo={
-            disabled
-              ? hex.isCenter
-                ? theme.accent
-                : theme.hexLo
-              : hex.isCenter
-                ? theme.accent
-                : theme.hexLo
-          }
-          strokeColor={
-            disabled
-              ? hex.isCenter
-                ? theme.accent
-                : theme.border
-              : hex.isCenter
-                ? theme.accent
-                : theme.hexStroke
-          }
-          textColor={
-            disabled
-              ? hex.isCenter
-                ? theme.onAccent
-                : theme.textTertiary
-              : hex.isCenter
-                ? theme.hexCenterText
-                : theme.textPrimary
-          }
+          fillHi={hex.isCenter ? theme.accent : theme.hexHi}
+          fillLo={hex.isCenter ? theme.accent : theme.hexLo}
+          strokeColor={hex.isCenter ? theme.accent : theme.hexStroke}
+          textColor={hex.isCenter ? theme.onAccent : theme.textPrimary}
           disabled={disabled}
         />
       ))}

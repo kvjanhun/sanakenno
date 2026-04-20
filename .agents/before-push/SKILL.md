@@ -15,6 +15,7 @@ Use this as the default gate before `git push`.
    - `pnpm turbo run typecheck`
 3. Run lint:
    - `pnpm run lint`
+   - Fix any lint errors with `prettier --write` or manually.
 4. Run tests:
    - `pnpm run test:unit`
    - `pnpm run test:bdd`

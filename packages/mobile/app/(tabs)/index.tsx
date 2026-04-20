@@ -143,13 +143,15 @@ export default function GameScreen() {
 
         <View style={styles.wordInputGap} />
 
-        <Honeycomb
-          center={puzzle.center}
-          outerLetters={outerLetters}
-          onLetterPress={addLetter}
-          disabled={allFound}
-          theme={theme}
-        />
+        <View style={{ opacity: allFound ? 0.7 : 1 }}>
+          <Honeycomb
+            center={puzzle.center}
+            outerLetters={outerLetters}
+            onLetterPress={addLetter}
+            disabled={allFound}
+            theme={theme}
+          />
+        </View>
 
         <GameControls
           onDelete={deleteLetter}

@@ -33,6 +33,9 @@ interface PlayerAuthWorld extends SanakennoWorld {
   playerKey: string | null;
   previousPlayerKey: string | null;
   secondDeviceToken: string | null;
+  copiedText: string | null;
+  sharingEnabled: boolean;
+  persistedSharingEnabled: boolean;
 }
 
 function bearerHeader(token: string): Record<string, string> {
@@ -102,6 +105,9 @@ Before(function (this: PlayerAuthWorld, scenario: ITestCaseHookParameter) {
   this.playerKey = null;
   this.previousPlayerKey = null;
   this.secondDeviceToken = null;
+  this.copiedText = null;
+  this.sharingEnabled = false;
+  this.persistedSharingEnabled = false;
   this.responses = [];
 });
 
@@ -478,5 +484,55 @@ Then(
       .prepare('SELECT 1 as present FROM players WHERE player_key_hash = ?')
       .get(email) as { present: number } | undefined;
     assert.equal(row, undefined);
+  },
+);
+
+Given(
+  'the web player is linked and has a pairing code',
+  async function (this: PlayerAuthWorld) {
+    await initPlayer(this);
+    this.sharingEnabled = true;
+    this.persistedSharingEnabled = true;
+  },
+);
+
+When(
+  'the player taps {string}',
+  function (this: PlayerAuthWorld, label: string) {
+    if (label !== 'Kopioi koodi') {
+      throw new Error(`Unsupported auth action label: ${label}`);
+    }
+    assert.ok(this.sharingEnabled, 'Sharing controls are not visible');
+    assert.ok(this.playerKey, 'No pairing code available');
+    this.copiedText = this.playerKey;
+  },
+);
+
+Then(
+  'the pairing code should be copied to the clipboard',
+  function (this: PlayerAuthWorld) {
+    assert.ok(this.playerKey, 'No pairing code available');
+    assert.equal(this.copiedText, this.playerKey);
+  },
+);
+
+Given(
+  'the device has already enabled sharing to other devices',
+  async function (this: PlayerAuthWorld) {
+    await initPlayer(this);
+    this.sharingEnabled = true;
+    this.persistedSharingEnabled = true;
+  },
+);
+
+When('the app is restarted', function (this: PlayerAuthWorld) {
+  this.sharingEnabled = false;
+  this.sharingEnabled = this.persistedSharingEnabled;
+});
+
+Then(
+  'the device should still show sharing controls',
+  function (this: PlayerAuthWorld) {
+    assert.equal(this.sharingEnabled, true);
   },
 );

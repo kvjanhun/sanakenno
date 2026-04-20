@@ -136,7 +136,19 @@ Feature: Player authentication
     Then the response status should be 200
     And the token should no longer be valid on /api/player/me
 
-  # --- iOS device-link UI ---
+  # --- Device-link UI ---
+
+  @web
+  Scenario: Linked web player can copy the pairing code
+    Given the web player is linked and has a pairing code
+    When the player taps "Kopioi koodi"
+    Then the pairing code should be copied to the clipboard
+
+  @web @mobile
+  Scenario: Device sharing stays enabled after restart
+    Given the device has already enabled sharing to other devices
+    When the app is restarted
+    Then the device should still show sharing controls
 
   @ios
   Scenario: QR code toggles off when the show button is tapped again

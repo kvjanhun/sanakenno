@@ -80,7 +80,7 @@ Given(
 );
 
 Then(
-  'the completed honeycomb center hex should keep the active palette accent',
+  'the completed honeycomb should dim uniformly while keeping the active palette colors',
   function (this: SanakennoWorld) {
     return 'pending';
   },

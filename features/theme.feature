@@ -76,12 +76,11 @@ Feature: Theme Toggle
     And the current theme is dark
     Then accent-colored controls should use the palette's on-accent text color
 
-  @mobile
-  Scenario: Completed honeycomb keeps the active palette on the center hex
+  Scenario: Completed honeycomb dims uniformly without switching palette colors
     Given the active color palette is "aamu"
     And the current theme is dark
     And the player has found all words in the puzzle
-    Then the completed honeycomb center hex should keep the active palette accent
+    Then the completed honeycomb should dim uniformly while keeping the active palette colors
 
   @mobile
   Scenario: Color palette persists across app restarts

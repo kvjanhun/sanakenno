@@ -23,7 +23,7 @@ export interface AuthToken {
    * won't have it until they rotate once.
    */
   playerKey?: string;
-  /** True once the player has explicitly linked devices via useTransfer(). */
+  /** Legacy local UI flag from older builds. New builds persist this separately. */
   linked?: boolean;
 }
 
