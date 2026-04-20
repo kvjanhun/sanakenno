@@ -391,11 +391,9 @@ export default function ArchiveScreen() {
             scrollEventThrottle={16}
           >
             {pages.map((entriesOnPage, pageIdx) => (
-              <ScrollView
+              <View
                 key={pageIdx}
-                style={{ width: containerWidth }}
-                contentContainerStyle={styles.pageList}
-                showsVerticalScrollIndicator={false}
+                style={[styles.pageList, { width: containerWidth }]}
               >
                 {entriesOnPage.map((item) => {
                   const isCurrent = item.puzzle_number === currentPuzzleNumber;
@@ -460,7 +458,7 @@ export default function ArchiveScreen() {
                     </Pressable>
                   );
                 })}
-              </ScrollView>
+              </View>
             ))}
           </ScrollView>
         )}
