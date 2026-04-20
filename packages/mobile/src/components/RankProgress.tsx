@@ -112,12 +112,19 @@ export function RankProgress({
           >
             <View style={styles.chipContent}>
               <Text
-                style={[styles.chipText, { color: '#fff', fontWeight: '600' }]}
+                style={[
+                  styles.chipText,
+                  { color: theme.onAccent, fontWeight: '600' },
+                ]}
                 numberOfLines={1}
               >
                 {rankLabel}
               </Text>
-              <ChevronDown size={14} strokeWidth={2.5} color="#fff" />
+              <ChevronDown
+                size={14}
+                strokeWidth={2.5}
+                color={theme.onAccent}
+              />
             </View>
           </Pressable>
         </View>

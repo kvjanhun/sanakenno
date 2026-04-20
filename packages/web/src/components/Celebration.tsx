@@ -101,8 +101,11 @@ export function Celebration({
           <button
             type="button"
             onClick={handleShare}
-            className="px-4 py-2 rounded-lg font-semibold cursor-pointer border-none text-white"
-            style={{ backgroundColor: 'var(--color-accent)' }}
+            className="px-4 py-2 rounded-lg font-semibold cursor-pointer border-none"
+            style={{
+              backgroundColor: 'var(--color-accent)',
+              color: 'var(--color-on-accent)',
+            }}
           >
             Jaa tulos
           </button>

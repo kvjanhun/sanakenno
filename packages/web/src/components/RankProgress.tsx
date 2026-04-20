@@ -97,8 +97,12 @@ export function RankProgress({
           key={rank}
           type="button"
           onClick={onToggleRanks}
-          className={`px-3 py-0.5 text-sm text-white rounded-full cursor-pointer border-none ${styles.rankPulse}`}
-          style={{ backgroundColor: 'var(--color-accent)', flexShrink: 0 }}
+          className={`px-3 py-0.5 text-sm rounded-full cursor-pointer border-none ${styles.rankPulse}`}
+          style={{
+            backgroundColor: 'var(--color-accent)',
+            color: 'var(--color-on-accent)',
+            flexShrink: 0,
+          }}
         >
           {rank}
         </button>

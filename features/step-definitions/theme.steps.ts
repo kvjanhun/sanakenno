@@ -26,6 +26,13 @@ Given('the current theme is dark', function (this: SanakennoWorld) {
   return 'pending';
 });
 
+Given(
+  'the active color palette is {string}',
+  function (this: SanakennoWorld, _palette: string) {
+    return 'pending';
+  },
+);
+
 When('the player selects dark theme', function (this: SanakennoWorld) {
   return 'pending';
 });
@@ -57,3 +64,24 @@ Given('the player has set the theme to dark', function (this: SanakennoWorld) {
 Then('the theme should remain dark', function (this: SanakennoWorld) {
   return 'pending';
 });
+
+Then(
+  'accent-colored controls should use the palette\'s on-accent text color',
+  function (this: SanakennoWorld) {
+    return 'pending';
+  },
+);
+
+Given(
+  'the player has found all words in the puzzle',
+  function (this: SanakennoWorld) {
+    return 'pending';
+  },
+);
+
+Then(
+  'the completed honeycomb center hex should keep the active palette accent',
+  function (this: SanakennoWorld) {
+    return 'pending';
+  },
+);

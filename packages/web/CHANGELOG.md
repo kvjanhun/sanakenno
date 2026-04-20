@@ -1,5 +1,12 @@
 # @sanakenno/web
 
+## 1.3.1
+
+### Patch Changes
+
+- Fix theme accent contrast issues and align mobile completion styling with web.
+  - @sanakenno/shared@1.3.1
+
 ## 1.3.0
 
 ### Minor Changes

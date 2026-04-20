@@ -71,6 +71,18 @@ Feature: Theme Toggle
     Then the palette remains "meri"
     And the accent color uses the palette's variant for the active mode
 
+  Scenario: Accent surfaces use a readable foreground for the active palette
+    Given the active color palette is "mustavalko"
+    And the current theme is dark
+    Then accent-colored controls should use the palette's on-accent text color
+
+  @mobile
+  Scenario: Completed honeycomb keeps the active palette on the center hex
+    Given the active color palette is "aamu"
+    And the current theme is dark
+    And the player has found all words in the puzzle
+    Then the completed honeycomb center hex should keep the active palette accent
+
   @mobile
   Scenario: Color palette persists across app restarts
     Given the player has selected the "metsä" color palette

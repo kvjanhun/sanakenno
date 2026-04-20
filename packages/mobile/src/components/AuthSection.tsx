@@ -184,7 +184,9 @@ export function AuthSection({ theme }: AuthSectionProps) {
               },
             ]}
           >
-            <Text style={styles.primaryButtonText}>
+            <Text
+              style={[styles.primaryButtonText, { color: theme.onAccent }]}
+            >
               Synkronoi muille laitteille
             </Text>
           </AnimatedButton>
@@ -220,7 +222,11 @@ export function AuthSection({ theme }: AuthSectionProps) {
                 },
               ]}
             >
-              <Text style={styles.primaryButtonText}>Yhdistä</Text>
+              <Text
+                style={[styles.primaryButtonText, { color: theme.onAccent }]}
+              >
+                Yhdistä
+              </Text>
             </AnimatedButton>
           </View>
         </>
@@ -374,9 +380,16 @@ export function AuthSection({ theme }: AuthSectionProps) {
                 ]}
               >
                 {isLoading ? (
-                  <ActivityIndicator size="small" color="#fff" />
+                  <ActivityIndicator size="small" color={theme.onAccent} />
                 ) : (
-                  <Text style={styles.primaryButtonText}>Lähetä</Text>
+                  <Text
+                    style={[
+                      styles.primaryButtonText,
+                      { color: theme.onAccent },
+                    ]}
+                  >
+                    Lähetä
+                  </Text>
                 )}
               </AnimatedButton>
               {emailSent ? (
@@ -448,7 +461,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   primaryButtonText: {
-    color: '#fff',
     fontSize: 15,
     fontWeight: '600',
   },

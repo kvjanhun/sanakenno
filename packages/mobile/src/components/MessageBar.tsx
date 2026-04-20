@@ -33,7 +33,7 @@ const chipStyles: Record<
   }),
   special: (theme) => ({
     bg: theme.accent,
-    color: '#ffffff',
+    color: theme.onAccent,
     isPill: true,
   }),
 };

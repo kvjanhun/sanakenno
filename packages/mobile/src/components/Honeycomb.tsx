@@ -193,7 +193,7 @@ export function Honeycomb({
           fillHi={
             disabled
               ? hex.isCenter
-                ? theme.accentFaded
+                ? theme.accent
                 : theme.hexLo
               : hex.isCenter
                 ? theme.accent
@@ -202,7 +202,7 @@ export function Honeycomb({
           fillLo={
             disabled
               ? hex.isCenter
-                ? theme.accentFaded
+                ? theme.accent
                 : theme.hexLo
               : hex.isCenter
                 ? theme.accent
@@ -211,7 +211,7 @@ export function Honeycomb({
           strokeColor={
             disabled
               ? hex.isCenter
-                ? theme.accentFaded
+                ? theme.accent
                 : theme.border
               : hex.isCenter
                 ? theme.accent
@@ -219,7 +219,9 @@ export function Honeycomb({
           }
           textColor={
             disabled
-              ? theme.textTertiary
+              ? hex.isCenter
+                ? theme.onAccent
+                : theme.textTertiary
               : hex.isCenter
                 ? theme.hexCenterText
                 : theme.textPrimary

@@ -84,8 +84,11 @@ export function GameControls({
           prepare(e);
           onSubmit();
         }}
-        className="px-4 py-2 rounded-lg font-normal cursor-pointer border-none text-white"
-        style={{ backgroundColor: 'var(--color-accent)' }}
+        className="px-4 py-2 rounded-lg font-normal cursor-pointer border-none"
+        style={{
+          backgroundColor: 'var(--color-accent)',
+          color: 'var(--color-on-accent)',
+        }}
       >
         OK
       </button>
