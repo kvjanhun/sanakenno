@@ -1440,11 +1440,18 @@ Then(
   },
 );
 
+function helsinkiDateDaysAgo(n: number): string {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - n);
+  return d.toLocaleDateString('en-CA', { timeZone: 'Europe/Helsinki' });
+}
+
 Given(
-  'no achievements were recorded on {int}-{int}-{int}',
-  function (this: AdminWorld, _year: number, _month: number, _day: number) {
-    // No action needed — in-memory DB starts empty
-    assert.ok(true);
+  'no achievements were recorded {int} days ago',
+  function (this: AdminWorld, daysAgo: number) {
+    // In-memory DB starts empty; just capture the target date for the Then step.
+    (this as unknown as { emptyDate: string }).emptyDate =
+      helsinkiDateDaysAgo(daysAgo);
   },
 );
 
@@ -1460,14 +1467,14 @@ When(
 );
 
 Then(
-  '{int}-{int}-{int} should appear with all rank counts as 0',
-  function (this: AdminWorld, year: number, month: number, day: number) {
+  'the date {int} days ago should appear with all rank counts as 0',
+  function (this: AdminWorld, daysAgo: number) {
     const daily = this.responseJson.daily as Array<{
       date: string;
       counts: Record<string, number>;
       total: number;
     }>;
-    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const dateStr = helsinkiDateDaysAgo(daysAgo);
     const entry = daily.find((e) => e.date === dateStr);
     assert.ok(entry, `Date ${dateStr} should appear in stats`);
     assert.equal(entry!.total, 0, 'Total should be 0');

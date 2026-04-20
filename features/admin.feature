@@ -220,9 +220,9 @@ Feature: Admin tool
     And not under 2026-03-24
 
   Scenario: Empty days show zero counts
-    Given no achievements were recorded on 2026-03-20
+    Given no achievements were recorded 5 days ago
     When the admin requests stats covering that date
-    Then 2026-03-20 should appear with all rank counts as 0
+    Then the date 5 days ago should appear with all rank counts as 0
 
   # --- Failed guesses stats ---
 
