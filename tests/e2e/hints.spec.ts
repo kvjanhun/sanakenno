@@ -10,6 +10,8 @@
 import { test, expect } from '@playwright/test';
 import { loadGame } from './helpers';
 
+const VISIBLE_HINT_TABS = ['Yleiskuva', 'Pituudet', 'Alkuparit'] as const;
+
 /** Open a hint tab and unlock it via the "Aktivoi apu" button. */
 async function unlockHint(
   page: import('@playwright/test').Page,
@@ -50,21 +52,37 @@ test.describe('Hint unlock persistence', () => {
     await expect(page.getByText('Sanoja jäljellä')).not.toBeVisible();
   });
 
-  test('opening a hint does not move the honeycomb down', async ({ page }) => {
+  test('opening any visible hint does not move the play area down', async ({
+    page,
+  }) => {
     await loadGame(page);
 
     const honeycomb = page.getByRole('img', { name: /Kirjainkenno:/ });
+    const deleteButton = page.getByRole('button', { name: 'Poista' });
     const beforeBox = await honeycomb.boundingBox();
+    const beforeDeleteBox = await deleteButton.boundingBox();
     if (!beforeBox)
       throw new Error('Honeycomb should be visible before opening hints');
+    if (!beforeDeleteBox)
+      throw new Error('Delete button should be visible before opening hints');
 
-    await page.getByText('Yleiskuva').click();
+    for (const tabLabel of VISIBLE_HINT_TABS) {
+      await page.getByRole('button', { name: tabLabel }).click();
 
-    const afterBox = await honeycomb.boundingBox();
-    if (!afterBox)
-      throw new Error('Honeycomb should stay visible after opening hints');
+      const afterBox = await honeycomb.boundingBox();
+      const afterDeleteBox = await deleteButton.boundingBox();
+      if (!afterBox)
+        throw new Error('Honeycomb should stay visible after opening hints');
+      if (!afterDeleteBox)
+        throw new Error(
+          'Delete button should stay visible after opening hints',
+        );
 
-    expect(afterBox.y).toBeCloseTo(beforeBox.y, 0);
+      expect(afterBox.y).toBeCloseTo(beforeBox.y, 0);
+      expect(afterDeleteBox.y).toBeCloseTo(beforeDeleteBox.y, 0);
+
+      await page.getByRole('button', { name: tabLabel }).click();
+    }
   });
 });
 

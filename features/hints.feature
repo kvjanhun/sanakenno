@@ -59,7 +59,7 @@ Feature: Hint panels
     Then no tab should be active
 
   @e2e
-  Scenario: Hint area reserves layout space even when closed
+  Scenario: Every visible hint tab preserves the play area position
     When the player opens the "summary" tab
     Then the honeycomb position should not change
 

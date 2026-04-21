@@ -1,5 +1,5 @@
 /**
- * Hint section with pill-button navigation and revealable content panel.
+ * Hint section with segmented navigation and revealable content panel.
  *
  * Three visible tabs: Yleiskuva, Pituudet, Alkuparit.
  * Clicking a tab opens its content in an attached panel; clicking the active
@@ -11,7 +11,7 @@
  * @module src/components/HintPanels
  */
 
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { toColumns } from '@sanakenno/shared';
 import { useHintData } from '../hooks/useHintData';
 import type { DerivedHintData } from '../hooks/useHintData';
@@ -54,10 +54,13 @@ const VISIBLE_PANELS: readonly PanelConfig[] = [
   },
 ];
 
-const PANEL_MIN_HEIGHT = '7.6rem';
-const PANEL_CONTENT_HEIGHT = '6rem';
-const RESERVED_PANEL_SPACE = 'calc(7.6rem + 1px)';
+const CONTENT_HEIGHT_PX = 108;
+const PANEL_SECTION_HEIGHT_PX = CONTENT_HEIGHT_PX + 1;
+const RESERVED_PANEL_SPACE = `${PANEL_SECTION_HEIGHT_PX}px`;
+const PANEL_INNER_HEIGHT_PX = CONTENT_HEIGHT_PX - 20;
+const BAR_HEIGHT_PX = 26;
 const PAIRS_PER_COLUMN = 4;
+const TEXTURE_LINE_COUNT = 18;
 
 /* ------------------------------------------------------------------ */
 /*  Panel content renderers                                            */
@@ -73,20 +76,20 @@ function SummaryMetric({
 }): React.JSX.Element {
   return (
     <div
-      className="flex items-center gap-2"
+      className="flex items-center gap-1.5"
       style={{
         background: 'var(--color-bg-primary)',
         border: '1px solid var(--color-border)',
         borderRadius: '999px',
-        padding: '0.35rem 0.65rem',
+        padding: '5px 8px',
       }}
     >
       <span
         style={{
           color: 'var(--color-text-tertiary)',
-          fontSize: '0.74rem',
+          fontSize: '10.5px',
           fontWeight: 600,
-          lineHeight: 1.2,
+          lineHeight: '13px',
         }}
       >
         {label}
@@ -94,9 +97,9 @@ function SummaryMetric({
       <span
         style={{
           color: 'var(--color-text-primary)',
-          fontSize: '0.84rem',
-          fontWeight: 600,
-          lineHeight: 1.2,
+          fontSize: '11.5px',
+          fontWeight: 700,
+          lineHeight: '14px',
           whiteSpace: 'nowrap',
         }}
       >
@@ -114,37 +117,40 @@ function SummaryContent({
 }): React.JSX.Element {
   const pct = Math.round((data.wordsFound / data.wordCount) * 100);
   const { pangramStats } = data;
-  const pangramLabel = 'Pangrammit';
-
+  const pangramLabel = pangramStats.total === 1 ? 'Pangrammi' : 'Pangrammit';
   const unfoundLengths = data.lengthDistribution.filter((e) => e.remaining > 0);
   const uniqueCount = unfoundLengths.length;
   const longest =
     unfoundLengths.length > 0
       ? Math.max(...unfoundLengths.map((e) => e.len))
       : 0;
-  const pangramValue = `${pangramStats.remaining}/${pangramStats.total}`;
-  const lengthValue = `${uniqueCount} eri`;
-  const longestValue = `${longest} kirj.`;
+  const allFound = data.wordsRemaining === 0;
+  const primaryColor = allFound
+    ? 'var(--color-text-tertiary)'
+    : 'var(--color-text-primary)';
+  const secondaryColor = allFound
+    ? 'var(--color-text-tertiary)'
+    : 'var(--color-text-secondary)';
 
   return (
-    <div className="flex flex-col gap-2.5 w-full">
-      <div className="flex flex-wrap items-end gap-2">
+    <div className="flex flex-col gap-2 w-full">
+      <div className="flex flex-wrap items-center gap-1.5">
         <div
           style={{
-            color: 'var(--color-text-primary)',
-            fontSize: '1.35rem',
+            color: primaryColor,
+            fontSize: '16px',
             fontWeight: 700,
-            lineHeight: 1,
+            lineHeight: '20px',
           }}
         >
           {data.wordsRemaining}/{data.wordCount}
         </div>
         <div
           style={{
-            color: 'var(--color-text-primary)',
-            fontSize: '0.95rem',
-            fontWeight: 500,
-            lineHeight: 1.2,
+            color: primaryColor,
+            fontSize: '12.5px',
+            fontWeight: 600,
+            lineHeight: '16px',
           }}
         >
           sanaa löytämättä
@@ -154,21 +160,24 @@ function SummaryContent({
             background: 'var(--color-bg-primary)',
             border: '1px solid var(--color-border)',
             borderRadius: '999px',
-            color: 'var(--color-text-secondary)',
-            fontSize: '0.74rem',
-            fontWeight: 600,
-            lineHeight: 1,
-            padding: '0.3rem 0.5rem',
+            color: secondaryColor,
+            fontSize: '11px',
+            fontWeight: 700,
+            lineHeight: '14px',
+            padding: '3px 7px',
           }}
         >
           {pct}%
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        <SummaryMetric label={pangramLabel} value={pangramValue} />
-        <SummaryMetric label="Pituuksia" value={lengthValue} />
-        <SummaryMetric label="Pisin" value={longestValue} />
+      <div className="flex flex-wrap gap-1.5">
+        <SummaryMetric
+          label={pangramLabel}
+          value={`${pangramStats.remaining}/${pangramStats.total}`}
+        />
+        <SummaryMetric label="Pituuksia" value={`${uniqueCount} eri`} />
+        <SummaryMetric label="Pisin" value={`${longest} kirj.`} />
       </div>
     </div>
   );
@@ -181,11 +190,10 @@ function LettersContent({
   data: DerivedHintData;
 }): React.JSX.Element {
   return (
-    <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+    <div className="flex flex-wrap gap-x-3 gap-y-1 w-full">
       {data.letterMap.map((item) => (
         <span
           key={item.letter}
-          className="text-sm"
           style={{
             background: 'var(--color-bg-primary)',
             border: '1px solid var(--color-border)',
@@ -194,10 +202,12 @@ function LettersContent({
               item.remaining === 0
                 ? 'var(--color-text-tertiary)'
                 : 'var(--color-text-primary)',
-            padding: '0.25rem 0.55rem',
+            fontSize: '13px',
+            lineHeight: '17px',
+            padding: '4px 8px',
           }}
         >
-          {item.letter.toUpperCase()}&nbsp;{item.remaining}
+          {item.letter.toUpperCase()} {item.remaining}
         </span>
       ))}
     </div>
@@ -211,22 +221,25 @@ function DistributionContent({
   data: DerivedHintData;
 }): React.JSX.Element {
   return (
-    <div className="flex flex-col w-full">
+    <div className="flex flex-col items-center w-full" style={{ gap: '4px' }}>
       <span
         style={{
-          fontSize: '0.7rem',
-          lineHeight: 1,
+          fontSize: '10px',
+          lineHeight: '12px',
           color: 'var(--color-text-tertiary)',
           textAlign: 'center',
-          marginBottom: '9px',
         }}
       >
         Sanoja jäljellä
       </span>
-      <div className="flex gap-1.5 w-full">
+      <div className="flex items-end gap-1 w-full">
         {data.lengthDistribution.map((item) => {
           const done = item.remaining === 0;
-          const fillPct = item.total > 0 ? (item.found / item.total) * 100 : 0;
+          const fillHeight =
+            item.total > 0
+              ? Math.round(BAR_HEIGHT_PX * (item.found / item.total))
+              : 0;
+
           return (
             <div
               key={item.len}
@@ -235,9 +248,9 @@ function DistributionContent({
             >
               <span
                 style={{
-                  fontSize: '0.65rem',
-                  lineHeight: 1,
-                  marginBottom: '2px',
+                  fontSize: '9px',
+                  lineHeight: '11px',
+                  marginBottom: '1px',
                   color: done
                     ? 'var(--color-text-tertiary)'
                     : 'var(--color-text-secondary)',
@@ -248,11 +261,10 @@ function DistributionContent({
               <div
                 style={{
                   width: '100%',
-                  height: '26px',
-                  background:
-                    'linear-gradient(180deg, var(--color-bg-primary) 0%, var(--color-bg-secondary) 100%)',
+                  height: `${BAR_HEIGHT_PX}px`,
+                  background: 'var(--color-bg-primary)',
                   border: '1px solid var(--color-border)',
-                  borderRadius: '3px',
+                  borderRadius: '4px',
                   overflow: 'hidden',
                   display: 'flex',
                   flexDirection: 'column',
@@ -262,19 +274,18 @@ function DistributionContent({
                 <div
                   style={{
                     width: '100%',
-                    height: `${fillPct}%`,
+                    height: `${fillHeight}px`,
                     background: done
                       ? 'var(--color-text-tertiary)'
                       : 'var(--color-accent)',
-                    transition: 'height 0.3s ease',
                   }}
                 />
               </div>
               <span
                 style={{
-                  fontSize: '0.65rem',
-                  lineHeight: 1,
-                  marginTop: '2px',
+                  fontSize: '9px',
+                  lineHeight: '11px',
+                  marginTop: '1px',
                   color: done
                     ? 'var(--color-text-tertiary)'
                     : 'var(--color-text-secondary)',
@@ -288,11 +299,10 @@ function DistributionContent({
       </div>
       <span
         style={{
-          fontSize: '0.7rem',
-          lineHeight: 1,
+          fontSize: '10px',
+          lineHeight: '12px',
           color: 'var(--color-text-tertiary)',
           textAlign: 'center',
-          marginTop: '5px',
         }}
       >
         Pituus, kirjainta
@@ -306,25 +316,27 @@ function PairsContent({ data }: { data: DerivedHintData }): React.JSX.Element {
   const columns = toColumns(data.pairMap, PAIRS_PER_COLUMN);
 
   return (
-    <div className="flex flex-wrap gap-x-3 gap-y-1.5 w-full">
+    <div
+      className="flex flex-wrap w-full"
+      style={{ columnGap: '10px', rowGap: '4px' }}
+    >
       {columns.map((column, index) => (
         <div key={`pairs-col-${index}`} className="flex flex-col gap-1">
           {column.map((item) => (
             <span
               key={item.pair}
-              className="text-sm"
               style={{
                 fontFamily: 'var(--font-mono)',
                 color:
                   item.remaining === 0
                     ? 'var(--color-text-tertiary)'
                     : 'var(--color-text-primary)',
-                fontSize: '0.95rem',
-                lineHeight: 1.25,
+                fontSize: '13px',
+                lineHeight: '17px',
                 whiteSpace: 'nowrap',
               }}
             >
-              <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 500 }}>
+              <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 700 }}>
                 {item.pair.toUpperCase()}:{' '}
               </span>
               {item.remaining}
@@ -346,6 +358,28 @@ const PANEL_CONTENT: Record<
   pairs: PairsContent,
 };
 
+function PanelTexture(): React.JSX.Element {
+  return (
+    <>
+      {Array.from({ length: TEXTURE_LINE_COUNT }, (_, index) => (
+        <span
+          key={`hint-texture-line-${index}`}
+          aria-hidden="true"
+          className="pointer-events-none absolute"
+          style={{
+            top: 0,
+            bottom: 0,
+            left: `${18 + index * 32}px`,
+            width: '1px',
+            background: 'var(--color-border)',
+            opacity: index % 2 === 0 ? 0.22 : 0.12,
+          }}
+        />
+      ))}
+    </>
+  );
+}
+
 /** Locked hint state with a short teaser and activation button. */
 function LockedHintState({
   panel,
@@ -355,16 +389,18 @@ function LockedHintState({
   onUnlock: () => void;
 }): React.JSX.Element {
   return (
-    <div className="flex flex-col gap-3 w-full md:flex-row md:items-center md:justify-between">
-      <div className="flex-1">
+    <div
+      className="flex flex-col justify-center gap-2 w-full"
+      style={{ minHeight: `${PANEL_INNER_HEIGHT_PX}px` }}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
         <div
           style={{
             color: 'var(--color-accent)',
-            fontSize: '0.72rem',
+            fontSize: '10px',
             fontWeight: 700,
-            letterSpacing: '0.04em',
-            lineHeight: 1.2,
-            marginBottom: '0.35rem',
+            letterSpacing: '0.06em',
+            lineHeight: '13px',
             textTransform: 'uppercase',
           }}
         >
@@ -373,9 +409,8 @@ function LockedHintState({
         <div
           style={{
             color: 'var(--color-text-secondary)',
-            fontSize: '0.88rem',
-            lineHeight: 1.35,
-            maxWidth: '34rem',
+            fontSize: '13px',
+            lineHeight: '17px',
           }}
         >
           {panel.teaser}
@@ -384,14 +419,16 @@ function LockedHintState({
 
       <button
         type="button"
-        className="rounded-xl cursor-pointer px-4 py-2 text-sm font-semibold"
         style={{
+          alignSelf: 'stretch',
           background: 'var(--color-accent)',
           border: '1px solid var(--color-accent-faded)',
-          boxShadow:
-            '0 2px 5px -4px var(--color-button-shadow), 0 10px 20px -16px var(--color-button-shadow)',
+          borderRadius: '10px',
           color: 'var(--color-on-accent)',
-          flexShrink: 0,
+          cursor: 'pointer',
+          fontSize: '13px',
+          fontWeight: 700,
+          padding: '8px 14px',
         }}
         onClick={onUnlock}
       >
@@ -434,25 +471,21 @@ export function HintPanels({
       <div
         className="relative overflow-hidden"
         style={{
-          background:
-            'linear-gradient(180deg, var(--color-bg-primary) 0%, var(--color-bg-secondary) 100%)',
+          background: 'var(--color-bg-secondary)',
           border: '1px solid var(--color-border)',
-          borderRadius: '18px',
-          boxShadow:
-            '0 4px 10px -8px var(--color-button-shadow), 0 18px 28px -26px var(--color-button-shadow)',
+          borderRadius: '14px',
         }}
       >
         <div
           className="relative flex items-center gap-2"
-          style={{ padding: '0.8rem 0.85rem' }}
+          style={{ padding: '7px 10px' }}
         >
           <span
-            className="text-sm"
             style={{
               color: 'var(--color-text-primary)',
+              fontSize: '13px',
               fontWeight: 700,
               flexShrink: 0,
-              marginRight: '0.35rem',
             }}
           >
             Avut
@@ -462,41 +495,41 @@ export function HintPanels({
             className="flex"
             style={{
               flex: 1,
-              background:
-                'linear-gradient(180deg, var(--color-bg-secondary) 0%, var(--color-bg-primary) 100%)',
+              background: 'var(--color-bg-secondary)',
               border: '1px solid var(--color-border)',
-              borderRadius: '12px',
-              padding: '4px',
+              borderRadius: '10px',
+              padding: '3px',
               gap: '2px',
             }}
           >
             {VISIBLE_PANELS.map((panel) => {
               const isActive = activeTab === panel.id;
               const isUnlocked = hintsUnlocked.has(panel.id);
+
               return (
                 <button
                   key={panel.id}
                   type="button"
                   onClick={() => handleTabClick(panel.id)}
                   aria-pressed={isActive}
-                  className="relative text-sm"
                   style={{
                     flex: 1,
-                    padding: '0.62rem 0.85rem 0.75rem',
-                    borderRadius: '9px',
-                    border: 'none',
+                    minHeight: '30px',
+                    padding: '4px',
+                    borderRadius: '8px',
+                    border: `1px solid ${
+                      isActive ? 'var(--color-border)' : 'transparent'
+                    }`,
                     background: isActive
-                      ? 'linear-gradient(180deg, var(--color-bg-primary) 0%, var(--color-bg-secondary) 100%)'
+                      ? 'var(--color-bg-primary)'
                       : 'transparent',
-                    boxShadow: isActive
-                      ? '0 2px 6px -5px var(--color-button-shadow)'
-                      : 'none',
                     color: isActive
                       ? 'var(--color-text-primary)'
                       : 'var(--color-text-secondary)',
                     cursor: 'pointer',
-                    fontWeight: 500,
-                    transition: 'all 0.15s ease',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    position: 'relative',
                   }}
                 >
                   {panel.label}
@@ -504,17 +537,15 @@ export function HintPanels({
                     aria-hidden="true"
                     className="pointer-events-none absolute"
                     style={{
-                      left: '18%',
-                      right: '18%',
-                      bottom: '0.34rem',
+                      left: '24%',
+                      right: '24%',
+                      bottom: '3px',
                       height: '3px',
                       borderRadius: '999px',
                       background: isUnlocked
                         ? 'var(--color-accent)'
                         : 'var(--color-border)',
                       opacity: isActive ? 1 : 0,
-                      transform: isActive ? 'scaleX(1)' : 'scaleX(0.45)',
-                      transition: 'transform 0.15s ease, opacity 0.15s ease',
                     }}
                   />
                 </button>
@@ -523,15 +554,14 @@ export function HintPanels({
           </div>
 
           <div
-            className="flex items-center gap-1.5"
+            className="flex items-center gap-1"
             style={{
-              background:
-                'linear-gradient(180deg, var(--color-bg-primary) 0%, var(--color-bg-secondary) 100%)',
+              background: 'var(--color-bg-secondary)',
               border: '1px solid var(--color-border)',
               borderRadius: '999px',
               flexShrink: 0,
-              minHeight: '2.1rem',
-              padding: '0.45rem 0.5rem',
+              minHeight: '30px',
+              padding: '6px 7px',
             }}
           >
             {VISIBLE_PANELS.map((panel) => {
@@ -543,17 +573,15 @@ export function HintPanels({
                   key={panel.id}
                   style={{
                     width: '5px',
-                    height: '1.35rem',
+                    height: '18px',
                     borderRadius: '999px',
+                    border: `1px solid ${
+                      isActive ? 'var(--color-accent-faded)' : 'transparent'
+                    }`,
                     background: isUnlocked
                       ? 'var(--color-accent)'
                       : 'var(--color-border)',
-                    boxShadow: isActive
-                      ? '0 0 0 1px var(--color-accent-faded)'
-                      : 'none',
-                    opacity: isUnlocked || isActive ? 1 : 0.7,
-                    transform: isActive ? 'scaleY(1.02)' : 'none',
-                    transition: 'background 0.2s ease, transform 0.2s ease',
+                    opacity: isUnlocked || isActive ? 1 : 0.72,
                   }}
                 />
               );
@@ -565,57 +593,43 @@ export function HintPanels({
           <div
             className="relative overflow-hidden text-sm"
             style={{
+              boxSizing: 'border-box',
               borderTop: '1px solid var(--color-border)',
+              background: 'var(--color-bg-primary)',
               fontFamily: 'var(--font-sans)',
-              height: PANEL_MIN_HEIGHT,
+              height: RESERVED_PANEL_SPACE,
             }}
           >
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0"
-              style={{
-                background:
-                  'linear-gradient(180deg, var(--color-bg-secondary) 0%, var(--color-bg-primary) 100%)',
-              }}
-            />
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0"
-              style={{
-                background:
-                  'linear-gradient(30deg, var(--color-border) 12%, transparent 12.5%, transparent 87%, var(--color-border) 87.5%, var(--color-border)), linear-gradient(150deg, var(--color-border) 12%, transparent 12.5%, transparent 87%, var(--color-border) 87.5%, var(--color-border)), linear-gradient(90deg, var(--color-border) 2%, transparent 2.5%, transparent 97%, var(--color-border) 97.5%, var(--color-border))',
-                backgroundPosition: '0 0, 0 0, 15px 8.5px',
-                backgroundSize: '30px 17px',
-                opacity: 0.09,
-              }}
-            />
+            <PanelTexture />
             <div
               className="relative z-10"
               style={{
-                height: PANEL_MIN_HEIGHT,
-                display: 'flex',
-                alignItems: 'center',
-                padding: '0.95rem 1rem 1rem',
+                height: '100%',
+                overflowY: 'auto',
+                padding: '10px 12px',
               }}
             >
-              {activeIsUnlocked && ContentComponent ? (
-                <div
-                  style={{
-                    height: PANEL_CONTENT_HEIGHT,
-                    overflowY: 'auto',
-                    width: '100%',
-                  }}
-                >
-                  <ContentComponent data={hintData} />
-                </div>
-              ) : (
-                activePanel && (
-                  <LockedHintState
-                    panel={activePanel}
-                    onUnlock={() => onUnlock(activePanel.id)}
-                  />
-                )
-              )}
+              <div
+                style={{
+                  minHeight: `${PANEL_INNER_HEIGHT_PX}px`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  width: '100%',
+                }}
+              >
+                {activeIsUnlocked && ContentComponent ? (
+                  <div style={{ width: '100%' }}>
+                    <ContentComponent data={hintData} />
+                  </div>
+                ) : (
+                  activePanel && (
+                    <LockedHintState
+                      panel={activePanel}
+                      onUnlock={() => onUnlock(activePanel.id)}
+                    />
+                  )
+                )}
+              </div>
             </div>
           </div>
         )}
