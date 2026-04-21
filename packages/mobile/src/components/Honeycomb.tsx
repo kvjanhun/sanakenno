@@ -1,5 +1,9 @@
 import { useCallback, useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
+import {
+  getHoneycombCenterOverlayStops,
+  type HoneycombCenterOverlayVariant,
+} from '@sanakenno/shared';
 import Svg, {
   Defs,
   LinearGradient,
@@ -75,6 +79,7 @@ function HexButton({
   fillLo,
   strokeColor,
   textColor,
+  overlayVariant,
   disabled,
 }: {
   hex: HexCell;
@@ -84,10 +89,17 @@ function HexButton({
   fillLo: string;
   strokeColor: string;
   textColor: string;
+  overlayVariant: HoneycombCenterOverlayVariant | null;
   disabled: boolean;
 }) {
   const scale = useSharedValue(1);
   const gradId = `hex-grad-${index}`;
+  const overlayId = `hex-overlay-${index}`;
+  const overlayStops = useMemo(
+    () =>
+      overlayVariant ? getHoneycombCenterOverlayStops(overlayVariant) : null,
+    [overlayVariant],
+  );
 
   const handlePressHaptic = useCallback(() => {
     PreparedHaptics.trigger();
@@ -139,12 +151,26 @@ function HexButton({
         ]}
       >
         <Svg width={HEX_R * 2} height={HEX_R * 2} viewBox="0 0 92 92">
-          {!isSolid && (
+          {(!isSolid || overlayStops) && (
             <Defs>
-              <LinearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0%" stopColor={fillHi} />
-                <Stop offset="100%" stopColor={fillLo} />
-              </LinearGradient>
+              {!isSolid && (
+                <LinearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+                  <Stop offset="0%" stopColor={fillHi} />
+                  <Stop offset="100%" stopColor={fillLo} />
+                </LinearGradient>
+              )}
+              {overlayStops && (
+                <LinearGradient id={overlayId} x1="0" y1="0" x2="0" y2="1">
+                  {overlayStops.map((stop) => (
+                    <Stop
+                      key={stop.offset}
+                      offset={stop.offset}
+                      stopColor={stop.color}
+                      stopOpacity={stop.opacity}
+                    />
+                  ))}
+                </LinearGradient>
+              )}
             </Defs>
           )}
           <Polygon
@@ -153,6 +179,13 @@ function HexButton({
             stroke={strokeColor}
             strokeWidth={1.5}
           />
+          {overlayStops && (
+            <Polygon
+              points={hexPoints(46, 46, HEX_R)}
+              fill={`url(#${overlayId})`}
+              stroke="none"
+            />
+          )}
           <SvgText
             x="46"
             y="46"
@@ -194,6 +227,7 @@ export function Honeycomb({
           fillLo={hex.isCenter ? theme.accent : theme.hexLo}
           strokeColor={hex.isCenter ? theme.accent : theme.hexStroke}
           textColor={hex.isCenter ? theme.onAccent : theme.textPrimary}
+          overlayVariant={hex.isCenter ? theme.centerHexOverlayVariant : null}
           disabled={disabled}
         />
       ))}

@@ -106,6 +106,11 @@ Feature: Game interaction
     When the player taps any hexagon
     Then no letter should be added to the current word
 
+  @mobile
+  Scenario: All words found message uses accent colour on mobile
+    Given the player has found all words in the puzzle
+    Then the "Kaikki sanat löydetty, huomenna lisää!" message should be displayed in accent colour
+
   # --- Honeycomb ---
 
   Scenario: Honeycomb displays 7 hexagons in a flower pattern
@@ -113,6 +118,7 @@ Feature: Game interaction
     Then 7 hexagons should be rendered
     And the center hexagon should be visually distinct
     And the center hexagon should show the center letter
+    And the center hexagon should use the shading variant selected by the active theme
 
   Scenario: Shuffle randomises outer letter positions
     Given the outer letters are in position [e, k, l, n, s, t]

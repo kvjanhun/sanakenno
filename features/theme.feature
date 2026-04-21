@@ -76,6 +76,13 @@ Feature: Theme Toggle
     And the current theme is dark
     Then accent-colored controls should use the palette's on-accent text color
 
+  @mobile
+  Scenario: Monochrome dark theme uses a dark active switch track
+    Given the active color palette is "mustavalko"
+    And the current theme is dark
+    When the player opens the settings screen
+    Then the active "Tumma teema" switch track should be dark
+
   Scenario: Completed honeycomb dims uniformly without switching palette colors
     Given the active color palette is "aamu"
     And the current theme is dark

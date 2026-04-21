@@ -11,7 +11,12 @@
  */
 
 import { useColorScheme } from 'react-native';
-import { DEFAULT_THEME_ID, type ThemeId } from '@sanakenno/shared';
+import {
+  DEFAULT_THEME_ID,
+  getHoneycombCenterOverlayVariant,
+  type HoneycombCenterOverlayVariant,
+  type ThemeId,
+} from '@sanakenno/shared';
 import { useSettingsStore } from './store/useSettingsStore';
 
 export { DEFAULT_THEME_ID, type ThemeId };
@@ -27,6 +32,10 @@ export interface Theme {
   hexHi: string;
   hexLo: string;
   hexStroke: string;
+  /** Active iOS switch track color. */
+  switchTrackActive: string;
+  /** Accent-hex shading preset. */
+  centerHexOverlayVariant: HoneycombCenterOverlayVariant;
   /** Faded / inactive accent — used for disabled center hex fill. */
   accentFaded: string;
   /** Text color on accent backgrounds. */
@@ -102,6 +111,8 @@ const baseLight: Omit<Theme, 'accent' | 'accentFaded'> = {
   hexHi: '#fbfbfb',
   hexLo: '#ececec',
   hexStroke: '#e0e0e0',
+  switchTrackActive: '#ff643e',
+  centerHexOverlayVariant: 'glossy',
   onAccent: '#ffffff',
   error: '#FF6B6B',
   golden: '#fbbf24',
@@ -119,6 +130,8 @@ const baseDark: Omit<Theme, 'accent' | 'accentFaded'> = {
   hexHi: '#343434',
   hexLo: '#252525',
   hexStroke: '#3e3e3e',
+  switchTrackActive: '#e05030',
+  centerHexOverlayVariant: 'glossy',
   onAccent: '#ffffff',
   error: '#FF6B6B',
   golden: '#fbbf24',
@@ -129,11 +142,18 @@ const baseDark: Omit<Theme, 'accent' | 'accentFaded'> = {
 function buildTheme(scheme: SchemeKey, paletteId: ThemeId): Theme {
   const base = scheme === 'dark' ? baseDark : baseLight;
   const override = PALETTES[paletteId][scheme];
+  const onAccent = override.onAccent ?? base.onAccent;
   return {
     ...base,
     accent: override.accent,
     accentFaded: override.accentFaded,
-    onAccent: override.onAccent ?? base.onAccent,
+    switchTrackActive:
+      paletteId === 'mono' && scheme === 'dark' ? onAccent : override.accent,
+    centerHexOverlayVariant: getHoneycombCenterOverlayVariant(
+      paletteId,
+      scheme,
+    ),
+    onAccent,
   };
 }
 

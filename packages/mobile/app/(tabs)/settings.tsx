@@ -31,7 +31,7 @@ function SettingRow({
   value,
   onValueChange,
   disabled,
-  accentColor,
+  activeTrackColor,
   labelColor,
   borderColor,
   isLast,
@@ -40,7 +40,7 @@ function SettingRow({
   value: boolean;
   onValueChange: (v: boolean) => void;
   disabled?: boolean;
-  accentColor: string;
+  activeTrackColor: string;
   labelColor: string;
   borderColor: string;
   isLast?: boolean;
@@ -67,7 +67,7 @@ function SettingRow({
         value={value}
         onValueChange={onValueChange}
         disabled={disabled}
-        trackColor={{ false: borderColor, true: accentColor }}
+        trackColor={{ false: borderColor, true: activeTrackColor }}
         ios_backgroundColor={borderColor}
       />
     </View>
@@ -277,7 +277,7 @@ export default function SettingsScreen() {
             value={followSystem ? false : darkMode}
             onValueChange={(v) => setThemePreference(v ? 'dark' : 'light')}
             disabled={followSystem}
-            accentColor={theme.accent}
+            activeTrackColor={theme.switchTrackActive}
             labelColor={theme.textPrimary}
             borderColor={theme.border}
           />
@@ -291,7 +291,7 @@ export default function SettingsScreen() {
                 setThemePreference('light');
               }
             }}
-            accentColor={theme.accent}
+            activeTrackColor={theme.switchTrackActive}
             labelColor={theme.textPrimary}
             borderColor={theme.border}
             isLast

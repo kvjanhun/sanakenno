@@ -85,7 +85,7 @@ export function MessageBar({
           ) : null}
         </Animated.View>
       ) : allFound ? (
-        <Text style={[styles.allFoundText, { color: theme.textTertiary }]}>
+        <Text style={[styles.allFoundText, { color: theme.accent }]}>
           Kaikki sanat löydetty, huomenna lisää!
         </Text>
       ) : null}

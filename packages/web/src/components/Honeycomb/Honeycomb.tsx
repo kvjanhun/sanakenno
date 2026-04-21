@@ -1,4 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
+import {
+  getHoneycombCenterOverlayStops,
+  getHoneycombCenterOverlayVariant,
+} from '@sanakenno/shared';
+import { usePaletteStore } from '../../store/usePaletteStore';
+import {
+  resolveScheme,
+  useThemePreferenceStore,
+} from '../../store/useThemePreferenceStore';
 
 /** Props for the Honeycomb SVG letter grid component. */
 export interface HoneycombProps {
@@ -41,6 +50,21 @@ function hexPoints(cx: number, cy: number, r: number): string {
     );
   }
   return pts.join(' ');
+}
+
+/**
+ * Generates the same pointy-top hexagon as an SVG path.
+ * Used for non-interactive overlays so the main hex count stays unchanged.
+ */
+function hexPath(cx: number, cy: number, r: number): string {
+  const pts: string[] = [];
+  for (let i = 0; i < 6; i++) {
+    const angle = (Math.PI / 180) * (60 * i - 30);
+    pts.push(
+      `${(cx + r * Math.cos(angle)).toFixed(2)} ${(cy + r * Math.sin(angle)).toFixed(2)}`,
+    );
+  }
+  return `M ${pts.join(' L ')} Z`;
 }
 
 /**
@@ -87,6 +111,15 @@ export function Honeycomb({
     () => computeHexes(center, outerLetters),
     [center, outerLetters],
   );
+  const themeId = usePaletteStore((s) => s.themeId);
+  const preference = useThemePreferenceStore((s) => s.preference);
+  const centerOverlayStops = useMemo(
+    () =>
+      getHoneycombCenterOverlayStops(
+        getHoneycombCenterOverlayVariant(themeId, resolveScheme(preference)),
+      ),
+    [themeId, preference],
+  );
 
   const ariaLabel = `Kirjainkenno: kirjaimet ${hexes.map((h) => h.letter.toUpperCase()).join(', ')}, keskuskirjain ${center.toUpperCase()}`;
 
@@ -119,6 +152,16 @@ export function Honeycomb({
         <linearGradient id="hex-outer-grad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" style={{ stopColor: 'var(--color-hex-hi)' }} />
           <stop offset="100%" style={{ stopColor: 'var(--color-hex-lo)' }} />
+        </linearGradient>
+        <linearGradient id="hex-center-overlay" x1="0" y1="0" x2="0" y2="1">
+          {centerOverlayStops.map((stop) => (
+            <stop
+              key={stop.offset}
+              offset={stop.offset}
+              stopColor={stop.color}
+              stopOpacity={stop.opacity}
+            />
+          ))}
         </linearGradient>
       </defs>
       {hexes.map((hex, i) => (
@@ -156,6 +199,15 @@ export function Honeycomb({
               transition: 'transform 0.08s ease, opacity 0.08s ease',
             }}
           />
+          {hex.isCenter && (
+            <path
+              d={hexPath(hex.x, hex.y, 46)}
+              style={{
+                fill: 'url(#hex-center-overlay)',
+                pointerEvents: 'none',
+              }}
+            />
+          )}
           <text
             x={hex.x}
             y={hex.y}

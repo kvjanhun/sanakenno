@@ -1,5 +1,13 @@
 # @sanakenno/web
 
+## 1.3.3
+
+### Patch Changes
+
+- Fix archive and theme regressions, and polish honeycomb shading across web and iOS.
+- Updated dependencies
+  - @sanakenno/shared@1.3.3
+
 ## 1.3.2
 
 ### Patch Changes

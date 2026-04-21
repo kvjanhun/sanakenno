@@ -107,7 +107,6 @@ export default function ArchiveScreen() {
         })
         .then((data) => {
           setEntries(data);
-          setPage(0);
           setLoading(false);
           hasFetched.current = true;
         })
@@ -271,6 +270,31 @@ export default function ArchiveScreen() {
     });
   }, [selectedEntry, animateSheetOut, router]);
 
+  const today = entries.find((entry) => entry.is_today);
+  const pastEntries = entries.filter((entry) => !entry.is_today);
+  const pages: ArchiveEntry[][] = [];
+  for (let i = 0; i < pastEntries.length; i += PAGE_SIZE) {
+    pages.push(pastEntries.slice(i, i + PAGE_SIZE));
+  }
+  if (pages.length === 0) pages.push([]);
+  const pageCount = pages.length;
+  pageCountRef.current = pageCount;
+
+  useEffect(() => {
+    if (page < pageCount) return;
+
+    const clamped = Math.max(0, pageCount - 1);
+    pageRef.current = clamped;
+    setPage(clamped);
+
+    if (containerWidth > 0) {
+      pagerRef.current?.scrollTo({
+        x: clamped * containerWidth,
+        animated: false,
+      });
+    }
+  }, [page, pageCount, containerWidth]);
+
   if (loading) {
     return (
       <SafeAreaView
@@ -292,16 +316,6 @@ export default function ArchiveScreen() {
       </SafeAreaView>
     );
   }
-
-  const today = entries.find((e) => e.is_today);
-  const pastEntries = entries.filter((e) => !e.is_today);
-  const pages: ArchiveEntry[][] = [];
-  for (let i = 0; i < pastEntries.length; i += PAGE_SIZE) {
-    pages.push(pastEntries.slice(i, i + PAGE_SIZE));
-  }
-  if (pages.length === 0) pages.push([]);
-  const pageCount = pages.length;
-  pageCountRef.current = pageCount;
 
   return (
     <SafeAreaView

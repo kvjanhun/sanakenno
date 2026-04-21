@@ -70,5 +70,15 @@ export type {
   ThemePreference,
 } from './auth-types';
 
+// Theme-derived honeycomb styling
+export {
+  getHoneycombCenterOverlayStops,
+  getHoneycombCenterOverlayVariant,
+} from './honeycomb-theme';
+export type {
+  HoneycombCenterOverlayVariant,
+  HoneycombCenterOverlayStop,
+} from './honeycomb-theme';
+
 // Sync merge utilities
 export { mergeStatsRecord, mergePuzzleState } from './sync-merge';

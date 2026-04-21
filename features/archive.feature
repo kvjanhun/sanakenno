@@ -111,6 +111,14 @@ Feature: Puzzle archive
     And the previous page button should become active
 
   @ios
+  Scenario: Returning from an archived puzzle preserves the current page indicator
+    Given the archive has more than 8 past puzzles
+    And the player is on the second page of past puzzles
+    When the player opens a past puzzle from the archive and returns to the archive
+    Then the second page of past puzzles should still be shown
+    And the page indicator should still show page 2
+
+  @ios
   Scenario: Pagination controls are hidden when all puzzles fit on one page
     Given the archive has 8 or fewer past puzzles
     Then no pagination controls should be visible
