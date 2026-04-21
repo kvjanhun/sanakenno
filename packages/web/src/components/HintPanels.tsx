@@ -472,16 +472,16 @@ export function HintPanels({
             className="flex"
             style={{
               flex: 1,
-              background: 'var(--color-bg-secondary)',
-              border: '1px solid var(--color-border)',
+              background: 'var(--color-bg-primary)',
               borderRadius: '10px',
-              padding: '3px',
-              gap: '2px',
+              padding: '2px',
+              boxShadow: 'inset 0 1px 2px var(--color-button-shadow)',
             }}
           >
-            {VISIBLE_PANELS.map((panel) => {
+            {VISIBLE_PANELS.map((panel, index) => {
               const isActive = activeTab === panel.id;
               const isUnlocked = hintsUnlocked.has(panel.id);
+              const isLast = index === VISIBLE_PANELS.length - 1;
 
               return (
                 <button
@@ -492,14 +492,18 @@ export function HintPanels({
                   style={{
                     flex: 1,
                     minHeight: '30px',
-                    padding: '4px',
-                    borderRadius: '8px',
-                    border: `1px solid ${
-                      isActive ? 'var(--color-border)' : 'transparent'
-                    }`,
+                    padding: '4px 6px',
+                    borderRadius: '7px',
+                    border: 'none',
+                    borderRight: isLast
+                      ? 'none'
+                      : '1px solid var(--color-border)',
                     background: isActive
-                      ? 'var(--color-bg-primary)'
+                      ? 'color-mix(in srgb, var(--color-accent) 10%, var(--color-bg-primary))'
                       : 'transparent',
+                    boxShadow: isActive
+                      ? '0 1px 2px -1px var(--color-button-shadow)'
+                      : 'none',
                     color: isActive
                       ? 'var(--color-text-primary)'
                       : 'var(--color-text-secondary)',
@@ -528,41 +532,40 @@ export function HintPanels({
                 </button>
               );
             })}
-          </div>
+            <div
+              className="flex items-center gap-1"
+              style={{
+                alignSelf: 'stretch',
+                borderLeft: '1px solid var(--color-border)',
+                flexShrink: 0,
+                gap: '4px',
+                marginLeft: '4px',
+                padding: '0 6px 0 8px',
+              }}
+            >
+              {VISIBLE_PANELS.map((panel) => {
+                const isActive = activeTab === panel.id;
+                const isUnlocked = hintsUnlocked.has(panel.id);
 
-          <div
-            className="flex items-center gap-1"
-            style={{
-              background: 'var(--color-bg-secondary)',
-              border: '1px solid var(--color-border)',
-              borderRadius: '999px',
-              flexShrink: 0,
-              minHeight: '30px',
-              padding: '6px 7px',
-            }}
-          >
-            {VISIBLE_PANELS.map((panel) => {
-              const isActive = activeTab === panel.id;
-              const isUnlocked = hintsUnlocked.has(panel.id);
-
-              return (
-                <div
-                  key={panel.id}
-                  style={{
-                    width: '5px',
-                    height: '18px',
-                    borderRadius: '999px',
-                    border: `1px solid ${
-                      isActive ? 'var(--color-accent-faded)' : 'transparent'
-                    }`,
-                    background: isUnlocked
-                      ? 'var(--color-accent)'
-                      : 'var(--color-border)',
-                    opacity: isUnlocked || isActive ? 1 : 0.72,
-                  }}
-                />
-              );
-            })}
+                return (
+                  <div
+                    key={panel.id}
+                    style={{
+                      width: isActive ? '6px' : '5px',
+                      height: isActive ? '20px' : '18px',
+                      borderRadius: '999px',
+                      background: isUnlocked
+                        ? 'var(--color-accent)'
+                        : 'var(--color-border)',
+                      boxShadow: isActive
+                        ? '0 0 0 1px var(--color-accent-faded), 0 0 6px color-mix(in srgb, var(--color-accent) 22%, transparent)'
+                        : 'none',
+                      opacity: isUnlocked || isActive ? 1 : 0.72,
+                    }}
+                  />
+                );
+              })}
+            </div>
           </div>
         </div>
 

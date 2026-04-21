@@ -142,14 +142,14 @@ export function HintPanel({
             style={[
               styles.segmentedControl,
               {
-                backgroundColor: withOpacity(theme.bgPrimary, 0.45),
-                borderColor: theme.border,
+                backgroundColor: withOpacity(theme.bgPrimary, 0.8),
               },
             ]}
           >
-            {TABS.map((tab) => {
+            {TABS.map((tab, index) => {
               const isActive = activeTab === tab.id;
               const isUnlocked = hintsUnlocked.has(tab.id);
+              const isLast = index === TABS.length - 1;
 
               return (
                 <Pressable
@@ -160,9 +160,14 @@ export function HintPanel({
                   style={[
                     styles.segment,
                     isActive && {
-                      backgroundColor: withOpacity(theme.bgPrimary, 0.94),
-                      borderColor: theme.border,
+                      backgroundColor: withOpacity(theme.accent, 0.08),
+                      shadowOpacity: 0.12,
+                      shadowRadius: 1,
                       shadowColor: theme.buttonShadow,
+                    },
+                    !isLast && {
+                      borderRightWidth: StyleSheet.hairlineWidth,
+                      borderRightColor: theme.border,
                     },
                   ]}
                 >
@@ -198,10 +203,9 @@ export function HintPanel({
 
           <View
             style={[
-              styles.statusCapsule,
+              styles.statusCluster,
               {
-                backgroundColor: withOpacity(theme.bgPrimary, 0.55),
-                borderColor: theme.border,
+                borderLeftColor: theme.border,
               },
             ]}
           >
@@ -215,10 +219,13 @@ export function HintPanel({
                   style={[
                     styles.statusBar,
                     {
+                      width: isActive ? 6 : 5,
+                      height: isActive ? 20 : 18,
                       backgroundColor: isUnlocked ? theme.accent : theme.border,
-                      borderColor: isActive
-                        ? withOpacity(theme.accentFaded, 0.95)
-                        : 'transparent',
+                      borderColor: 'transparent',
+                      shadowColor: isActive ? theme.accent : 'transparent',
+                      shadowOpacity: isActive ? 0.2 : 0,
+                      shadowRadius: isActive ? 1 : 0,
                       opacity: isUnlocked || isActive ? 1 : 0.72,
                     },
                   ]}
@@ -479,7 +486,6 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     borderRadius: 10,
-    borderWidth: StyleSheet.hairlineWidth,
     padding: 3,
     gap: 2,
   },
@@ -490,8 +496,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'transparent',
     position: 'relative',
   },
   segmentText: {
@@ -506,22 +510,22 @@ const styles = StyleSheet.create({
     height: 3,
     borderRadius: 999,
   },
-  statusCapsule: {
+  statusCluster: {
     flexDirection: 'row',
     gap: 4,
     flexShrink: 0,
-    minHeight: 30,
-    paddingHorizontal: 7,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
+    alignSelf: 'stretch',
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    marginLeft: 4,
+    paddingLeft: 8,
+    paddingRight: 2,
   },
   statusBar: {
     width: 5,
     height: 18,
     borderRadius: 999,
-    borderWidth: 1,
+    borderWidth: 0,
   },
   panelSection: {
     height: CONTENT_HEIGHT,
