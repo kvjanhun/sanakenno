@@ -1,5 +1,11 @@
 # @sanakenno/shared
 
+## 1.4.0
+
+### Minor Changes
+
+- Add shared column-first hint ordering support used by the refreshed hint panels on web and iOS.
+
 ## 1.3.3
 
 ### Patch Changes

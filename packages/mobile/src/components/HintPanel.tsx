@@ -25,7 +25,7 @@ const TABS = [
 type TabId = (typeof TABS)[number]['id'];
 
 const CONTENT_HEIGHT = 108;
-const RESERVED_PANEL_SPACE = CONTENT_HEIGHT + 1;
+const RESERVED_PANEL_SPACE = CONTENT_HEIGHT;
 const BAR_H = 26;
 const PAIRS_PER_COLUMN = 4;
 const TEXTURE_LINE_COUNT = 9;
@@ -145,7 +145,7 @@ export function HintPanel({
   const activeUnlocked = activeTab ? hintsUnlocked.has(activeTab) : false;
 
   return (
-    <View style={styles.container}>
+    <View>
       <View
         style={[
           styles.shell,
@@ -479,9 +479,6 @@ function PairsContent({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    gap: 6,
-  },
   shell: {
     borderRadius: 14,
     borderWidth: StyleSheet.hairlineWidth,

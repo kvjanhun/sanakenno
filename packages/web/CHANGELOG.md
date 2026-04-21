@@ -1,5 +1,15 @@
 # @sanakenno/web
 
+## 1.4.0
+
+### Minor Changes
+
+- Refresh the gameplay UI with cleaner hint panels and more polished control buttons across web and iOS.
+
+### Patch Changes
+
+- @sanakenno/shared@1.4.0
+
 ## 1.3.3
 
 ### Patch Changes
