@@ -199,39 +199,41 @@ export function HintPanel({
                 </Pressable>
               );
             })}
-          </View>
+            <View
+              style={[
+                styles.statusCluster,
+                {
+                  borderLeftColor: theme.border,
+                },
+              ]}
+            >
+              {TABS.map((tab) => {
+                const isActive = activeTab === tab.id;
+                const isUnlocked = hintsUnlocked.has(tab.id);
 
-          <View
-            style={[
-              styles.statusCluster,
-              {
-                borderLeftColor: theme.border,
-              },
-            ]}
-          >
-            {TABS.map((tab) => {
-              const isActive = activeTab === tab.id;
-              const isUnlocked = hintsUnlocked.has(tab.id);
-
-              return (
-                <View
-                  key={tab.id}
-                  style={[
-                    styles.statusBar,
-                    {
-                      width: isActive ? 6 : 5,
-                      height: isActive ? 20 : 18,
-                      backgroundColor: isUnlocked ? theme.accent : theme.border,
-                      borderColor: 'transparent',
-                      shadowColor: isActive ? theme.accent : 'transparent',
-                      shadowOpacity: isActive ? 0.2 : 0,
-                      shadowRadius: isActive ? 1 : 0,
-                      opacity: isUnlocked || isActive ? 1 : 0.72,
-                    },
-                  ]}
-                />
-              );
-            })}
+                return (
+                  <View
+                    key={tab.id}
+                    style={[
+                      styles.statusBar,
+                      {
+                        width: isActive ? 6 : 5,
+                        height: isActive ? 20 : 18,
+                        backgroundColor: isUnlocked
+                          ? theme.accent
+                          : theme.border,
+                        borderColor: 'transparent',
+                        shadowColor: isActive ? theme.accent : 'transparent',
+                        shadowOpacity: isActive ? 0.24 : 0,
+                        shadowRadius: isActive ? 2 : 0,
+                        shadowOffset: { width: 0, height: 0 },
+                        opacity: isUnlocked || isActive ? 1 : 0.72,
+                      },
+                    ]}
+                  />
+                );
+              })}
+            </View>
           </View>
         </View>
 
@@ -241,7 +243,7 @@ export function HintPanel({
               styles.panelSection,
               {
                 borderTopColor: theme.border,
-                backgroundColor: withOpacity(theme.bgPrimary, 0.16),
+                backgroundColor: theme.bgPrimary,
               },
             ]}
           >
@@ -486,14 +488,14 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     borderRadius: 10,
-    padding: 3,
-    gap: 2,
+    padding: 2,
+    gap: 0,
   },
   segment: {
     flex: 1,
     minHeight: 30,
-    paddingHorizontal: 4,
-    borderRadius: 8,
+    paddingHorizontal: 6,
+    borderRadius: 7,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
