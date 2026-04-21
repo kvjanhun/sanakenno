@@ -107,11 +107,11 @@ export function colorizeWord(
   });
 }
 
-/** Split an array of words into columns of a given size. */
-export function toColumns(words: string[], perColumn: number = 10): string[][] {
-  const cols: string[][] = [];
-  for (let i = 0; i < words.length; i += perColumn) {
-    cols.push(words.slice(i, i + perColumn));
+/** Split an array of items into columns of a given size. */
+export function toColumns<T>(items: T[], perColumn: number = 10): T[][] {
+  const cols: T[][] = [];
+  for (let i = 0; i < items.length; i += perColumn) {
+    cols.push(items.slice(i, i + perColumn));
   }
   return cols;
 }

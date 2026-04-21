@@ -12,6 +12,7 @@
  */
 
 import { useState, useCallback } from 'react';
+import { toColumns } from '@sanakenno/shared';
 import { useHintData } from '../hooks/useHintData';
 import type { DerivedHintData } from '../hooks/useHintData';
 
@@ -39,22 +40,24 @@ const VISIBLE_PANELS: readonly PanelConfig[] = [
   {
     id: 'summary',
     label: 'Yleiskuva',
-    teaser: 'Yhteenveto jäljellä olevista sanoista ja pangrammeista.',
+    teaser: 'Yhteenveto jäljellä olevista sanoista.',
   },
   {
     id: 'distribution',
     label: 'Pituudet',
-    teaser: 'Näet, minkä pituisia sanoja on vielä löytymättä.',
+    teaser: 'Jäljellä olevien sanojen pituudet.',
   },
   {
     id: 'pairs',
     label: 'Alkuparit',
-    teaser: 'Näet, millä kirjainpareilla puuttuvat sanat alkavat.',
+    teaser: 'Jäljellä olevien sanojen alkukirjainparit.',
   },
 ];
 
 const PANEL_MIN_HEIGHT = '7.6rem';
+const PANEL_CONTENT_HEIGHT = '6rem';
 const RESERVED_PANEL_SPACE = 'calc(7.6rem + 1px)';
+const PAIRS_PER_COLUMN = 4;
 
 /* ------------------------------------------------------------------ */
 /*  Panel content renderers                                            */
@@ -300,31 +303,34 @@ function DistributionContent({
 
 /** Compact multi-column list showing remaining words by two-letter prefix. */
 function PairsContent({ data }: { data: DerivedHintData }): React.JSX.Element {
+  const columns = toColumns(data.pairMap, PAIRS_PER_COLUMN);
+
   return (
-    <div
-      className="grid w-full gap-x-3 gap-y-1.5"
-      style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(4.5rem, 1fr))' }}
-    >
-      {data.pairMap.map((item) => (
-        <span
-          key={item.pair}
-          className="text-sm"
-          style={{
-            fontFamily: 'var(--font-mono)',
-            color:
-              item.remaining === 0
-                ? 'var(--color-text-tertiary)'
-                : 'var(--color-text-primary)',
-            fontSize: '0.95rem',
-            lineHeight: 1.25,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 500 }}>
-            {item.pair.toUpperCase()}:{' '}
-          </span>
-          {item.remaining}
-        </span>
+    <div className="flex flex-wrap gap-x-3 gap-y-1.5 w-full">
+      {columns.map((column, index) => (
+        <div key={`pairs-col-${index}`} className="flex flex-col gap-1">
+          {column.map((item) => (
+            <span
+              key={item.pair}
+              className="text-sm"
+              style={{
+                fontFamily: 'var(--font-mono)',
+                color:
+                  item.remaining === 0
+                    ? 'var(--color-text-tertiary)'
+                    : 'var(--color-text-primary)',
+                fontSize: '0.95rem',
+                lineHeight: 1.25,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 500 }}>
+                {item.pair.toUpperCase()}:{' '}
+              </span>
+              {item.remaining}
+            </span>
+          ))}
+        </div>
       ))}
     </div>
   );
@@ -561,7 +567,7 @@ export function HintPanels({
             style={{
               borderTop: '1px solid var(--color-border)',
               fontFamily: 'var(--font-sans)',
-              minHeight: PANEL_MIN_HEIGHT,
+              height: PANEL_MIN_HEIGHT,
             }}
           >
             <span
@@ -586,7 +592,7 @@ export function HintPanels({
             <div
               className="relative z-10"
               style={{
-                minHeight: PANEL_MIN_HEIGHT,
+                height: PANEL_MIN_HEIGHT,
                 display: 'flex',
                 alignItems: 'center',
                 padding: '0.95rem 1rem 1rem',
@@ -595,7 +601,7 @@ export function HintPanels({
               {activeIsUnlocked && ContentComponent ? (
                 <div
                   style={{
-                    maxHeight: '6rem',
+                    height: PANEL_CONTENT_HEIGHT,
                     overflowY: 'auto',
                     width: '100%',
                   }}

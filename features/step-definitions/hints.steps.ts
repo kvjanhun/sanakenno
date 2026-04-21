@@ -7,7 +7,7 @@
 
 import { Given, When, Then, Before } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
-import { deriveHintData } from '@sanakenno/shared';
+import { deriveHintData, toColumns } from '@sanakenno/shared';
 import type { HintData } from '@sanakenno/shared';
 import type { SanakennoWorld } from './types';
 
@@ -206,6 +206,22 @@ Then(
     const collator = new Intl.Collator('fi', { usage: 'sort' });
     const sorted = [...pairs].sort((a, b) => collator.compare(a, b));
     assert.deepEqual(pairs, sorted);
+  },
+);
+
+Then(
+  'prefixes should fill top-to-bottom within each column before continuing rightward',
+  function (this: SanakennoWorld) {
+    assert.ok(this.derivedHints);
+    const pairs = this.derivedHints!.pairMap.map((entry) => entry.pair);
+    const columns = toColumns(pairs, 4);
+    const flattened = columns.flat();
+
+    assert.deepEqual(flattened, pairs);
+    for (const column of columns) {
+      const sorted = [...column].sort(new Intl.Collator('fi').compare);
+      assert.deepEqual(column, sorted);
+    }
   },
 );
 
