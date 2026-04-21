@@ -60,7 +60,6 @@ const RESERVED_PANEL_SPACE = `${PANEL_SECTION_HEIGHT_PX}px`;
 const PANEL_INNER_HEIGHT_PX = CONTENT_HEIGHT_PX - 20;
 const BAR_HEIGHT_PX = 26;
 const PAIRS_PER_COLUMN = 4;
-const TEXTURE_LINE_COUNT = 18;
 
 /* ------------------------------------------------------------------ */
 /*  Panel content renderers                                            */
@@ -358,28 +357,6 @@ const PANEL_CONTENT: Record<
   pairs: PairsContent,
 };
 
-function PanelTexture(): React.JSX.Element {
-  return (
-    <>
-      {Array.from({ length: TEXTURE_LINE_COUNT }, (_, index) => (
-        <span
-          key={`hint-texture-line-${index}`}
-          aria-hidden="true"
-          className="pointer-events-none absolute"
-          style={{
-            top: 0,
-            bottom: 0,
-            left: `${18 + index * 32}px`,
-            width: '1px',
-            background: 'var(--color-border)',
-            opacity: index % 2 === 0 ? 0.22 : 0.12,
-          }}
-        />
-      ))}
-    </>
-  );
-}
-
 /** Locked hint state with a short teaser and activation button. */
 function LockedHintState({
   panel,
@@ -600,7 +577,6 @@ export function HintPanels({
               height: RESERVED_PANEL_SPACE,
             }}
           >
-            <PanelTexture />
             <div
               className="relative z-10"
               style={{

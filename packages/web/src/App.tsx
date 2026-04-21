@@ -69,6 +69,50 @@ const useViewingPuzzleDate = () => useGameStore((s) => s.viewingPuzzleDate);
 
 const useAuthIsLinked = () => useAuthStore((s) => s.isLinked);
 
+function SideHexTexture({
+  side,
+}: {
+  side: 'left' | 'right';
+}): React.JSX.Element {
+  const isLeft = side === 'left';
+
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none fixed inset-y-0 z-0 hidden md:block"
+      style={{
+        [side === 'left' ? 'left' : 'right']: 0,
+        width: 'clamp(5rem, 18vw, 16rem)',
+        WebkitMaskImage: isLeft
+          ? 'linear-gradient(90deg, black 0%, black 68%, transparent 100%)'
+          : 'linear-gradient(270deg, black 0%, black 68%, transparent 100%)',
+        maskImage: isLeft
+          ? 'linear-gradient(90deg, black 0%, black 68%, transparent 100%)'
+          : 'linear-gradient(270deg, black 0%, black 68%, transparent 100%)',
+      }}
+    >
+      <div
+        aria-hidden="true"
+        className="absolute inset-0"
+        style={{
+          background: isLeft
+            ? 'linear-gradient(90deg, var(--color-accent) 0%, var(--color-accent-faded) 100%)'
+            : 'linear-gradient(270deg, var(--color-accent) 0%, var(--color-accent-faded) 100%)',
+          WebkitMaskImage: "url('/icons/desktop-side-hex.svg')",
+          maskImage: "url('/icons/desktop-side-hex.svg')",
+          WebkitMaskRepeat: 'no-repeat',
+          maskRepeat: 'no-repeat',
+          WebkitMaskSize: 'cover',
+          maskSize: 'cover',
+          WebkitMaskPosition: isLeft ? 'left center' : 'right center',
+          maskPosition: isLeft ? 'left center' : 'right center',
+          opacity: 0.22,
+        }}
+      />
+    </div>
+  );
+}
+
 /* Stable action references — these don't change between renders */
 const actions = () => {
   const s = useGameStore.getState();
@@ -213,6 +257,9 @@ function App() {
 
   return (
     <>
+      <SideHexTexture side="left" />
+      <SideHexTexture side="right" />
+
       {/* Fixed title bar */}
       <header
         className="fixed top-0 left-0 right-0 z-50"
@@ -397,7 +444,7 @@ function App() {
 
       {/* Main content */}
       <div
-        className="max-w-sm mx-auto"
+        className="relative z-10 max-w-sm mx-auto"
         style={{
           touchAction: 'manipulation',
           paddingBottom: 'calc(env(safe-area-inset-bottom) + 1rem)',

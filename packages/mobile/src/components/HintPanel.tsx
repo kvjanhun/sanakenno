@@ -28,7 +28,6 @@ const CONTENT_HEIGHT = 108;
 const RESERVED_PANEL_SPACE = CONTENT_HEIGHT;
 const BAR_H = 26;
 const PAIRS_PER_COLUMN = 4;
-const TEXTURE_LINE_COUNT = 9;
 
 interface Props {
   hintData: HintData;
@@ -64,28 +63,6 @@ function SummaryMetric({
       <Text style={[styles.metricValue, { color: theme.textPrimary }]}>
         {value}
       </Text>
-    </View>
-  );
-}
-
-function PanelTexture({ theme }: { theme: Theme }) {
-  return (
-    <View pointerEvents="none" style={styles.texture}>
-      {Array.from({ length: TEXTURE_LINE_COUNT }, (_, index) => (
-        <View
-          key={`texture-line-${index}`}
-          style={[
-            styles.textureLine,
-            {
-              left: 18 + index * 32,
-              backgroundColor: withOpacity(
-                theme.border,
-                index % 2 === 0 ? 0.22 : 0.12,
-              ),
-            },
-          ]}
-        />
-      ))}
     </View>
   );
 }
@@ -261,8 +238,6 @@ export function HintPanel({
               },
             ]}
           >
-            <PanelTexture theme={theme} />
-
             {activeUnlocked ? (
               <ScrollView
                 style={styles.scroll}
@@ -552,15 +527,6 @@ const styles = StyleSheet.create({
     height: CONTENT_HEIGHT,
     borderTopWidth: StyleSheet.hairlineWidth,
     overflow: 'hidden',
-  },
-  texture: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  textureLine: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    width: 1,
   },
   scroll: {
     flex: 1,
