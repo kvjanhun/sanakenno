@@ -57,6 +57,11 @@ Feature: Hint panels
     And the player reloads the page
     Then no tab should be active
 
+  @e2e
+  Scenario: Hint area reserves layout space even when closed
+    When the player opens the "summary" tab
+    Then the honeycomb position should not change
+
   # --- Pre-hint score tracking ---
 
   Scenario: Pre-hint score is captured when the first hint is unlocked

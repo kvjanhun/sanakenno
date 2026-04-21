@@ -449,7 +449,7 @@ function App() {
               />
             </div>
 
-            {/* Hints — overlay panel floats over content, no height reservation needed */}
+            {/* Hints — reserve panel height so the honeycomb stays in a fixed position */}
             <HintPanels hintsUnlocked={hintsUnlocked} onUnlock={unlockHint} />
 
             {/* Word input */}

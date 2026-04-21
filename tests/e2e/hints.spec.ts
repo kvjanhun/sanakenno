@@ -16,7 +16,7 @@ async function unlockHint(
   tabLabel: string,
 ) {
   await page.getByText(tabLabel).click();
-  await page.getByText('Aktivoi apu').click();
+  await page.getByRole('button', { name: 'Aktivoi apu' }).click();
 }
 
 test.describe('Hint unlock persistence', () => {
@@ -32,7 +32,7 @@ test.describe('Hint unlock persistence', () => {
     // Content should appear immediately — no "Aktivoi apu" prompt
     await expect(page.getByText('Aktivoi apu')).not.toBeVisible();
     await expect(
-      page.getByText('Pisin jäljellä', { exact: false }),
+      page.getByText('sanaa löytämättä', { exact: false }),
     ).toBeVisible();
   });
 
@@ -48,6 +48,23 @@ test.describe('Hint unlock persistence', () => {
       page.getByText('jäljellä', { exact: false }),
     ).not.toBeVisible();
     await expect(page.getByText('Sanoja jäljellä')).not.toBeVisible();
+  });
+
+  test('opening a hint does not move the honeycomb down', async ({ page }) => {
+    await loadGame(page);
+
+    const honeycomb = page.getByRole('img', { name: /Kirjainkenno:/ });
+    const beforeBox = await honeycomb.boundingBox();
+    if (!beforeBox)
+      throw new Error('Honeycomb should be visible before opening hints');
+
+    await page.getByText('Yleiskuva').click();
+
+    const afterBox = await honeycomb.boundingBox();
+    if (!afterBox)
+      throw new Error('Honeycomb should stay visible after opening hints');
+
+    expect(afterBox.y).toBeCloseTo(beforeBox.y, 0);
   });
 });
 
