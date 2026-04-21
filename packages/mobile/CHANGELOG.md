@@ -1,5 +1,19 @@
 # @sanakenno/mobile
 
+## 0.6.1
+
+### Patch Changes
+
+- Version bump.
+
+## 0.6.0
+
+### Minor Changes
+
+- Refresh the gameplay UI with cleaner hint panels and more polished control buttons across web and iOS.
+- Updated dependencies
+  - @sanakenno/shared@1.4.0
+
 ## 0.4.6
 
 ### Patch Changes
