@@ -1,5 +1,12 @@
 # @sanakenno/web
 
+## 1.4.1
+
+### Patch Changes
+
+- Remove the standalone hint-tab separators and keep only the divider before the hint activation indicators.
+  - @sanakenno/shared@1.4.1
+
 ## 1.4.0
 
 ### Minor Changes

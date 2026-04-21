@@ -1,5 +1,11 @@
 # @sanakenno/mobile
 
+## 0.6.2
+
+### Patch Changes
+
+- Refine the hint panel styling to better match web, including a cleaner tab bar and primary-surface open panel.
+
 ## 0.6.1
 
 ### Patch Changes

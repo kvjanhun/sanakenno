@@ -146,10 +146,9 @@ export function HintPanel({
               },
             ]}
           >
-            {TABS.map((tab, index) => {
+            {TABS.map((tab) => {
               const isActive = activeTab === tab.id;
               const isUnlocked = hintsUnlocked.has(tab.id);
-              const isLast = index === TABS.length - 1;
 
               return (
                 <Pressable
@@ -164,10 +163,6 @@ export function HintPanel({
                       shadowOpacity: 0.12,
                       shadowRadius: 1,
                       shadowColor: theme.buttonShadow,
-                    },
-                    !isLast && {
-                      borderRightWidth: StyleSheet.hairlineWidth,
-                      borderRightColor: theme.border,
                     },
                   ]}
                 >

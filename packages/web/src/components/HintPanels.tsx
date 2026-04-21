@@ -478,10 +478,9 @@ export function HintPanels({
               boxShadow: 'inset 0 1px 2px var(--color-button-shadow)',
             }}
           >
-            {VISIBLE_PANELS.map((panel, index) => {
+            {VISIBLE_PANELS.map((panel) => {
               const isActive = activeTab === panel.id;
               const isUnlocked = hintsUnlocked.has(panel.id);
-              const isLast = index === VISIBLE_PANELS.length - 1;
 
               return (
                 <button
@@ -495,9 +494,6 @@ export function HintPanels({
                     padding: '4px 6px',
                     borderRadius: '7px',
                     border: 'none',
-                    borderRight: isLast
-                      ? 'none'
-                      : '1px solid var(--color-border)',
                     background: isActive
                       ? 'color-mix(in srgb, var(--color-accent) 10%, var(--color-bg-primary))'
                       : 'transparent',
