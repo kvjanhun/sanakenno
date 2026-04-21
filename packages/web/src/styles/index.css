@@ -22,6 +22,7 @@
   --color-hex-hi: #fbfbfb;
   --color-hex-lo: #ececec;
   --color-hex-stroke: #e0e0e0;
+  --color-button-shadow: #1a1a1a26;
   --color-on-accent: #ffffff;
 
   /* Default accent = hehku, light */
@@ -44,6 +45,7 @@
     --color-hex-hi: #343434;
     --color-hex-lo: #252525;
     --color-hex-stroke: #3e3e3e;
+    --color-button-shadow: #0000005c;
     /* Default accent = hehku, dark */
     --color-accent: #e05030;
     --color-accent-faded: #7d3525;
@@ -61,6 +63,7 @@
   --color-hex-hi: #343434;
   --color-hex-lo: #252525;
   --color-hex-stroke: #3e3e3e;
+  --color-button-shadow: #0000005c;
   --color-accent: #e05030;
   --color-accent-faded: #7d3525;
 }

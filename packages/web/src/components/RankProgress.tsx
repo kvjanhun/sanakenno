@@ -119,8 +119,15 @@ export function RankProgress({
           <button
             type="button"
             onClick={onShare}
-            className="flex items-center gap-1 text-sm bg-transparent border-none cursor-pointer p-1"
-            style={{ color: 'var(--color-text-secondary)' }}
+            className="flex items-center gap-1 text-sm cursor-pointer rounded-lg px-2.5 py-1.5 transition-transform duration-100 active:translate-y-px"
+            style={{
+              color: 'var(--color-text-secondary)',
+              background:
+                'linear-gradient(180deg, var(--color-hex-hi) 0%, var(--color-hex-lo) 100%)',
+              border: '1px solid var(--color-hex-stroke)',
+              boxShadow:
+                '0 1px 4px -3px var(--color-button-shadow), 0 6px 14px -14px var(--color-button-shadow)',
+            }}
           >
             Jaa
             <CopyIcon />

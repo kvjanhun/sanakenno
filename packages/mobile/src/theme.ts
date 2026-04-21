@@ -48,6 +48,8 @@ export interface Theme {
   goldenShadow: string;
   /** Backdrop overlay color. */
   backdrop: string;
+  /** Shared raised-button drop shadow. */
+  buttonShadow: string;
 }
 
 export interface PaletteMeta {
@@ -118,6 +120,7 @@ const baseLight: Omit<Theme, 'accent' | 'accentFaded'> = {
   golden: '#fbbf24',
   goldenShadow: '#f59e0b',
   backdrop: '#000000',
+  buttonShadow: '#1a1a1a26',
 };
 
 const baseDark: Omit<Theme, 'accent' | 'accentFaded'> = {
@@ -137,6 +140,7 @@ const baseDark: Omit<Theme, 'accent' | 'accentFaded'> = {
   golden: '#fbbf24',
   goldenShadow: '#f59e0b',
   backdrop: '#000000',
+  buttonShadow: '#0000005c',
 };
 
 function buildTheme(scheme: SchemeKey, paletteId: ThemeId): Theme {
