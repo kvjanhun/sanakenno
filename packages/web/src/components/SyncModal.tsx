@@ -18,7 +18,7 @@ const PALETTE_LABELS: Record<ThemeId, string> = {
   metsa: 'Metsä',
   yo: 'Yö',
   aamu: 'Aamu',
-  mono: 'Mustavalko',
+  mono: 'Hiili',
 };
 
 /** Accent swatch colour for a palette in the resolved scheme. */

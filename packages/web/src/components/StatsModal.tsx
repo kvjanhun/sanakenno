@@ -21,17 +21,6 @@ import type { PlayerStats } from '@sanakenno/shared';
 import { loadFromStorage } from '../utils/storage';
 import { useAuthStore } from '../store/useAuthStore';
 
-/** Rank display colors, ordered from lowest to highest. */
-const RANK_COLORS: Record<string, string> = {
-  'Etsi sanoja!': '#94a3b8',
-  'Hyvä alku': '#60a5fa',
-  'Nyt mennään!': '#34d399',
-  Onnistuja: '#a78bfa',
-  Sanavalmis: '#fbbf24',
-  Ällistyttävä: '#f97316',
-  'Täysi kenno': '#ef4444',
-};
-
 /** Props for {@link StatsModal}. */
 export interface StatsModalProps {
   show: boolean;
@@ -235,8 +224,7 @@ export function StatsModal({
                           className="h-4 rounded-sm"
                           style={{
                             width: count > 0 ? `${Math.max(4, pct)}%` : '0',
-                            backgroundColor:
-                              RANK_COLORS[rank.name] || 'var(--color-accent)',
+                            backgroundColor: 'var(--color-accent)',
                             minWidth: count > 0 ? '4px' : '0',
                           }}
                         />

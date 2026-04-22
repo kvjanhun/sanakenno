@@ -145,7 +145,7 @@ export function RulesModal({
               <li>
                 • Sisältää{' '}
                 <span style={{ color: 'var(--color-accent)' }}>
-                  oranssi keskikirjain
+                  värillinen keskikirjain
                 </span>
               </li>
               <li>• Olla vähintään 4 kirjaimen pituisia</li>

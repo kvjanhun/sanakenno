@@ -1,5 +1,12 @@
 # @sanakenno/web
 
+## 1.4.2
+
+### Patch Changes
+
+- Patch release for small web copy and theme label updates.
+  - @sanakenno/shared@1.4.2
+
 ## 1.4.1
 
 ### Patch Changes

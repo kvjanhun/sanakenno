@@ -164,7 +164,7 @@ export default function RulesScreen() {
       >
         <BulletRow theme={theme}>
           {'Sisältää '}
-          <Text style={{ color: accentColor }}>oranssi keskikirjain</Text>
+          <Text style={{ color: accentColor }}>värillinen keskikirjain</Text>
         </BulletRow>
         <BulletRow theme={theme}>Olla vähintään 4 kirjaimen pituisia</BulletRow>
         <BulletRow theme={theme}>

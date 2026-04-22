@@ -63,7 +63,7 @@ export const PALETTE_ORDER: ReadonlyArray<PaletteMeta> = [
   { id: 'metsa', label: 'Metsä' },
   { id: 'yo', label: 'Yö' },
   { id: 'aamu', label: 'Aamu' },
-  { id: 'mono', label: 'Mustavalko' },
+  { id: 'mono', label: 'Hiili' },
 ];
 
 interface PaletteOverride {

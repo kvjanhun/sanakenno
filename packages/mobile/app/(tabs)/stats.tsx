@@ -61,7 +61,7 @@ export default function StatsScreen() {
       <View style={styles.grid}>
         <StatCard label="Pelattu" value={stats.records.length} theme={theme} />
         <StatCard label="Putki" value={streak.current} theme={theme} />
-        <StatCard label="Paras putki" value={streak.best} theme={theme} />
+        <StatCard label="Pisin putki" value={streak.best} theme={theme} />
       </View>
 
       {/* Lifetime totals */}

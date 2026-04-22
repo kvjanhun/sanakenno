@@ -172,7 +172,7 @@ export function RankProgress({
             onPress={() => {}}
           >
             <Text style={[styles.overlayTitle, { color: theme.textSecondary }]}>
-              Pisteet / taso
+              Tasoon vaaditut pisteet
             </Text>
             <ScrollView
               style={styles.rankScroll}
