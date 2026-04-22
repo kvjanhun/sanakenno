@@ -516,7 +516,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: StyleSheet.hairlineWidth,
     marginLeft: 4,
     paddingLeft: 8,
-    paddingRight: 2,
+    paddingRight: 8,
   },
   statusBar: {
     width: 5,

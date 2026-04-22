@@ -60,6 +60,8 @@ const RESERVED_PANEL_SPACE = `${PANEL_SECTION_HEIGHT_PX}px`;
 const PANEL_INNER_HEIGHT_PX = CONTENT_HEIGHT_PX - 20;
 const BAR_HEIGHT_PX = 26;
 const PAIRS_PER_COLUMN = 4;
+const SOFT_PANEL_BORDER =
+  'color-mix(in srgb, var(--color-border) 72%, transparent)';
 
 /* ------------------------------------------------------------------ */
 /*  Panel content renderers                                            */
@@ -449,13 +451,13 @@ export function HintPanels({
         className="relative overflow-hidden"
         style={{
           background: 'var(--color-bg-secondary)',
-          border: '1px solid var(--color-border)',
+          border: `1px solid ${SOFT_PANEL_BORDER}`,
           borderRadius: '14px',
         }}
       >
         <div
           className="relative flex items-center gap-2"
-          style={{ padding: '7px 10px' }}
+          style={{ padding: '7px 8px' }}
         >
           <span
             style={{
@@ -532,7 +534,7 @@ export function HintPanels({
               className="flex items-center gap-1"
               style={{
                 alignSelf: 'stretch',
-                borderLeft: '1px solid var(--color-border)',
+                borderLeft: `1px solid ${SOFT_PANEL_BORDER}`,
                 flexShrink: 0,
                 gap: '4px',
                 marginLeft: '4px',
@@ -570,7 +572,7 @@ export function HintPanels({
             className="relative overflow-hidden text-sm"
             style={{
               boxSizing: 'border-box',
-              borderTop: '1px solid var(--color-border)',
+              borderTop: `1px solid ${SOFT_PANEL_BORDER}`,
               background: 'var(--color-bg-primary)',
               fontFamily: 'var(--font-sans)',
               height: RESERVED_PANEL_SPACE,
@@ -581,7 +583,7 @@ export function HintPanels({
               style={{
                 height: '100%',
                 overflowY: 'auto',
-                padding: '10px 12px',
+                padding: '10px 10px',
               }}
             >
               <div

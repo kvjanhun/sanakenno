@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useCallback } from 'react';
 import { useFocusEffect } from 'expo-router';
@@ -52,11 +52,7 @@ export default function StatsScreen() {
   }, '');
 
   return (
-    <ScrollView
-      style={{ backgroundColor: theme.bgPrimary }}
-      contentContainerStyle={styles.content}
-      contentInsetAdjustmentBehavior="automatic"
-    >
+    <View style={[styles.content, { backgroundColor: theme.bgPrimary }]}>
       {/* Summary grid */}
       <View style={styles.grid}>
         <StatCard label="Pelattu" value={stats.records.length} theme={theme} />
@@ -152,7 +148,7 @@ export default function StatsScreen() {
           );
         })}
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -208,8 +204,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   content: {
+    flex: 1,
     padding: 16,
     gap: 24,
+    justifyContent: 'center',
   },
   grid: {
     flexDirection: 'row',

@@ -1,5 +1,13 @@
 # @sanakenno/mobile
 
+## 0.6.4
+
+### Patch Changes
+
+- Remove drop shadows from in-game control buttons for a cleaner, flatter control row.
+- Add extra right-side spacing around the hint activation indicators (three blips) in the hints header.
+- Keep Stats and Archive as non-scrollable layouts and vertically center their content when extra space is available.
+
 ## 0.6.2
 
 ### Patch Changes

@@ -146,13 +146,7 @@ function SimpleButton({
       }}
       onPress={onPress}
     >
-      <Animated.View
-        style={[
-          styles.buttonOuter,
-          { shadowColor: theme.buttonShadow },
-          animatedStyle,
-        ]}
-      >
+      <Animated.View style={[styles.buttonOuter, animatedStyle]}>
         <ButtonSurface variant={variant} theme={theme} surfaceId={surfaceId} />
         <View style={styles.buttonContent}>{children}</View>
       </Animated.View>
@@ -249,10 +243,6 @@ const styles = StyleSheet.create({
   buttonOuter: {
     height: 48,
     borderRadius: 12,
-    shadowOpacity: 1,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
   },
   buttonSurface: {
     ...StyleSheet.absoluteFillObject,
