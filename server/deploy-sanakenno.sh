@@ -22,11 +22,20 @@ Time: $(date "+%Y-%m-%d %H:%M")"
   exit 1
 }
 
-export GIT_SSH_COMMAND="ssh -i $HOME/.ssh/sanakenno_deploy_key -o IdentitiesOnly=yes"
-echo "Pulling latest changes from GitHub..."
-git stash
-git pull origin main || fail "git pull"
-git stash drop 2>/dev/null || true
+if [ "$1" != "--post-pull" ]; then
+  export GIT_SSH_COMMAND="ssh -i $HOME/.ssh/sanakenno_deploy_key -o IdentitiesOnly=yes"
+  echo "Pulling latest changes from GitHub..."
+  git stash
+  git pull origin main || fail "git pull"
+  git stash drop 2>/dev/null || true
+  # Re-exec the freshly-pulled script so script-level changes (new flags,
+  # new stages, retry logic) take effect on the same deploy that introduces
+  # them, instead of one cycle late. Bash buffers small scripts at start, so
+  # without this re-exec the post-pull commands keep running the cached
+  # pre-pull version.
+  exec "$0" --post-pull
+  fail "exec self"
+fi
 
 echo "Rebuilding Docker container..."
 # The single-container service was renamed to sanakenno-a / sanakenno-b in 1.5.0.
