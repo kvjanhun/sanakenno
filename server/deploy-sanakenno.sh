@@ -31,9 +31,14 @@ git stash drop 2>/dev/null || true
 echo "Rebuilding Docker container..."
 docker compose up --build -d || fail "docker compose"
 
+echo "Running post-deploy health checks..."
+curl -fsS "http://127.0.0.1:8081/api/health" >/dev/null || fail "health 8081"
+curl -fsS "http://127.0.0.1:8082/api/health" >/dev/null || fail "health 8082"
+curl -fsS "https://sanakenno.fi/api/health" >/dev/null || fail "site health"
+
 echo "Extracting frontend build to $WEB_ROOT/dist..."
 rm -rf "$WEB_ROOT/dist"
-docker cp sanakenno:/app/dist "$WEB_ROOT/dist" || fail "docker cp dist"
+docker cp sanakenno-a:/app/dist "$WEB_ROOT/dist" || fail "docker cp dist"
 
 COMMIT_MSG=$(git log -1 --pretty=%s)
 COMMIT_HASH=$(git log -1 --pretty=%h)

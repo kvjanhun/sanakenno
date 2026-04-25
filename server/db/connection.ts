@@ -35,6 +35,7 @@ function resolveDataDir(): string {
 function applySchema(db: BetterSqlite3.Database): void {
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
+  db.pragma('busy_timeout = 5000');
 
   const schemaPath = join(__dirname, 'schema.sql');
   const schema = readFileSync(schemaPath, 'utf-8');

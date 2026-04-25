@@ -5,6 +5,7 @@
  */
 
 import {
+  Given,
   When,
   Then,
   Before,
@@ -18,6 +19,7 @@ import {
   setWordlist,
   invalidateAll,
   getPuzzleForDate,
+  totalPuzzles,
 } from '../../server/puzzle-engine';
 import type { SanakennoWorld } from './types';
 
@@ -162,6 +164,38 @@ When(
   },
 );
 
+Given(
+  'today is puzzle index {int} for archive rotation',
+  function (this: SanakennoWorld, puzzleNumber: number) {
+    const db = getDb();
+    db.prepare('DELETE FROM puzzles').run();
+    for (let i = 0; i < 41; i++) {
+      db.prepare(
+        'INSERT OR REPLACE INTO puzzles (slot, letters, center) VALUES (?, ?, ?)',
+      ).run(i, 'a,e,k,l,n,s,t', 'a');
+    }
+
+    const total = totalPuzzles();
+    const now = new Date();
+    const helsinki = new Date(
+      now.toLocaleString('en-US', { timeZone: 'Europe/Helsinki' }),
+    );
+    helsinki.setHours(0, 0, 0, 0);
+
+    // getPuzzleForDate uses START_INDEX=1, so this epoch makes today resolve
+    // to the requested slot while keeping the seeded puzzle count intact.
+    const daysBack = ((puzzleNumber - 1) % total) + total;
+    const epoch = new Date(helsinki);
+    epoch.setDate(epoch.getDate() - daysBack);
+    const epochStr = `${epoch.getFullYear()}-${String(epoch.getMonth() + 1).padStart(2, '0')}-${String(epoch.getDate()).padStart(2, '0')}`;
+
+    db.prepare(
+      "INSERT OR REPLACE INTO config (key, value) VALUES ('rotation_epoch', ?)",
+    ).run(epochStr);
+    invalidateAll();
+  },
+);
+
 Then(
   'the response should contain more than {int} entries',
   function (this: SanakennoWorld, minCount: number) {
@@ -169,6 +203,13 @@ Then(
       this.archiveEntries.length > minCount,
       `Expected more than ${minCount} entries, got ${this.archiveEntries.length}`,
     );
+  },
+);
+
+Then(
+  'the response should contain one full puzzle cycle',
+  function (this: SanakennoWorld) {
+    assert.equal(this.archiveEntries.length, totalPuzzles());
   },
 );
 
@@ -193,7 +234,7 @@ When(
 );
 
 When(
-  /^a GET request is made to \/api\/puzzle\/([a-zA-Z][a-zA-Z0-9]*)\/words$/,
+  /^a GET request is made to \/api\/puzzle\/([a-zA-Z][a-zA-Z0-9-]*)\/words$/,
   async function (this: SanakennoWorld, identifier: string) {
     if (identifier === 'today') {
       const now = new Date();
@@ -202,6 +243,15 @@ When(
       );
       const todaySlot = getPuzzleForDate(helsinki);
       this.response = await app.request(`/api/puzzle/${todaySlot}/words`);
+    } else if (identifier === 'today-alias') {
+      const now = new Date();
+      const helsinki = new Date(
+        now.toLocaleString('en-US', { timeZone: 'Europe/Helsinki' }),
+      );
+      const todaySlot = getPuzzleForDate(helsinki);
+      this.response = await app.request(
+        `/api/puzzle/${todaySlot + totalPuzzles()}/words`,
+      );
     } else {
       this.response = await app.request(`/api/puzzle/${identifier}/words`);
     }

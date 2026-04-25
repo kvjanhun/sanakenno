@@ -33,6 +33,28 @@ export interface PlayerStats {
 
 export const STATS_STORAGE_KEY = 'sanakenno_player_stats';
 
+export interface LifetimeStats {
+  totalWords: number;
+  totalPangrams: number;
+  longestWord: string;
+}
+
+/** Return a stable YYYY-MM-DD calendar date in Helsinki time. */
+export function getHelsinkiDateString(date: Date = new Date()): string {
+  const helsinkiParts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Helsinki',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+
+  const year = helsinkiParts.find((p) => p.type === 'year')?.value;
+  const month = helsinkiParts.find((p) => p.type === 'month')?.value;
+  const day = helsinkiParts.find((p) => p.type === 'day')?.value;
+
+  return `${year}-${month}-${day}`;
+}
+
 /** Map a Finnish rank name to its numeric index (higher = better). */
 export function rankIndex(name: string): number {
   // RANKS is ordered from highest (Täysi kenno, index 0) to lowest
@@ -108,7 +130,7 @@ export function computeStreak(
   if (dates.length === 0) return { current: 0, best: 0 };
 
   // Check if the most recent date is today or yesterday (for current streak)
-  const todayStr = today ?? new Date().toISOString().split('T')[0];
+  const todayStr = today ?? getHelsinkiDateString();
   const todayDate = new Date(todayStr + 'T12:00:00');
   const latestDate = new Date(dates[0] + 'T12:00:00');
   const daysDiff = Math.round(
@@ -153,6 +175,22 @@ export function computeStreak(
   best = Math.max(best, current);
 
   return { current, best };
+}
+
+/** Compute lifetime totals shown in stats views. */
+export function computeLifetimeStats(records: StatsRecord[]): LifetimeStats {
+  return records.reduce<LifetimeStats>(
+    (totals, record) => {
+      const word = record.longest_word ?? '';
+      return {
+        totalWords: totals.totalWords + record.words_found,
+        totalPangrams: totals.totalPangrams + (record.pangrams_found ?? 0),
+        longestWord:
+          word.length > totals.longestWord.length ? word : totals.longestWord,
+      };
+    },
+    { totalWords: 0, totalPangrams: 0, longestWord: '' },
+  );
 }
 
 /** Count best rank occurrences across all puzzle records. */

@@ -3,7 +3,12 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { mergeStatsRecord, mergePuzzleState } from '@sanakenno/shared';
+import {
+  mergeStatsRecord,
+  mergePuzzleState,
+  isStatsRecordBetterThanServer,
+  isPuzzleStateBetterThanServer,
+} from '@sanakenno/shared';
 import type { StatsRecord, SyncPuzzleState } from '@sanakenno/shared';
 
 // ---------------------------------------------------------------------------
@@ -225,6 +230,14 @@ describe('mergePuzzleState', () => {
     expect(result.started_at).toBe(1_000_000_000_000);
   });
 
+  it('ignores zero started_at when the other side has a real start time', () => {
+    const result = mergePuzzleState(
+      makeState({ started_at: 1_000_000_000_000 }),
+      makeState({ started_at: 0 }),
+    );
+    expect(result.started_at).toBe(1_000_000_000_000);
+  });
+
   it('takes the higher total_paused_ms', () => {
     const result = mergePuzzleState(
       makeState({ total_paused_ms: 5_000 }),
@@ -279,5 +292,76 @@ describe('mergePuzzleState', () => {
       makeState({ found_words: [] }),
     );
     expect(result.found_words).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// push-back comparison helpers
+// ---------------------------------------------------------------------------
+
+describe('isStatsRecordBetterThanServer', () => {
+  it('returns true when the server has no record', () => {
+    expect(isStatsRecordBetterThanServer(makeRecord(), undefined)).toBe(true);
+  });
+
+  it('returns true for strictly better local progress', () => {
+    expect(
+      isStatsRecordBetterThanServer(
+        makeRecord({ best_score: 50 }),
+        makeRecord({ best_score: 30 }),
+      ),
+    ).toBe(true);
+  });
+
+  it('returns false for identical progress', () => {
+    const record = makeRecord({ best_score: 50, longest_word: 'sanake' });
+    expect(isStatsRecordBetterThanServer(record, record)).toBe(false);
+  });
+
+  it('returns false when the server is better', () => {
+    expect(
+      isStatsRecordBetterThanServer(
+        makeRecord({ words_found: 2 }),
+        makeRecord({ words_found: 6 }),
+      ),
+    ).toBe(false);
+  });
+});
+
+describe('isPuzzleStateBetterThanServer', () => {
+  it('returns true when the server has no state', () => {
+    expect(isPuzzleStateBetterThanServer(makeState(), undefined)).toBe(true);
+  });
+
+  it('returns true when local has additional words', () => {
+    expect(
+      isPuzzleStateBetterThanServer(
+        makeState({ found_words: ['kissa', 'koira'] }),
+        makeState({ found_words: ['kissa'] }),
+      ),
+    ).toBe(true);
+  });
+
+  it('returns true when local has a score-before-hints value missing on the server', () => {
+    expect(
+      isPuzzleStateBetterThanServer(
+        makeState({ score_before_hints: 20 }),
+        makeState({ score_before_hints: null }),
+      ),
+    ).toBe(true);
+  });
+
+  it('returns false for identical progress', () => {
+    const state = makeState({ score: 30, hints_unlocked: ['summary'] });
+    expect(isPuzzleStateBetterThanServer(state, state)).toBe(false);
+  });
+
+  it('returns false when the server has all local progress', () => {
+    expect(
+      isPuzzleStateBetterThanServer(
+        makeState({ found_words: ['kissa'] }),
+        makeState({ found_words: ['kissa', 'koira'], score: 30 }),
+      ),
+    ).toBe(false);
   });
 });

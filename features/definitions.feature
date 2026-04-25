@@ -1,5 +1,5 @@
 Feature: Word definitions via Kotus dictionary
-  Found words in the expanded list are clickable links that open the
+  Found words in both collapsed and expanded lists are clickable links that open the
   Kielitoimiston sanakirja entry in a new browser tab.
 
   # --- URL construction ---
@@ -44,7 +44,15 @@ Feature: Word definitions via Kotus dictionary
   # --- Collapsed view ---
 
   @e2e
-  Scenario: Collapsed chip view words are not clickable links
+  Scenario: Collapsed chip view words are clickable links
     Given the player has found words
     And the found words list is collapsed
-    Then the word chips should not be rendered as links
+    Then the word chips should be rendered as Kotus links
+    And clicking a word chip should preserve gameplay
+
+  @e2e
+  Scenario: Pangram found words are visually bolded
+    Given the player has found a pangram
+    Then the pangram should be bolded in the found-word pills
+    When the player expands the found words list
+    Then the pangram should be bolded in the expanded list

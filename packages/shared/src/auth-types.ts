@@ -38,6 +38,12 @@ export interface SyncPuzzleState {
   score_before_hints: number | null;
 }
 
+/** Combined gameplay progress snapshot pushed by web after an accepted word. */
+export interface SyncProgressPayload extends SyncPuzzleState {
+  date: string;
+  max_score: number;
+}
+
 /** Valid identifiers for the color palette ("Väriteema") selection. */
 export const THEME_IDS = [
   'hehku',

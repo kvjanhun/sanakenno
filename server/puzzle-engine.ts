@@ -261,6 +261,29 @@ export function computeVariations(
 // --- In-memory cache ---
 
 const _cache = new Map<string, FullPuzzleData>();
+const PUZZLE_CACHE_GENERATION_KEY = 'puzzle_cache_generation';
+let _cacheGeneration: number | null = null;
+
+function readPuzzleCacheGeneration(): number {
+  const db = getDb();
+  const row = db
+    .prepare('SELECT value FROM config WHERE key = ?')
+    .get(PUZZLE_CACHE_GENERATION_KEY) as ConfigRow | undefined;
+  const value = row ? Number.parseInt(row.value, 10) : 0;
+  return Number.isFinite(value) ? value : 0;
+}
+
+function ensureCacheFresh(): void {
+  const generation = readPuzzleCacheGeneration();
+  if (_cacheGeneration === null) {
+    _cacheGeneration = generation;
+    return;
+  }
+  if (_cacheGeneration === generation) return;
+
+  _cache.clear();
+  _cacheGeneration = generation;
+}
 
 /**
  * Invalidate cached puzzle data for a specific slot.
@@ -274,6 +297,20 @@ export function invalidate(slot: number): void {
  */
 export function invalidateAll(): void {
   _cache.clear();
+}
+
+/**
+ * Bump the DB-backed cache generation after puzzle-visible admin mutations.
+ * Other API processes observe this value before serving cached puzzle data.
+ */
+export function bumpPuzzleCacheGeneration(): void {
+  const db = getDb();
+  db.prepare(
+    `INSERT INTO config (key, value) VALUES (?, '1')
+     ON CONFLICT(key) DO UPDATE SET value = CAST(CAST(value AS INTEGER) + 1 AS TEXT)`,
+  ).run(PUZZLE_CACHE_GENERATION_KEY);
+  _cache.clear();
+  _cacheGeneration = readPuzzleCacheGeneration();
 }
 
 // --- Database helpers ---
@@ -347,6 +384,8 @@ export function getPuzzleForDate(date: Date): number {
  * Returns null if the slot doesn't exist in the DB.
  */
 export function getPuzzleBySlot(slot: number): FullPuzzleData | null {
+  ensureCacheFresh();
+
   const cacheKey = String(slot);
   if (_cache.has(cacheKey)) {
     return _cache.get(cacheKey)!;

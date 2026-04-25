@@ -10,6 +10,8 @@ import {
   emptyStats,
   updateStatsRecord,
   computeStreak,
+  computeLifetimeStats,
+  getHelsinkiDateString,
   computeRankDistribution,
   computeAverageCompletion,
   mergeStatsRecord,
@@ -301,6 +303,29 @@ Then(
   },
 );
 
+Given(
+  'stats records include the current Helsinki date',
+  function (this: SanakennoWorld) {
+    this.playerStats = updateStatsRecord(
+      emptyStats(),
+      makeRecord({
+        puzzle_number: 1,
+        date: getHelsinkiDateString(),
+        best_rank: 'Hyvä alku',
+        best_score: 10,
+      }),
+    );
+  },
+);
+
+Then(
+  'the default current streak should be {int}',
+  function (this: SanakennoWorld, expected: number) {
+    const { current } = computeStreak(this.playerStats.records);
+    assert.equal(current, expected);
+  },
+);
+
 /* ------------------------------------------------------------------ */
 /*  Rank distribution                                                  */
 /* ------------------------------------------------------------------ */
@@ -362,6 +387,69 @@ Then(
       Math.abs(avg - expected) < 0.1,
       `Expected ~${expected}%, got ${avg}%`,
     );
+  },
+);
+
+/* ------------------------------------------------------------------ */
+/*  Lifetime totals                                                    */
+/* ------------------------------------------------------------------ */
+
+Given(
+  'a stats record with {int} words, {int} pangram, and longest_word {string}',
+  function (
+    this: SanakennoWorld,
+    words: number,
+    pangrams: number,
+    longestWord: string,
+  ) {
+    const idx = this.playerStats.records.length;
+    this.playerStats = updateStatsRecord(
+      this.playerStats,
+      makeRecord({
+        puzzle_number: 200 + idx,
+        date: `2026-04-${String(idx + 1).padStart(2, '0')}`,
+        words_found: words,
+        pangrams_found: pangrams,
+        longest_word: longestWord,
+      }),
+    );
+  },
+);
+
+Given(
+  'a stats record with {int} words, {int} pangrams, and longest_word {string}',
+  function (
+    this: SanakennoWorld,
+    words: number,
+    pangrams: number,
+    longestWord: string,
+  ) {
+    const idx = this.playerStats.records.length;
+    this.playerStats = updateStatsRecord(
+      this.playerStats,
+      makeRecord({
+        puzzle_number: 200 + idx,
+        date: `2026-04-${String(idx + 1).padStart(2, '0')}`,
+        words_found: words,
+        pangrams_found: pangrams,
+        longest_word: longestWord,
+      }),
+    );
+  },
+);
+
+Then(
+  'lifetime totals should show {int} words, {int} pangrams, and longest_word {string}',
+  function (
+    this: SanakennoWorld,
+    totalWords: number,
+    totalPangrams: number,
+    longestWord: string,
+  ) {
+    const totals = computeLifetimeStats(this.playerStats.records);
+    assert.equal(totals.totalWords, totalWords);
+    assert.equal(totals.totalPangrams, totalPangrams);
+    assert.equal(totals.longestWord, longestWord);
   },
 );
 

@@ -16,7 +16,7 @@ sanakenno/
   features/   # BDD specs (source of truth for behaviour)
 ```
 
-Current versions: web/server/shared **1.2.0**, mobile **0.4.0**.
+Current versions: see the package.json files for each deployable target.
 
 ---
 

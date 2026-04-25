@@ -1,103 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Check, Copy, LogOut, Mail, QrCode, RefreshCw } from 'lucide-react';
+import { Copy, LogOut, Mail, QrCode, RefreshCw } from 'lucide-react';
 import isEmail from 'validator/lib/isEmail';
-import { THEME_IDS } from '@sanakenno/shared';
-import type { ThemeId } from '@sanakenno/shared';
 import { useAuthStore } from '../store/useAuthStore';
 import { share } from '../platform';
-import { usePaletteStore } from '../store/usePaletteStore';
-import {
-  useThemePreferenceStore,
-  resolveScheme,
-} from '../store/useThemePreferenceStore';
-
-/** Mirrors the mobile PALETTE_ORDER for consistent UI across platforms. */
-const PALETTE_LABELS: Record<ThemeId, string> = {
-  hehku: 'Hehku',
-  meri: 'Meri',
-  metsa: 'Metsä',
-  yo: 'Yö',
-  aamu: 'Aamu',
-  mono: 'Hiili',
-};
-
-/** Accent swatch colour for a palette in the resolved scheme. */
-function paletteAccent(id: ThemeId, scheme: 'light' | 'dark'): string {
-  const map: Record<ThemeId, { light: string; dark: string }> = {
-    hehku: { light: '#ff643e', dark: '#e05030' },
-    meri: { light: '#0d9488', dark: '#2dd4bf' },
-    metsa: { light: '#15803d', dark: '#22c55e' },
-    yo: { light: '#6366f1', dark: '#818cf8' },
-    aamu: { light: '#d97706', dark: '#f59e0b' },
-    mono: { light: '#111827', dark: '#f3f4f6' },
-  };
-  return map[id][scheme];
-}
-
-function PalettePicker(): React.JSX.Element {
-  const themeId = usePaletteStore((s) => s.themeId);
-  const setThemeId = usePaletteStore((s) => s.setThemeId);
-  const preference = useThemePreferenceStore((s) => s.preference);
-  const scheme = resolveScheme(preference);
-
-  return (
-    <div>
-      <p
-        className="text-xs font-semibold uppercase tracking-wide mb-2"
-        style={{ color: 'var(--color-text-secondary)' }}
-      >
-        Väriteema
-      </p>
-      <div className="flex justify-between gap-2">
-        {THEME_IDS.map((id) => {
-          const isSelected = id === themeId;
-          const accent = paletteAccent(id, scheme);
-          const isMonoDark = id === 'mono' && scheme === 'dark';
-          return (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setThemeId(id)}
-              aria-label={PALETTE_LABELS[id]}
-              aria-pressed={isSelected}
-              className="flex-1 flex flex-col items-center gap-1 bg-transparent border-none cursor-pointer p-0"
-            >
-              <span
-                className="flex items-center justify-center rounded-full"
-                style={{
-                  width: 36,
-                  height: 36,
-                  backgroundColor: accent,
-                  border: isSelected
-                    ? '2px solid var(--color-text-primary)'
-                    : '1px solid var(--color-border)',
-                  boxSizing: 'border-box',
-                }}
-              >
-                {isSelected ? (
-                  <Check
-                    size={16}
-                    strokeWidth={3}
-                    color={isMonoDark ? '#000' : '#fff'}
-                  />
-                ) : null}
-              </span>
-              <span
-                style={{
-                  fontSize: 11,
-                  color: 'var(--color-text-primary)',
-                  fontWeight: isSelected ? 600 : 400,
-                }}
-              >
-                {PALETTE_LABELS[id]}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 export interface SyncModalProps {
   show: boolean;
@@ -207,7 +112,7 @@ export function SyncModal({
         }}
       >
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold">Lisää laite</h2>
+          <h2 className="text-lg font-semibold">Pelisessio tallennettu!</h2>
           <button
             type="button"
             onClick={onClose}
@@ -236,10 +141,12 @@ export function SyncModal({
               }}
               disabled={isLoading}
             >
-              Synkronoi muille laitteille
+              Tallenna
             </button>
             <hr style={{ borderColor: 'var(--color-text-tertiary)' }} />
-            <p style={{ color: 'var(--color-text-secondary)' }}>Lisää koodi:</p>
+            <p style={{ color: 'var(--color-text-secondary)' }}>
+              Synkronoi pelitunnisteella:
+            </p>
             <div className="flex gap-2">
               <input
                 type="text"
@@ -274,12 +181,10 @@ export function SyncModal({
 
         {mode === 'options' && isLinked && (
           <div className="space-y-3">
-            <PalettePicker />
-            <hr style={{ borderColor: 'var(--color-text-tertiary)' }} />
             {playerKey ? (
               <p style={{ color: 'var(--color-text-secondary)' }}>
                 Avaa Sanakenno toisella laitteella ja käytä alla olevaa linkkiä
-                tai koodia.
+                tai koodia synkronoidaksesi.
               </p>
             ) : (
               <p style={{ color: 'var(--color-text-secondary)' }}>

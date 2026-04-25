@@ -1,6 +1,6 @@
 Feature: Puzzle archive
   Players can access past puzzles from the archive.
-  Web shows the last 7 days; iOS shows all past puzzles with ?all=true.
+  Web and iOS show all current-cycle puzzles with ?all=true.
   Each past puzzle preserves independent progress.
   The word list for each past puzzle is available via a dedicated endpoint.
 
@@ -28,10 +28,17 @@ Feature: Puzzle archive
     Then the response status should be 200
     And the response should contain more than 7 entries
 
-  Scenario: Archive with all=true always ends at puzzle index 0
+  Scenario: Archive with all=true ends at puzzle index 0 when today is later in the cycle
     When a GET request is made to /api/archive?all=true
     Then the first entry should have is_today true
     And the last entry should be for puzzle index 0
+
+  Scenario: Archive with all=true returns a full cycle when today is puzzle index 0
+    Given today is puzzle index 0 for archive rotation
+    When a GET request is made to /api/archive?all=true
+    Then the first entry should have is_today true
+    And the response should contain one full puzzle cycle
+    And the last entry should be for puzzle index 1
 
   # --- Word list endpoint ---
 
@@ -42,6 +49,10 @@ Feature: Puzzle archive
 
   Scenario: Word list is blocked for today's puzzle
     When a GET request is made to /api/puzzle/today/words
+    Then the response status should be 403
+
+  Scenario: Word list is blocked for wrapped aliases of today's puzzle
+    When a GET request is made to /api/puzzle/today-alias/words
     Then the response status should be 403
 
   Scenario: Word list returns 400 for invalid puzzle number
@@ -59,7 +70,14 @@ Feature: Puzzle archive
   Scenario: Archive modal opens on button click
     When the player clicks the archive button
     Then the archive modal should open
-    And it should show 7 day entries
+    And it should show today plus one page of past entries
+
+  @e2e
+  Scenario: Archive pagination controls navigate pages
+    When the player opens the archive modal
+    And clicks the archive next page button
+    Then the next page of archive entries should be shown
+    And the archive previous page button should become active
 
   @e2e
   Scenario: Today's puzzle is highlighted in the archive

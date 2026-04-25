@@ -24,6 +24,7 @@
  *   GET  /api/player/sync         - Pull all server data for authenticated player
  *   POST /api/player/sync/stats   - Push a stats record
  *   POST /api/player/sync/state   - Push a puzzle state
+ *   POST /api/player/sync/progress - Push gameplay progress snapshot
  *
  * @module server/index
  */

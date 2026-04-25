@@ -10,6 +10,7 @@
 export {
   RANKS,
   scoreWord,
+  isPangram,
   recalcScore,
   rankForScore,
   rankThresholds,
@@ -36,11 +37,13 @@ export {
   rankIndex,
   updateStatsRecord,
   computeStreak,
+  computeLifetimeStats,
+  getHelsinkiDateString,
   computeRankDistribution,
   computeAverageCompletion,
   emptyStats,
 } from './stats';
-export type { StatsRecord, PlayerStats } from './stats';
+export type { StatsRecord, PlayerStats, LifetimeStats } from './stats';
 
 // Kotus
 export { buildKotusUrl } from './kotus';
@@ -64,6 +67,7 @@ export {
 export type {
   AuthToken,
   SyncPuzzleState,
+  SyncProgressPayload,
   SyncPayload,
   PlayerPreferences,
   ThemeId,
@@ -81,4 +85,9 @@ export type {
 } from './honeycomb-theme';
 
 // Sync merge utilities
-export { mergeStatsRecord, mergePuzzleState } from './sync-merge';
+export {
+  mergeStatsRecord,
+  mergePuzzleState,
+  isStatsRecordBetterThanServer,
+  isPuzzleStateBetterThanServer,
+} from './sync-merge';

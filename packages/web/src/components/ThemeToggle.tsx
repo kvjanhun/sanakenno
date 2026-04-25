@@ -32,7 +32,7 @@ export function ThemeToggle(): React.JSX.Element {
     <button
       type="button"
       onClick={toggle}
-      className="bg-transparent border-none cursor-pointer p-1 leading-none flex items-center"
+      className="bg-transparent border-none cursor-pointer py-2 pl-1 leading-none flex items-center"
       style={{ color: 'var(--color-text-primary)' }}
       aria-label={
         resolved === 'dark'

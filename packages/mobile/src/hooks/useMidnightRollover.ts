@@ -12,14 +12,8 @@
 
 import { useEffect, useRef } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
+import { getHelsinkiDateString } from '@sanakenno/shared';
 import { useGameStore } from '../store/useGameStore';
-
-/** Get current Helsinki date string for comparison. */
-function getHelsinkiDateString(date: Date = new Date()): string {
-  return new Date(
-    date.toLocaleString('en-US', { timeZone: 'Europe/Helsinki' }),
-  ).toDateString();
-}
 
 /** Milliseconds until the next midnight in Helsinki timezone. */
 function msUntilMidnight(): number {
@@ -39,6 +33,13 @@ export function useMidnightRollover(): void {
   useEffect(() => {
     mountDate.current = getHelsinkiDateString();
 
+    const clearScheduledRollover = () => {
+      if (timerId.current !== null) {
+        clearTimeout(timerId.current);
+        timerId.current = null;
+      }
+    };
+
     const refetchIfNewDay = () => {
       const currentDate = getHelsinkiDateString();
       if (currentDate !== mountDate.current) {
@@ -47,21 +48,28 @@ export function useMidnightRollover(): void {
       }
     };
 
-    // Schedule a single refetch at next midnight (+500ms buffer to avoid edge misfires).
-    // The AppState listener handles the case where the app is backgrounded past midnight.
-    timerId.current = setTimeout(refetchIfNewDay, msUntilMidnight() + 500);
+    const scheduleNextRollover = () => {
+      clearScheduledRollover();
+      timerId.current = setTimeout(() => {
+        refetchIfNewDay();
+        scheduleNextRollover();
+      }, msUntilMidnight() + 500);
+    };
+
+    scheduleNextRollover();
 
     // Check on app foregrounding (reliable fallback for backgrounded JS timers)
     const handleAppState = (nextState: AppStateStatus) => {
       if (nextState === 'active') {
         refetchIfNewDay();
+        scheduleNextRollover();
       }
     };
 
     const subscription = AppState.addEventListener('change', handleAppState);
 
     return () => {
-      if (timerId.current !== null) clearTimeout(timerId.current);
+      clearScheduledRollover();
       subscription.remove();
     };
   }, []);

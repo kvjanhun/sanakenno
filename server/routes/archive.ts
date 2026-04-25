@@ -29,8 +29,8 @@ const archive = new Hono();
 /**
  * GET /api/archive
  * Returns puzzle metadata, newest first.
- * With ?all=true, returns entries from today back to the first occurrence of
- * slot 0 (Kenno #1), so the oldest entry is always puzzle_number 0.
+ * With ?all=true, returns entries from today back through the current cycle.
+ * If today is slot 0, the full cycle is returned so every other slot appears.
  * Without the param, returns only the last 7 days.
  * Dates are computed in Helsinki timezone to match puzzle rotation.
  */

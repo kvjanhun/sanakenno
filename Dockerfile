@@ -33,7 +33,7 @@ COPY patches ./patches
 COPY packages/shared/package.json packages/shared/
 COPY packages/web/package.json packages/web/
 
-RUN pnpm install --frozen-lockfile --prod && apk del python3 make g++
+RUN pnpm install --frozen-lockfile && apk del python3 make g++
 
 # Copy built frontend
 COPY --from=build /app/packages/web/dist ./dist
@@ -41,7 +41,7 @@ COPY --from=build /app/packages/web/dist ./dist
 # Copy shared package source (needed at runtime for server imports)
 COPY packages/shared ./packages/shared
 
-# Copy server source and admin scripts (executed via tsx at runtime)
+# Copy server source and admin scripts (executed via pinned workspace tsx at runtime)
 COPY server ./server
 COPY scripts ./scripts
 
@@ -61,4 +61,4 @@ EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD wget -qO- http://localhost:3001/api/health || exit 1
 
-CMD ["npx", "tsx", "server/index.ts"]
+CMD ["pnpm", "exec", "tsx", "server/index.ts"]

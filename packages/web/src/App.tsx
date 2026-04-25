@@ -22,6 +22,7 @@ import { RankProgress } from './components/RankProgress';
 import { RulesModal } from './components/RulesModal';
 import { ErrorState } from './components/ErrorState';
 import { ThemeToggle } from './components/ThemeToggle';
+import { ThemeSelector } from './components/ThemeSelector';
 import { Celebration } from './components/Celebration';
 import { MessageBar } from './components/MessageBar';
 import { GameControls } from './components/GameControls';
@@ -309,16 +310,17 @@ function App() {
               </>
             )}
           </h1>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center">
             <button
               type="button"
               onClick={() => setShowRules(true)}
-              className="p-2 rounded-lg bg-transparent border-none cursor-pointer"
+              className="py-2 pr-1 rounded-lg bg-transparent border-none cursor-pointer"
               style={{ color: 'var(--color-text-primary)' }}
               aria-label="Säännöt"
             >
               <CircleHelpIcon />
             </button>
+            <ThemeSelector />
             <ThemeToggle />
           </div>
         </div>
@@ -508,6 +510,7 @@ function App() {
               foundWords={sortedFoundWords}
               recentWords={recentFoundWords}
               showAll={showAllFoundWords}
+              allLetters={allLetters}
               onToggleShowAll={() => setShowAllFoundWords(!showAllFoundWords)}
               lastResubmittedWord={lastResubmittedWord}
             />

@@ -486,29 +486,18 @@ export const useGameStore = create<GameState>()((set, get) => ({
       saveToStorage(STATS_STORAGE_KEY, updated);
 
       // Fire-and-forget server sync when player is logged in
-      const { isLoggedIn, syncStatsRecord, syncPuzzleState } =
-        useAuthStore.getState();
+      const { isLoggedIn, syncProgress } = useAuthStore.getState();
       if (isLoggedIn) {
-        void syncStatsRecord({
+        void syncProgress({
           puzzle_number: puzzle.puzzle_number,
           date: get().viewingPuzzleDate ?? dateStr,
-          best_rank: newRank,
-          best_score: newScore,
-          max_score: puzzle.max_score,
-          words_found: newFoundWords.size,
-          hints_used: state.hintsUnlocked.size,
-          elapsed_ms: elapsed,
-          longest_word: longestWord,
-          pangrams_found: pangramsFound,
-        });
-        void syncPuzzleState({
-          puzzle_number: puzzle.puzzle_number,
           found_words: [...newFoundWords],
           score: newScore,
           hints_unlocked: [...state.hintsUnlocked],
           started_at: state.startedAt,
           total_paused_ms: state.totalPausedMs,
           score_before_hints: state.scoreBeforeHints,
+          max_score: puzzle.max_score,
         });
       }
     }

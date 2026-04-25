@@ -7,6 +7,7 @@ import { describe, it, expect } from 'vitest';
 import {
   RANKS,
   scoreWord,
+  isPangram,
   recalcScore,
   rankForScore,
   rankThresholds,
@@ -38,6 +39,18 @@ describe('scoreWord', () => {
 
   it('no pangram bonus when missing a letter', () => {
     expect(scoreWord('aktive', letters)).toBe(6);
+  });
+});
+
+describe('isPangram', () => {
+  const letters: Set<string> = new Set(['a', 'e', 'i', 'k', 'l', 't', 'v']);
+
+  it('returns true when every puzzle letter is present', () => {
+    expect(isPangram('aktiveli', letters)).toBe(true);
+  });
+
+  it('returns false when a puzzle letter is missing', () => {
+    expect(isPangram('aktive', letters)).toBe(false);
   });
 });
 

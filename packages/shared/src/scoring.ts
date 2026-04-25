@@ -39,8 +39,15 @@ export function scoreWord(
   allLetters: Set<string> | string[],
 ): number {
   const pts = word.length === 4 ? 1 : word.length;
-  const isPangram = [...allLetters].every((c) => word.includes(c));
-  return pts + (isPangram ? 7 : 0);
+  return pts + (isPangram(word, allLetters) ? 7 : 0);
+}
+
+/** Return true when a word uses every puzzle letter at least once. */
+export function isPangram(
+  word: string,
+  allLetters: Set<string> | string[],
+): boolean {
+  return [...allLetters].every((c) => word.includes(c));
 }
 
 /** Recalculate total score for a list of found words. */

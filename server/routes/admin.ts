@@ -33,8 +33,7 @@ import {
   computeVariations,
   getBlockedWords,
   getPuzzleForDate,
-  invalidate,
-  invalidateAll,
+  bumpPuzzleCacheGeneration,
   totalPuzzles,
   FINNISH_LETTERS,
 } from '../puzzle-engine';
@@ -246,7 +245,7 @@ admin.post('/puzzle', async (c) => {
     ).run(lettersStr, center, slot);
   }
 
-  invalidate(slot);
+  bumpPuzzleCacheGeneration();
 
   logAction(
     session.adminId,
@@ -294,7 +293,7 @@ admin.delete('/puzzle/:slot', async (c) => {
     db.prepare('UPDATE puzzles SET slot = slot - 1 WHERE slot > ?').run(slot);
   })();
 
-  invalidateAll();
+  bumpPuzzleCacheGeneration();
 
   logAction(session.adminId, 'puzzle_delete', `slot=${slot}`);
 
@@ -362,8 +361,7 @@ admin.post('/puzzle/swap', async (c) => {
     ).run(puzzleA.letters, puzzleA.center, slot_b);
   })();
 
-  invalidate(slot_a);
-  invalidate(slot_b);
+  bumpPuzzleCacheGeneration();
 
   logAction(
     session.adminId,
@@ -418,7 +416,7 @@ admin.post('/puzzle/center', async (c) => {
     "UPDATE puzzles SET center = ?, updated_at = datetime('now') WHERE slot = ?",
   ).run(center, slot);
 
-  invalidate(slot);
+  bumpPuzzleCacheGeneration();
 
   logAction(session.adminId, 'center_change', `slot=${slot} center=${center}`);
 
@@ -524,7 +522,7 @@ admin.post('/block', async (c) => {
     .prepare('INSERT OR IGNORE INTO blocked_words (word) VALUES (?)')
     .run(normalized);
 
-  invalidateAll();
+  bumpPuzzleCacheGeneration();
 
   logAction(session.adminId, 'word_block', normalized);
 
@@ -561,7 +559,7 @@ admin.delete('/block/:id', async (c) => {
   }
 
   db.prepare('DELETE FROM blocked_words WHERE id = ?').run(id);
-  invalidateAll();
+  bumpPuzzleCacheGeneration();
 
   logAction(session.adminId, 'word_unblock', row.word);
 

@@ -59,6 +59,10 @@ Feature: Player stats and history
     Given stats records for dates "2026-04-01|2026-03-25|2026-03-24|2026-03-23|2026-03-22|2026-03-21"
     Then the best streak should be 5
 
+  Scenario: Default current streak uses Helsinki date
+    Given stats records include the current Helsinki date
+    Then the default current streak should be 1
+
   # --- Rank distribution ---
 
   Scenario: Rank distribution counts best ranks
@@ -71,6 +75,13 @@ Feature: Player stats and history
     Given a stats record with score 50 and max_score 100
     And a stats record with score 75 and max_score 100
     Then the average completion should be 62.5%
+
+  # --- Lifetime totals ---
+
+  Scenario: Lifetime totals sum all played puzzles
+    Given a stats record with 4 words, 1 pangram, and longest_word "kala"
+    And a stats record with 7 words, 2 pangrams, and longest_word "laskenta"
+    Then lifetime totals should show 11 words, 3 pangrams, and longest_word "laskenta"
 
   # --- Stats modal ---
 
@@ -102,6 +113,12 @@ Feature: Player stats and history
     Given the player is logged in with email "testi@esimerkki.fi"
     When the player opens the stats modal
     Then the stats modal should show a sync status line containing "testi@esimerkki.fi"
+
+  @e2e
+  Scenario: Stats modal shows lifetime totals
+    Given the player has lifetime stats in localStorage
+    When the player opens the stats modal
+    Then the stats modal should show total words, total pangrams, and longest word
 
   # --- Server-backed stats ---
 

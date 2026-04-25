@@ -41,7 +41,7 @@ test.describe('Word definitions', () => {
       'https://www.kielitoimistonsanakirja.fi/#/kala',
     );
     await expect(link).toHaveAttribute('target', '_blank');
-    await expect(link).toHaveAttribute('rel', 'noopener');
+    await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
   });
 
   test('found word link has descriptive title', async ({ page }) => {
@@ -61,14 +61,45 @@ test.describe('Word definitions', () => {
     expect(title).toContain('kala');
   });
 
-  test('collapsed chip view does not contain links', async ({ page }) => {
+  test('collapsed chip view contains Kotus links', async ({ page }) => {
     await loadGame(page);
     await submitWord(page, 'kala');
     await expect(page.getByText('kala')).toBeVisible();
 
-    // In collapsed view (< 7 words), words are spans, not links
     const section = page.locator('section').filter({ hasText: 'kala' });
-    const links = section.locator('a[href*="kielitoimistonsanakirja.fi"]');
-    await expect(links).toHaveCount(0);
+    const link = section.locator('a[href*="kielitoimistonsanakirja.fi"]', {
+      hasText: 'kala',
+    });
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute(
+      'href',
+      'https://www.kielitoimistonsanakirja.fi/#/kala',
+    );
+
+    await page.keyboard.press('k');
+    await expect(page.locator('[aria-atomic="true"]').first()).toContainText(
+      'K',
+    );
+  });
+
+  test('pangrams are bolded in collapsed and expanded found-word views', async ({
+    page,
+  }) => {
+    await loadGame(page);
+    await submitManyWords(page);
+    await submitWord(page, 'laskenta');
+
+    const collapsed = page.locator('section a', { hasText: 'laskenta' });
+    await expect(collapsed).toBeVisible();
+    expect(
+      await collapsed.evaluate((el) => getComputedStyle(el).fontWeight),
+    ).toMatch(/^(700|bold)$/);
+
+    await page.getByText('Kaikki').click();
+    const expanded = page.locator('section li a', { hasText: 'laskenta' });
+    await expect(expanded).toBeVisible();
+    expect(
+      await expanded.evaluate((el) => getComputedStyle(el).fontWeight),
+    ).toMatch(/^(700|bold)$/);
   });
 });

@@ -4,6 +4,8 @@ import {
   AUTH_TOKEN_STORAGE_KEY,
   mergeStatsRecord,
   mergePuzzleState,
+  isStatsRecordBetterThanServer,
+  isPuzzleStateBetterThanServer,
   emptyStats,
   updateStatsRecord,
 } from '@sanakenno/shared';
@@ -11,6 +13,7 @@ import type {
   StatsRecord,
   PlayerStats,
   SyncPuzzleState,
+  SyncProgressPayload,
   SyncPayload,
   AuthToken,
   PlayerPreferences,
@@ -45,6 +48,7 @@ export interface AuthState {
   pullAndMerge(payload: SyncPayload): boolean;
   syncStatsRecord(record: StatsRecord): Promise<void>;
   syncPuzzleState(state: SyncPuzzleState): Promise<void>;
+  syncProgress(payload: SyncProgressPayload): Promise<void>;
   syncPreferences(): Promise<void>;
 }
 
@@ -177,6 +181,41 @@ function readLinkedState(stored: AuthToken): boolean {
   return linked;
 }
 
+function pushLocalDataAheadOfServer(
+  local: ReturnType<typeof gatherLocalData>,
+  server: SyncPayload,
+  actions: Pick<AuthState, 'syncStatsRecord' | 'syncPuzzleState'>,
+): void {
+  const serverStatsByPuzzle = new Map(
+    server.stats.records.map((record) => [record.puzzle_number, record]),
+  );
+  const serverStatesByPuzzle = new Map(
+    server.puzzle_states.map((state) => [state.puzzle_number, state]),
+  );
+
+  for (const record of local.stats.records) {
+    if (
+      isStatsRecordBetterThanServer(
+        record,
+        serverStatsByPuzzle.get(record.puzzle_number),
+      )
+    ) {
+      void actions.syncStatsRecord(record);
+    }
+  }
+
+  for (const state of local.puzzle_states) {
+    if (
+      isPuzzleStateBetterThanServer(
+        state,
+        serverStatesByPuzzle.get(state.puzzle_number),
+      )
+    ) {
+      void actions.syncPuzzleState(state);
+    }
+  }
+}
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   isLoggedIn: false,
   playerId: null,
@@ -226,25 +265,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         });
         const changed = get().pullAndMerge(payload);
 
-        // Only push records the server didn't return — the server already
-        // has everything it sent us, so pushing those again is wasted work.
-        const serverPuzzleNumbers = new Set(
-          payload.stats.records.map((r) => r.puzzle_number),
-        );
-        const serverStatePuzzleNumbers = new Set(
-          payload.puzzle_states.map((s) => s.puzzle_number),
-        );
         const local = gatherLocalData();
-        for (const record of local.stats.records) {
-          if (!serverPuzzleNumbers.has(record.puzzle_number)) {
-            void get().syncStatsRecord(record);
-          }
-        }
-        for (const state of local.puzzle_states) {
-          if (!serverStatePuzzleNumbers.has(state.puzzle_number)) {
-            void get().syncPuzzleState(state);
-          }
-        }
+        pushLocalDataAheadOfServer(local, payload, get());
 
         if (changed) window.location.reload();
       })
@@ -514,7 +536,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           score_before_hints: saved.scoreBeforeHints ?? null,
         };
         const merged = mergePuzzleState(localSyncState, serverState);
-        if (merged.found_words.length > localSyncState.found_words.length) {
+        if (JSON.stringify(merged) !== JSON.stringify(localSyncState)) {
           changed = true;
         }
         storage.save(localKey, {
@@ -566,6 +588,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       method: 'POST',
       headers: authHeader(stored.token),
       body: JSON.stringify(state),
+    }).catch(() => {});
+  },
+
+  async syncProgress(payload: SyncProgressPayload) {
+    const { isLoggedIn } = get();
+    if (!isLoggedIn) return;
+    const stored = authService.getToken();
+    if (!stored) return;
+    fetch(apiUrl('/api/player/sync/progress'), {
+      method: 'POST',
+      headers: authHeader(stored.token),
+      body: JSON.stringify(payload),
     }).catch(() => {});
   },
 

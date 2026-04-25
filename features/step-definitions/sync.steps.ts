@@ -20,12 +20,23 @@ import app from '../../server/index';
 import { getDb, closeDb, setDb } from '../../server/db/connection';
 import { invalidateAll, setWordlist } from '../../server/puzzle-engine';
 import { createPlayerSession } from '../../server/player-auth/session';
+import {
+  isPuzzleStateBetterThanServer,
+  isStatsRecordBetterThanServer,
+} from '@sanakenno/shared';
+import type { StatsRecord, SyncPuzzleState } from '@sanakenno/shared';
 import type { SanakennoWorld } from './types';
 
 interface SyncWorld extends SanakennoWorld {
   playerBearerToken: string | null;
   lastPlayerId: number | null;
   _uploadRawToken?: string;
+  localStatsRecord?: StatsRecord;
+  serverStatsRecordForPush?: StatsRecord;
+  localPuzzleState?: SyncPuzzleState;
+  serverPuzzleStateForPush?: SyncPuzzleState;
+  shouldPushStats?: boolean;
+  shouldPushState?: boolean;
 }
 
 function bearerHeader(token: string): Record<string, string> {
@@ -81,13 +92,18 @@ Before(function (this: SyncWorld, scenario: ITestCaseHookParameter) {
 
   closeDb();
   setDb(null);
-  getDb({ inMemory: true });
+  const db = getDb({ inMemory: true });
   invalidateAll();
-  setWordlist(new Set(['kala', 'sanka']));
+  db.prepare(
+    'INSERT OR REPLACE INTO puzzles (slot, letters, center) VALUES (?, ?, ?)',
+  ).run(42, 'a,e,k,l,n,s,t', 'a');
+  setWordlist(new Set(['kala', 'sanka', 'laskenta']));
 
   this.playerBearerToken = null;
   this.lastPlayerId = null;
   this.responses = [];
+  this.shouldPushStats = false;
+  this.shouldPushState = false;
 });
 
 After(function (scenario: ITestCaseHookParameter) {
@@ -288,6 +304,60 @@ Given(
   },
 );
 
+Given(
+  'the server sync payload has stale same-puzzle stats and state',
+  function (this: SyncWorld) {
+    this.serverStatsRecordForPush = {
+      puzzle_number: 12,
+      date: '2026-04-10',
+      best_rank: 'Hyvä alku',
+      best_score: 10,
+      max_score: 100,
+      words_found: 2,
+      hints_used: 0,
+      elapsed_ms: 30_000,
+      longest_word: 'kala',
+      pangrams_found: 0,
+    };
+    this.serverPuzzleStateForPush = {
+      puzzle_number: 12,
+      found_words: ['kala'],
+      score: 10,
+      hints_unlocked: [],
+      started_at: 1_800_000_000_000,
+      total_paused_ms: 0,
+      score_before_hints: null,
+    };
+  },
+);
+
+Given(
+  'the local device has better same-puzzle stats and state',
+  function (this: SyncWorld) {
+    this.localStatsRecord = {
+      puzzle_number: 12,
+      date: '2026-04-10',
+      best_rank: 'Onnistuja',
+      best_score: 30,
+      max_score: 100,
+      words_found: 4,
+      hints_used: 1,
+      elapsed_ms: 45_000,
+      longest_word: 'lakana',
+      pangrams_found: 1,
+    };
+    this.localPuzzleState = {
+      puzzle_number: 12,
+      found_words: ['kala', 'sanka'],
+      score: 30,
+      hints_unlocked: ['summary'],
+      started_at: 1_700_000_000_000,
+      total_paused_ms: 5_000,
+      score_before_hints: 20,
+    };
+  },
+);
+
 // ---------------------------------------------------------------------------
 // When
 // ---------------------------------------------------------------------------
@@ -482,6 +552,100 @@ When(
     this.responseJson = await this.response.clone().json();
   },
 );
+
+When(
+  /^a POST is made to \/api\/player\/sync\/progress with progress for puzzle index (\d+)$/,
+  async function (this: SyncWorld, puzzleNumber: number) {
+    assert.ok(this.playerBearerToken, 'No Bearer token in context');
+    this.response = await app.request('/api/player/sync/progress', {
+      method: 'POST',
+      headers: bearerHeader(this.playerBearerToken),
+      body: JSON.stringify({
+        puzzle_number: puzzleNumber,
+        date: '2026-04-10',
+        found_words: ['kala', 'sanka'],
+        score: 6,
+        hints_unlocked: [],
+        started_at: Date.now() - 60_000,
+        total_paused_ms: 0,
+        score_before_hints: null,
+        max_score: 20,
+      }),
+    });
+    this.responseJson = await this.response.clone().json();
+  },
+);
+
+When(
+  /^a POST is made to \/api\/player\/sync\/progress with pangram progress for puzzle index (\d+)$/,
+  async function (this: SyncWorld, puzzleNumber: number) {
+    assert.ok(this.playerBearerToken, 'No Bearer token in context');
+    this.response = await app.request('/api/player/sync/progress', {
+      method: 'POST',
+      headers: bearerHeader(this.playerBearerToken),
+      body: JSON.stringify({
+        puzzle_number: puzzleNumber,
+        date: '2026-04-10',
+        found_words: ['laskenta'],
+        score: 15,
+        hints_unlocked: [],
+        started_at: Date.now() - 60_000,
+        total_paused_ms: 0,
+        score_before_hints: null,
+        max_score: 43,
+      }),
+    });
+    this.responseJson = await this.response.clone().json();
+  },
+);
+
+When(
+  /^a POST is made to \/api\/player\/sync\/progress without a token$/,
+  async function (this: SyncWorld) {
+    this.response = await app.request('/api/player/sync/progress', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        puzzle_number: 42,
+        date: '2026-04-10',
+        found_words: ['kala'],
+        score: 1,
+        hints_unlocked: [],
+        started_at: 0,
+        total_paused_ms: 0,
+        score_before_hints: null,
+        max_score: 20,
+      }),
+    });
+    this.responseJson = await this.response.clone().json();
+  },
+);
+
+When(
+  /^a POST is made to \/api\/player\/sync\/progress with an invalid body$/,
+  async function (this: SyncWorld) {
+    assert.ok(this.playerBearerToken, 'No Bearer token in context');
+    this.response = await app.request('/api/player/sync/progress', {
+      method: 'POST',
+      headers: bearerHeader(this.playerBearerToken),
+      body: JSON.stringify({ not_valid: true }),
+    });
+    this.responseJson = await this.response.clone().json();
+  },
+);
+
+When('sync push-back candidates are computed', function (this: SyncWorld) {
+  assert.ok(this.localStatsRecord, 'No local stats record');
+  assert.ok(this.localPuzzleState, 'No local puzzle state');
+  this.shouldPushStats = isStatsRecordBetterThanServer(
+    this.localStatsRecord,
+    this.serverStatsRecordForPush,
+  );
+  this.shouldPushState = isPuzzleStateBetterThanServer(
+    this.localPuzzleState,
+    this.serverPuzzleStateForPush,
+  );
+});
 
 When(
   'the player pairs this device with the pairing code and the local stats included',
@@ -769,5 +933,19 @@ Then(
       .prepare('SELECT COUNT(*) as cnt FROM player_stats WHERE player_id = ?')
       .get(this.lastPlayerId) as Row;
     assert.equal(row.cnt, count);
+  },
+);
+
+Then(
+  'the stale stats record should be selected for push',
+  function (this: SyncWorld) {
+    assert.equal(this.shouldPushStats, true);
+  },
+);
+
+Then(
+  'the stale puzzle state should be selected for push',
+  function (this: SyncWorld) {
+    assert.equal(this.shouldPushState, true);
   },
 );

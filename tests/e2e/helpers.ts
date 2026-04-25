@@ -132,10 +132,10 @@ export async function mockPuzzleApi(page: Page) {
   return puzzle;
 }
 
-/** Build a deterministic mock archive response (7 days). */
+/** Build a deterministic mock archive response with multiple pages. */
 export function createMockArchive() {
   const today = new Date();
-  return Array.from({ length: 7 }, (_, i) => {
+  return Array.from({ length: 18 }, (_, i) => {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
     const dateStr = d.toISOString().split('T')[0];
@@ -145,6 +145,7 @@ export function createMockArchive() {
       letters: ['a', 'e', 'k', 'l', 'n', 's', 't'],
       center: 'a',
       is_today: i === 0,
+      max_score: 43,
     };
   });
 }
@@ -156,7 +157,7 @@ export function createMockArchive() {
 export async function mockArchiveApi(page: Page) {
   const archive = createMockArchive();
 
-  await page.route('**/api/archive', async (route) => {
+  await page.route('**/api/archive**', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',

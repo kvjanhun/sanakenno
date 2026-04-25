@@ -100,13 +100,14 @@ puzzle.get('/:number/words', (c) => {
   );
   const activeSlot = getPuzzleForDate(helsinki);
 
-  if (number === activeSlot) {
-    return c.json({ error: "Word list not available for today's puzzle" }, 403);
-  }
-
   const totalPuzzles = getTotalPuzzles();
   if (totalPuzzles === 0) return c.json({ error: 'Puzzle not found' }, 404);
   const wrappedSlot = ((number % totalPuzzles) + totalPuzzles) % totalPuzzles;
+
+  if (wrappedSlot === activeSlot) {
+    return c.json({ error: "Word list not available for today's puzzle" }, 403);
+  }
+
   const data = getPuzzleBySlot(wrappedSlot);
   if (!data) return c.json({ error: 'Puzzle not found' }, 404);
 

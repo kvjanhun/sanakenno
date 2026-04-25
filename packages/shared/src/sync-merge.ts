@@ -13,6 +13,16 @@ import { rankIndex } from './stats';
 import type { StatsRecord } from './stats';
 import type { SyncPuzzleState } from './auth-types';
 
+function hasAdditionalItems(local: string[], server: string[]): boolean {
+  const serverSet = new Set(server);
+  return local.some((item) => !serverSet.has(item));
+}
+
+function earlierStartedAt(a: number, b: number): number {
+  if (a > 0 && b > 0) return Math.min(a, b);
+  return a || b;
+}
+
 /**
  * Merge two stats records for the same puzzle_number.
  *
@@ -81,8 +91,55 @@ export function mergePuzzleState(
     found_words: [...foundWordsSet],
     score: Math.max(local.score, server.score),
     hints_unlocked: [...hintsSet],
-    started_at: Math.min(local.started_at, server.started_at),
+    started_at: earlierStartedAt(local.started_at, server.started_at),
     total_paused_ms: Math.max(local.total_paused_ms, server.total_paused_ms),
     score_before_hints: scoreBeforeHints,
   };
+}
+
+/**
+ * Return true when a local stats record contains strictly better progress than
+ * the server record and should be pushed back after a pull/merge.
+ */
+export function isStatsRecordBetterThanServer(
+  local: StatsRecord,
+  server: StatsRecord | undefined,
+): boolean {
+  if (!server) return true;
+  if (rankIndex(local.best_rank) > rankIndex(server.best_rank)) return true;
+  if (local.best_score > server.best_score) return true;
+  if (local.max_score > server.max_score) return true;
+  if (local.words_found > server.words_found) return true;
+  if (local.hints_used > server.hints_used) return true;
+  if (local.elapsed_ms > server.elapsed_ms) return true;
+  if ((local.longest_word ?? '').length > (server.longest_word ?? '').length) {
+    return true;
+  }
+  return (local.pangrams_found ?? 0) > (server.pangrams_found ?? 0);
+}
+
+/**
+ * Return true when a local puzzle state contains progress not yet represented
+ * by the server state and should be pushed back after a pull/merge.
+ */
+export function isPuzzleStateBetterThanServer(
+  local: SyncPuzzleState,
+  server: SyncPuzzleState | undefined,
+): boolean {
+  if (!server) return true;
+  if (hasAdditionalItems(local.found_words, server.found_words)) return true;
+  if (hasAdditionalItems(local.hints_unlocked, server.hints_unlocked)) {
+    return true;
+  }
+  if (local.score > server.score) return true;
+  if (
+    local.started_at > 0 &&
+    (server.started_at === 0 || local.started_at < server.started_at)
+  ) {
+    return true;
+  }
+  if (local.total_paused_ms > server.total_paused_ms) return true;
+  return (
+    local.score_before_hints !== null && server.score_before_hints === null
+  );
 }

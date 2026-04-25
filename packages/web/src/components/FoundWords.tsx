@@ -7,7 +7,7 @@
  */
 
 import { useMemo } from 'react';
-import { toColumns, buildKotusUrl } from '@sanakenno/shared';
+import { toColumns, buildKotusUrl, isPangram } from '@sanakenno/shared';
 
 /** Props for {@link FoundWords}. */
 export interface FoundWordsProps {
@@ -17,6 +17,8 @@ export interface FoundWordsProps {
   recentWords: string[];
   /** Whether to show the full alphabetical list. */
   showAll: boolean;
+  /** All letters in the current puzzle, used to emphasize pangrams. */
+  allLetters: Set<string>;
   /** Toggle between collapsed / expanded view. */
   onToggleShowAll: () => void;
   /** Word that was re-submitted (highlight briefly). */
@@ -30,6 +32,7 @@ export function FoundWords({
   foundWords,
   recentWords,
   showAll,
+  allLetters,
   onToggleShowAll,
   lastResubmittedWord,
 }: FoundWordsProps): React.JSX.Element | null {
@@ -81,13 +84,15 @@ export function FoundWords({
                       word === lastResubmittedWord
                         ? 'var(--color-accent)'
                         : 'var(--color-text-primary)',
+                    fontWeight: isPangram(word, allLetters) ? 700 : 400,
                   }}
                 >
                   <a
                     href={buildKotusUrl(word)}
                     target="_blank"
-                    rel="noopener"
-                    title={`Katso "${word}" sanakirjasta`}
+                    rel="noopener noreferrer"
+                    title={`Avaa sanan "${word}" määritelmä Kotuksessa`}
+                    aria-label={`Avaa sanan "${word}" määritelmä Kotuksessa`}
                     style={{
                       color: 'inherit',
                       textDecoration: 'none',
@@ -122,9 +127,15 @@ export function FoundWords({
             style={{ flexWrap: 'nowrap', width: 'max-content' }}
           >
             {collapsed.map((word) => (
-              <span
+              <a
                 key={word}
                 className="font-[var(--font-mono)] text-sm px-2 py-0.5 rounded-full transition-colors duration-300"
+                href={buildKotusUrl(word)}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={`Avaa sanan "${word}" määritelmä Kotuksessa`}
+                aria-label={`Avaa sanan "${word}" määritelmä Kotuksessa`}
+                onClick={(e) => e.stopPropagation()}
                 style={{
                   flexShrink: 0,
                   backgroundColor:
@@ -136,10 +147,12 @@ export function FoundWords({
                       ? 'var(--color-on-accent)'
                       : 'var(--color-text-primary)',
                   border: '1px solid var(--color-border)',
+                  fontWeight: isPangram(word, allLetters) ? 700 : 400,
+                  textDecoration: 'none',
                 }}
               >
                 {word}
-              </span>
+              </a>
             ))}
           </div>
         </div>

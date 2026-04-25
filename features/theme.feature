@@ -8,9 +8,9 @@ Feature: Theme Toggle
   yö (indigo), aamu (amber), mustavalko (monochrome) — each with hand-tuned
   light and dark variants.
 
-  On the web app, the palette picker is surfaced inside the "Lisää laite"
-  (user) dialog and is only usable once the player has linked an account,
-  while on mobile it lives on the settings screen.
+  On the web app, the palette picker is surfaced in the header between
+  the Rules button and the light/dark toggle, while on mobile it lives on
+  the settings screen.
 
   The active palette and the light/dark preference sync between devices via
   the player account (last-write-wins by timestamp).
@@ -96,17 +96,24 @@ Feature: Theme Toggle
     Then the active color palette should still be "metsä"
 
   @web
-  Scenario: Palette picker is hidden when not linked
-    Given the web player is not linked to an account
-    When the player opens the user dialog
-    Then the color palette picker should not be offered
+  Scenario: Palette selector button is visible in the header
+    When the player first loads the app
+    Then a button with aria-label "Valitse väriteema" should be visible in the header
 
   @web
-  Scenario: Palette picker is available to linked players
-    Given the web player is linked to an account
-    When the player opens the user dialog
-    Then the color palette picker should be shown
+  Scenario: Palette selector menu opens below the header button
+    When the player opens the palette selector
+    Then the color palette menu should be shown above game content
     And the currently active palette should be marked as selected
+
+  @web
+  Scenario: Palette selector closes on Escape and outside click
+    Given the palette selector is open
+    When the player presses Escape
+    Then the color palette menu should close
+    When the player opens the palette selector
+    And clicks outside the palette selector
+    Then the color palette menu should close
 
   Scenario: Preference changes on one device sync to another
     Given the player is linked on two devices

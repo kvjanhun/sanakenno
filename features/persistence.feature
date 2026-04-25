@@ -55,14 +55,13 @@ Feature: Game state persistence
 
   # --- Server sync ---
 
-  Scenario: Stats and puzzle state are synced to server after finding a word when logged in
+  Scenario: Progress is synced to server after finding a word when logged in
     Given the player is logged in
     And the player is on puzzle number 3
     When the player finds a word
-    Then a POST request should have been made to "/api/player/sync/stats"
-    And a POST request should have been made to "/api/player/sync/state"
+    Then a POST request should have been made to "/api/player/sync/progress"
 
   Scenario: No sync requests are made when the player is anonymous
     Given the player is not logged in
     When the player finds a word
-    Then no POST request should have been made to "/api/player/sync/stats"
+    Then no POST request should have been made to "/api/player/sync/progress"

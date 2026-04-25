@@ -66,4 +66,54 @@ test.describe('Theme toggle', () => {
 
     expect(await effectiveScheme(page)).toBe('dark');
   });
+
+  test('palette selector opens from the header and persists selection', async ({
+    page,
+  }) => {
+    await loadGame(page);
+
+    const selector = page.getByRole('button', { name: 'Valitse väriteema' });
+    await expect(selector).toBeVisible();
+    await selector.click();
+
+    const menu = page.getByRole('menu', { name: 'Väriteema' });
+    await expect(menu).toBeVisible();
+    await expect(
+      menu.getByRole('menuitemradio', { name: 'Hehku' }),
+    ).toHaveAttribute('aria-checked', 'true');
+
+    await menu.getByRole('menuitemradio', { name: 'Meri' }).click();
+
+    await expect(menu).not.toBeVisible();
+    expect(
+      await page.evaluate(() =>
+        document.documentElement.getAttribute('data-palette'),
+      ),
+    ).toBe('meri');
+    expect(
+      await page.evaluate(() => localStorage.getItem('sanakenno_palette')),
+    ).toBe('"meri"');
+  });
+
+  test('palette selector closes on Escape and outside click', async ({
+    page,
+  }) => {
+    await loadGame(page);
+
+    const selector = page.getByRole('button', { name: 'Valitse väriteema' });
+    await selector.click();
+    await expect(page.getByRole('menu', { name: 'Väriteema' })).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(
+      page.getByRole('menu', { name: 'Väriteema' }),
+    ).not.toBeVisible();
+
+    await selector.click();
+    await expect(page.getByRole('menu', { name: 'Väriteema' })).toBeVisible();
+    await page.mouse.click(10, 200);
+    await expect(
+      page.getByRole('menu', { name: 'Väriteema' }),
+    ).not.toBeVisible();
+  });
 });

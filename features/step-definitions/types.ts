@@ -62,5 +62,6 @@ export interface SanakennoWorld {
     letters: string[];
     center: string;
     is_today: boolean;
+    max_score: number;
   }>;
 }

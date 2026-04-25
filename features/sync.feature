@@ -110,6 +110,38 @@ Feature: Cross-device progress sync
     When a POST is made to /api/player/sync/state with an invalid body
     Then the response status should be 400
 
+  # --- Push combined progress ---
+
+  Scenario: Pushing progress stores puzzle state and derived stats
+    When a POST is made to /api/player/sync/progress with progress for puzzle index 42
+    Then the response status should be 200
+    And the server should have a puzzle state for puzzle index 42
+    And the server should have a stats record for puzzle index 42
+    And the server stats for puzzle index 42 should have best_score 6
+
+  Scenario: Pushing progress derives longest word and pangrams
+    When a POST is made to /api/player/sync/progress with pangram progress for puzzle index 42
+    Then the response status should be 200
+    And the server stats for puzzle index 42 should have longest_word "laskenta"
+    And the server stats for puzzle index 42 should have pangrams_found 1
+
+  Scenario: Push progress requires authentication
+    When a POST is made to /api/player/sync/progress without a token
+    Then the response status should be 401
+
+  Scenario: Push progress with invalid body returns 400
+    When a POST is made to /api/player/sync/progress with an invalid body
+    Then the response status should be 400
+
+  # --- Client push-back decisions ---
+
+  Scenario: Stale same-puzzle server records are selected for push-back
+    Given the server sync payload has stale same-puzzle stats and state
+    And the local device has better same-puzzle stats and state
+    When sync push-back candidates are computed
+    Then the stale stats record should be selected for push
+    And the stale puzzle state should be selected for push
+
   # --- First-time pair upload ---
 
   Scenario: Pairing with the pairing code uploads local stats to the server

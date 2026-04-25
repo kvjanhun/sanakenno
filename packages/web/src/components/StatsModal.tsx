@@ -12,6 +12,7 @@ import { useState, useEffect } from 'react';
 import {
   RANKS,
   computeStreak,
+  computeLifetimeStats,
   computeRankDistribution,
   computeAverageCompletion,
   emptyStats,
@@ -59,6 +60,7 @@ export function StatsModal({
   const { current: currentStreak, best: bestStreak } = computeStreak(records);
   const rankDist = computeRankDistribution(records);
   const avgCompletion = computeAverageCompletion(records);
+  const lifetime = computeLifetimeStats(records);
   const maxCount = Math.max(1, ...Object.values(rankDist));
 
   // Ranks from lowest to highest for display
@@ -164,6 +166,68 @@ export function StatsModal({
                   style={{ color: 'var(--color-text-tertiary)' }}
                 >
                   Paras putki
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div
+                className="text-sm mb-2"
+                style={{ color: 'var(--color-text-secondary)' }}
+              >
+                Kaikki pelit
+              </div>
+              <div
+                className="space-y-3"
+                style={{
+                  backgroundColor: 'var(--color-bg-secondary)',
+                  borderRadius: '0.75rem',
+                  padding: '0.75rem',
+                }}
+              >
+                <div className="grid grid-cols-2 gap-2 text-center">
+                  <div>
+                    <div
+                      className="text-xl font-semibold"
+                      style={{ color: 'var(--color-text-primary)' }}
+                    >
+                      {lifetime.totalWords}
+                    </div>
+                    <div
+                      className="text-xs"
+                      style={{ color: 'var(--color-text-tertiary)' }}
+                    >
+                      Sanoja
+                    </div>
+                  </div>
+                  <div>
+                    <div
+                      className="text-xl font-semibold"
+                      style={{ color: 'var(--color-text-primary)' }}
+                    >
+                      {lifetime.totalPangrams}
+                    </div>
+                    <div
+                      className="text-xs"
+                      style={{ color: 'var(--color-text-tertiary)' }}
+                    >
+                      Pangrammeja
+                    </div>
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div
+                    className="text-lg font-semibold break-all"
+                    style={{ color: 'var(--color-text-primary)' }}
+                  >
+                    {lifetime.longestWord || '—'}
+                  </div>
+                  <div
+                    className="text-xs"
+                    style={{ color: 'var(--color-text-tertiary)' }}
+                  >
+                    Pisin sana
+                  </div>
                 </div>
               </div>
             </div>

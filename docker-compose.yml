@@ -1,7 +1,7 @@
 services:
-  sanakenno:
+  sanakenno-a:
     build: .
-    container_name: sanakenno
+    container_name: sanakenno-a
     restart: unless-stopped
     ports:
       - '8081:3001'
@@ -12,6 +12,7 @@ services:
       - PORT=3001
       - DATA_DIR=/data
       - TZ=Europe/Helsinki
+      - INSTANCE_ID=sanakenno-a
       - RESEND_API_KEY=${RESEND_API_KEY}
       - BASE_URL=${BASE_URL}
     healthcheck:
@@ -25,4 +26,33 @@ services:
       options:
         max-size: '10m'
         max-file: '3'
-        tag: 'sanakenno'
+        tag: 'sanakenno-a'
+
+  sanakenno-b:
+    build: .
+    container_name: sanakenno-b
+    restart: unless-stopped
+    ports:
+      - '8082:3001'
+    volumes:
+      - ./server/data:/data
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - DATA_DIR=/data
+      - TZ=Europe/Helsinki
+      - INSTANCE_ID=sanakenno-b
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - BASE_URL=${BASE_URL}
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:3001/api/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+        tag: 'sanakenno-b'

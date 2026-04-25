@@ -9,7 +9,12 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import app from '../server/index';
 import { getDb, closeDb, setDb } from '../server/db/connection';
 import { resetRateLimit } from '../server/routes/achievement';
-import { setWordlist, invalidateAll } from '../server/puzzle-engine';
+import {
+  setWordlist,
+  invalidateAll,
+  getPuzzleForDate,
+  totalPuzzles,
+} from '../server/puzzle-engine';
 
 interface PuzzleResponse {
   center: string;
@@ -211,6 +216,28 @@ describe('GET /api/puzzle/:number', () => {
   it('returns 400 for negative puzzle number', async () => {
     const res = await request('/api/puzzle/-1');
     expect(res.status).toBe(400);
+  });
+});
+
+describe('GET /api/puzzle/:number/words', () => {
+  beforeEach(() => seedPuzzleData());
+  afterEach(() => {
+    closeDb();
+    setDb(null);
+    invalidateAll();
+  });
+
+  it("blocks wrapped aliases of today's puzzle", async () => {
+    const now = new Date();
+    const helsinki = new Date(
+      now.toLocaleString('en-US', { timeZone: 'Europe/Helsinki' }),
+    );
+    const activeSlot = getPuzzleForDate(helsinki);
+    const alias = activeSlot + totalPuzzles();
+
+    const res = await request(`/api/puzzle/${alias}/words`);
+
+    expect(res.status).toBe(403);
   });
 });
 

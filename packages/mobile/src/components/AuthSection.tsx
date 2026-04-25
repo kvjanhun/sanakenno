@@ -167,7 +167,7 @@ export function AuthSection({ theme }: AuthSectionProps) {
   return (
     <View style={[styles.card, { backgroundColor: theme.bgSecondary }]}>
       <Text style={[styles.label, { color: theme.textSecondary }]}>
-        Lisää laite
+        Tallenna pelisessiosi
       </Text>
 
       {!isLinked ? (
