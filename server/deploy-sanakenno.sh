@@ -34,7 +34,9 @@ echo "Rebuilding Docker container..."
 # before compose tries to start the new services. --remove-orphans handles the
 # common case where the legacy container was still managed by compose.
 docker rm -f sanakenno 2>/dev/null || true
-docker compose up --build -d --remove-orphans || fail "docker compose"
+# --wait blocks until each service reports its compose healthcheck as healthy
+# (or the timeout fires), so we don't race the Node startup with curl below.
+docker compose up --build -d --remove-orphans --wait --wait-timeout 90 || fail "docker compose"
 
 echo "Running post-deploy health checks..."
 curl -fsS "http://127.0.0.1:8081/api/health" >/dev/null || fail "health 8081"
