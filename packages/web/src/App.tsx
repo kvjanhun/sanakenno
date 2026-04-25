@@ -429,7 +429,7 @@ function App() {
           <>
             {/* Score + rank + share */}
             <div
-              className="sticky z-10"
+              className="sticky z-20"
               style={{
                 top: 'calc(env(safe-area-inset-top) + 3rem)',
                 backgroundColor: 'var(--color-bg-primary)',
