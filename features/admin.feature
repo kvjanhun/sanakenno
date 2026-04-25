@@ -215,9 +215,9 @@ Feature: Admin tool
     And a totals summary should be included
 
   Scenario: Achievement stats grouped by Helsinki timezone
-    Given an achievement was recorded at 01:00 UTC on 2026-03-25
-    Then it should appear under date 2026-03-25 in the stats
-    And not under 2026-03-24
+    Given an achievement was recorded 2 days ago at 23:30 UTC
+    Then it should appear under yesterday in Helsinki timezone stats
+    And not under 2 days ago in Helsinki timezone stats
 
   Scenario: Empty days show zero counts
     Given no achievements were recorded 5 days ago

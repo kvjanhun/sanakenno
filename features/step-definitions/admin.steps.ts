@@ -1385,10 +1385,13 @@ Then('a totals summary should be included', function (this: AdminWorld) {
 });
 
 Given(
-  'an achievement was recorded at 01:00 UTC on {int}-{int}-{int}',
-  function (this: AdminWorld, year: number, month: number, day: number) {
+  'an achievement was recorded 2 days ago at 23:30 UTC',
+  function (this: AdminWorld) {
     const db = getDb();
-    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')} 01:00:00`;
+    const d = new Date();
+    d.setUTCDate(d.getUTCDate() - 2);
+    d.setUTCHours(23, 30, 0, 0);
+    const dateStr = d.toISOString().replace('T', ' ').slice(0, 19);
     db.prepare(
       'INSERT INTO achievements (puzzle_number, rank, score, max_score, words_found, achieved_at) VALUES (?, ?, ?, ?, ?, ?)',
     ).run(1, 'Onnistuja', 25, 100, 8, dateStr);
@@ -1396,45 +1399,46 @@ Given(
 );
 
 Then(
-  'it should appear under date {int}-{int}-{int} in the stats',
-  async function (this: AdminWorld, year: number, month: number, day: number) {
-    const res = await app.request('/api/admin/achievements?days=30', {
+  'it should appear under yesterday in Helsinki timezone stats',
+  async function (this: AdminWorld) {
+    const res = await app.request('/api/admin/achievements?days=7', {
       method: 'GET',
       headers: adminGet(this.sessionCookie),
     });
     const json = (await res.json()) as {
       daily: Array<{ date: string; total: number }>;
     };
-    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    const entry = json.daily.find((e) => e.date === dateStr);
-    // 01:00 UTC = 03:00 Helsinki time, so it should be on the same date
-    assert.ok(entry, `Entry for ${dateStr} should exist`);
+    // 23:30 UTC 2 days ago = 01:30/02:30 Helsinki yesterday (UTC+2/+3 always crosses midnight)
+    const yesterday = helsinkiDateByOffset(1);
+    const entry = json.daily.find((e) => e.date === yesterday);
+    assert.ok(
+      entry,
+      `Entry for Helsinki yesterday (${yesterday}) should exist`,
+    );
     assert.ok(entry!.total > 0, 'Should have at least one achievement');
   },
 );
 
 Then(
-  'not under {int}-{int}-{int}',
-  async function (this: AdminWorld, year: number, month: number, day: number) {
-    // 01:00 UTC on 2026-03-25 = 03:00 Helsinki on 2026-03-25
-    // So it should NOT appear under 2026-03-24
-    const res = await app.request('/api/admin/achievements?days=30', {
+  'not under 2 days ago in Helsinki timezone stats',
+  async function (this: AdminWorld) {
+    const res = await app.request('/api/admin/achievements?days=7', {
       method: 'GET',
       headers: adminGet(this.sessionCookie),
     });
     const json = (await res.json()) as {
       daily: Array<{ date: string; counts: Record<string, number> }>;
     };
-    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    const entry = json.daily.find((e) => e.date === dateStr);
+    // The UTC date of the achievement is 2 days ago; if the server grouped by UTC
+    // it would appear here instead of under yesterday's Helsinki date
+    const twoDaysAgo = helsinkiDateByOffset(2);
+    const entry = json.daily.find((e) => e.date === twoDaysAgo);
     if (entry) {
       const onnistujaCount = entry.counts['Onnistuja'] || 0;
-      // The specific achievement from the Given step should not be here
-      // (it's at 03:00 Helsinki time on the 25th, not the 24th)
       assert.equal(
         onnistujaCount,
         0,
-        `Should not have Onnistuja on ${dateStr}`,
+        `Should not have Onnistuja on ${twoDaysAgo}`,
       );
     }
   },
