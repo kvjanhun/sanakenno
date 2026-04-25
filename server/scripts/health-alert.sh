@@ -21,7 +21,8 @@ send_telegram() {
 
 # Container name -> display name
 declare -A SITES=(
-  ["sanakenno"]="sanakenno.fi"
+  ["sanakenno-a"]="sanakenno.fi (a)"
+  ["sanakenno-b"]="sanakenno.fi (b)"
   ["web_kontissa-web-1"]="erez.ac"
 )
 

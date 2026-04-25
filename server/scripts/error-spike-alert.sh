@@ -11,10 +11,10 @@
 ALERT_ENV_FILE="${ALERT_ENV_FILE:-$HOME/.config/site-alerts.env}"
 [ -f "$ALERT_ENV_FILE" ] && source "$ALERT_ENV_FILE"
 
-CONTAINER="sanakenno"
+CONTAINERS=("sanakenno-a" "sanakenno-b")
 SITE="sanakenno.fi"
 THRESHOLD="${THRESHOLD:-5}"
-FLAG_FILE="/tmp/${CONTAINER}-error-spike.flag"
+FLAG_FILE="/tmp/sanakenno-error-spike.flag"
 WINDOW="5m"
 
 send_telegram() {
@@ -24,8 +24,15 @@ send_telegram() {
     -d "parse_mode=HTML" > /dev/null 2>&1
 }
 
+# Aggregate logs across all backend containers — the threshold is site-wide,
+# not per-process, so spikes split across instances still alert correctly.
+RECENT_LOGS=""
+for CONTAINER in "${CONTAINERS[@]}"; do
+  RECENT_LOGS+=$(docker logs --since "$WINDOW" "$CONTAINER" 2>&1)
+  RECENT_LOGS+=$'\n'
+done
+
 # Count server errors: explicit error-level logs OR 5xx status codes in request logs
-RECENT_LOGS=$(docker logs --since "$WINDOW" "$CONTAINER" 2>&1)
 ERROR_COUNT=$(echo "$RECENT_LOGS" | grep -cE '"level":"error"|"status":5[0-9]{2}')
 
 if [ "$ERROR_COUNT" -ge "$THRESHOLD" ]; then

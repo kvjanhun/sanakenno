@@ -29,7 +29,12 @@ git pull origin main || fail "git pull"
 git stash drop 2>/dev/null || true
 
 echo "Rebuilding Docker container..."
-docker compose up --build -d || fail "docker compose"
+# The single-container service was renamed to sanakenno-a / sanakenno-b in 1.5.0.
+# Remove any leftover container with the old name so its port binding is released
+# before compose tries to start the new services. --remove-orphans handles the
+# common case where the legacy container was still managed by compose.
+docker rm -f sanakenno 2>/dev/null || true
+docker compose up --build -d --remove-orphans || fail "docker compose"
 
 echo "Running post-deploy health checks..."
 curl -fsS "http://127.0.0.1:8081/api/health" >/dev/null || fail "health 8081"
