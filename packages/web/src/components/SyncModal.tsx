@@ -222,7 +222,8 @@ export function SyncModal({
         {mode === 'options' && !isLinked && (
           <div className="space-y-3">
             <p style={{ color: 'var(--color-text-secondary)' }}>
-              Tallenna edistymisesi, tilastosi ja asetuksesi, synkronoi halutessasi muille laitteille.
+              Tallenna edistymisesi, tilastosi ja asetuksesi, synkronoi
+              halutessasi muille laitteille.
             </p>
             <button
               type="button"
