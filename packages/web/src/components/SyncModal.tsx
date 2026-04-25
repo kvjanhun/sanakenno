@@ -273,6 +273,8 @@ export function SyncModal({
 
         {mode === 'options' && isLinked && (
           <div className="space-y-3">
+            <PalettePicker />
+            <hr style={{ borderColor: 'var(--color-text-tertiary)' }} />
             {playerKey ? (
               <p style={{ color: 'var(--color-text-secondary)' }}>
                 Avaa Sanakenno toisella laitteella ja käytä alla olevaa linkkiä
@@ -340,8 +342,6 @@ export function SyncModal({
               <Mail size={16} />
               Lähetä sähköpostiin
             </button>
-            <hr style={{ borderColor: 'var(--color-text-tertiary)' }} />
-            <PalettePicker />
             <hr style={{ borderColor: 'var(--color-text-tertiary)' }} />
             <button
               type="button"
