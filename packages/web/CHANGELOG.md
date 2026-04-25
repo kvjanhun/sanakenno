@@ -1,5 +1,13 @@
 # @sanakenno/web
 
+## 1.4.3
+
+### Patch Changes
+
+- 71e4e96: Reduce extra horizontal inset inside the hint panel and soften its border/divider treatment so it aligns and blends better with the rank/progress area above.
+- Fix rank dropdown layering over hint content; move colour theme picker to top of user menu.
+  - @sanakenno/shared@1.4.3
+
 ## 1.4.2
 
 ### Patch Changes
