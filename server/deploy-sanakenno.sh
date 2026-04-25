@@ -58,7 +58,7 @@ docker cp sanakenno-a:/app/dist "$WEB_ROOT/dist" || fail "docker cp dist"
 
 COMMIT_MSG=$(git log -1 --pretty=%s)
 COMMIT_HASH=$(git log -1 --pretty=%h)
-send_telegram "🚀 <b>Sanakenno deployed</b>
+send_telegram "🟢 <b>Sanakenno deployed</b>
 <code>${COMMIT_HASH}</code> ${COMMIT_MSG}
 Site: https://sanakenno.fi"
 
