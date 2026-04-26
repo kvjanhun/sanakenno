@@ -1,18 +1,20 @@
 # Sanakenno — Project Rules
 
 ## What this is
-A Finnish word-puzzle game (standalone React + Hono, SQLite). Live at **sanakenno.fi**.
-See `src/CLAUDE.md` for frontend rules, `server/CLAUDE.md` for backend rules.
+A Finnish word-puzzle game with a web app, an iOS/Android app, and a Hono backend (SQLite). Live at **sanakenno.fi**.
+See `packages/web/src/CLAUDE.md` for web rules, `packages/mobile/CLAUDE.md` for mobile rules, `server/CLAUDE.md` for backend rules.
 
 ## Tech Stack
 | Layer | Tech |
 |---|---|
-| Frontend | React 19, Vite, Zustand, Tailwind 4 |
+| Web Frontend | React 19, Vite, Zustand, Tailwind 4 |
+| Mobile App | Expo 55, React Native 0.83, Zustand, MMKV (iOS-first) |
+| Shared Domain | `packages/shared` — pure game logic, types, platform interfaces |
 | Backend | Hono on Node.js (tsx) |
-| Storage | SQLite |
+| Storage | SQLite (better-sqlite3) |
 | Testing | Vitest · Cucumber.js (BDD) · Playwright (E2E) |
 | PWA | vite-plugin-pwa |
-| Monorepo | Turborepo (task orchestration) |
+| Monorepo | pnpm workspace + Turborepo |
 
 ## BDD-First Development
 Feature files in `features/` are the source of truth for behaviour.
@@ -89,6 +91,18 @@ pnpm turbo run typecheck --filter=<pkg>   typecheck a specific package (and its 
 pnpm run lint                             eslint + prettier check
 pnpm run test:unit                        vitest
 pnpm run test:bdd                         cucumber.js
-pnpm exec playwright test                 E2E tests (requires dev server running)
+pnpm run test:e2e                         playwright E2E tests (requires dev server running)
 pnpm run build                            production build → dist/
 ```
+
+## Workflow Skills
+Project-specific Claude Code skills live in `.claude/skills/<name>/SKILL.md`. They auto-trigger on matching intent and can also be invoked with `/<name>`.
+
+| Skill | When |
+|---|---|
+| `bdd-feature` | Any behavioural change — writes the `.feature` file first, gets agreement, then step definitions in `features/step-definitions/` |
+| `bump-version` | After implementation — writes the changeset for web/server/shared OR runs `npm version` for mobile; defaults to patch, suggests minor for new behaviour |
+| `pre-push` | Before every push — runs the local CI gauntlet matching the change set (web / mobile / both); halts on first failure; supports `--skip-e2e`, `--docs-only`, `--web`, `--mobile`, `--full` |
+| `verify-locally` | After `pre-push` passes — pings dev servers (`:5173`/`:3001`, doesn't start them) and produces browser + iOS-surface checklists |
+| `commit` | Any standalone commit — Conventional Commits format matching recent history, includes Co-Authored-By trailer, never pushes |
+| `ship-feature` | Full feature pipeline — chains `bdd-feature` → implement → `pre-push` → `verify-locally` → `bump-version` → `commit` |

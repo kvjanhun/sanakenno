@@ -27,7 +27,7 @@ pnpm run build       # Production build
 pnpm run typecheck   # TypeScript check
 pnpm run test:unit   # Vitest unit tests
 pnpm run test:bdd    # Cucumber.js BDD specs
-pnpm exec playwright test   # Playwright E2E tests (dev server required)
+pnpm run test:e2e    # Playwright E2E tests (dev server required)
 pnpm run lint        # ESLint + Prettier check
 ```
 
@@ -54,11 +54,13 @@ All behaviour is defined in Gherkin specs under `features/`. The BDD suite runs 
 | [accessibility](features/accessibility.feature) | Keyboard behaviour, touch quirks, safe areas |
 | [pwa](features/pwa.feature) | Installability, service worker strategies, iOS quirks |
 | [infrastructure](features/infrastructure.feature) | Docker, nginx, health checks |
-| [auth](features/auth.feature) | Admin authentication, sessions, CSRF |
+| [auth](features/auth.feature) | Admin authentication (cookie sessions, CSRF, CLI-provisioned account) |
+| [player-auth](features/player-auth.feature) | Silent player init, pairing-code device pairing, key rotation |
 | [admin](features/admin.feature) | Puzzle CRUD, blocked words, schedule |
 | [archive](features/archive.feature) | 7-day puzzle archive, score+rank per day, replay past puzzles |
 | [definitions](features/definitions.feature) | Word definitions via Kotus dictionary links |
 | [stats](features/stats.feature) | Player statistics, streaks, rank distribution |
+| [sync](features/sync.feature) | Cross-device stats and puzzle-state sync (offline-safe, fire-and-forget) |
 | [server-errors](features/server-errors.feature) | API error responses, structured error logging |
 
 ## Deployment

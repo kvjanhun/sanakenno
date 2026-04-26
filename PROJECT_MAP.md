@@ -107,6 +107,7 @@ Current versions: see the package.json files for each deployable target.
 - `routes/failed-guess.ts`: `POST /api/failed-guess`.
 - `auth/`: Admin session middleware and routes (cookie-based, CSRF-protected).
 - `player-auth/`: Player identity middleware and routes (Bearer token-based).
+- `email/`: Transactional email helpers (e.g. `send-transfer-link.ts` for the device-pairing email).
 - `db/schema.sql`: Database structure (puzzles, player_stats, player_puzzle_states, achievements, failed_guesses, config).
 - `db/connection.ts`: `getDb()` helper — opens the SQLite file, enables WAL, and applies `schema.sql`.
 
