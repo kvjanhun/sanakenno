@@ -4,12 +4,18 @@
  * Fetches puzzle metadata from /api/archive?all=true and displays each day
  * with date, letter preview, and play status derived from localStorage.
  *
+ * Past puzzles open a small action sheet with two options: play the
+ * puzzle or reveal its answers (mirroring the iOS app). Today's entry
+ * still loads directly when clicked since its answers cannot be revealed.
+ *
  * @module src/components/ArchiveModal
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { rankForScore } from '@sanakenno/shared';
 import { loadFromStorage } from '../utils/storage';
+import { storage } from '../platform';
+import { EyeIcon } from './icons';
 
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -41,6 +47,8 @@ export interface ArchiveModalProps {
   show: boolean;
   onClose: () => void;
   onSelectPuzzle: (puzzleNumber: number, date: string | null) => void;
+  /** Open the word-list modal for a past puzzle. */
+  onRevealAnswers: (puzzleNumber: number) => void;
   /** Currently loaded puzzle number (to highlight). */
   currentPuzzleNumber: number | null;
 }
@@ -79,12 +87,14 @@ export function ArchiveModal({
   show,
   onClose,
   onSelectPuzzle,
+  onRevealAnswers,
   currentPuzzleNumber,
 }: ArchiveModalProps): React.JSX.Element | null {
   const [entries, setEntries] = useState<ArchiveEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const [page, setPage] = useState(0);
+  const [selectedEntry, setSelectedEntry] = useState<ArchiveEntry | null>(null);
 
   const fetchArchive = useCallback(async () => {
     setLoading(true);
@@ -100,7 +110,10 @@ export function ArchiveModal({
   }, []);
 
   useEffect(() => {
-    if (show) fetchArchive();
+    if (show) {
+      setSelectedEntry(null);
+      fetchArchive();
+    }
   }, [show, fetchArchive]);
 
   const todayEntry = useMemo(
@@ -117,6 +130,20 @@ export function ArchiveModal({
     page * PAST_PAGE_SIZE + PAST_PAGE_SIZE,
   );
 
+  // Re-derived on every open of the modal (and when entries change),
+  // since selecting an entry can flip the revealed flag and we want the
+  // eye indicator to reflect that on next open.
+  const revealedPuzzles = useMemo(() => {
+    if (!show) return new Set<number>();
+    const set = new Set<number>();
+    for (const entry of entries) {
+      if (storage.getRaw(`revealed_${entry.puzzle_number}`) === 'true') {
+        set.add(entry.puzzle_number);
+      }
+    }
+    return set;
+  }, [entries, show]);
+
   useEffect(() => {
     if (page < pageCount) return;
     setPage(Math.max(0, pageCount - 1));
@@ -125,11 +152,37 @@ export function ArchiveModal({
   useEffect(() => {
     if (!show) return;
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        if (selectedEntry) setSelectedEntry(null);
+        else onClose();
+      }
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [show, onClose]);
+  }, [show, onClose, selectedEntry]);
+
+  const handleEntryClick = useCallback(
+    (entry: ArchiveEntry) => {
+      if (entry.is_today) {
+        onSelectPuzzle(entry.puzzle_number, null);
+        return;
+      }
+      setSelectedEntry(entry);
+    },
+    [onSelectPuzzle],
+  );
+
+  const handlePlay = useCallback(() => {
+    if (!selectedEntry) return;
+    onSelectPuzzle(selectedEntry.puzzle_number, selectedEntry.date);
+  }, [selectedEntry, onSelectPuzzle]);
+
+  const handleReveal = useCallback(() => {
+    if (!selectedEntry) return;
+    const number = selectedEntry.puzzle_number;
+    setSelectedEntry(null);
+    onRevealAnswers(number);
+  }, [selectedEntry, onRevealAnswers]);
 
   if (!show) return null;
 
@@ -191,6 +244,7 @@ export function ArchiveModal({
                     entry.max_score,
                   );
                   const isCurrent = entry.puzzle_number === currentPuzzleNumber;
+                  const isRevealed = revealedPuzzles.has(entry.puzzle_number);
 
                   return (
                     <button
@@ -205,12 +259,7 @@ export function ArchiveModal({
                           ? 'inset 0 0 0 2px var(--color-accent)'
                           : undefined,
                       }}
-                      onClick={() =>
-                        onSelectPuzzle(
-                          entry.puzzle_number,
-                          entry.is_today ? null : entry.date,
-                        )
-                      }
+                      onClick={() => handleEntryClick(entry)}
                     >
                       {/* Date + puzzle number */}
                       <div className="flex-1 min-w-0">
@@ -257,10 +306,20 @@ export function ArchiveModal({
                         ))}
                       </div>
 
-                      {/* Play status */}
-                      <div className="shrink-0 w-20 text-right truncate text-xs">
+                      {/* Play / reveal status */}
+                      <div className="shrink-0 w-20 flex items-center justify-end gap-1.5 text-xs">
+                        {isRevealed && (
+                          <span
+                            aria-label="Vastaukset paljastettu"
+                            title="Vastaukset paljastettu"
+                            style={{ color: 'var(--color-accent)' }}
+                          >
+                            <EyeIcon />
+                          </span>
+                        )}
                         {status.played && (
                           <span
+                            className="truncate"
                             title={`${status.wordsFound} sanaa, ${status.rank}`}
                             style={{ color: 'var(--color-accent)' }}
                           >
@@ -322,6 +381,78 @@ export function ArchiveModal({
           </div>
         )}
       </div>
+
+      {/* Action sheet for past puzzles — sits above the list modal */}
+      {selectedEntry && (
+        <div
+          className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+          onClick={() => setSelectedEntry(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-xl p-5 flex flex-col gap-3"
+            style={{ backgroundColor: 'var(--color-bg-primary)' }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="puzzle-action-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3
+              id="puzzle-action-title"
+              className="text-sm text-center"
+              style={{ color: 'var(--color-text-secondary)' }}
+            >
+              Kenno #{selectedEntry.puzzle_number + 1} ·{' '}
+              {formatFinnishDate(selectedEntry.date)}
+            </h3>
+
+            {revealedPuzzles.has(selectedEntry.puzzle_number) && (
+              <div
+                className="rounded-lg px-3 py-2 text-xs text-center"
+                style={{
+                  backgroundColor: 'var(--color-bg-secondary)',
+                  color: 'var(--color-text-secondary)',
+                  border: '1px solid var(--color-border)',
+                }}
+              >
+                Vastaukset on jo paljastettu. Tästä kennosta ei enää kerry
+                tilastoja.
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={handlePlay}
+              className="w-full py-3 rounded-lg font-medium text-base cursor-pointer border-none"
+              style={{
+                backgroundColor: 'var(--color-accent)',
+                color: 'var(--color-on-accent)',
+              }}
+            >
+              Pelaa
+            </button>
+            <button
+              type="button"
+              onClick={handleReveal}
+              className="w-full py-3 rounded-lg font-medium text-base cursor-pointer border-none"
+              style={{
+                backgroundColor: 'var(--color-bg-secondary)',
+                color: 'var(--color-text-primary)',
+              }}
+            >
+              Näytä vastaukset
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedEntry(null)}
+              className="w-full py-2 text-sm bg-transparent border-none cursor-pointer"
+              style={{ color: 'var(--color-text-secondary)' }}
+            >
+              Peruuta
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

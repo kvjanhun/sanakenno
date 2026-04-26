@@ -449,8 +449,13 @@ export const useGameStore = create<GameState>()((set, get) => ({
       });
     }
 
-    // Record stats locally (on every accepted word, not just rank changes)
-    {
+    // Record stats locally (on every accepted word, not just rank changes).
+    // Skip both local stats and server sync for puzzles whose answers have
+    // been revealed via the archive — matches the iOS behavior so that
+    // peeking at solutions never poisons a player's record.
+    const isRevealed =
+      storage.getRaw(`revealed_${puzzle.puzzle_number}`) === 'true';
+    if (!isRevealed) {
       const elapsed = Date.now() - state.startedAt - state.totalPausedMs;
       const helsinkiDate = new Date(
         new Date().toLocaleString('en-US', { timeZone: 'Europe/Helsinki' }),

@@ -85,11 +85,40 @@ Feature: Puzzle archive
     Then today's entry should be visually highlighted
 
   @e2e
-  Scenario: Clicking a past date loads that puzzle
+  Scenario: Clicking a past date opens an action sheet
     When the player opens the archive modal
     And clicks on a past day's entry
+    Then the puzzle action sheet should be shown
+    And it should offer "Pelaa" and "Näytä vastaukset" options
+
+  @e2e
+  Scenario: Choosing "Pelaa" loads the past puzzle
+    When the player opens the archive modal
+    And clicks on a past day's entry
+    And clicks the "Pelaa" option
     Then the modal should close
     And a different puzzle should load
+
+  @e2e
+  Scenario: Choosing "Näytä vastaukset" opens the word list
+    When the player opens the archive modal
+    And clicks on a past day's entry
+    And clicks the "Näytä vastaukset" option
+    Then the word list for that puzzle should be shown
+    And the list should display each word from that puzzle's solution
+
+  @e2e
+  Scenario: A revealed past puzzle is marked with an eye indicator
+    Given the player has revealed answers for a past puzzle
+    When the player opens the archive modal
+    Then the revealed past puzzle row should display a reveal indicator
+
+  @e2e
+  Scenario: Re-opening a revealed puzzle's action sheet shows a stats notice
+    Given the player has revealed answers for a past puzzle
+    When the player opens the archive modal
+    And clicks on the revealed past puzzle entry
+    Then the action sheet should show a notice that stats are frozen for that puzzle
 
   @e2e
   Scenario: Header shows date when viewing an archive puzzle

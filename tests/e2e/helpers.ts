@@ -165,6 +165,17 @@ export async function mockArchiveApi(page: Page) {
     });
   });
 
+  // Mock the puzzle word list endpoint used by the reveal-answers flow.
+  // Registered before the puzzle/:number route so the more specific
+  // pattern wins on Playwright's most-recent-first matcher.
+  await page.route('**/api/puzzle/*/words', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ words: TEST_WORDS }),
+    });
+  });
+
   // Also mock puzzle/:number for archive puzzle loads
   await page.route('**/api/puzzle/*', async (route) => {
     const url = route.request().url();

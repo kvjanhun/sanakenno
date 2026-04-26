@@ -1,5 +1,16 @@
 # @sanakenno/web
 
+## 1.6.0
+
+### Minor Changes
+
+- Web archive: reveal answers from past puzzles. Tapping a past puzzle in the archive now opens an action sheet with `Pelaa` and `Näytä vastaukset`. Choosing reveal opens a word-list modal with the puzzle's full solution and freezes stats for that puzzle (matches the existing iOS behaviour).
+
+### Patch Changes
+
+- Updated dependencies
+  - @sanakenno/shared@1.6.0
+
 ## 1.5.0
 
 ### Minor Changes

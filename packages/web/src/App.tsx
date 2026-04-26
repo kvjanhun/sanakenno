@@ -28,6 +28,7 @@ import { MessageBar } from './components/MessageBar';
 import { GameControls } from './components/GameControls';
 import { HintPanels } from './components/HintPanels';
 import { ArchiveModal } from './components/ArchiveModal';
+import { PuzzleWordsModal } from './components/PuzzleWordsModal';
 import { StatsModal } from './components/StatsModal';
 import { SyncModal } from './components/SyncModal';
 import {
@@ -104,6 +105,9 @@ function App() {
   const authIsLinked = useAuthIsLinked();
   const [showAuth, setShowAuth] = useState(false);
   const [connectBannerToken, setConnectBannerToken] = useState<string | null>(
+    null,
+  );
+  const [revealPuzzleNumber, setRevealPuzzleNumber] = useState<number | null>(
     null,
   );
   const fetchError = useFetchError();
@@ -393,7 +397,16 @@ function App() {
         show={showArchive}
         onClose={() => setShowArchive(false)}
         onSelectPuzzle={loadArchivePuzzle}
+        onRevealAnswers={(puzzleNumber) => {
+          setShowArchive(false);
+          setRevealPuzzleNumber(puzzleNumber);
+        }}
         currentPuzzleNumber={puzzle?.puzzle_number ?? null}
+      />
+      <PuzzleWordsModal
+        show={revealPuzzleNumber !== null}
+        onClose={() => setRevealPuzzleNumber(null)}
+        puzzleNumber={revealPuzzleNumber}
       />
       <StatsModal show={showStats} onClose={() => setShowStats(false)} />
 

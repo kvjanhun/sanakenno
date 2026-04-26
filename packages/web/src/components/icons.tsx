@@ -20,6 +20,7 @@ import {
   User,
   UserCheck,
   Copy,
+  Eye,
 } from 'lucide-react';
 
 const HEADER_SIZE = 20;
@@ -147,4 +148,9 @@ export function UserIcon({
  */
 export function CopyIcon(): React.JSX.Element {
   return <Copy size={14} strokeWidth={1.5} aria-hidden="true" />;
+}
+
+/** Eye icon used to flag puzzles whose answers have been revealed. */
+export function EyeIcon(): React.JSX.Element {
+  return <Eye size={14} strokeWidth={2} aria-hidden="true" />;
 }
