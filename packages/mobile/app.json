@@ -2,7 +2,6 @@
   "expo": {
     "name": "Sanakenno",
     "slug": "sanakenno",
-    "version": "0.5.3",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "sanakenno",

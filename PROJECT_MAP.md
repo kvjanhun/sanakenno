@@ -126,3 +126,4 @@ Current versions: see the package.json files for each deployable target.
 - **Auth layers**: Admin — cookie session (`/api/admin/*`, `/api/auth/*`). Player — Bearer token (`/api/player/*`). Public — no auth.
 - **Mobile**: MMKV for persistence, iOS-first. Android is a later phase.
 - **Revealed flag**: `revealed_N` in MMKV (local-only, not synced) marks a puzzle whose answers have been viewed; stats updates are frozen for that puzzle number.
+- **Backups**: The SQLite database is backed up off-box to Backblaze S3 by the shared backup service that runs alongside `erez.ac` (see `~/Projects/web_kontissa`). No backup logic lives in this repo.
