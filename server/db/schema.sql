@@ -93,6 +93,18 @@ CREATE TABLE IF NOT EXISTS failed_guesses (
 CREATE INDEX IF NOT EXISTS idx_failed_guesses_word ON failed_guesses(word);
 CREATE INDEX IF NOT EXISTS idx_failed_guesses_date ON failed_guesses(puzzle_date);
 
+CREATE TABLE IF NOT EXISTS word_finds (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    word          TEXT NOT NULL,
+    puzzle_number INTEGER NOT NULL,
+    count         INTEGER NOT NULL DEFAULT 1,
+    first_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    last_at       TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(word, puzzle_number)
+);
+CREATE INDEX IF NOT EXISTS idx_word_finds_word ON word_finds(word);
+CREATE INDEX IF NOT EXISTS idx_word_finds_puzzle ON word_finds(puzzle_number);
+
 -- -------------------------------------------------------------------------
 -- Player accounts and authentication (separate from admin auth)
 -- -------------------------------------------------------------------------

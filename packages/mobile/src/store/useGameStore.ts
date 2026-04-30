@@ -338,6 +338,17 @@ export const useGameStore = create<GameState>()((set, get) => ({
     });
     PreparedHaptics.triggerNotification('success');
 
+    fetch(`${config.apiBase}/api/word-find`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        word: normalized,
+        puzzle_number: puzzle.puzzle_number,
+      }),
+    }).catch(() => {
+      // Silently ignore network errors
+    });
+
     // Auto-clear the success message after 2 seconds
     setTimeout(() => {
       const s = get();

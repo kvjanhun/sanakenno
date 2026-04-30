@@ -11,6 +11,7 @@
  *   GET  /api/archive             - Last 7 days of puzzle metadata
  *   POST /api/achievement         - Record player achievement
  *   POST /api/failed-guess        - Record non-dictionary guess
+ *   POST /api/word-find           - Record a successful word find
  *   POST /api/auth/login          - Admin login
  *   POST /api/auth/logout         - Admin logout
  *   GET  /api/auth/session        - Check session validity
@@ -36,6 +37,7 @@ import puzzleRoutes from './routes/puzzle';
 import archiveRoutes from './routes/archive';
 import achievementRoutes from './routes/achievement';
 import failedGuessRoutes from './routes/failed-guess';
+import wordFindRoutes from './routes/word-find';
 import authRoutes from './auth/routes';
 import adminRoutes from './routes/admin';
 import playerAuthRoutes from './player-auth/routes';
@@ -131,6 +133,7 @@ app.route('/api/puzzle', puzzleRoutes);
 app.route('/api/archive', archiveRoutes);
 app.route('/api/achievement', achievementRoutes);
 app.route('/api/failed-guess', failedGuessRoutes);
+app.route('/api/word-find', wordFindRoutes);
 app.route('/api/auth', authRoutes);
 app.route('/api/admin', adminRoutes);
 app.route('/api/player', playerAuthRoutes);
