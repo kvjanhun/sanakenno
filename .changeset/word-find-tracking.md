@@ -1,5 +1,5 @@
 ---
-"@sanakenno/web": minor
+'@sanakenno/web': minor
 ---
 
 Track how often each word is found per puzzle. Adds a `word_finds` table
