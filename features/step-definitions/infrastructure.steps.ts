@@ -8,8 +8,13 @@
 
 import { Given, When, Then } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import app from '../../server/index';
 import type { SanakennoWorld } from './types';
+
+interface InfrastructureWorld extends SanakennoWorld {
+  healthAlertOutput?: string;
+}
 
 // --- Security & Environment (container-only) ---
 
@@ -77,6 +82,38 @@ Then(
   'the response should confirm the database is reachable',
   function (this: SanakennoWorld) {
     assert.equal(this.responseJson.status, 'ok');
+  },
+);
+
+Given(
+  'the health monitor sees a transient missing Docker status while the site is healthy',
+  function (this: InfrastructureWorld) {
+    this.healthAlertOutput = undefined;
+  },
+);
+
+When(
+  'the health monitor runs with mocked dependencies',
+  function (this: InfrastructureWorld) {
+    this.healthAlertOutput = execFileSync(
+      'bash',
+      ['server/scripts/health-alert-test.sh', 'transient-missing'],
+      { encoding: 'utf8' },
+    );
+  },
+);
+
+Then(
+  'no health alert notification should be sent',
+  function (this: InfrastructureWorld) {
+    assert.match(this.healthAlertOutput ?? '', /transient-missing: ok/);
+  },
+);
+
+Then(
+  'a later healthy monitor run should clear the transient status without a recovery notification',
+  function (this: InfrastructureWorld) {
+    assert.match(this.healthAlertOutput ?? '', /transient-missing: ok/);
   },
 );
 

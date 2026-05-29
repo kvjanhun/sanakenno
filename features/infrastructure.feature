@@ -24,6 +24,12 @@ Feature: Container Infrastructure
     Then the server should respond with 200 "OK"
     And the response should confirm the database is reachable
 
+  Scenario: Health monitor ignores a transient missing container read
+    Given the health monitor sees a transient missing Docker status while the site is healthy
+    When the health monitor runs with mocked dependencies
+    Then no health alert notification should be sent
+    And a later healthy monitor run should clear the transient status without a recovery notification
+
   Scenario: Logs are emitted in a Loki-compatible format
     When the server processes a request
     Then it should emit a structured log to stdout (console)
