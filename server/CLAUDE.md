@@ -4,7 +4,7 @@
 ```
 server/
   index.ts          entry point — mounts all routes, middleware
-  routes/           puzzle, archive, achievement, failed-guess, admin, player-sync route files
+  routes/           puzzle, archive, achievement, failed-guess, word-find, admin, player-sync route files
   auth/             admin session middleware and routes (cookie-based)
   player-auth/      player identity middleware and routes (Bearer token-based)
   db/               SQLite connection + schema
@@ -21,7 +21,7 @@ server/
 ## Auth layers
 - **Admin** (`/api/admin/*`, `/api/auth/*`): cookie session via `requireAuth` + `requireCsrf` from `auth/middleware.ts`.
 - **Player** (`/api/player/*`): Bearer token via `requirePlayerAuth` from `player-auth/middleware.ts`.
-- **Public** (`/api/puzzle`, `/api/archive`, `/api/achievement`, `/api/failed-guess`): no auth, rate-limited where needed.
+- **Public** (`/api/puzzle`, `/api/archive`, `/api/achievement`, `/api/failed-guess`, `/api/word-find`): no auth, rate-limited where needed.
 
 ## Database
 - All queries go through the `getDb()` helper — never open a raw connection elsewhere.

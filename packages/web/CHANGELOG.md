@@ -1,5 +1,20 @@
 # @sanakenno/web
 
+## 1.7.0
+
+### Minor Changes
+
+- 5d5de01: Track how often each word is found per puzzle. Adds a `word_finds` table
+  (word, puzzle_number, count) and a `POST /api/word-find` endpoint, with
+  fire-and-forget reporting from web and mobile clients on every accepted
+  word. Adds authenticated admin word-find analytics so puzzle tuning can
+  inspect per-puzzle words hardest-first, including valid words that have not
+  been found yet.
+
+### Patch Changes
+
+- @sanakenno/shared@1.7.0
+
 ## 1.6.0
 
 ### Minor Changes

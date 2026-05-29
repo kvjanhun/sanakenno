@@ -10,7 +10,7 @@ Finnish Spelling Bee word game — find words from 7 letters, every word must co
 |---|---|
 | Language | TypeScript (strict) |
 | Web Frontend | React 19, Vite, Zustand, Tailwind CSS 4 |
-| Mobile App | Expo 55, React Native 0.83, Zustand, MMKV |
+| Mobile App | Expo 55, React Native 0.83, Zustand, MMKV (paused) |
 | Shared Domain | `packages/shared` — pure game logic, types, platform interfaces |
 | Backend | Hono (Node.js via tsx) |
 | Storage | SQLite (better-sqlite3) |
@@ -46,7 +46,7 @@ All behaviour is defined in Gherkin specs under `features/`. The BDD suite runs 
 | [timer](features/timer.feature) | Elapsed time tracking, pause on tab hidden/blur |
 | [persistence](features/persistence.feature) | localStorage per-puzzle, validation on reload |
 | [achievements](features/achievements.feature) | Server-side rank recording, session dedup |
-| [api](features/api.feature) | Hono endpoints, response shape, rate limiting, failed-guess recording |
+| [api](features/api.feature) | Hono endpoints, response shape, rate limiting, failed-guess and word-find recording |
 | [settings](features/settings.feature) | Theme preference, haptics intensity levels (mobile) |
 | [navigation](features/navigation.feature) | Stack navigator, archive/stats/rules/settings screens (mobile) |
 | [theme](features/theme.feature) | Light/dark mode toggle, system preference |
@@ -56,7 +56,7 @@ All behaviour is defined in Gherkin specs under `features/`. The BDD suite runs 
 | [infrastructure](features/infrastructure.feature) | Docker, nginx, health checks |
 | [auth](features/auth.feature) | Admin authentication (cookie sessions, CSRF, CLI-provisioned account) |
 | [player-auth](features/player-auth.feature) | Silent player init, pairing-code device pairing, key rotation |
-| [admin](features/admin.feature) | Puzzle CRUD, blocked words, schedule |
+| [admin](features/admin.feature) | Puzzle CRUD, blocked words, schedule, analytics |
 | [archive](features/archive.feature) | 7-day puzzle archive, score+rank per day, replay past puzzles |
 | [definitions](features/definitions.feature) | Word definitions via Kotus dictionary links |
 | [stats](features/stats.feature) | Player statistics, streaks, rank distribution |

@@ -3,7 +3,7 @@
  *
  * Tests admin API: puzzle CRUD, today's puzzle protection, center letter,
  * preview, word blocking, combinations browser, schedule, achievements,
- * failed-guess stats,
+ * failed-guess stats, word-find stats,
  * and cache invalidation via Hono app.request().
  */
 
@@ -1559,6 +1559,98 @@ Then(
     const item = entry!.words.find((w) => w.word === normalized);
     assert.ok(item, `Word ${normalized} should appear for ${date}`);
     assert.equal(item!.count, expectedCount);
+  },
+);
+
+// --- Word-find stats ---
+
+Given(
+  'word finds include word {string} with count {int} for puzzle {int}',
+  function (
+    this: AdminWorld,
+    word: string,
+    count: number,
+    puzzleNumber: number,
+  ) {
+    const db = getDb();
+    const normalized = word.toLowerCase().replace(/-/g, '');
+
+    db.prepare(
+      `INSERT INTO word_finds (word, puzzle_number, count, first_at, last_at)
+       VALUES (?, ?, ?, datetime('now'), datetime('now'))
+       ON CONFLICT(word, puzzle_number) DO UPDATE SET
+         count = count + excluded.count,
+         last_at = datetime('now')`,
+    ).run(normalized, puzzleNumber, count);
+  },
+);
+
+When(
+  'the admin requests word-find stats for puzzle {int}',
+  async function (this: AdminWorld, puzzleNumber: number) {
+    this.response = await app.request(
+      `/api/admin/word-finds?puzzle_number=${puzzleNumber}`,
+      {
+        method: 'GET',
+        headers: adminGet(this.sessionCookie),
+      },
+    );
+    this.responseJson = (await this.response.json()) as Record<string, unknown>;
+  },
+);
+
+Then(
+  'the word-find response should include puzzle number {int}',
+  function (this: AdminWorld, puzzleNumber: number) {
+    assert.equal(this.responseJson.puzzle_number, puzzleNumber);
+  },
+);
+
+Then(
+  'the word-find response should include current puzzle words',
+  function (this: AdminWorld) {
+    const words = this.responseJson.words as Array<{
+      word: string;
+      find_count: number;
+    }>;
+    assert.ok(Array.isArray(words), 'Missing words array');
+    assert.ok(
+      words.some((item) => item.word === 'lakana' && item.find_count === 0),
+      'Expected current valid puzzle words with zero finds to be included',
+    );
+  },
+);
+
+Then(
+  'word-find word {string} should have count {int}',
+  function (this: AdminWorld, word: string, expectedCount: number) {
+    const words = this.responseJson.words as Array<{
+      word: string;
+      find_count: number;
+    }>;
+    const normalized = word.toLowerCase().replace(/-/g, '');
+    const item = words.find((entry) => entry.word === normalized);
+    assert.ok(item, `Expected word ${normalized} in word-find response`);
+    assert.equal(item!.find_count, expectedCount);
+  },
+);
+
+Then(
+  'word-find word {string} should be harder than word {string}',
+  function (this: AdminWorld, harderWord: string, easierWord: string) {
+    const words = this.responseJson.words as Array<{
+      word: string;
+      find_count: number;
+    }>;
+    const harder = words.find((entry) => entry.word === harderWord);
+    const easier = words.find((entry) => entry.word === easierWord);
+
+    assert.ok(harder, `Expected word ${harderWord} in response`);
+    assert.ok(easier, `Expected word ${easierWord} in response`);
+    assert.ok(
+      harder!.find_count < easier!.find_count,
+      `${harderWord} should have fewer finds than ${easierWord}`,
+    );
   },
 );
 

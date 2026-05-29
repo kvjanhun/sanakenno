@@ -4,14 +4,16 @@ This document provides a high-level overview of the project's architecture and d
 
 ## Core Architecture
 
-Sanakenno is a word-puzzle game with a web app, a native iOS/Android app, and a Hono (Node.js) backend. A pnpm workspace ties them together:
+Sanakenno is a word-puzzle game with a web app and a Hono (Node.js) backend.
+A native Expo app exists in the repo, but native development/distribution is
+currently on hiatus. A pnpm workspace ties the code together:
 
 ```
 sanakenno/
   packages/
     shared/   # Pure domain logic, types, platform interfaces (@sanakenno/shared)
     web/      # React 19 + Vite PWA frontend
-    mobile/   # Expo / React Native app (iOS-first)
+    mobile/   # Expo / React Native app (paused)
   server/     # Hono API server
   features/   # BDD specs (source of truth for behaviour)
 ```
@@ -32,7 +34,8 @@ Current versions: see the package.json files for each deployable target.
 6. **Stats**: `updateStatsRecord` (shared) updates the per-puzzle `StatsRecord` (rank, score, longest_word, pangrams_found). Skipped if the puzzle's `revealed_N` flag is set.
 7. **Sync**: If logged in, fires `POST /api/player/sync/stats` and `POST /api/player/sync/state` (fire-and-forget).
 8. **Feedback**: `MessageBar` (web) / in-store `message` state (mobile) shows success/error messages.
-9. **Failed guesses**: After an "Ei sanakirjassa" rejection, both clients fire-and-forget `POST /api/failed-guess`.
+9. **Word-find analytics**: Accepted words fire-and-forget `POST /api/word-find` with `(word, puzzle_number)`.
+10. **Failed guesses**: After an "Ei sanakirjassa" rejection, both clients fire-and-forget `POST /api/failed-guess`.
 
 ### Daily Puzzle Fetching
 
@@ -42,7 +45,7 @@ Current versions: see the package.json files for each deployable target.
 4. **Database**: Puzzles are fetched from SQLite via `server/db/connection.ts`.
 5. **Response**: JSON including letters, center letter, and pre-computed `hint_data`.
 
-### Archive & Word List (mobile)
+### Archive & Word List (mobile, paused)
 
 1. Mobile archive screen fetches `GET /api/archive?all=true` — returns all past puzzle slots.
 2. Today's card is pinned above a scrollable `FlatList` of past entries.
@@ -77,6 +80,8 @@ Current versions: see the package.json files for each deployable target.
 - `components/Honeycomb/`: The visual heart of the web game.
 - `components/ArchiveModal.tsx`: 7-day puzzle archive browser.
 - `components/StatsModal.tsx`: Player statistics and history display.
+- `components/admin/Stats.tsx`: Admin achievement stats plus failed-guess and word-find analytics.
+- `components/admin/WordFinds.tsx`: Per-puzzle successful word-find counts, sorted hardest-first.
 
 ### Mobile App (`packages/mobile/`)
 
@@ -105,6 +110,7 @@ Current versions: see the package.json files for each deployable target.
 - `routes/player-sync.ts`: `GET /api/player/sync`, `POST /api/player/sync/stats`, `POST /api/player/sync/state`.
 - `routes/admin.ts`: Admin dashboard endpoints (requires session auth).
 - `routes/failed-guess.ts`: `POST /api/failed-guess`.
+- `routes/word-find.ts`: `POST /api/word-find`; admin reads aggregate counts through `GET /api/admin/word-finds`.
 - `auth/`: Admin session middleware and routes (cookie-based, CSRF-protected).
 - `player-auth/`: Player identity middleware and routes (Bearer token-based).
 - `email/`: Transactional email helpers (e.g. `send-transfer-link.ts` for the device-pairing email).
@@ -124,6 +130,6 @@ Current versions: see the package.json files for each deployable target.
 
 - **Helsinki Time**: The game strictly follows `Europe/Helsinki` for puzzle rotation.
 - **Auth layers**: Admin — cookie session (`/api/admin/*`, `/api/auth/*`). Player — Bearer token (`/api/player/*`). Public — no auth.
-- **Mobile**: MMKV for persistence, iOS-first. Android is a later phase.
+- **Mobile**: MMKV for persistence; native development is paused. Do not plan App Store, TestFlight, EAS production builds, or Android parity unless the roadmap is explicitly reopened.
 - **Revealed flag**: `revealed_N` in MMKV (local-only, not synced) marks a puzzle whose answers have been viewed; stats updates are frozen for that puzzle number.
 - **Backups**: The SQLite database is backed up off-box to Backblaze S3 by the shared backup service that runs alongside `erez.ac` (see `~/Projects/web_kontissa`). No backup logic lives in this repo.

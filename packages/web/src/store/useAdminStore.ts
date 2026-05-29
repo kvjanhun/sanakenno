@@ -59,6 +59,11 @@ export interface FailedGuessDay {
   words: { word: string; count: number }[];
 }
 
+export interface WordFindEntry {
+  word: string;
+  find_count: number;
+}
+
 interface AdminState {
   // Auth
   authenticated: boolean;

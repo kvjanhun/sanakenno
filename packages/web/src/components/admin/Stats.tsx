@@ -12,6 +12,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAdminStore } from '../../store/useAdminStore';
 import type { AchievementDay } from '../../store/useAdminStore';
 import { FailedGuesses } from './FailedGuesses';
+import { WordFinds } from './WordFinds';
 
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -287,6 +288,21 @@ export function Stats() {
               </h3>
             </div>
             <FailedGuesses />
+          </section>
+
+          <section className="pt-4 space-y-3">
+            <div
+              className="pt-3"
+              style={{ borderTop: '1px solid var(--color-border)' }}
+            >
+              <h3
+                className="text-sm font-semibold"
+                style={{ color: 'var(--color-text-primary)' }}
+              >
+                Löydetyt sanat
+              </h3>
+            </div>
+            <WordFinds />
           </section>
         </>
       )}

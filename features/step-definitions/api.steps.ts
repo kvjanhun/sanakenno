@@ -3,7 +3,7 @@
  *
  * Wires Cucumber scenarios to the Hono app using app.request().
  * Tests puzzle API structure, achievement recording, validation, rate limiting,
- * and failed-guess recording.
+ * failed-guess recording, and word-find recording.
  */
 
 import {
@@ -19,6 +19,7 @@ import app from '../../server/index';
 import { getDb, closeDb, setDb } from '../../server/db/connection';
 import { resetRateLimit } from '../../server/routes/achievement';
 import { resetRateLimit as resetFailedGuessRateLimit } from '../../server/routes/failed-guess';
+import { resetRateLimit as resetWordFindRateLimit } from '../../server/routes/word-find';
 import { setWordlist, invalidateAll } from '../../server/puzzle-engine';
 import type { SanakennoWorld } from './types';
 
@@ -29,6 +30,12 @@ interface AchievementRow {
   score: number;
 }
 
+interface WordFindRow {
+  word: string;
+  puzzle_number: number;
+  count: number;
+}
+
 Before(function (this: SanakennoWorld, scenario: ITestCaseHookParameter) {
   if (!scenario.gherkinDocument?.uri?.includes('api.feature')) return;
 
@@ -37,6 +44,7 @@ Before(function (this: SanakennoWorld, scenario: ITestCaseHookParameter) {
   const db = getDb({ inMemory: true });
   resetRateLimit();
   resetFailedGuessRateLimit();
+  resetWordFindRateLimit();
   invalidateAll();
   this.responses = [];
 
@@ -328,4 +336,71 @@ When(
 
 Then('the 31st should receive a 429 response', function (this: SanakennoWorld) {
   assert.equal(this.responses[30].status, 429);
+});
+
+/* ------------------------------------------------------------------ */
+/* POST /api/word-find steps */
+/* ------------------------------------------------------------------ */
+
+When(
+  'a POST is made to \\/api\\/word-find with word {string} and puzzle number {int}',
+  async function (this: SanakennoWorld, word: string, puzzleNumber: number) {
+    this.response = await app.request('/api/word-find', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ word, puzzle_number: puzzleNumber }),
+    });
+    this.responseJson = await this.response.json();
+  },
+);
+
+Given(
+  'a word find for word {string} on puzzle {int} already exists',
+  async function (this: SanakennoWorld, word: string, puzzleNumber: number) {
+    await app.request('/api/word-find', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ word, puzzle_number: puzzleNumber }),
+    });
+  },
+);
+
+Then(
+  'the word find for word {string} on puzzle {int} should have count {int}',
+  function (
+    this: SanakennoWorld,
+    word: string,
+    puzzleNumber: number,
+    expectedCount: number,
+  ) {
+    const db = getDb();
+    const normalized = word.toLowerCase().replace(/-/g, '');
+    const row = db
+      .prepare(
+        'SELECT word, puzzle_number, count FROM word_finds WHERE word = ? AND puzzle_number = ?',
+      )
+      .get(normalized, puzzleNumber) as WordFindRow | undefined;
+
+    assert.ok(row, `Word find ${normalized}/${puzzleNumber} should exist`);
+    assert.equal(row!.count, expectedCount);
+  },
+);
+
+When(
+  /^(\d+) POST requests are made to \/api\/word-find within one minute$/,
+  async function (this: SanakennoWorld, count: string) {
+    resetWordFindRateLimit();
+    for (let i = 0; i < parseInt(count, 10); i++) {
+      const res = await app.request('/api/word-find', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ word: `word${i}`, puzzle_number: 5 }),
+      });
+      this.responses.push(res);
+    }
+  },
+);
+
+Then('the 61st should receive a 429 response', function (this: SanakennoWorld) {
+  assert.equal(this.responses[60].status, 429);
 });

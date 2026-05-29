@@ -69,3 +69,24 @@ Feature: Puzzle API
   Scenario: Failed-guess endpoint is rate-limited to 30/minute
     When 31 POST requests are made to /api/failed-guess within one minute
     Then the 31st should receive a 429 response
+
+  # --- POST /api/word-find ---
+
+  Scenario: Valid word find is recorded
+    When a POST is made to /api/word-find with word "Kala" and puzzle number 5
+    Then the server should respond with 200
+    And the word find for word "kala" on puzzle 5 should have count 1
+
+  Scenario: Duplicate word find increments the count
+    Given a word find for word "kala" on puzzle 5 already exists
+    When a POST is made to /api/word-find with word "kala" and puzzle number 5
+    Then the server should respond with 200
+    And the word find for word "kala" on puzzle 5 should have count 2
+
+  Scenario: Word find with invalid puzzle number is rejected
+    When a POST is made to /api/word-find with word "kala" and puzzle number -1
+    Then the server should respond with 400
+
+  Scenario: Word-find endpoint is rate-limited to 60/minute
+    When 61 POST requests are made to /api/word-find within one minute
+    Then the 61st should receive a 429 response

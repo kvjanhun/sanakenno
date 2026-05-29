@@ -19,6 +19,7 @@
  *   GET    /api/admin/schedule            - 14-day upcoming puzzle rotation
  *   GET    /api/admin/achievements        - Daily achievement breakdown by rank
  *   GET    /api/admin/failed-guesses      - Daily failed-guess breakdown by word
+ *   GET    /api/admin/word-finds          - Per-puzzle successful word-find counts
  *
  * @module server/routes/admin
  */
@@ -32,6 +33,7 @@ import {
   computePuzzle,
   computeVariations,
   getBlockedWords,
+  getPuzzleBySlot,
   getPuzzleForDate,
   bumpPuzzleCacheGeneration,
   totalPuzzles,
@@ -66,6 +68,11 @@ interface AchievementRow {
 
 interface FailedGuessStatRow {
   puzzle_date: string;
+  word: string;
+  count: number;
+}
+
+interface WordFindStatRow {
   word: string;
   count: number;
 }
@@ -960,6 +967,61 @@ admin.get('/failed-guesses', (c) => {
 
   const grandTotal = daily.reduce((sum, day) => sum + day.total_count, 0);
   return c.json({ days, daily, grand_total: grandTotal });
+});
+
+/**
+ * GET /word-finds
+ * Successful word-find counts for one puzzle slot.
+ * Query params:
+ *   puzzle_number=0 — zero-based puzzle slot to inspect
+ */
+admin.get('/word-finds', (c) => {
+  const rawPuzzleNumber = c.req.query('puzzle_number');
+  if (!rawPuzzleNumber || !/^\d+$/.test(rawPuzzleNumber)) {
+    return c.json({ error: 'Invalid puzzle_number' }, 400);
+  }
+
+  const puzzleNumber = Number.parseInt(rawPuzzleNumber, 10);
+  const puzzle = getPuzzleBySlot(puzzleNumber);
+  if (!puzzle) {
+    return c.json({ error: 'Puzzle not found' }, 404);
+  }
+
+  const db = getDb();
+  const rows = db
+    .prepare(
+      `SELECT word, count FROM word_finds
+       WHERE puzzle_number = ?
+       ORDER BY count ASC, word ASC`,
+    )
+    .all(puzzleNumber) as WordFindStatRow[];
+
+  const countsByWord = new Map(rows.map((row) => [row.word, row.count]));
+  const words = puzzle.words
+    .map((word) => ({
+      word,
+      find_count: countsByWord.get(word) || 0,
+    }))
+    .sort((a, b) => {
+      if (a.find_count !== b.find_count) {
+        return a.find_count - b.find_count;
+      }
+      return a.word.localeCompare(b.word, 'fi');
+    });
+
+  const totalFinds = words.reduce((sum, item) => sum + item.find_count, 0);
+  const recordedWords = words.filter((item) => item.find_count > 0).length;
+
+  return c.json({
+    puzzle_number: puzzleNumber,
+    display_number: puzzleNumber + 1,
+    center: puzzle.center,
+    letters: puzzle.letters,
+    total_words: words.length,
+    recorded_words: recordedWords,
+    total_finds: totalFinds,
+    words,
+  });
 });
 
 export default admin;

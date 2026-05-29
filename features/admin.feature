@@ -237,6 +237,18 @@ Feature: Admin tool
     And failed guess day offset 0 should include word "outu" with count 1
     And failed guess day offset 1 should have total_count 2
 
+  # --- Word-find stats ---
+
+  Scenario: View word-find counts for a puzzle
+    Given word finds include word "kala" with count 5 for puzzle 4
+    And word finds include word "kana" with count 2 for puzzle 4
+    When the admin requests word-find stats for puzzle 4
+    Then the word-find response should include puzzle number 4
+    And the word-find response should include current puzzle words
+    And word-find word "kala" should have count 5
+    And word-find word "kana" should have count 2
+    And word-find word "kana" should be harder than word "kala"
+
   # --- Cache invalidation ---
 
   Scenario: Admin writes invalidate the puzzle engine cache

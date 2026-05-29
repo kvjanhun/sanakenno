@@ -127,6 +127,22 @@ export async function mockPuzzleApi(page: Page) {
     });
   });
 
+  await page.route('**/api/word-find', async (route) => {
+    await route.fulfill({
+      status: 201,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true }),
+    });
+  });
+
+  await page.route('**/api/failed-guess', async (route) => {
+    await route.fulfill({
+      status: 201,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true }),
+    });
+  });
+
   await mockPlayerApi(page);
 
   return puzzle;

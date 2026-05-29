@@ -9,6 +9,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import app from '../server/index';
 import { getDb, closeDb, setDb } from '../server/db/connection';
 import { resetRateLimit } from '../server/routes/achievement';
+import { resetRateLimit as resetWordFindRateLimit } from '../server/routes/word-find';
 import {
   setWordlist,
   invalidateAll,
@@ -42,6 +43,12 @@ interface AchievementRow {
   elapsed_ms: number | null;
   session_id: string | null;
   achieved_at: string;
+}
+
+interface WordFindRow {
+  word: string;
+  puzzle_number: number;
+  count: number;
 }
 
 interface ErrorResponse {
@@ -369,5 +376,106 @@ describe('POST /api/achievement', () => {
       const json = (await res.json()) as ErrorResponse;
       expect(json.error).toContain('Rate limit');
     });
+  });
+});
+
+describe('POST /api/word-find', () => {
+  beforeEach(() => {
+    closeDb();
+    setDb(null);
+    getDb({ inMemory: true });
+    resetWordFindRateLimit();
+  });
+
+  afterEach(() => {
+    closeDb();
+    setDb(null);
+  });
+
+  it('records a valid word find', async () => {
+    const res = await postJson('/api/word-find', {
+      word: 'Kala',
+      puzzle_number: 5,
+    });
+
+    expect(res.status).toBe(200);
+
+    const db = getDb();
+    const row = db.prepare('SELECT * FROM word_finds').get() as
+      | WordFindRow
+      | undefined;
+    expect(row).toBeTruthy();
+    expect(row!.word).toBe('kala');
+    expect(row!.puzzle_number).toBe(5);
+    expect(row!.count).toBe(1);
+  });
+
+  it('increments duplicate word finds by word and puzzle number', async () => {
+    await postJson('/api/word-find', { word: 'kala', puzzle_number: 5 });
+    const res = await postJson('/api/word-find', {
+      word: 'kala',
+      puzzle_number: 5,
+    });
+
+    expect(res.status).toBe(200);
+
+    const db = getDb();
+    const row = db
+      .prepare(
+        'SELECT count FROM word_finds WHERE word = ? AND puzzle_number = ?',
+      )
+      .get('kala', 5) as { count: number } | undefined;
+    expect(row?.count).toBe(2);
+  });
+
+  it('keeps counts separate per puzzle number', async () => {
+    await postJson('/api/word-find', { word: 'kala', puzzle_number: 5 });
+    await postJson('/api/word-find', { word: 'kala', puzzle_number: 6 });
+
+    const db = getDb();
+    const rows = db
+      .prepare(
+        'SELECT puzzle_number, count FROM word_finds ORDER BY puzzle_number',
+      )
+      .all() as Array<{ puzzle_number: number; count: number }>;
+    expect(rows).toEqual([
+      { puzzle_number: 5, count: 1 },
+      { puzzle_number: 6, count: 1 },
+    ]);
+  });
+
+  it('returns 400 for invalid puzzle number', async () => {
+    const res = await postJson('/api/word-find', {
+      word: 'kala',
+      puzzle_number: -1,
+    });
+
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 400 for invalid JSON body', async () => {
+    const res = await request('/api/word-find', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: 'not json',
+    });
+
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 429 after 60 requests per minute', async () => {
+    for (let i = 0; i < 60; i++) {
+      const res = await postJson('/api/word-find', {
+        word: `word${i}`,
+        puzzle_number: 5,
+      });
+      expect(res.status).toBe(200);
+    }
+
+    const res = await postJson('/api/word-find', {
+      word: 'word60',
+      puzzle_number: 5,
+    });
+    expect(res.status).toBe(429);
   });
 });
