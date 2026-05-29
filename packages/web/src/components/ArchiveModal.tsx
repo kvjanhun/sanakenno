@@ -16,6 +16,7 @@ import { rankForScore } from '@sanakenno/shared';
 import { loadFromStorage } from '../utils/storage';
 import { storage } from '../platform';
 import { EyeIcon } from './icons';
+import { ModalShell } from './ModalShell';
 
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -149,17 +150,10 @@ export function ArchiveModal({
     setPage(Math.max(0, pageCount - 1));
   }, [page, pageCount]);
 
-  useEffect(() => {
-    if (!show) return;
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (selectedEntry) setSelectedEntry(null);
-        else onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [show, onClose, selectedEntry]);
+  const handleEscape = useCallback(() => {
+    if (selectedEntry) setSelectedEntry(null);
+    else onClose();
+  }, [selectedEntry, onClose]);
 
   const handleEntryClick = useCallback(
     (entry: ArchiveEntry) => {
@@ -187,39 +181,16 @@ export function ArchiveModal({
   if (!show) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-sm rounded-xl p-4 flex flex-col"
-        style={{ backgroundColor: 'var(--color-bg-primary)', height: '80vh' }}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="archive-title"
-        onClick={(e) => e.stopPropagation()}
+    <>
+      <ModalShell
+        title="Arkisto"
+        titleId="archive-title"
+        onClose={onClose}
+        onEscape={handleEscape}
+        className="flex flex-col"
+        style={{ height: '80vh', overflowY: 'hidden' }}
+        headerClassName="mb-3"
       >
-        {/* Header */}
-        <div className="flex items-center justify-between mb-3">
-          <h2
-            id="archive-title"
-            className="text-lg font-semibold"
-            style={{ color: 'var(--color-text-primary)' }}
-          >
-            Arkisto
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1 text-lg bg-transparent border-none cursor-pointer"
-            style={{ color: 'var(--color-text-tertiary)' }}
-            aria-label="Sulje"
-          >
-            ✕
-          </button>
-        </div>
-
         {loading ? (
           <div
             className="flex-1 text-sm py-4 text-center"
@@ -380,7 +351,7 @@ export function ArchiveModal({
             )}
           </div>
         )}
-      </div>
+      </ModalShell>
 
       {/* Action sheet for past puzzles — sits above the list modal */}
       {selectedEntry && (
@@ -453,6 +424,6 @@ export function ArchiveModal({
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

@@ -21,6 +21,7 @@ import {
 import type { PlayerStats } from '@sanakenno/shared';
 import { loadFromStorage } from '../utils/storage';
 import { useAuthStore } from '../store/useAuthStore';
+import { ModalShell } from './ModalShell';
 
 /** Props for {@link StatsModal}. */
 export interface StatsModalProps {
@@ -45,15 +46,6 @@ export function StatsModal({
     }
   }, [show]);
 
-  useEffect(() => {
-    if (!show) return;
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [show, onClose]);
-
   if (!show) return null;
 
   const { records } = stats;
@@ -67,246 +59,214 @@ export function StatsModal({
   const ranksLowestFirst = [...RANKS].reverse();
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-sm rounded-xl p-4 overflow-y-auto max-h-[90vh]"
-        style={{ backgroundColor: 'var(--color-bg-primary)' }}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="stats-title"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between mb-1">
-          <h2
-            id="stats-title"
-            className="text-lg font-semibold"
-            style={{ color: 'var(--color-text-primary)' }}
-          >
-            Tilastot
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1 text-lg bg-transparent border-none cursor-pointer"
-            style={{ color: 'var(--color-text-tertiary)' }}
-            aria-label="Sulje"
-          >
-            ✕
-          </button>
-        </div>
-        {isLoggedIn && (
-          <p
-            className="text-xs mb-3"
-            style={{ color: 'var(--color-text-tertiary)' }}
-          >
-            ✓ Synkronoitu
-          </p>
-        )}
+    <ModalShell title="Tilastot" titleId="stats-title" onClose={onClose}>
+      {isLoggedIn && (
+        <p
+          className="text-xs mb-3"
+          style={{ color: 'var(--color-text-tertiary)' }}
+        >
+          ✓ Synkronoitu
+        </p>
+      )}
 
-        {records.length === 0 ? (
+      {records.length === 0 ? (
+        <div
+          className="text-sm py-4 text-center"
+          style={{ color: 'var(--color-text-tertiary)' }}
+        >
+          Ei vielä tilastoja. Pelaa kenno!
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {/* Summary row */}
           <div
-            className="text-sm py-4 text-center"
-            style={{ color: 'var(--color-text-tertiary)' }}
+            className="grid grid-cols-3 gap-2 text-center"
+            style={{
+              backgroundColor: 'var(--color-bg-secondary)',
+              borderRadius: '0.75rem',
+              padding: '0.75rem',
+            }}
           >
-            Ei vielä tilastoja. Pelaa kenno!
+            <div>
+              <div
+                className="text-xl font-semibold"
+                style={{ color: 'var(--color-text-primary)' }}
+              >
+                {records.length}
+              </div>
+              <div
+                className="text-xs"
+                style={{ color: 'var(--color-text-tertiary)' }}
+              >
+                Pelattu
+              </div>
+            </div>
+            <div>
+              <div
+                className="text-xl font-semibold"
+                style={{ color: 'var(--color-text-primary)' }}
+              >
+                {currentStreak}
+              </div>
+              <div
+                className="text-xs"
+                style={{ color: 'var(--color-text-tertiary)' }}
+              >
+                Putki
+              </div>
+            </div>
+            <div>
+              <div
+                className="text-xl font-semibold"
+                style={{ color: 'var(--color-text-primary)' }}
+              >
+                {bestStreak}
+              </div>
+              <div
+                className="text-xs"
+                style={{ color: 'var(--color-text-tertiary)' }}
+              >
+                Paras putki
+              </div>
+            </div>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {/* Summary row */}
+
+          <div>
             <div
-              className="grid grid-cols-3 gap-2 text-center"
+              className="text-sm mb-2"
+              style={{ color: 'var(--color-text-secondary)' }}
+            >
+              Kaikki pelit
+            </div>
+            <div
+              className="space-y-3"
               style={{
                 backgroundColor: 'var(--color-bg-secondary)',
                 borderRadius: '0.75rem',
                 padding: '0.75rem',
               }}
             >
-              <div>
-                <div
-                  className="text-xl font-semibold"
-                  style={{ color: 'var(--color-text-primary)' }}
-                >
-                  {records.length}
-                </div>
-                <div
-                  className="text-xs"
-                  style={{ color: 'var(--color-text-tertiary)' }}
-                >
-                  Pelattu
-                </div>
-              </div>
-              <div>
-                <div
-                  className="text-xl font-semibold"
-                  style={{ color: 'var(--color-text-primary)' }}
-                >
-                  {currentStreak}
-                </div>
-                <div
-                  className="text-xs"
-                  style={{ color: 'var(--color-text-tertiary)' }}
-                >
-                  Putki
-                </div>
-              </div>
-              <div>
-                <div
-                  className="text-xl font-semibold"
-                  style={{ color: 'var(--color-text-primary)' }}
-                >
-                  {bestStreak}
-                </div>
-                <div
-                  className="text-xs"
-                  style={{ color: 'var(--color-text-tertiary)' }}
-                >
-                  Paras putki
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div
-                className="text-sm mb-2"
-                style={{ color: 'var(--color-text-secondary)' }}
-              >
-                Kaikki pelit
-              </div>
-              <div
-                className="space-y-3"
-                style={{
-                  backgroundColor: 'var(--color-bg-secondary)',
-                  borderRadius: '0.75rem',
-                  padding: '0.75rem',
-                }}
-              >
-                <div className="grid grid-cols-2 gap-2 text-center">
-                  <div>
-                    <div
-                      className="text-xl font-semibold"
-                      style={{ color: 'var(--color-text-primary)' }}
-                    >
-                      {lifetime.totalWords}
-                    </div>
-                    <div
-                      className="text-xs"
-                      style={{ color: 'var(--color-text-tertiary)' }}
-                    >
-                      Sanoja
-                    </div>
-                  </div>
-                  <div>
-                    <div
-                      className="text-xl font-semibold"
-                      style={{ color: 'var(--color-text-primary)' }}
-                    >
-                      {lifetime.totalPangrams}
-                    </div>
-                    <div
-                      className="text-xs"
-                      style={{ color: 'var(--color-text-tertiary)' }}
-                    >
-                      Pangrammeja
-                    </div>
-                  </div>
-                </div>
-                <div className="text-center">
+              <div className="grid grid-cols-2 gap-2 text-center">
+                <div>
                   <div
-                    className="text-lg font-semibold break-all"
+                    className="text-xl font-semibold"
                     style={{ color: 'var(--color-text-primary)' }}
                   >
-                    {lifetime.longestWord || '—'}
+                    {lifetime.totalWords}
                   </div>
                   <div
                     className="text-xs"
                     style={{ color: 'var(--color-text-tertiary)' }}
                   >
-                    Pisin sana
+                    Sanoja
+                  </div>
+                </div>
+                <div>
+                  <div
+                    className="text-xl font-semibold"
+                    style={{ color: 'var(--color-text-primary)' }}
+                  >
+                    {lifetime.totalPangrams}
+                  </div>
+                  <div
+                    className="text-xs"
+                    style={{ color: 'var(--color-text-tertiary)' }}
+                  >
+                    Pangrammeja
                   </div>
                 </div>
               </div>
-            </div>
-
-            {/* Average completion */}
-            <div>
-              <div className="flex justify-between items-baseline mb-1">
-                <span
-                  className="text-sm"
-                  style={{ color: 'var(--color-text-secondary)' }}
-                >
-                  Keskimääräinen tulos
-                </span>
-                <span
-                  className="text-sm font-semibold"
+              <div className="text-center">
+                <div
+                  className="text-lg font-semibold break-all"
                   style={{ color: 'var(--color-text-primary)' }}
                 >
-                  {avgCompletion.toFixed(0)} %
-                </span>
-              </div>
-              <div
-                className="h-2 rounded-full overflow-hidden"
-                style={{ backgroundColor: 'var(--color-bg-secondary)' }}
-              >
+                  {lifetime.longestWord || '—'}
+                </div>
                 <div
-                  className="h-full rounded-full"
-                  style={{
-                    width: `${Math.min(100, avgCompletion)}%`,
-                    backgroundColor: 'var(--color-accent)',
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Rank distribution */}
-            <div>
-              <div
-                className="text-sm mb-2"
-                style={{ color: 'var(--color-text-secondary)' }}
-              >
-                Paras taso per kenno
-              </div>
-              <div className="space-y-1">
-                {ranksLowestFirst.map((rank) => {
-                  const count = rankDist[rank.name] || 0;
-                  const pct = (count / maxCount) * 100;
-                  return (
-                    <div key={rank.name} className="flex items-center gap-2">
-                      <span
-                        className="text-xs w-24 shrink-0 truncate"
-                        style={{ color: 'var(--color-text-secondary)' }}
-                        title={rank.name}
-                      >
-                        {rank.name}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <div
-                          className="h-4 rounded-sm"
-                          style={{
-                            width: count > 0 ? `${Math.max(4, pct)}%` : '0',
-                            backgroundColor: 'var(--color-accent)',
-                            minWidth: count > 0 ? '4px' : '0',
-                          }}
-                        />
-                      </div>
-                      <span
-                        className="text-xs w-4 text-right shrink-0"
-                        style={{ color: 'var(--color-text-tertiary)' }}
-                      >
-                        {count || ''}
-                      </span>
-                    </div>
-                  );
-                })}
+                  className="text-xs"
+                  style={{ color: 'var(--color-text-tertiary)' }}
+                >
+                  Pisin sana
+                </div>
               </div>
             </div>
           </div>
-        )}
-      </div>
-    </div>
+
+          {/* Average completion */}
+          <div>
+            <div className="flex justify-between items-baseline mb-1">
+              <span
+                className="text-sm"
+                style={{ color: 'var(--color-text-secondary)' }}
+              >
+                Keskimääräinen tulos
+              </span>
+              <span
+                className="text-sm font-semibold"
+                style={{ color: 'var(--color-text-primary)' }}
+              >
+                {avgCompletion.toFixed(0)} %
+              </span>
+            </div>
+            <div
+              className="h-2 rounded-full overflow-hidden"
+              style={{ backgroundColor: 'var(--color-bg-secondary)' }}
+            >
+              <div
+                className="h-full rounded-full"
+                style={{
+                  width: `${Math.min(100, avgCompletion)}%`,
+                  backgroundColor: 'var(--color-accent)',
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Rank distribution */}
+          <div>
+            <div
+              className="text-sm mb-2"
+              style={{ color: 'var(--color-text-secondary)' }}
+            >
+              Paras taso per kenno
+            </div>
+            <div className="space-y-1">
+              {ranksLowestFirst.map((rank) => {
+                const count = rankDist[rank.name] || 0;
+                const pct = (count / maxCount) * 100;
+                return (
+                  <div key={rank.name} className="flex items-center gap-2">
+                    <span
+                      className="text-xs w-24 shrink-0 truncate"
+                      style={{ color: 'var(--color-text-secondary)' }}
+                      title={rank.name}
+                    >
+                      {rank.name}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div
+                        className="h-4 rounded-sm"
+                        style={{
+                          width: count > 0 ? `${Math.max(4, pct)}%` : '0',
+                          backgroundColor: 'var(--color-accent)',
+                          minWidth: count > 0 ? '4px' : '0',
+                        }}
+                      />
+                    </div>
+                    <span
+                      className="text-xs w-4 text-right shrink-0"
+                      style={{ color: 'var(--color-text-tertiary)' }}
+                    >
+                      {count || ''}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </ModalShell>
   );
 }

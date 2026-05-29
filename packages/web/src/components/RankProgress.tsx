@@ -108,8 +108,11 @@ export function RankProgress({
         </button>
 
         <span
-          className="text-base font-semibold"
-          style={{ color: 'var(--color-text-primary)' }}
+          className="text-[26px] font-bold leading-none"
+          style={{
+            color: 'var(--color-text-primary)',
+            fontFamily: 'var(--font-game)',
+          }}
         >
           {displayScore} pistettä
         </span>

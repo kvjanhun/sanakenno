@@ -3,6 +3,7 @@ import { Copy, LogOut, Mail, QrCode, RefreshCw } from 'lucide-react';
 import isEmail from 'validator/lib/isEmail';
 import { useAuthStore } from '../store/useAuthStore';
 import { share } from '../platform';
+import { ModalShell } from './ModalShell';
 
 export interface SyncModalProps {
   show: boolean;
@@ -37,15 +38,6 @@ export function SyncModal({
       useAuthStore.getState().clearError();
     }
   }, [show]);
-
-  useEffect(() => {
-    if (!show) return;
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [show, onClose]);
 
   useEffect(() => {
     if (mode !== 'qr' || !qrCanvasRef.current || !connectUrl) return;
@@ -97,43 +89,188 @@ export function SyncModal({
   if (!show) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+    <ModalShell
+      title="Pelisessio tallennettu!"
+      titleId="sync-title"
+      onClose={onClose}
+      headerClassName="mb-4"
     >
-      <div
-        className="rounded-xl p-6 max-w-sm w-full mx-4"
-        style={{
-          backgroundColor: 'var(--color-bg-primary)',
-          color: 'var(--color-text-primary)',
-        }}
-      >
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold">Pelisessio tallennettu!</h2>
+      {mode === 'options' && !isLinked && (
+        <div className="space-y-3">
+          <p style={{ color: 'var(--color-text-secondary)' }}>
+            Tallenna edistymisesi, tilastosi ja asetuksesi, synkronoi
+            halutessasi muille laitteille.
+          </p>
           <button
             type="button"
-            onClick={onClose}
-            className="bg-transparent border-none cursor-pointer text-xl"
-            style={{ color: 'var(--color-text-tertiary)' }}
-            aria-label="Sulje"
+            onClick={() => useAuthStore.getState().revealShareOptions()}
+            className="w-full py-2 px-4 rounded-lg cursor-pointer border-none font-medium"
+            style={{
+              backgroundColor: 'var(--color-accent)',
+              color: 'var(--color-on-accent)',
+              opacity: isLoading ? 0.6 : 1,
+            }}
+            disabled={isLoading}
           >
-            ×
+            Tallenna
           </button>
-        </div>
-
-        {mode === 'options' && !isLinked && (
-          <div className="space-y-3">
-            <p style={{ color: 'var(--color-text-secondary)' }}>
-              Tallenna edistymisesi, tilastosi ja asetuksesi, synkronoi
-              halutessasi muille laitteille.
-            </p>
+          <p style={{ color: 'var(--color-text-secondary)' }}>
+            Synkronoi pelitunnisteella:
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={codeInput}
+              onChange={(e) => {
+                setCodeInput(e.target.value);
+                if (error) useAuthStore.setState({ error: null });
+              }}
+              className="flex-1 px-3 py-2 rounded-lg border text-sm"
+              style={{
+                backgroundColor: 'var(--color-bg-secondary)',
+                borderColor: 'var(--color-text-tertiary)',
+                color: 'var(--color-text-primary)',
+              }}
+            />
             <button
               type="button"
-              onClick={() => useAuthStore.getState().revealShareOptions()}
-              className="w-full py-2 px-4 rounded-lg cursor-pointer border-none font-medium"
+              onClick={() => void handleUseCode()}
+              className="py-2 px-3 rounded-lg font-medium cursor-pointer border-none"
+              style={{
+                backgroundColor: 'var(--color-accent)',
+                color: 'var(--color-on-accent)',
+                opacity: isLoading || !codeInput.trim() ? 0.6 : 1,
+              }}
+              disabled={isLoading || !codeInput.trim()}
+            >
+              Yhdistä
+            </button>
+          </div>
+        </div>
+      )}
+
+      {mode === 'options' && isLinked && (
+        <div className="space-y-3">
+          {playerKey ? (
+            <p style={{ color: 'var(--color-text-secondary)' }}>
+              Avaa Sanakenno toisella laitteella ja käytä alla olevaa linkkiä
+              tai koodia synkronoidaksesi.
+            </p>
+          ) : (
+            <p style={{ color: 'var(--color-text-secondary)' }}>
+              Tältä laitteelta ei vielä löydy pysyvää tunnistetta. Paina "Vaihda
+              tunniste" luodaksesi uuden.
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={() => void copyText(connectUrl)}
+            className="w-full py-2 px-4 rounded-lg border cursor-pointer flex items-center justify-center gap-2"
+            style={{
+              backgroundColor: 'transparent',
+              borderColor: 'var(--color-text-tertiary)',
+              color: 'var(--color-text-primary)',
+            }}
+            disabled={isLoading || !connectUrl}
+          >
+            <Copy size={16} />
+            Kopioi linkki
+          </button>
+          <button
+            type="button"
+            onClick={() => void copyText(playerKey ?? '')}
+            className="w-full py-2 px-4 rounded-lg border cursor-pointer flex items-center justify-center gap-2"
+            style={{
+              backgroundColor: 'transparent',
+              borderColor: 'var(--color-text-tertiary)',
+              color: 'var(--color-text-primary)',
+            }}
+            disabled={isLoading || !playerKey}
+          >
+            <Copy size={16} />
+            Kopioi koodi
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('qr')}
+            className="w-full py-2 px-4 rounded-lg border cursor-pointer flex items-center justify-center gap-2"
+            style={{
+              backgroundColor: 'transparent',
+              borderColor: 'var(--color-text-tertiary)',
+              color: 'var(--color-text-primary)',
+            }}
+            disabled={isLoading || !connectUrl}
+          >
+            <QrCode size={16} />
+            Näytä QR-koodi
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('email')}
+            className="w-full py-2 px-4 rounded-lg border cursor-pointer flex items-center justify-center gap-2"
+            style={{
+              backgroundColor: 'transparent',
+              borderColor: 'var(--color-text-tertiary)',
+              color: 'var(--color-text-primary)',
+            }}
+            disabled={isLoading || !playerKey}
+          >
+            <Mail size={16} />
+            Lähetä sähköpostiin
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('confirmRotate')}
+            className="w-full py-2 px-4 rounded-lg border cursor-pointer flex items-center justify-center gap-2"
+            style={{
+              backgroundColor: 'transparent',
+              borderColor: 'var(--color-text-tertiary)',
+              color: 'var(--color-text-primary)',
+            }}
+            disabled={isLoading}
+          >
+            <RefreshCw size={16} />
+            Vaihda tunniste
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleLogout()}
+            className="w-full py-2 px-4 rounded-lg border cursor-pointer flex items-center justify-center gap-2"
+            style={{
+              backgroundColor: 'transparent',
+              borderColor: 'var(--color-text-tertiary)',
+              color: 'var(--color-text-primary)',
+            }}
+          >
+            <LogOut size={16} />
+            Kirjaudu ulos
+          </button>
+        </div>
+      )}
+
+      {mode === 'confirmRotate' && (
+        <div className="space-y-3">
+          <p style={{ color: 'var(--color-text-secondary)' }}>
+            Tunnisteen vaihtamisen jälkeen käyttämäsi laitteet pitää synkronoida
+            uudelleen uudella tunnisteella. Jatka silti?
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setMode('options')}
+              className="w-1/2 py-2 px-4 rounded-lg border cursor-pointer"
+              style={{
+                backgroundColor: 'transparent',
+                borderColor: 'var(--color-text-tertiary)',
+                color: 'var(--color-text-primary)',
+              }}
+            >
+              Peruuta
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleConfirmRotate()}
+              className="w-1/2 py-2 px-4 rounded-lg font-medium cursor-pointer border-none"
               style={{
                 backgroundColor: 'var(--color-accent)',
                 color: 'var(--color-on-accent)',
@@ -141,288 +278,119 @@ export function SyncModal({
               }}
               disabled={isLoading}
             >
-              Tallenna
-            </button>
-            <hr style={{ borderColor: 'var(--color-text-tertiary)' }} />
-            <p style={{ color: 'var(--color-text-secondary)' }}>
-              Synkronoi pelitunnisteella:
-            </p>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={codeInput}
-                onChange={(e) => {
-                  setCodeInput(e.target.value);
-                  if (error) useAuthStore.setState({ error: null });
-                }}
-                className="flex-1 px-3 py-2 rounded-lg border text-sm"
-                style={{
-                  backgroundColor: 'var(--color-bg-secondary)',
-                  borderColor: 'var(--color-text-tertiary)',
-                  color: 'var(--color-text-primary)',
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => void handleUseCode()}
-                className="py-2 px-3 rounded-lg font-medium cursor-pointer border-none"
-                style={{
-                  backgroundColor: 'var(--color-accent)',
-                  color: 'var(--color-on-accent)',
-                  opacity: isLoading || !codeInput.trim() ? 0.6 : 1,
-                }}
-                disabled={isLoading || !codeInput.trim()}
-              >
-                Yhdistä
-              </button>
-            </div>
-          </div>
-        )}
-
-        {mode === 'options' && isLinked && (
-          <div className="space-y-3">
-            {playerKey ? (
-              <p style={{ color: 'var(--color-text-secondary)' }}>
-                Avaa Sanakenno toisella laitteella ja käytä alla olevaa linkkiä
-                tai koodia synkronoidaksesi.
-              </p>
-            ) : (
-              <p style={{ color: 'var(--color-text-secondary)' }}>
-                Tältä laitteelta ei vielä löydy pysyvää tunnistetta. Paina
-                "Vaihda tunniste" luodaksesi uuden.
-              </p>
-            )}
-            <button
-              type="button"
-              onClick={() => void copyText(connectUrl)}
-              className="w-full py-2 px-4 rounded-lg border cursor-pointer flex items-center justify-center gap-2"
-              style={{
-                backgroundColor: 'transparent',
-                borderColor: 'var(--color-text-tertiary)',
-                color: 'var(--color-text-primary)',
-              }}
-              disabled={isLoading || !connectUrl}
-            >
-              <Copy size={16} />
-              Kopioi linkki
-            </button>
-            <button
-              type="button"
-              onClick={() => void copyText(playerKey ?? '')}
-              className="w-full py-2 px-4 rounded-lg border cursor-pointer flex items-center justify-center gap-2"
-              style={{
-                backgroundColor: 'transparent',
-                borderColor: 'var(--color-text-tertiary)',
-                color: 'var(--color-text-primary)',
-              }}
-              disabled={isLoading || !playerKey}
-            >
-              <Copy size={16} />
-              Kopioi koodi
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode('qr')}
-              className="w-full py-2 px-4 rounded-lg border cursor-pointer flex items-center justify-center gap-2"
-              style={{
-                backgroundColor: 'transparent',
-                borderColor: 'var(--color-text-tertiary)',
-                color: 'var(--color-text-primary)',
-              }}
-              disabled={isLoading || !connectUrl}
-            >
-              <QrCode size={16} />
-              Näytä QR-koodi
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode('email')}
-              className="w-full py-2 px-4 rounded-lg border cursor-pointer flex items-center justify-center gap-2"
-              style={{
-                backgroundColor: 'transparent',
-                borderColor: 'var(--color-text-tertiary)',
-                color: 'var(--color-text-primary)',
-              }}
-              disabled={isLoading || !playerKey}
-            >
-              <Mail size={16} />
-              Lähetä sähköpostiin
-            </button>
-            <hr style={{ borderColor: 'var(--color-text-tertiary)' }} />
-            <button
-              type="button"
-              onClick={() => setMode('confirmRotate')}
-              className="w-full py-2 px-4 rounded-lg border cursor-pointer flex items-center justify-center gap-2"
-              style={{
-                backgroundColor: 'transparent',
-                borderColor: 'var(--color-text-tertiary)',
-                color: 'var(--color-text-primary)',
-              }}
-              disabled={isLoading}
-            >
-              <RefreshCw size={16} />
               Vaihda tunniste
             </button>
-            <button
-              type="button"
-              onClick={() => void handleLogout()}
-              className="w-full py-2 px-4 rounded-lg border cursor-pointer flex items-center justify-center gap-2"
-              style={{
-                backgroundColor: 'transparent',
-                borderColor: 'var(--color-text-tertiary)',
-                color: 'var(--color-text-primary)',
-              }}
-            >
-              <LogOut size={16} />
-              Kirjaudu ulos
-            </button>
           </div>
-        )}
+        </div>
+      )}
 
-        {mode === 'confirmRotate' && (
-          <div className="space-y-3">
-            <p style={{ color: 'var(--color-text-secondary)' }}>
-              Tunnisteen vaihtamisen jälkeen käyttämäsi laitteet pitää
-              synkronoida uudelleen uudella tunnisteella. Jatka silti?
-            </p>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setMode('options')}
-                className="w-1/2 py-2 px-4 rounded-lg border cursor-pointer"
-                style={{
-                  backgroundColor: 'transparent',
-                  borderColor: 'var(--color-text-tertiary)',
-                  color: 'var(--color-text-primary)',
-                }}
-              >
-                Peruuta
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleConfirmRotate()}
-                className="w-1/2 py-2 px-4 rounded-lg font-medium cursor-pointer border-none"
-                style={{
-                  backgroundColor: 'var(--color-accent)',
-                  color: 'var(--color-on-accent)',
-                  opacity: isLoading ? 0.6 : 1,
-                }}
-                disabled={isLoading}
-              >
-                Vaihda tunniste
-              </button>
-            </div>
-          </div>
-        )}
-
-        {mode === 'email' && (
-          <div className="space-y-3">
-            <p style={{ color: 'var(--color-text-secondary)' }}>
-              Lähetä yhdistyslinkki sähköpostiin.
-            </p>
-            <p
-              style={{
-                color: 'var(--color-text-secondary)',
-                fontSize: '0.875rem',
-              }}
-            >
-              Sähköpostiosoitettasi ei tallenneta.
-            </p>
-            <input
-              type="email"
-              value={emailInput}
-              onChange={(e) => {
-                setEmailInput(e.target.value);
-                if (error) useAuthStore.setState({ error: null });
-              }}
-              placeholder="sinä@esimerkki.fi"
-              className="w-full px-3 py-2 rounded-lg border text-sm"
-              style={{
-                backgroundColor: 'var(--color-bg-secondary)',
-                borderColor: 'var(--color-text-tertiary)',
-                color: 'var(--color-text-primary)',
-              }}
-            />
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setMode('options')}
-                className="w-1/2 py-2 px-4 rounded-lg border cursor-pointer"
-                style={{
-                  backgroundColor: 'transparent',
-                  borderColor: 'var(--color-text-tertiary)',
-                  color: 'var(--color-text-primary)',
-                }}
-              >
-                Takaisin
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleSendEmail()}
-                className="w-1/2 py-2 px-4 rounded-lg font-medium cursor-pointer border-none"
-                style={{
-                  backgroundColor: 'var(--color-accent)',
-                  color: 'var(--color-on-accent)',
-                  opacity: isLoading || !emailInput.trim() ? 0.6 : 1,
-                }}
-                disabled={isLoading || !emailInput.trim()}
-              >
-                Lähetä
-              </button>
-            </div>
-          </div>
-        )}
-
-        {mode === 'sent' && (
-          <div className="space-y-3">
-            <p style={{ color: 'var(--color-text-secondary)' }}>
-              Tarkista sähköpostisi.
-            </p>
-            <button
-              type="button"
-              onClick={() => setMode('options')}
-              className="w-full py-2 px-4 rounded-lg border cursor-pointer"
-              style={{
-                backgroundColor: 'transparent',
-                borderColor: 'var(--color-text-tertiary)',
-                color: 'var(--color-text-primary)',
-              }}
-            >
-              Takaisin
-            </button>
-          </div>
-        )}
-
-        {mode === 'qr' && (
-          <div className="space-y-3 text-center">
-            <canvas ref={qrCanvasRef} className="mx-auto rounded" />
-            <button
-              type="button"
-              onClick={() => setMode('options')}
-              className="w-full py-2 px-4 rounded-lg border cursor-pointer"
-              style={{
-                backgroundColor: 'transparent',
-                borderColor: 'var(--color-text-tertiary)',
-                color: 'var(--color-text-primary)',
-              }}
-            >
-              Takaisin
-            </button>
-          </div>
-        )}
-
-        {error && (
+      {mode === 'email' && (
+        <div className="space-y-3">
+          <p style={{ color: 'var(--color-text-secondary)' }}>
+            Lähetä yhdistyslinkki sähköpostiin.
+          </p>
           <p
             style={{
-              color: '#ef4444',
+              color: 'var(--color-text-secondary)',
               fontSize: '0.875rem',
-              marginTop: '0.75rem',
             }}
           >
-            {error}
+            Sähköpostiosoitettasi ei tallenneta.
           </p>
-        )}
-      </div>
-    </div>
+          <input
+            type="email"
+            value={emailInput}
+            onChange={(e) => {
+              setEmailInput(e.target.value);
+              if (error) useAuthStore.setState({ error: null });
+            }}
+            placeholder="sinä@esimerkki.fi"
+            className="w-full px-3 py-2 rounded-lg border text-sm"
+            style={{
+              backgroundColor: 'var(--color-bg-secondary)',
+              borderColor: 'var(--color-text-tertiary)',
+              color: 'var(--color-text-primary)',
+            }}
+          />
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setMode('options')}
+              className="w-1/2 py-2 px-4 rounded-lg border cursor-pointer"
+              style={{
+                backgroundColor: 'transparent',
+                borderColor: 'var(--color-text-tertiary)',
+                color: 'var(--color-text-primary)',
+              }}
+            >
+              Takaisin
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleSendEmail()}
+              className="w-1/2 py-2 px-4 rounded-lg font-medium cursor-pointer border-none"
+              style={{
+                backgroundColor: 'var(--color-accent)',
+                color: 'var(--color-on-accent)',
+                opacity: isLoading || !emailInput.trim() ? 0.6 : 1,
+              }}
+              disabled={isLoading || !emailInput.trim()}
+            >
+              Lähetä
+            </button>
+          </div>
+        </div>
+      )}
+
+      {mode === 'sent' && (
+        <div className="space-y-3">
+          <p style={{ color: 'var(--color-text-secondary)' }}>
+            Tarkista sähköpostisi.
+          </p>
+          <button
+            type="button"
+            onClick={() => setMode('options')}
+            className="w-full py-2 px-4 rounded-lg border cursor-pointer"
+            style={{
+              backgroundColor: 'transparent',
+              borderColor: 'var(--color-text-tertiary)',
+              color: 'var(--color-text-primary)',
+            }}
+          >
+            Takaisin
+          </button>
+        </div>
+      )}
+
+      {mode === 'qr' && (
+        <div className="space-y-3 text-center">
+          <canvas ref={qrCanvasRef} className="mx-auto rounded" />
+          <button
+            type="button"
+            onClick={() => setMode('options')}
+            className="w-full py-2 px-4 rounded-lg border cursor-pointer"
+            style={{
+              backgroundColor: 'transparent',
+              borderColor: 'var(--color-text-tertiary)',
+              color: 'var(--color-text-primary)',
+            }}
+          >
+            Takaisin
+          </button>
+        </div>
+      )}
+
+      {error && (
+        <p
+          style={{
+            color: 'var(--color-error)',
+            fontSize: '0.875rem',
+            marginTop: '0.75rem',
+          }}
+        >
+          {error}
+        </p>
+      )}
+    </ModalShell>
   );
 }

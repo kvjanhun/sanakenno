@@ -62,7 +62,11 @@ export function WordInput({
 
   return (
     <div
-      className={`text-center font-[var(--font-mono)] text-2xl ${shake ? ` ${styles.wordShake}` : ''}`}
+      className={`text-center text-[30px] font-semibold leading-none ${shake ? ` ${styles.wordShake}` : ''}`}
+      style={{
+        fontFamily: 'var(--font-game)',
+        minHeight: '44px',
+      }}
       aria-live="polite"
       aria-atomic="true"
     >

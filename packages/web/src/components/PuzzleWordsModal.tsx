@@ -12,6 +12,7 @@
 
 import { useEffect, useState } from 'react';
 import { storage, config } from '../platform';
+import { ModalShell } from './ModalShell';
 
 /** Locally persisted state shape (subset). */
 interface SavedGameState {
@@ -69,103 +70,68 @@ export function PuzzleWordsModal({
       });
   }, [show, puzzleNumber]);
 
-  useEffect(() => {
-    if (!show) return;
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [show, onClose]);
-
   if (!show || puzzleNumber === null) return null;
 
   const foundCount = words.filter((w) => foundWords.has(w)).length;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
-      onClick={onClose}
+    <ModalShell
+      title={`Kenno #${puzzleNumber + 1}`}
+      titleId="puzzle-words-title"
+      onClose={onClose}
+      className="flex flex-col"
+      style={{ height: '80vh', overflowY: 'hidden' }}
     >
-      <div
-        className="w-full max-w-sm rounded-xl p-4 flex flex-col"
-        style={{ backgroundColor: 'var(--color-bg-primary)', height: '80vh' }}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="puzzle-words-title"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-1">
-          <h2
-            id="puzzle-words-title"
-            className="text-lg font-semibold"
-            style={{ color: 'var(--color-text-primary)' }}
-          >
-            Kenno #{puzzleNumber + 1}
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1 text-lg bg-transparent border-none cursor-pointer"
-            style={{ color: 'var(--color-text-tertiary)' }}
-            aria-label="Sulje"
-          >
-            ✕
-          </button>
+      {!loading && !error && (
+        <div
+          className="text-xs mb-3"
+          style={{ color: 'var(--color-text-tertiary)' }}
+        >
+          {foundCount}/{words.length} löydetty
         </div>
+      )}
 
-        {!loading && !error && (
-          <div
-            className="text-xs mb-3"
-            style={{ color: 'var(--color-text-tertiary)' }}
-          >
-            {foundCount}/{words.length} löydetty
-          </div>
-        )}
+      {loading && (
+        <div
+          className="flex-1 text-sm py-4 text-center"
+          style={{ color: 'var(--color-text-tertiary)' }}
+        >
+          Ladataan...
+        </div>
+      )}
 
-        {loading && (
-          <div
-            className="flex-1 text-sm py-4 text-center"
-            style={{ color: 'var(--color-text-tertiary)' }}
-          >
-            Ladataan...
-          </div>
-        )}
+      {error && (
+        <div
+          className="flex-1 text-sm py-4 text-center"
+          style={{ color: 'var(--color-text-tertiary)' }}
+        >
+          Sanalistaa ei voitu ladata.
+        </div>
+      )}
 
-        {error && (
-          <div
-            className="flex-1 text-sm py-4 text-center"
-            style={{ color: 'var(--color-text-tertiary)' }}
-          >
-            Sanalistaa ei voitu ladata.
-          </div>
-        )}
-
-        {!loading && !error && (
-          <div className="flex-1 min-h-0 overflow-y-auto">
-            <ul className="grid grid-cols-3 gap-x-3 gap-y-1.5 list-none p-0 m-0">
-              {words.map((word) => {
-                const found = foundWords.has(word);
-                return (
-                  <li
-                    key={word}
-                    className="text-sm"
-                    style={{
-                      color: found
-                        ? 'var(--color-text-primary)'
-                        : 'var(--color-text-tertiary)',
-                      fontWeight: found ? 600 : 400,
-                    }}
-                  >
-                    {word}
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        )}
-      </div>
-    </div>
+      {!loading && !error && (
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <ul className="grid grid-cols-3 gap-x-3 gap-y-1.5 list-none p-0 m-0">
+            {words.map((word) => {
+              const found = foundWords.has(word);
+              return (
+                <li
+                  key={word}
+                  className="text-sm"
+                  style={{
+                    color: found
+                      ? 'var(--color-text-primary)'
+                      : 'var(--color-text-tertiary)',
+                    fontWeight: found ? 600 : 400,
+                  }}
+                >
+                  {word}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+    </ModalShell>
   );
 }
