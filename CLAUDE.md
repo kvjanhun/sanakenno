@@ -1,14 +1,14 @@
 # Sanakenno — Project Rules
 
 ## What this is
-A Finnish word-puzzle game with a web app, an iOS/Android app, and a Hono backend (SQLite). Live at **sanakenno.fi**.
+A Finnish word-puzzle game with a web app and a Hono backend (SQLite). Live at **sanakenno.fi**. Native app code remains in the repo, but mobile development and publishing are paused.
 See `packages/web/src/CLAUDE.md` for web rules, `packages/mobile/CLAUDE.md` for mobile rules, `server/CLAUDE.md` for backend rules.
 
 ## Tech Stack
 | Layer | Tech |
 |---|---|
 | Web Frontend | React 19, Vite, Zustand, Tailwind 4 |
-| Mobile App | Expo 55, React Native 0.83, Zustand, MMKV (iOS-first) |
+| Mobile App | Expo 55, React Native 0.83, Zustand, MMKV (paused reference surface) |
 | Shared Domain | `packages/shared` — pure game logic, types, platform interfaces |
 | Backend | Hono on Node.js (tsx) |
 | Storage | SQLite (better-sqlite3) |
@@ -79,7 +79,7 @@ The typecheck step uses Turborepo to run each package's own `tsc --noEmit` respe
 - `ci-web.yml`: `pnpm run typecheck` (server) + `pnpm turbo run typecheck --filter=!@sanakenno/mobile` (shared, web)
 - `ci-mobile.yml`: `pnpm turbo run typecheck --filter=@sanakenno/mobile` (shared + mobile, via `dependsOn`)
 
-When Android is added as a separate target, add a `ci-android.yml` following the same pattern as `ci-mobile.yml`.
+When native development resumes and Android becomes active, add a `ci-android.yml` following the same pattern as `ci-mobile.yml`.
 
 ## Commands
 ```
@@ -96,13 +96,13 @@ pnpm run build                            production build → dist/
 ```
 
 ## Workflow Skills
-Project-specific Claude Code skills live in `.claude/skills/<name>/SKILL.md`. They auto-trigger on matching intent and can also be invoked with `/<name>`.
+Codex uses project-specific skills under `~/.codex/skills/sanakenno-*`. The older `.claude/skills/<name>/SKILL.md` files are kept as reference material from the previous Claude workflow; do not treat them as the active source of agent behavior unless you are explicitly working in Claude Code.
 
 | Skill | When |
 |---|---|
-| `bdd-feature` | Any behavioural change — writes the `.feature` file first, gets agreement, then step definitions in `features/step-definitions/` |
-| `bump-version` | After implementation — writes the changeset for web/server/shared OR runs `npm version` for mobile; defaults to patch, suggests minor for new behaviour |
-| `pre-push` | Before every push — runs the local CI gauntlet matching the change set (web / mobile / both); halts on first failure; supports `--skip-e2e`, `--docs-only`, `--web`, `--mobile`, `--full` |
-| `verify-locally` | After `pre-push` passes — pings dev servers (`:5173`/`:3001`, doesn't start them) and produces browser + iOS-surface checklists |
-| `commit` | Any standalone commit — Conventional Commits format matching recent history, includes Co-Authored-By trailer, never pushes |
-| `ship-feature` | Full feature pipeline — chains `bdd-feature` → implement → `pre-push` → `verify-locally` → `bump-version` → `commit` |
+| `sanakenno-bdd-feature` | Any behavioural change — writes the `.feature` file first, gets agreement when needed, then step definitions or E2E coverage |
+| `sanakenno-bump-version` | After implementation — writes the changeset for web/server/shared OR runs `npm version` for mobile; defaults to patch, suggests minor for new behaviour |
+| `sanakenno-pre-push` | Before every push — runs the local CI gauntlet matching the change set (web / mobile / both); halts on first failure |
+| `sanakenno-verify-locally` | After `pre-push` passes — checks local web/API availability and verifies real surfaces without claiming unrun iOS work |
+| `sanakenno-commit` | Any standalone commit — Conventional Commits format matching recent history, includes Codex co-author trailer, never pushes |
+| `sanakenno-ship-feature` | Full feature pipeline — chains BDD → implementation → version bump → pre-push → local verification → commit |
