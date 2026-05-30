@@ -96,13 +96,13 @@ pnpm run build                            production build → dist/
 ```
 
 ## Workflow Skills
-Codex uses project-specific skills under `~/.codex/skills/sanakenno-*`. The older `.claude/skills/<name>/SKILL.md` files are kept as reference material from the previous Claude workflow; do not treat them as the active source of agent behavior unless you are explicitly working in Claude Code.
+Project-specific Claude Code skills live in `.claude/skills/<name>/SKILL.md`. They auto-trigger on matching intent and can also be invoked with `/<name>`.
 
 | Skill | When |
 |---|---|
-| `sanakenno-bdd-feature` | Any behavioural change — writes the `.feature` file first, gets agreement when needed, then step definitions or E2E coverage |
-| `sanakenno-bump-version` | After implementation — writes the changeset for web/server/shared OR runs `npm version` for mobile; defaults to patch, suggests minor for new behaviour |
-| `sanakenno-pre-push` | Before every push — runs the local CI gauntlet matching the change set (web / mobile / both); halts on first failure |
-| `sanakenno-verify-locally` | After `pre-push` passes — checks local web/API availability and verifies real surfaces without claiming unrun iOS work |
-| `sanakenno-commit` | Any standalone commit — Conventional Commits format matching recent history, includes Codex co-author trailer, never pushes |
-| `sanakenno-ship-feature` | Full feature pipeline — chains BDD → implementation → version bump → pre-push → local verification → commit |
+| `bdd-feature` | Any behavioural change — writes the `.feature` file first, gets agreement, then step definitions in `features/step-definitions/` |
+| `bump-version` | After implementation — writes the changeset for web/server/shared OR runs `npm version` for mobile; defaults to patch, suggests minor for new behaviour |
+| `pre-push` | Before every push — runs the local CI gauntlet matching the change set (web / mobile / both); halts on first failure; supports `--skip-e2e`, `--docs-only`, `--web`, `--mobile`, `--full` |
+| `verify-locally` | After `pre-push` passes — pings dev servers (`:5173`/`:3001`, doesn't start them) and produces browser + iOS-surface checklists |
+| `commit` | Any standalone commit — Conventional Commits format matching recent history, includes Co-Authored-By trailer, never pushes |
+| `ship-feature` | Full feature pipeline — chains `bdd-feature` → implement → `pre-push` → `verify-locally` → `bump-version` → `commit` |
