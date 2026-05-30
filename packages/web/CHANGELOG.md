@@ -1,5 +1,15 @@
 # @sanakenno/web
 
+## 1.8.0
+
+### Minor Changes
+
+- Add no-spoiler admin game suggestions.
+
+### Patch Changes
+
+- @sanakenno/shared@1.8.0
+
 ## 1.7.1
 
 ### Patch Changes

@@ -16,6 +16,7 @@
  *   DELETE /api/admin/block/:id           - Unblock a word
  *   GET    /api/admin/blocked             - List all blocked words
  *   GET    /api/admin/combinations        - Filterable/sortable combinations browser
+ *   GET    /api/admin/suggestion          - No-spoiler next-game suggestion
  *   GET    /api/admin/schedule            - 14-day upcoming puzzle rotation
  *   GET    /api/admin/achievements        - Daily achievement breakdown by rank
  *   GET    /api/admin/failed-guesses      - Daily failed-guess breakdown by word
@@ -39,6 +40,7 @@ import {
   totalPuzzles,
   FINNISH_LETTERS,
 } from '../puzzle-engine';
+import { normalizeLettersKey, suggestPuzzle } from '../puzzle-suggestions';
 
 const admin = new Hono<{ Variables: AdminVariables }>();
 
@@ -75,6 +77,36 @@ interface FailedGuessStatRow {
 interface WordFindStatRow {
   word: string;
   count: number;
+}
+
+function parseOptionalPositiveInt(
+  value: string | undefined,
+): number | undefined {
+  if (!value) return undefined;
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+/**
+ * Refresh combination membership flags from the puzzles table.
+ * Suggestions use puzzles as source of truth, but the admin browser displays
+ * this flag and should stay consistent after create/update/delete writes.
+ */
+function syncCombinationRotationFlags(): void {
+  const db = getDb();
+  const rows = db.prepare('SELECT letters FROM puzzles').all() as Array<{
+    letters: string;
+  }>;
+  const mark = db.prepare(
+    'UPDATE combinations SET in_rotation = 1 WHERE letters = ?',
+  );
+
+  db.transaction(() => {
+    db.prepare('UPDATE combinations SET in_rotation = 0').run();
+    for (const row of rows) {
+      mark.run(normalizeLettersKey(row.letters));
+    }
+  })();
 }
 
 /**
@@ -251,6 +283,7 @@ admin.post('/puzzle', async (c) => {
       "UPDATE puzzles SET letters = ?, center = ?, updated_at = datetime('now') WHERE slot = ?",
     ).run(lettersStr, center, slot);
   }
+  syncCombinationRotationFlags();
 
   bumpPuzzleCacheGeneration();
 
@@ -299,6 +332,7 @@ admin.delete('/puzzle/:slot', async (c) => {
     db.prepare('DELETE FROM puzzles WHERE slot = ?').run(slot);
     db.prepare('UPDATE puzzles SET slot = slot - 1 WHERE slot > ?').run(slot);
   })();
+  syncCombinationRotationFlags();
 
   bumpPuzzleCacheGeneration();
 
@@ -716,6 +750,29 @@ admin.get('/combinations', (c) => {
   }));
 
   return c.json({ combinations, total, page, pages, per_page: perPage });
+});
+
+/**
+ * GET /suggestion
+ * Return one no-spoiler candidate for appending to the puzzle rotation.
+ */
+admin.get('/suggestion', (c) => {
+  const declinedParam = c.req.query('declined') || '';
+  const declined = declinedParam
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+  const suggestion = suggestPuzzle({
+    declined,
+    minWords: parseOptionalPositiveInt(c.req.query('min_words')),
+    maxWords: parseOptionalPositiveInt(c.req.query('max_words')),
+  });
+
+  if (!suggestion) {
+    return c.json({ error: 'No suitable suggestion found' }, 404);
+  }
+
+  return c.json({ suggestion });
 });
 
 // --- Schedule ---

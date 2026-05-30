@@ -190,6 +190,35 @@ Feature: Admin tool
     Then the variations array should contain 7 entries
     And each variation should include center, word_count, max_score, pangram_count
 
+  # --- Game suggestions ---
+
+  Scenario: Suggest an appendable game without spoilers
+    Given candidate combinations exist for game suggestions
+    When the admin requests a game suggestion
+    Then the suggestion response should include letters, center, word_count, pangram_count, and quality label
+    And the suggestion response should not include solution words
+
+  Scenario: Suggestion excludes combinations already in rotation
+    Given candidate combinations include one already in the puzzle rotation
+    When the admin requests a game suggestion
+    Then the suggested letters should not be already in the puzzle rotation
+
+  Scenario: Suggestion skips declined candidates
+    Given candidate combinations exist for game suggestions
+    When the admin declines the first suggested game and asks again
+    Then the next suggested game should be different
+
+  Scenario: Suggestion prefers less repeated short words near append position
+    Given two suggestion candidates differ by neighbor short-word overlap
+    When the admin requests a game suggestion
+    Then the suggestion should choose the candidate with less short-word overlap
+
+  Scenario: Pangram quality grades affect suggestions without exposing pangrams
+    Given one suggestion candidate has a rejected pangram quality grade
+    When the admin requests a game suggestion
+    Then the rejected-quality candidate should not be suggested
+    And the suggestion response should not include pangram words
+
   # --- Schedule ---
 
   Scenario: View upcoming puzzle schedule

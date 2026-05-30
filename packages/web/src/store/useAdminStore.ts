@@ -99,7 +99,11 @@ interface AdminState {
     force?: boolean,
   ) => Promise<'ok' | 'needs_force' | 'error'>;
   deleteSlot: (force?: boolean) => Promise<void>;
-  createPuzzle: (letters: string[], center: string) => Promise<void>;
+  createPuzzle: (
+    letters: string[],
+    center: string,
+    options?: { loadAfterCreate?: boolean },
+  ) => Promise<void>;
   previewCombo: (letters: string[], center?: string) => Promise<void>;
   blockWord: (word: string) => Promise<void>;
   setActiveLetters: (letters: string) => void;
@@ -436,7 +440,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     }
   },
 
-  createPuzzle: async (letters, center) => {
+  createPuzzle: async (letters, center, options) => {
     const { csrfToken } = get();
     set({ saving: true });
     try {
@@ -459,7 +463,9 @@ export const useAdminStore = create<AdminState>((set, get) => ({
         statusMessage: `Uusi peli #${data.slot + 1} luotu`,
         statusType: 'success',
       });
-      get().loadSlot(data.slot);
+      if (options?.loadAfterCreate !== false) {
+        get().loadSlot(data.slot);
+      }
     } catch {
       set({ saving: false, statusMessage: 'Yhteysvirhe', statusType: 'error' });
     }

@@ -48,6 +48,28 @@ const DEFAULT_FILTERS: Filters = {
   in_rotation: '',
 };
 
+interface SuggestionOverlap {
+  slot: number | null;
+  shared_letters: number;
+  shared_short_words: number;
+}
+
+interface PuzzleSuggestion {
+  letters: string[];
+  letters_key: string;
+  center: string;
+  word_count: number;
+  pangram_count: number;
+  max_score: number;
+  quality_label: string;
+  score: number;
+  overlaps: {
+    previous: SuggestionOverlap;
+    next: SuggestionOverlap;
+  };
+  reasons: string[];
+}
+
 export function PuzzleEditor() {
   const currentSlot = useAdminStore((s) => s.currentSlot);
   const totalPuzzles = useAdminStore((s) => s.totalPuzzles);
@@ -94,6 +116,10 @@ export function PuzzleEditor() {
   const [selectedVariations, setSelectedVariations] = useState<VariationData[]>(
     [],
   );
+  const [suggestion, setSuggestion] = useState<PuzzleSuggestion | null>(null);
+  const [suggestionLoading, setSuggestionLoading] = useState(false);
+  const [suggestionError, setSuggestionError] = useState<string | null>(null);
+  const [declinedSuggestions, setDeclinedSuggestions] = useState<string[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const isDirty =
@@ -329,6 +355,57 @@ export function PuzzleEditor() {
     setSelectedVariations([]);
   }, [selectedCombo, activeLetters, activeCenter, createPuzzle]);
 
+  const fetchSuggestion = useCallback(
+    async (declined: string[] = declinedSuggestions) => {
+      setSuggestionLoading(true);
+      setSuggestionError(null);
+      const params = new URLSearchParams();
+      if (declined.length > 0) {
+        params.set('declined', declined.join(','));
+      }
+
+      try {
+        const res = await fetch(
+          `${API_BASE}/api/admin/suggestion${params.size ? `?${params}` : ''}`,
+          {
+            credentials: 'same-origin',
+            headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {},
+          },
+        );
+        const data = await res.json();
+        if (!res.ok) {
+          setSuggestion(null);
+          setSuggestionError(data.error || 'Ehdotusta ei löytynyt');
+          return;
+        }
+        setSuggestion(data.suggestion);
+      } catch {
+        setSuggestion(null);
+        setSuggestionError('Yhteysvirhe');
+      } finally {
+        setSuggestionLoading(false);
+      }
+    },
+    [csrfToken, declinedSuggestions],
+  );
+
+  const handleRejectSuggestion = useCallback(async () => {
+    if (!suggestion) return;
+    const key = `${suggestion.letters_key}:${suggestion.center}`;
+    const nextDeclined = [...declinedSuggestions, key];
+    setDeclinedSuggestions(nextDeclined);
+    await fetchSuggestion(nextDeclined);
+  }, [declinedSuggestions, fetchSuggestion, suggestion]);
+
+  const handleAcceptSuggestion = useCallback(async () => {
+    if (!suggestion) return;
+    await createPuzzle(suggestion.letters, suggestion.center, {
+      loadAfterCreate: false,
+    });
+    setSuggestion(null);
+    setDeclinedSuggestions([]);
+  }, [createPuzzle, suggestion]);
+
   const inputStyle = {
     backgroundColor: 'var(--color-bg-primary)',
     border: '1px solid var(--color-border)',
@@ -555,6 +632,137 @@ export function PuzzleEditor() {
           </div>
         </div>
       )}
+
+      {/* No-spoiler game suggestion */}
+      <div
+        className="p-3 rounded-lg space-y-3"
+        style={{
+          backgroundColor: 'var(--color-bg-secondary)',
+          border: '1px solid var(--color-border)',
+        }}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <div
+            className="text-xs font-semibold"
+            style={{ color: 'var(--color-text-secondary)' }}
+          >
+            Ehdotus
+          </div>
+          <button
+            type="button"
+            onClick={() => void fetchSuggestion()}
+            disabled={suggestionLoading || saving}
+            className="px-3 py-1 rounded text-xs font-semibold cursor-pointer"
+            style={{
+              backgroundColor: 'var(--color-bg-primary)',
+              border: '1px solid var(--color-border)',
+              color: 'var(--color-text-primary)',
+              opacity: suggestionLoading || saving ? 0.6 : 1,
+            }}
+          >
+            {suggestionLoading ? 'Haetaan...' : 'Ehdota peliä'}
+          </button>
+        </div>
+
+        {suggestionError && (
+          <div className="text-xs" style={{ color: '#dc2626' }}>
+            {suggestionError}
+          </div>
+        )}
+
+        {suggestion && (
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              {suggestion.letters.map((letter) => (
+                <span
+                  key={letter}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded font-mono text-sm font-semibold"
+                  style={{
+                    backgroundColor:
+                      letter === suggestion.center
+                        ? 'var(--color-accent)'
+                        : 'var(--color-bg-primary)',
+                    border:
+                      letter === suggestion.center
+                        ? '1px solid var(--color-accent)'
+                        : '1px solid var(--color-border)',
+                    color:
+                      letter === suggestion.center
+                        ? '#fff'
+                        : 'var(--color-text-primary)',
+                  }}
+                >
+                  {letter}
+                </span>
+              ))}
+            </div>
+
+            <div
+              className="grid grid-cols-2 gap-2 text-xs"
+              style={{ color: 'var(--color-text-secondary)' }}
+            >
+              <div>{suggestion.word_count} sanaa</div>
+              <div>{suggestion.pangram_count} pangrammia</div>
+              <div>{suggestion.max_score} pistettä</div>
+              <div>{suggestion.quality_label}</div>
+              <div>
+                Lyhyet samat ed.:{' '}
+                {suggestion.overlaps.previous.shared_short_words}
+              </div>
+              <div>
+                Lyhyet samat alkuun:{' '}
+                {suggestion.overlaps.next.shared_short_words}
+              </div>
+              <div>
+                Kirjaimet ed.: {suggestion.overlaps.previous.shared_letters}
+              </div>
+              <div>
+                Kirjaimet alkuun: {suggestion.overlaps.next.shared_letters}
+              </div>
+            </div>
+
+            {suggestion.reasons.length > 0 && (
+              <div
+                className="text-xs"
+                style={{ color: 'var(--color-text-tertiary)' }}
+              >
+                {suggestion.reasons.join(' · ')}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => void handleRejectSuggestion()}
+                disabled={suggestionLoading || saving}
+                className="px-3 py-1 rounded text-xs cursor-pointer"
+                style={{
+                  backgroundColor: 'var(--color-bg-primary)',
+                  border: '1px solid var(--color-border)',
+                  color: 'var(--color-text-primary)',
+                  opacity: suggestionLoading || saving ? 0.6 : 1,
+                }}
+              >
+                Hylkää
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleAcceptSuggestion()}
+                disabled={suggestionLoading || saving}
+                className="px-3 py-1 rounded text-xs font-semibold cursor-pointer"
+                style={{
+                  backgroundColor: '#16a34a',
+                  color: '#fff',
+                  border: 'none',
+                  opacity: suggestionLoading || saving ? 0.6 : 1,
+                }}
+              >
+                Hyväksy
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Center letter selector, with "add as new puzzle" button when browsing a combo */}
       {displayVariations.length > 0 && (

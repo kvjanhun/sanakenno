@@ -29,12 +29,18 @@ import {
   getPuzzleForDate,
   totalPuzzles,
 } from '../../server/puzzle-engine';
+import {
+  setSuggestionQualityForTesting,
+  suggestionKey,
+  type PangramQualityGrade,
+} from '../../server/puzzle-suggestions';
 import type { SanakennoWorld } from './types';
 
 interface AdminWorld extends SanakennoWorld {
   sessionCookie: string;
   csrfToken: string;
   cachedSlot5Before: unknown;
+  firstSuggestionKey?: string;
 }
 
 const TEST_USERNAME = 'admin';
@@ -72,6 +78,60 @@ function helsinkiDateByOffset(offset: number): string {
   const anchor = new Date(todayHki + 'T12:00:00Z');
   const date = new Date(anchor.getTime() - offset * 86400000);
   return date.toISOString().slice(0, 10);
+}
+
+function suggestionWords(
+  letters: string,
+  center: string,
+  count: number,
+  extras: string[] = [],
+): string[] {
+  const chars = Array.from(letters);
+  const words = new Set<string>([letters, ...extras]);
+  for (const a of chars) {
+    for (const b of chars) {
+      for (const c of chars) {
+        words.add(`${center}${a}${b}${c}`);
+        if (words.size >= count) return [...words].slice(0, count);
+      }
+    }
+  }
+  return [...words].slice(0, count);
+}
+
+function seedSuggestionCombination(
+  letters: string,
+  center: string,
+  wordCount = 36,
+  maxScore = 120,
+): void {
+  const db = getDb();
+  const sortedLetters = Array.from(letters).sort().join('');
+  const variations = Array.from(sortedLetters).map((letter) => ({
+    center: letter,
+    word_count: letter === center ? wordCount : 8,
+    max_score: letter === center ? maxScore : 30,
+    pangram_count: letter === center ? 1 : 1,
+  }));
+  db.prepare(
+    `INSERT OR REPLACE INTO combinations
+     (letters, total_pangrams, min_word_count, max_word_count, min_max_score, max_max_score, variations, in_rotation)
+     VALUES (?, ?, ?, ?, ?, ?, ?, 0)`,
+  ).run(
+    sortedLetters,
+    1,
+    Math.min(...variations.map((v) => v.word_count)),
+    Math.max(...variations.map((v) => v.word_count)),
+    Math.min(...variations.map((v) => v.max_score)),
+    Math.max(...variations.map((v) => v.max_score)),
+    JSON.stringify(variations),
+  );
+}
+
+function setSuggestionQuality(
+  grades: Record<string, PangramQualityGrade>,
+): void {
+  setSuggestionQualityForTesting(grades);
 }
 
 Before(async function (this: AdminWorld, scenario: ITestCaseHookParameter) {
@@ -208,6 +268,7 @@ After(function (scenario: ITestCaseHookParameter) {
   if (!scenario.gherkinDocument?.uri?.includes('admin.feature')) return;
 
   invalidateAll();
+  setSuggestionQualityForTesting(null);
   closeDb();
   setDb(null);
 });
@@ -1254,6 +1315,183 @@ Then(
       assert.ok(v.max_score !== undefined, 'Missing max_score');
       assert.ok(v.pangram_count !== undefined, 'Missing pangram_count');
     }
+  },
+);
+
+// --- Game suggestions ---
+
+Given(
+  'candidate combinations exist for game suggestions',
+  function (this: AdminWorld) {
+    const words = [
+      ...suggestionWords('opqrstu', 'o', 36),
+      ...suggestionWords('vwxyzåä', 'v', 34),
+    ];
+    setWordlist(new Set(words));
+    seedSuggestionCombination('opqrstu', 'o', 36, 120);
+    seedSuggestionCombination('vwxyzåä', 'v', 34, 116);
+    setSuggestionQuality({
+      [suggestionKey('opqrstu', 'o')]: 'good',
+      [suggestionKey('vwxyzåä', 'v')]: 'ok',
+    });
+  },
+);
+
+Given(
+  'candidate combinations include one already in the puzzle rotation',
+  function (this: AdminWorld) {
+    const words = [
+      ...suggestionWords('aeklnst', 'a', 36),
+      ...suggestionWords('opqrstu', 'o', 34),
+    ];
+    setWordlist(new Set(words));
+    seedSuggestionCombination('aeklnst', 'a', 36, 120);
+    seedSuggestionCombination('opqrstu', 'o', 34, 116);
+    setSuggestionQuality({
+      [suggestionKey('aeklnst', 'a')]: 'good',
+      [suggestionKey('opqrstu', 'o')]: 'ok',
+    });
+  },
+);
+
+Given(
+  'two suggestion candidates differ by neighbor short-word overlap',
+  function (this: AdminWorld) {
+    const db = getDb();
+    db.prepare(
+      'UPDATE puzzles SET letters = ?, center = ? WHERE slot IN (0, 40)',
+    ).run('a,b,c,d,e,f,g', 'a');
+    invalidateAll();
+
+    setWordlist(
+      new Set([
+        ...suggestionWords('abcdefg', 'a', 24, ['abcd', 'abce', 'abcf']),
+        ...suggestionWords('abcghij', 'a', 36, ['abcd', 'abce', 'abcf']),
+        ...suggestionWords('opqrstu', 'o', 36),
+      ]),
+    );
+    seedSuggestionCombination('abcghij', 'a', 36, 120);
+    seedSuggestionCombination('opqrstu', 'o', 36, 120);
+    setSuggestionQuality({
+      [suggestionKey('abcghij', 'a')]: 'good',
+      [suggestionKey('opqrstu', 'o')]: 'good',
+    });
+  },
+);
+
+Given(
+  'one suggestion candidate has a rejected pangram quality grade',
+  function (this: AdminWorld) {
+    setWordlist(
+      new Set([
+        ...suggestionWords('opqrstu', 'o', 36),
+        ...suggestionWords('vwxyzåä', 'v', 34),
+      ]),
+    );
+    seedSuggestionCombination('opqrstu', 'o', 36, 120);
+    seedSuggestionCombination('vwxyzåä', 'v', 34, 116);
+    setSuggestionQuality({
+      [suggestionKey('opqrstu', 'o')]: 'reject',
+      [suggestionKey('vwxyzåä', 'v')]: 'ok',
+    });
+  },
+);
+
+When('the admin requests a game suggestion', async function (this: AdminWorld) {
+  this.response = await app.request('/api/admin/suggestion', {
+    method: 'GET',
+    headers: adminGet(this.sessionCookie),
+  });
+  this.responseJson = (await this.response.json()) as Record<string, unknown>;
+});
+
+When(
+  'the admin declines the first suggested game and asks again',
+  async function (this: AdminWorld) {
+    const first = await app.request('/api/admin/suggestion', {
+      method: 'GET',
+      headers: adminGet(this.sessionCookie),
+    });
+    const firstJson = (await first.json()) as {
+      suggestion: { letters_key: string; center: string };
+    };
+    this.firstSuggestionKey = `${firstJson.suggestion.letters_key}:${firstJson.suggestion.center}`;
+    this.response = await app.request(
+      `/api/admin/suggestion?declined=${encodeURIComponent(this.firstSuggestionKey)}`,
+      {
+        method: 'GET',
+        headers: adminGet(this.sessionCookie),
+      },
+    );
+    this.responseJson = (await this.response.json()) as Record<string, unknown>;
+  },
+);
+
+Then(
+  'the suggestion response should include letters, center, word_count, pangram_count, and quality label',
+  function (this: AdminWorld) {
+    assert.equal(this.response.status, 200);
+    const suggestion = this.responseJson.suggestion as Record<string, unknown>;
+    assert.ok(Array.isArray(suggestion.letters));
+    assert.equal(typeof suggestion.center, 'string');
+    assert.equal(typeof suggestion.word_count, 'number');
+    assert.equal(typeof suggestion.pangram_count, 'number');
+    assert.equal(typeof suggestion.quality_label, 'string');
+  },
+);
+
+Then(
+  'the suggestion response should not include solution words',
+  function (this: AdminWorld) {
+    const suggestion = this.responseJson.suggestion as Record<string, unknown>;
+    assert.equal(suggestion.words, undefined);
+  },
+);
+
+Then(
+  'the suggested letters should not be already in the puzzle rotation',
+  function (this: AdminWorld) {
+    const suggestion = this.responseJson.suggestion as { letters_key: string };
+    assert.notEqual(suggestion.letters_key, 'aeklnst');
+  },
+);
+
+Then(
+  'the next suggested game should be different',
+  function (this: AdminWorld) {
+    const suggestion = this.responseJson.suggestion as {
+      letters_key: string;
+      center: string;
+    };
+    assert.notEqual(
+      `${suggestion.letters_key}:${suggestion.center}`,
+      this.firstSuggestionKey,
+    );
+  },
+);
+
+Then(
+  'the suggestion should choose the candidate with less short-word overlap',
+  function (this: AdminWorld) {
+    const suggestion = this.responseJson.suggestion as { letters_key: string };
+    assert.equal(suggestion.letters_key, 'opqrstu');
+  },
+);
+
+Then(
+  'the rejected-quality candidate should not be suggested',
+  function (this: AdminWorld) {
+    const suggestion = this.responseJson.suggestion as { letters_key: string };
+    assert.equal(suggestion.letters_key, 'vwxyzäå');
+  },
+);
+
+Then(
+  'the suggestion response should not include pangram words',
+  function (this: AdminWorld) {
+    const suggestion = this.responseJson.suggestion as Record<string, unknown>;
+    assert.equal(suggestion.pangrams, undefined);
+    assert.equal(suggestion.pangram_words, undefined);
   },
 );
 
