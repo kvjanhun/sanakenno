@@ -204,6 +204,18 @@ Feature: Admin tool
     Then the suggestion response should include letters, center, word_count, pangram_count, and quality label
     And the suggestion response should not include solution words
 
+  Scenario: Suggestion reveals pangrams only on explicit spoiler request
+    Given candidate combinations exist for game suggestions
+    When the admin requests a game suggestion with pangram spoilers
+    Then the suggestion response should include pangram words
+    And the suggestion response should not include solution words
+
+  @e2e
+  Scenario: Inspect suggested pangrams and continue after accepting
+    Given the admin has opened a game suggestion
+    When the admin reveals its pangrams and accepts it
+    Then the editor should show the next suggestion without another manual request
+
   Scenario: Suggestion excludes combinations already in rotation
     Given candidate combinations include one already in the puzzle rotation
     When the admin requests a game suggestion

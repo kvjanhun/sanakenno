@@ -755,6 +755,8 @@ admin.get('/combinations', (c) => {
 /**
  * GET /suggestion
  * Return one no-spoiler candidate for appending to the puzzle rotation.
+ * Query include_pangrams=true exposes only the candidate's pangram words for
+ * the admin spoiler toggle; full solution words are never returned.
  */
 admin.get('/suggestion', (c) => {
   const declinedParam = c.req.query('declined') || '';
@@ -762,10 +764,14 @@ admin.get('/suggestion', (c) => {
     .split(',')
     .map((item) => item.trim())
     .filter(Boolean);
+  const includePangrams = ['1', 'true', 'yes'].includes(
+    (c.req.query('include_pangrams') || '').trim().toLowerCase(),
+  );
   const suggestion = suggestPuzzle({
     declined,
     minWords: parseOptionalPositiveInt(c.req.query('min_words')),
     maxWords: parseOptionalPositiveInt(c.req.query('max_words')),
+    includePangrams,
   });
 
   if (!suggestion) {

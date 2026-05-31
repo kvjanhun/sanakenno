@@ -2,8 +2,8 @@
  * Admin-only puzzle suggestion scoring.
  *
  * The scorer may inspect solution words internally to avoid repeated short
- * word pools, but public/admin API responses must not expose solution words
- * or pangram strings.
+ * word pools, but public/admin API responses must not expose solution words.
+ * Pangram strings are included only for explicit admin spoiler requests.
  *
  * @module server/puzzle-suggestions
  */
@@ -29,6 +29,7 @@ export interface SuggestionOptions {
   declined?: string[];
   minWords?: number;
   maxWords?: number;
+  includePangrams?: boolean;
 }
 
 export interface SuggestionOverlap {
@@ -53,6 +54,7 @@ export interface PuzzleSuggestion {
   };
   variations: VariationData[];
   reasons: string[];
+  pangrams?: string[];
 }
 
 interface CombinationRow {
@@ -387,6 +389,19 @@ function neighborOverlap(
   };
 }
 
+function pangramWords(words: string[], letters: string[]): string[] {
+  const required = new Set(letters);
+  return words
+    .filter((word) => {
+      const chars = new Set(Array.from(word));
+      for (const letter of required) {
+        if (!chars.has(letter)) return false;
+      }
+      return true;
+    })
+    .sort((a, b) => a.localeCompare(b, 'fi'));
+}
+
 function candidateReasons(
   candidate: PuzzleSuggestion,
   preferredBand: WordCountBand,
@@ -476,6 +491,7 @@ export function suggestPuzzle(
   const preferredTarget = preferredSuggestionTarget(total, declined.size);
   const preferredBand = preferredWordCountBand(preferredTarget);
   const preferredPangrams = preferredTarget.pangrams;
+  const includePangrams = options.includePangrams === true;
 
   const db = getDb();
   const rows = db
@@ -609,6 +625,9 @@ export function suggestPuzzle(
       variations: candidate.variations,
       reasons: [],
     };
+    if (includePangrams) {
+      suggestion.pangrams = pangramWords(puzzle.words, candidate.letters);
+    }
     suggestion.reasons = candidateReasons(
       suggestion,
       preferredBand,

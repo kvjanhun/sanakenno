@@ -14,6 +14,7 @@ const suggestionOne = {
     next: { slot: 0, shared_letters: 1, shared_short_words: 0 },
   },
   reasons: ['sanamaara osuu tavoitealueelle'],
+  pangrams: ['abcdefg'],
 };
 
 const suggestionTwo = {
@@ -27,7 +28,30 @@ const suggestionTwo = {
     previous: { slot: 99, shared_letters: 1, shared_short_words: 0 },
     next: { slot: 0, shared_letters: 1, shared_short_words: 0 },
   },
+  pangrams: ['opqrstu'],
 };
+
+const suggestionThree = {
+  ...suggestionOne,
+  letters: ['l', 'm', 'n', 'o', 'p', 'r', 's'],
+  letters_key: 'lmnoprs',
+  center: 'l',
+  word_count: 42,
+  pangram_count: 2,
+  max_score: 160,
+  overlaps: {
+    previous: { slot: 100, shared_letters: 0, shared_short_words: 0 },
+    next: { slot: 0, shared_letters: 1, shared_short_words: 0 },
+  },
+  pangrams: ['lmnoprs', 'slmnopr'],
+};
+
+function withoutPangrams<T extends { pangrams?: string[] }>(
+  suggestion: T,
+): Omit<T, 'pangrams'> {
+  const { pangrams: _pangrams, ...rest } = suggestion;
+  return rest;
+}
 
 test('admin can reject and accept no-spoiler game suggestions', async ({
   page,
@@ -100,13 +124,20 @@ test('admin can reject and accept no-spoiler game suggestions', async ({
   });
 
   await page.route('**/api/admin/suggestion**', async (route) => {
-    suggestionUrls.push(route.request().url());
-    const hasDeclined = route.request().url().includes('declined=');
+    const requestUrl = route.request().url();
+    suggestionUrls.push(requestUrl);
+    const hasDeclined = requestUrl.includes('declined=');
+    const includesPangrams = requestUrl.includes('include_pangrams=true');
+    const selected = createPayloads.length
+      ? suggestionThree
+      : hasDeclined
+        ? suggestionTwo
+        : suggestionOne;
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        suggestion: hasDeclined ? suggestionTwo : suggestionOne,
+        suggestion: includesPangrams ? selected : withoutPangrams(selected),
       }),
     });
   });
@@ -131,15 +162,28 @@ test('admin can reject and accept no-spoiler game suggestions', async ({
 
   await page.getByRole('button', { name: 'Ehdota peliä' }).click();
   await expect(page.getByText('36 sanaa')).toBeVisible();
-  await expect(page.getByText('spoilerword')).toHaveCount(0);
+  await expect(page.getByLabel('Pangrammien spoilerit')).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Näytä pangrammit' }).click();
+  await expect(
+    page.getByLabel('Pangrammien spoilerit').getByText('abcdefg'),
+  ).toBeVisible();
+
+  await page.getByRole('button', { name: 'Piilota pangrammit' }).click();
+  await expect(page.getByLabel('Pangrammien spoilerit')).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Hylkää' }).click();
   await expect(page.getByText('34 sanaa')).toBeVisible();
 
   await page.getByRole('button', { name: 'Hyväksy' }).click();
+  await expect(
+    page.getByText('Lisätty. Haetaan seuraavaa ehdotusta...'),
+  ).toBeVisible();
+  await expect(page.getByText('42 sanaa')).toBeVisible();
 
-  expect(suggestionUrls).toHaveLength(2);
-  expect(suggestionUrls[1]).toContain('declined=');
+  expect(suggestionUrls).toHaveLength(4);
+  expect(suggestionUrls[1]).toContain('include_pangrams=true');
+  expect(suggestionUrls[2]).toContain('declined=');
   expect(createPayloads).toEqual([
     {
       letters: ['o', 'p', 'q', 'r', 's', 't', 'u'],

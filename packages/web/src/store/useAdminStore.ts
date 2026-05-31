@@ -103,7 +103,7 @@ interface AdminState {
     letters: string[],
     center: string,
     options?: { loadAfterCreate?: boolean },
-  ) => Promise<void>;
+  ) => Promise<boolean>;
   previewCombo: (letters: string[], center?: string) => Promise<void>;
   blockWord: (word: string) => Promise<void>;
   setActiveLetters: (letters: string) => void;
@@ -455,7 +455,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
           statusMessage: data.error || 'Luonti epäonnistui',
           statusType: 'error',
         });
-        return;
+        return false;
       }
       set({
         saving: false,
@@ -466,8 +466,10 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       if (options?.loadAfterCreate !== false) {
         get().loadSlot(data.slot);
       }
+      return true;
     } catch {
       set({ saving: false, statusMessage: 'Yhteysvirhe', statusType: 'error' });
+      return false;
     }
   },
 

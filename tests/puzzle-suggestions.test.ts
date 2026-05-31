@@ -196,6 +196,19 @@ describe('suggestPuzzle', () => {
     expect(suggestion?.quality_grade).toBe('unreviewed');
   });
 
+  it('keeps pangram words hidden unless explicitly requested', () => {
+    seedCombination('opqrstu', [
+      { center: 'o', word_count: 36, max_score: 120, pangram_count: 1 },
+    ]);
+
+    const hidden = suggestPuzzle();
+    const revealed = suggestPuzzle({ includePangrams: true });
+
+    expect(hidden?.pangrams).toBeUndefined();
+    expect(revealed?.pangrams).toContain('opqrstu');
+    expect(revealed?.pangrams).not.toContain('oopq');
+  });
+
   it('uses reviewed candidates before unreviewed candidates in another word-count band', () => {
     getDb().prepare('DELETE FROM puzzles').run();
     seedPuzzle(0, 'abcdefg', 'a');

@@ -22,6 +22,7 @@ import type {
 } from '../../store/useAdminStore';
 import { VariationsGrid } from './VariationsGrid';
 import { WordList } from './WordList';
+import { EyeIcon } from '../icons';
 
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -62,6 +63,7 @@ interface PuzzleSuggestion {
   word_count: number;
   pangram_count: number;
   max_score: number;
+  quality_grade?: 'good' | 'ok' | 'risky' | 'reject' | 'unreviewed';
   quality_label: string;
   score: number;
   overlaps: {
@@ -69,6 +71,7 @@ interface PuzzleSuggestion {
     next: SuggestionOverlap;
   };
   reasons: string[];
+  pangrams?: string[];
 }
 
 export function PuzzleEditor() {
@@ -122,6 +125,7 @@ export function PuzzleEditor() {
   const [suggestionLoading, setSuggestionLoading] = useState(false);
   const [suggestionError, setSuggestionError] = useState<string | null>(null);
   const [declinedSuggestions, setDeclinedSuggestions] = useState<string[]>([]);
+  const [pangramSpoilersVisible, setPangramSpoilersVisible] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const isDirty =
@@ -386,12 +390,18 @@ export function PuzzleEditor() {
   }, [selectedCombo, activeLetters, activeCenter, createPuzzle]);
 
   const fetchSuggestion = useCallback(
-    async (declined: string[] = declinedSuggestions) => {
+    async (
+      declined: string[] = declinedSuggestions,
+      includePangrams = false,
+    ) => {
       setSuggestionLoading(true);
       setSuggestionError(null);
       const params = new URLSearchParams();
       if (declined.length > 0) {
         params.set('declined', declined.join(','));
+      }
+      if (includePangrams) {
+        params.set('include_pangrams', 'true');
       }
 
       try {
@@ -409,6 +419,9 @@ export function PuzzleEditor() {
           return;
         }
         setSuggestion(data.suggestion);
+        setPangramSpoilersVisible(
+          includePangrams && Array.isArray(data.suggestion?.pangrams),
+        );
       } catch {
         setSuggestion(null);
         setSuggestionError('Yhteysvirhe');
@@ -427,14 +440,27 @@ export function PuzzleEditor() {
     await fetchSuggestion(nextDeclined);
   }, [declinedSuggestions, fetchSuggestion, suggestion]);
 
+  const handleTogglePangrams = useCallback(async () => {
+    if (!suggestion) return;
+    if (suggestion.pangrams) {
+      setPangramSpoilersVisible((visible) => !visible);
+      return;
+    }
+    await fetchSuggestion(declinedSuggestions, true);
+  }, [declinedSuggestions, fetchSuggestion, suggestion]);
+
   const handleAcceptSuggestion = useCallback(async () => {
     if (!suggestion) return;
-    await createPuzzle(suggestion.letters, suggestion.center, {
+    const created = await createPuzzle(suggestion.letters, suggestion.center, {
       loadAfterCreate: false,
     });
+    if (!created) return;
     setSuggestion(null);
     setDeclinedSuggestions([]);
-  }, [createPuzzle, suggestion]);
+    setPangramSpoilersVisible(false);
+    setStatusMessage('Lisätty. Haetaan seuraavaa ehdotusta...', 'success');
+    await fetchSuggestion([]);
+  }, [createPuzzle, fetchSuggestion, setStatusMessage, suggestion]);
 
   const inputStyle = {
     backgroundColor: 'var(--color-bg-primary)',
@@ -761,38 +787,174 @@ export function PuzzleEditor() {
               ))}
             </div>
 
-            <div
-              className="grid grid-cols-2 gap-2 text-xs"
-              style={{ color: 'var(--color-text-secondary)' }}
-            >
-              <div>{suggestion.word_count} sanaa</div>
-              <div>{suggestion.pangram_count} pangrammia</div>
-              <div>{suggestion.max_score} pistettä</div>
-              <div>{suggestion.quality_label}</div>
-              <div>
-                Lyhyet samat ed.:{' '}
-                {suggestion.overlaps.previous.shared_short_words}
+            <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(220px,0.8fr)]">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <div
+                  className="min-w-0 border-l-2 pl-3"
+                  style={{ borderColor: 'var(--color-accent)' }}
+                >
+                  <div
+                    className="text-[10px] font-semibold uppercase tracking-normal"
+                    style={{ color: 'var(--color-text-tertiary)' }}
+                  >
+                    Sanoja
+                  </div>
+                  <div
+                    className="text-lg font-semibold leading-tight"
+                    style={{ color: 'var(--color-text-primary)' }}
+                  >
+                    {suggestion.word_count} sanaa
+                  </div>
+                  <div
+                    className="text-xs"
+                    style={{ color: 'var(--color-text-secondary)' }}
+                  >
+                    {suggestion.max_score} pistettä
+                  </div>
+                </div>
+
+                <div
+                  className="min-w-0 border-l-2 pl-3"
+                  style={{ borderColor: 'var(--color-border)' }}
+                >
+                  <div
+                    className="text-[10px] font-semibold uppercase tracking-normal"
+                    style={{ color: 'var(--color-text-tertiary)' }}
+                  >
+                    Pangrammit
+                  </div>
+                  <div
+                    className="text-lg font-semibold leading-tight"
+                    style={{ color: 'var(--color-text-primary)' }}
+                  >
+                    {suggestion.pangram_count}{' '}
+                    {suggestion.pangram_count === 1
+                      ? 'pangrammi'
+                      : 'pangrammia'}
+                  </div>
+                  <div
+                    className="truncate text-xs"
+                    style={{ color: 'var(--color-text-secondary)' }}
+                  >
+                    {suggestion.quality_label}
+                  </div>
+                </div>
+
+                <div
+                  className="min-w-0 border-l-2 pl-3"
+                  style={{ borderColor: 'var(--color-border)' }}
+                >
+                  <div
+                    className="text-[10px] font-semibold uppercase tracking-normal"
+                    style={{ color: 'var(--color-text-tertiary)' }}
+                  >
+                    Pisteytys
+                  </div>
+                  <div
+                    className="text-lg font-semibold leading-tight"
+                    style={{ color: 'var(--color-text-primary)' }}
+                  >
+                    {suggestion.score}
+                  </div>
+                  <div
+                    className="text-xs"
+                    style={{ color: 'var(--color-text-secondary)' }}
+                  >
+                    valintapisteet
+                  </div>
+                </div>
               </div>
-              <div>
-                Lyhyet samat alkuun:{' '}
-                {suggestion.overlaps.next.shared_short_words}
-              </div>
-              <div>
-                Kirjaimet ed.: {suggestion.overlaps.previous.shared_letters}
-              </div>
-              <div>
-                Kirjaimet alkuun: {suggestion.overlaps.next.shared_letters}
+
+              <div
+                className="space-y-2 border-l-2 pl-3 text-xs"
+                style={{
+                  borderColor: 'var(--color-border)',
+                  color: 'var(--color-text-secondary)',
+                }}
+              >
+                <div
+                  className="text-[10px] font-semibold uppercase tracking-normal"
+                  style={{ color: 'var(--color-text-tertiary)' }}
+                >
+                  Naapurit
+                </div>
+                <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1">
+                  <span>Edellinen</span>
+                  <span>
+                    {suggestion.overlaps.previous.shared_short_words} lyhyttä,{' '}
+                    {suggestion.overlaps.previous.shared_letters} kirjainta
+                  </span>
+                  <span>Alku</span>
+                  <span>
+                    {suggestion.overlaps.next.shared_short_words} lyhyttä,{' '}
+                    {suggestion.overlaps.next.shared_letters} kirjainta
+                  </span>
+                </div>
               </div>
             </div>
 
             {suggestion.reasons.length > 0 && (
-              <div
-                className="text-xs"
-                style={{ color: 'var(--color-text-tertiary)' }}
-              >
-                {suggestion.reasons.join(' · ')}
+              <div className="flex flex-wrap gap-1.5">
+                {suggestion.reasons.map((reason) => (
+                  <span
+                    key={reason}
+                    className="rounded-full px-2 py-1 text-xs"
+                    style={{
+                      backgroundColor: 'var(--color-bg-primary)',
+                      color: 'var(--color-text-tertiary)',
+                      border: '1px solid var(--color-border)',
+                    }}
+                  >
+                    {reason}
+                  </span>
+                ))}
               </div>
             )}
+
+            <div
+              className="flex flex-wrap items-center justify-between gap-2 border-t pt-3"
+              style={{ borderColor: 'var(--color-border)' }}
+            >
+              <button
+                type="button"
+                onClick={() => void handleTogglePangrams()}
+                disabled={suggestionLoading || saving}
+                className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs cursor-pointer"
+                style={{
+                  backgroundColor: 'var(--color-bg-primary)',
+                  border: '1px solid var(--color-border)',
+                  color: 'var(--color-text-primary)',
+                  opacity: suggestionLoading || saving ? 0.6 : 1,
+                }}
+                aria-expanded={pangramSpoilersVisible}
+              >
+                <EyeIcon />
+                {pangramSpoilersVisible
+                  ? 'Piilota pangrammit'
+                  : 'Näytä pangrammit'}
+              </button>
+
+              {pangramSpoilersVisible && suggestion.pangrams && (
+                <div
+                  aria-label="Pangrammien spoilerit"
+                  className="flex min-w-0 flex-1 flex-wrap justify-end gap-1"
+                >
+                  {suggestion.pangrams.map((pangram) => (
+                    <span
+                      key={pangram}
+                      className="rounded px-2 py-1 font-mono text-xs"
+                      style={{
+                        backgroundColor: 'var(--color-bg-primary)',
+                        color: 'var(--color-text-primary)',
+                        border: '1px solid var(--color-border)',
+                      }}
+                    >
+                      {pangram}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
 
             <div className="flex justify-end gap-2">
               <button

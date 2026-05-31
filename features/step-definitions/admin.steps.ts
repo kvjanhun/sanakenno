@@ -1571,6 +1571,20 @@ When('the admin requests a game suggestion', async function (this: AdminWorld) {
 });
 
 When(
+  'the admin requests a game suggestion with pangram spoilers',
+  async function (this: AdminWorld) {
+    this.response = await app.request(
+      '/api/admin/suggestion?include_pangrams=true',
+      {
+        method: 'GET',
+        headers: adminGet(this.sessionCookie),
+      },
+    );
+    this.responseJson = (await this.response.json()) as Record<string, unknown>;
+  },
+);
+
+When(
   'the admin declines the first suggested game and asks again',
   async function (this: AdminWorld) {
     const first = await app.request('/api/admin/suggestion', {
@@ -1631,6 +1645,19 @@ Then(
   function (this: AdminWorld) {
     const suggestion = this.responseJson.suggestion as Record<string, unknown>;
     assert.equal(suggestion.words, undefined);
+  },
+);
+
+Then(
+  'the suggestion response should include pangram words',
+  function (this: AdminWorld) {
+    assert.equal(this.response.status, 200);
+    const suggestion = this.responseJson.suggestion as Record<string, unknown>;
+    assert.ok(Array.isArray(suggestion.pangrams));
+    assert.ok(suggestion.pangrams.length > 0);
+    for (const word of suggestion.pangrams) {
+      assert.equal(typeof word, 'string');
+    }
   },
 );
 

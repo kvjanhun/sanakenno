@@ -1,5 +1,15 @@
 # @sanakenno/web
 
+## 1.10.0
+
+### Minor Changes
+
+- Improve admin suggestion review controls.
+
+### Patch Changes
+
+- @sanakenno/shared@1.10.0
+
 ## 1.9.1
 
 ### Patch Changes
