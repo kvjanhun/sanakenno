@@ -4,5 +4,6 @@ PLAN.md
 README.md
 features/*.feature
 pnpm-lock.yaml
+tmp/
 packages/mobile/ios/
 packages/mobile/expo-env.d.ts

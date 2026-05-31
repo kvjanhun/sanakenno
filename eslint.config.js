@@ -56,6 +56,7 @@ export default tseslint.config(
       'node_modules/',
       'coverage/',
       'reports/',
+      'tmp/',
       '.claude/',
       '.expo/',
       'packages/mobile/metro.config.js',

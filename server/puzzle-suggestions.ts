@@ -81,27 +81,78 @@ interface PreliminaryCandidate {
   variation: VariationData;
   variations: VariationData[];
   grade: SuggestionQualityGrade;
+  generatedGrade?: PangramQualityGrade;
   score: number;
 }
 
-const DEFAULT_MIN_WORDS = 20;
+interface WordCountBand {
+  id: 'short' | 'regular' | 'open' | 'long';
+  label: string;
+  min: number;
+  max: number;
+  target: number;
+}
+
+interface SuggestionTarget {
+  wordBand: WordCountBand['id'];
+  pangrams: number;
+}
+
+const DEFAULT_MIN_WORDS = 18;
 const DEFAULT_MAX_WORDS = 80;
-const IDEAL_MIN_WORDS = 28;
-const IDEAL_MAX_WORDS = 52;
-const TARGET_WORDS = 39;
-const MAX_PANGRAMS = 4;
+const MAX_PANGRAMS = 5;
 const SHORT_WORD_MAX_LENGTH = 5;
 const PRELIMINARY_LIMIT = 300;
 const QUALITY_PATH = join(__dirname, 'data', 'pangram-quality.json');
+const GENERATED_SCREENING_PATH = join(
+  __dirname,
+  'data',
+  'pangram-quality.generated.json',
+);
+const WORD_COUNT_BANDS: WordCountBand[] = [
+  { id: 'short', label: 'lyhyt', min: 18, max: 27, target: 23 },
+  { id: 'regular', label: 'tavallinen', min: 28, max: 39, target: 34 },
+  { id: 'open', label: 'runsas', min: 40, max: 55, target: 46 },
+  { id: 'long', label: 'pitkä', min: 56, max: 80, target: 64 },
+];
+const WORD_COUNT_BAND_BY_ID = new Map(
+  WORD_COUNT_BANDS.map((band) => [band.id, band]),
+);
+const SUGGESTION_TARGET_SEQUENCE: SuggestionTarget[] = [
+  { wordBand: 'regular', pangrams: 1 },
+  { wordBand: 'open', pangrams: 2 },
+  { wordBand: 'short', pangrams: 1 },
+  { wordBand: 'regular', pangrams: 3 },
+  { wordBand: 'open', pangrams: 1 },
+  { wordBand: 'regular', pangrams: 2 },
+  { wordBand: 'long', pangrams: 4 },
+  { wordBand: 'regular', pangrams: 1 },
+  { wordBand: 'open', pangrams: 2 },
+  { wordBand: 'short', pangrams: 3 },
+  { wordBand: 'regular', pangrams: 1 },
+  { wordBand: 'open', pangrams: 4 },
+  { wordBand: 'regular', pangrams: 2 },
+  { wordBand: 'long', pangrams: 5 },
+];
 
 let qualityOverride: Record<string, PangramQualityGrade> | null = null;
-let cachedQuality: Record<string, PangramQualityGrade> | null = null;
+let generatedScreeningOverride: Record<string, PangramQualityGrade> | null =
+  null;
+let cachedCuratedQuality: Record<string, PangramQualityGrade> | null = null;
+let cachedGeneratedQuality: Record<string, PangramQualityGrade> | null = null;
 
 export function setSuggestionQualityForTesting(
   quality: Record<string, PangramQualityGrade> | null,
 ): void {
   qualityOverride = quality;
-  cachedQuality = null;
+  cachedCuratedQuality = null;
+}
+
+export function setGeneratedSuggestionScreeningForTesting(
+  quality: Record<string, PangramQualityGrade> | null,
+): void {
+  generatedScreeningOverride = quality;
+  cachedGeneratedQuality = null;
 }
 
 export function normalizeLettersKey(letters: string | string[]): string {
@@ -124,19 +175,24 @@ export function suggestionKey(
   return `${normalizeLettersKey(letters)}:${center.trim().toLowerCase()}`;
 }
 
-function loadPangramQuality(): Record<string, PangramQualityGrade> {
-  if (qualityOverride) return qualityOverride;
-  if (cachedQuality) return cachedQuality;
-  if (!existsSync(QUALITY_PATH)) {
-    cachedQuality = {};
-    return cachedQuality;
-  }
+function readQualityFile(path: string): Record<string, PangramQualityGrade> {
+  if (!existsSync(path)) return {};
+  const parsed = JSON.parse(readFileSync(path, 'utf-8')) as PangramQualityFile;
+  return parsed.grades || {};
+}
 
-  const parsed = JSON.parse(
-    readFileSync(QUALITY_PATH, 'utf-8'),
-  ) as PangramQualityFile;
-  cachedQuality = parsed.grades || {};
-  return cachedQuality;
+function loadCuratedPangramQuality(): Record<string, PangramQualityGrade> {
+  if (qualityOverride) return qualityOverride;
+  if (cachedCuratedQuality) return cachedCuratedQuality;
+  cachedCuratedQuality = readQualityFile(QUALITY_PATH);
+  return cachedCuratedQuality;
+}
+
+function loadGeneratedPangramScreening(): Record<string, PangramQualityGrade> {
+  if (generatedScreeningOverride) return generatedScreeningOverride;
+  if (cachedGeneratedQuality) return cachedGeneratedQuality;
+  cachedGeneratedQuality = readQualityFile(GENERATED_SCREENING_PATH);
+  return cachedGeneratedQuality;
 }
 
 function parseDeclined(declined: string[] | undefined): Set<string> {
@@ -189,22 +245,46 @@ function qualityLabel(grade: SuggestionQualityGrade): string {
   }
 }
 
-function wordCountPenalty(wordCount: number): number {
-  if (wordCount >= IDEAL_MIN_WORDS && wordCount <= IDEAL_MAX_WORDS) {
-    return Math.abs(wordCount - TARGET_WORDS) * 2;
-  }
-  const distance =
-    wordCount < IDEAL_MIN_WORDS
-      ? IDEAL_MIN_WORDS - wordCount
-      : wordCount - IDEAL_MAX_WORDS;
-  return 30 + distance * 5;
+function wordCountBandFor(wordCount: number): WordCountBand {
+  return (
+    WORD_COUNT_BANDS.find(
+      (band) => wordCount >= band.min && wordCount <= band.max,
+    ) ||
+    (wordCount < WORD_COUNT_BANDS[0].min
+      ? WORD_COUNT_BANDS[0]
+      : WORD_COUNT_BANDS[WORD_COUNT_BANDS.length - 1])
+  );
 }
 
-function pangramPenalty(count: number): number {
-  if (count === 1) return 0;
-  if (count === 2) return 6;
-  if (count === 3) return 18;
-  return 34;
+function preferredSuggestionTarget(
+  total: number,
+  declinedCount: number,
+): SuggestionTarget {
+  return SUGGESTION_TARGET_SEQUENCE[
+    (total + declinedCount) % SUGGESTION_TARGET_SEQUENCE.length
+  ];
+}
+
+function preferredWordCountBand(target: SuggestionTarget): WordCountBand {
+  return WORD_COUNT_BAND_BY_ID.get(target.wordBand) || WORD_COUNT_BANDS[1];
+}
+
+function wordCountPenalty(wordCount: number, preferred: WordCountBand): number {
+  if (wordCount >= preferred.min && wordCount <= preferred.max) {
+    return Math.abs(wordCount - preferred.target) * 2;
+  }
+  const distance =
+    wordCount < preferred.min
+      ? preferred.min - wordCount
+      : wordCount - preferred.max;
+  return 70 + distance * 6;
+}
+
+function pangramPenalty(count: number, preferred: number): number {
+  if (count === preferred) return 0;
+  const distance = Math.abs(count - preferred);
+  const onePangramPenalty = preferred > 1 && count === 1 ? 18 : 0;
+  return 38 + distance * 12 + onePangramPenalty;
 }
 
 function qualityScore(grade: SuggestionQualityGrade): number {
@@ -217,6 +297,30 @@ function qualityScore(grade: SuggestionQualityGrade): number {
       return -80;
     default:
       return -10;
+  }
+}
+
+function isPreferredQuality(grade: SuggestionQualityGrade): boolean {
+  return grade === 'good' || grade === 'ok';
+}
+
+function isGeneratedPreferred(grade: PangramQualityGrade | undefined): boolean {
+  return grade === 'good' || grade === 'ok';
+}
+
+function generatedScreeningScore(
+  grade: SuggestionQualityGrade,
+  generatedGrade: PangramQualityGrade | undefined,
+): number {
+  if (grade !== 'unreviewed') return 0;
+  switch (generatedGrade) {
+    case 'good':
+    case 'ok':
+      return 5;
+    case 'risky':
+      return -90;
+    default:
+      return 0;
   }
 }
 
@@ -283,15 +387,23 @@ function neighborOverlap(
   };
 }
 
-function candidateReasons(candidate: PuzzleSuggestion): string[] {
+function candidateReasons(
+  candidate: PuzzleSuggestion,
+  preferredBand: WordCountBand,
+  preferredPangramCount: number,
+): string[] {
   const reasons: string[] = [];
-  const wordPart =
-    candidate.word_count >= IDEAL_MIN_WORDS &&
-    candidate.word_count <= IDEAL_MAX_WORDS
-      ? 'sanamäärä osuu tavoitealueelle'
-      : 'sanamäärä on sallittu mutta tavoitealueen reunalla';
-  reasons.push(wordPart);
-  reasons.push(`${candidate.pangram_count} pangrammia`);
+  const actualBand = wordCountBandFor(candidate.word_count);
+  reasons.push(
+    actualBand.id === preferredBand.id
+      ? `sanamäärä tuo vaihtelua (${actualBand.label})`
+      : `sanamäärä poikkeaa vaihtelutavoitteesta (${actualBand.label})`,
+  );
+  reasons.push(
+    candidate.pangram_count === preferredPangramCount
+      ? `${candidate.pangram_count} pangrammia osuu vaihteluun`
+      : `${candidate.pangram_count} pangrammia`,
+  );
   reasons.push(candidate.quality_label);
   reasons.push(
     `lyhyiden sanojen naapuri-osumat ${candidate.overlaps.previous.shared_short_words} + ${candidate.overlaps.next.shared_short_words}`,
@@ -299,16 +411,71 @@ function candidateReasons(candidate: PuzzleSuggestion): string[] {
   return reasons;
 }
 
+function selectCandidatePool(
+  candidates: PreliminaryCandidate[],
+  preferredBand: WordCountBand,
+  preferredPangramCount: number,
+): PreliminaryCandidate[] {
+  const rankedPools = [
+    candidates.filter((candidate) => isPreferredQuality(candidate.grade)),
+    candidates.filter((candidate) => candidate.grade === 'risky'),
+    candidates.filter(
+      (candidate) =>
+        candidate.grade === 'unreviewed' &&
+        isGeneratedPreferred(candidate.generatedGrade),
+    ),
+    candidates.filter(
+      (candidate) =>
+        candidate.grade === 'unreviewed' &&
+        candidate.generatedGrade === undefined,
+    ),
+    candidates.filter(
+      (candidate) =>
+        candidate.grade === 'unreviewed' &&
+        candidate.generatedGrade === 'risky',
+    ),
+  ];
+  for (const pool of rankedPools) {
+    if (pool.length === 0) continue;
+
+    const preferred = pool.filter(
+      (candidate) =>
+        candidate.variation.word_count >= preferredBand.min &&
+        candidate.variation.word_count <= preferredBand.max,
+    );
+    const preferredWithPangrams = preferred.filter(
+      (candidate) =>
+        candidate.variation.pangram_count === preferredPangramCount,
+    );
+    if (preferredWithPangrams.length > 0) return preferredWithPangrams;
+    if (preferred.length > 0) return preferred;
+
+    const pangramPreferred = pool.filter(
+      (candidate) =>
+        candidate.variation.pangram_count === preferredPangramCount,
+    );
+    if (pangramPreferred.length > 0) return pangramPreferred;
+    if (pool.length > 0) return pool;
+  }
+
+  return candidates;
+}
+
 export function suggestPuzzle(
   options: SuggestionOptions = {},
 ): PuzzleSuggestion | null {
   const minWords = options.minWords ?? DEFAULT_MIN_WORDS;
   const maxWords = options.maxWords ?? DEFAULT_MAX_WORDS;
-  const quality = loadPangramQuality();
+  const curatedQuality = loadCuratedPangramQuality();
+  const generatedScreening = loadGeneratedPangramScreening();
   const declined = parseDeclined(options.declined);
   const usedKeys = usedLetterKeys();
   const recentRows = recentPuzzleRows(7);
   const blockedWords = getBlockedWords();
+  const total = totalPuzzles();
+  const preferredTarget = preferredSuggestionTarget(total, declined.size);
+  const preferredBand = preferredWordCountBand(preferredTarget);
+  const preferredPangrams = preferredTarget.pangrams;
 
   const db = getDb();
   const rows = db
@@ -323,7 +490,6 @@ export function suggestPuzzle(
     .all(minWords, maxWords, MAX_PANGRAMS) as CombinationRow[];
 
   const preliminary: PreliminaryCandidate[] = [];
-  let hasReviewedCandidate = false;
 
   for (const row of rows) {
     const lettersKey = normalizeLettersKey(row.letters);
@@ -343,17 +509,19 @@ export function suggestPuzzle(
         continue;
       }
 
-      const qualityGrade = quality[key];
+      const qualityGrade = curatedQuality[key];
       if (qualityGrade === 'reject') continue;
-      if (qualityGrade) hasReviewedCandidate = true;
+      const generatedGrade = generatedScreening[key];
+      if (!qualityGrade && generatedGrade === 'reject') continue;
 
       const grade: SuggestionQualityGrade = qualityGrade || 'unreviewed';
       const score =
         1000 -
-        wordCountPenalty(variation.word_count) -
-        pangramPenalty(variation.pangram_count) -
+        wordCountPenalty(variation.word_count, preferredBand) -
+        pangramPenalty(variation.pangram_count, preferredPangrams) -
         recentPenalty(letters, variation.center, recentRows) +
-        qualityScore(grade);
+        qualityScore(grade) +
+        generatedScreeningScore(grade, generatedGrade);
 
       preliminary.push({
         letters,
@@ -362,22 +530,22 @@ export function suggestPuzzle(
         variation,
         variations,
         grade,
+        generatedGrade,
         score,
       });
     }
   }
 
-  const eligible = (
-    hasReviewedCandidate
-      ? preliminary.filter((candidate) => candidate.grade !== 'unreviewed')
-      : preliminary
+  const eligible = selectCandidatePool(
+    preliminary,
+    preferredBand,
+    preferredPangrams,
   )
     .sort((a, b) => b.score - a.score)
     .slice(0, PRELIMINARY_LIMIT);
 
   if (eligible.length === 0) return null;
 
-  const total = totalPuzzles();
   const previousSlot = total > 0 ? total - 1 : null;
   const nextSlot = total > 0 ? 0 : null;
   const previousPuzzle =
@@ -441,7 +609,11 @@ export function suggestPuzzle(
       variations: candidate.variations,
       reasons: [],
     };
-    suggestion.reasons = candidateReasons(suggestion);
+    suggestion.reasons = candidateReasons(
+      suggestion,
+      preferredBand,
+      preferredPangrams,
+    );
 
     if (!best || suggestion.score > best.score) {
       best = suggestion;

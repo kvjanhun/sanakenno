@@ -21,7 +21,7 @@ Feature: Authentication
     Given a valid admin account exists
     When a POST is made to /api/auth/login with correct credentials
     Then the server should respond with 200
-    And set a secure HTTP-only session cookie
+    And set an HTTP-only session cookie
     And return the admin username (but not the password hash)
 
   Scenario: Failed login with wrong password
@@ -48,10 +48,19 @@ Feature: Authentication
 
   # --- Session management ---
 
-  Scenario: Session cookie properties
+  Scenario: Production session cookie properties
+    Given the server is running in production mode
     When the admin logs in successfully
     Then the session cookie should be HttpOnly
     And the cookie should be Secure (HTTPS-only)
+    And the cookie should have SameSite=Strict
+    And the cookie should have a reasonable max-age
+
+  Scenario: Local development session cookie properties
+    Given the server is running in local development mode
+    When the admin logs in successfully
+    Then the session cookie should be HttpOnly
+    And the cookie should not require HTTPS
     And the cookie should have SameSite=Strict
     And the cookie should have a reasonable max-age
 

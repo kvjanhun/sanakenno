@@ -14,6 +14,7 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
+import type { FormEvent } from 'react';
 import { useAdminStore } from '../../store/useAdminStore';
 import type {
   CombinationEntry,
@@ -98,6 +99,7 @@ export function PuzzleEditor() {
   const setActiveCenter = useAdminStore((s) => s.setActiveCenter);
 
   const [swapTarget, setSwapTarget] = useState('');
+  const [jumpTarget, setJumpTarget] = useState('');
   const [initialLoaded, setInitialLoaded] = useState(false);
 
   // New-puzzle creation form state
@@ -135,6 +137,10 @@ export function PuzzleEditor() {
       loadSlot(currentSlot);
     }
   }, [totalPuzzles, initialLoaded, currentSlot, loadSlot]);
+
+  useEffect(() => {
+    setJumpTarget(totalPuzzles > 0 ? String(currentSlot + 1) : '');
+  }, [currentSlot, totalPuzzles]);
 
   // Sync search "requires" filter to the loaded puzzle's letters
   useEffect(() => {
@@ -279,6 +285,30 @@ export function PuzzleEditor() {
       loadSlot(currentSlot + 1);
     }
   }, [currentSlot, totalPuzzles, loadSlot]);
+
+  const handleJump = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+
+      const displayNumber = Number.parseInt(jumpTarget, 10);
+      if (
+        !Number.isInteger(displayNumber) ||
+        displayNumber < 1 ||
+        displayNumber > totalPuzzles
+      ) {
+        setStatusMessage(`Anna pelinumero 1-${totalPuzzles}`, 'warning');
+        return;
+      }
+
+      const targetSlot = displayNumber - 1;
+      if (targetSlot === currentSlot) return;
+
+      setSelectedCombo(null);
+      setSelectedVariations([]);
+      loadSlot(targetSlot);
+    },
+    [currentSlot, jumpTarget, loadSlot, setStatusMessage, totalPuzzles],
+  );
 
   const handleSwap = useCallback(async () => {
     const target = parseInt(swapTarget, 10) - 1;
@@ -439,13 +469,13 @@ export function PuzzleEditor() {
 
       {/* Toolbar */}
       <div
-        className="flex items-center justify-between gap-2 p-3 rounded-lg"
+        className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-lg"
         style={{
           backgroundColor: 'var(--color-bg-secondary)',
           border: '1px solid var(--color-border)',
         }}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={handlePrev}
@@ -480,6 +510,40 @@ export function PuzzleEditor() {
           >
             &gt;
           </button>
+          <form onSubmit={handleJump} className="flex items-center gap-1 ml-1">
+            <label
+              htmlFor="admin-puzzle-jump"
+              className="text-xs"
+              style={{ color: 'var(--color-text-tertiary)' }}
+            >
+              Peli
+            </label>
+            <input
+              id="admin-puzzle-jump"
+              type="number"
+              value={jumpTarget}
+              onChange={(e) => setJumpTarget(e.target.value)}
+              min={1}
+              max={Math.max(1, totalPuzzles)}
+              disabled={puzzleLoading || totalPuzzles <= 0}
+              aria-label="Siirry pelinumeroon"
+              className="w-16 px-1 py-1 rounded text-sm text-center"
+              style={inputStyle}
+            />
+            <button
+              type="submit"
+              disabled={puzzleLoading || totalPuzzles <= 0}
+              className="px-2 py-1 rounded text-xs cursor-pointer"
+              style={{
+                backgroundColor: 'var(--color-bg-primary)',
+                border: '1px solid var(--color-border)',
+                color: 'var(--color-text-primary)',
+                opacity: puzzleLoading || totalPuzzles <= 0 ? 0.6 : 1,
+              }}
+            >
+              Siirry
+            </button>
+          </form>
           {isDirty && (
             <>
               <button

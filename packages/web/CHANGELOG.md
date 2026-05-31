@@ -1,5 +1,15 @@
 # @sanakenno/web
 
+## 1.9.0
+
+### Minor Changes
+
+- Add reviewed pangram-quality metadata and no-spoiler admin puzzle suggestions.
+
+### Patch Changes
+
+- @sanakenno/shared@1.9.0
+
 ## 1.8.0
 
 ### Minor Changes

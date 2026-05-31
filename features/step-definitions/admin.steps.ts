@@ -30,6 +30,7 @@ import {
   totalPuzzles,
 } from '../../server/puzzle-engine';
 import {
+  setGeneratedSuggestionScreeningForTesting,
   setSuggestionQualityForTesting,
   suggestionKey,
   type PangramQualityGrade,
@@ -41,6 +42,8 @@ interface AdminWorld extends SanakennoWorld {
   csrfToken: string;
   cachedSlot5Before: unknown;
   firstSuggestionKey?: string;
+  firstSuggestionWordCount?: number;
+  firstSuggestionPangramCount?: number;
 }
 
 const TEST_USERNAME = 'admin';
@@ -104,6 +107,7 @@ function seedSuggestionCombination(
   center: string,
   wordCount = 36,
   maxScore = 120,
+  pangramCount = 1,
 ): void {
   const db = getDb();
   const sortedLetters = Array.from(letters).sort().join('');
@@ -111,7 +115,7 @@ function seedSuggestionCombination(
     center: letter,
     word_count: letter === center ? wordCount : 8,
     max_score: letter === center ? maxScore : 30,
-    pangram_count: letter === center ? 1 : 1,
+    pangram_count: letter === center ? pangramCount : pangramCount,
   }));
   db.prepare(
     `INSERT OR REPLACE INTO combinations
@@ -119,7 +123,7 @@ function seedSuggestionCombination(
      VALUES (?, ?, ?, ?, ?, ?, ?, 0)`,
   ).run(
     sortedLetters,
-    1,
+    pangramCount,
     Math.min(...variations.map((v) => v.word_count)),
     Math.max(...variations.map((v) => v.word_count)),
     Math.min(...variations.map((v) => v.max_score)),
@@ -128,10 +132,24 @@ function seedSuggestionCombination(
   );
 }
 
+function suggestionPangrams(letters: string, count: number): string[] {
+  const chars = Array.from(letters);
+  return Array.from({ length: count }, (_, index) => {
+    const suffix = chars[index % chars.length];
+    return index === 0 ? letters : `${letters}${suffix}`;
+  });
+}
+
 function setSuggestionQuality(
   grades: Record<string, PangramQualityGrade>,
 ): void {
   setSuggestionQualityForTesting(grades);
+}
+
+function setGeneratedSuggestionScreening(
+  grades: Record<string, PangramQualityGrade>,
+): void {
+  setGeneratedSuggestionScreeningForTesting(grades);
 }
 
 Before(async function (this: AdminWorld, scenario: ITestCaseHookParameter) {
@@ -269,6 +287,7 @@ After(function (scenario: ITestCaseHookParameter) {
 
   invalidateAll();
   setSuggestionQualityForTesting(null);
+  setGeneratedSuggestionScreeningForTesting(null);
   closeDb();
   setDb(null);
 });
@@ -1380,6 +1399,152 @@ Given(
 );
 
 Given(
+  'suggestion candidates cover multiple word-count bands',
+  function (this: AdminWorld) {
+    setWordlist(
+      new Set([
+        ...suggestionWords('opqrstu', 'o', 32),
+        ...suggestionWords('vwxyzåä', 'v', 45),
+        ...suggestionWords('bcdefgh', 'b', 23),
+        ...suggestionWords('ijklmno', 'i', 62),
+      ]),
+    );
+    seedSuggestionCombination('opqrstu', 'o', 32, 110);
+    seedSuggestionCombination('vwxyzåä', 'v', 45, 170);
+    seedSuggestionCombination('bcdefgh', 'b', 23, 80);
+    seedSuggestionCombination('ijklmno', 'i', 62, 260);
+    setSuggestionQuality({
+      [suggestionKey('opqrstu', 'o')]: 'good',
+      [suggestionKey('vwxyzåä', 'v')]: 'good',
+      [suggestionKey('bcdefgh', 'b')]: 'good',
+      [suggestionKey('ijklmno', 'i')]: 'good',
+    });
+  },
+);
+
+Given(
+  'reviewed suggestion candidates are low-thirties and open-count',
+  function (this: AdminWorld) {
+    setWordlist(
+      new Set([
+        ...suggestionWords('opqrstu', 'o', 32),
+        ...suggestionWords('vwxyzåä', 'v', 45),
+      ]),
+    );
+    seedSuggestionCombination('opqrstu', 'o', 32, 110);
+    seedSuggestionCombination('vwxyzåä', 'v', 45, 170);
+    setSuggestionQuality({
+      [suggestionKey('opqrstu', 'o')]: 'good',
+      [suggestionKey('vwxyzåä', 'v')]: 'ok',
+    });
+  },
+);
+
+Given(
+  'reviewed suggestion candidates are low-thirties and unreviewed candidates are open-count',
+  function (this: AdminWorld) {
+    setWordlist(
+      new Set([
+        ...suggestionWords('opqrstu', 'o', 32),
+        ...suggestionWords('vwxyzåä', 'v', 45),
+      ]),
+    );
+    seedSuggestionCombination('opqrstu', 'o', 32, 110);
+    seedSuggestionCombination('vwxyzåä', 'v', 45, 170);
+    setSuggestionQuality({
+      [suggestionKey('opqrstu', 'o')]: 'good',
+    });
+  },
+);
+
+Given(
+  'generated suggestion screening exists for an otherwise unreviewed candidate',
+  function (this: AdminWorld) {
+    setWordlist(new Set([...suggestionWords('opqrstu', 'o', 36)]));
+    seedSuggestionCombination('opqrstu', 'o', 36, 120);
+    setSuggestionQuality({});
+    setGeneratedSuggestionScreening({
+      [suggestionKey('opqrstu', 'o')]: 'ok',
+    });
+  },
+);
+
+Given(
+  'generated suggestion screening marks one candidate risky and another ok',
+  function (this: AdminWorld) {
+    setWordlist(
+      new Set([
+        ...suggestionWords('opqrstu', 'o', 36),
+        ...suggestionWords('vwxyzåä', 'v', 36),
+      ]),
+    );
+    seedSuggestionCombination('opqrstu', 'o', 36, 120);
+    seedSuggestionCombination('vwxyzåä', 'v', 36, 118);
+    setSuggestionQuality({});
+    setGeneratedSuggestionScreening({
+      [suggestionKey('opqrstu', 'o')]: 'risky',
+      [suggestionKey('vwxyzåä', 'v')]: 'ok',
+    });
+  },
+);
+
+Given(
+  'reviewed long suggestion candidates have one and two pangrams',
+  function (this: AdminWorld) {
+    setWordlist(
+      new Set([
+        ...suggestionWords(
+          'opqrstu',
+          'o',
+          62,
+          suggestionPangrams('opqrstu', 1),
+        ),
+        ...suggestionWords(
+          'ijklmno',
+          'i',
+          62,
+          suggestionPangrams('ijklmno', 2),
+        ),
+      ]),
+    );
+    seedSuggestionCombination('opqrstu', 'o', 62, 260, 1);
+    seedSuggestionCombination('ijklmno', 'i', 62, 260, 2);
+    setSuggestionQuality({
+      [suggestionKey('opqrstu', 'o')]: 'good',
+      [suggestionKey('ijklmno', 'i')]: 'good',
+    });
+  },
+);
+
+Given(
+  'reviewed suggestion candidates cover multiple pangram counts',
+  function (this: AdminWorld) {
+    setWordlist(
+      new Set([
+        ...suggestionWords(
+          'ijklmno',
+          'i',
+          62,
+          suggestionPangrams('ijklmno', 2),
+        ),
+        ...suggestionWords(
+          'opqrstu',
+          'o',
+          32,
+          suggestionPangrams('opqrstu', 1),
+        ),
+      ]),
+    );
+    seedSuggestionCombination('ijklmno', 'i', 62, 260, 2);
+    seedSuggestionCombination('opqrstu', 'o', 32, 110, 1);
+    setSuggestionQuality({
+      [suggestionKey('ijklmno', 'i')]: 'good',
+      [suggestionKey('opqrstu', 'o')]: 'good',
+    });
+  },
+);
+
+Given(
   'one suggestion candidate has a rejected pangram quality grade',
   function (this: AdminWorld) {
     setWordlist(
@@ -1413,11 +1578,32 @@ When(
       headers: adminGet(this.sessionCookie),
     });
     const firstJson = (await first.json()) as {
-      suggestion: { letters_key: string; center: string };
+      suggestion: {
+        letters_key: string;
+        center: string;
+        word_count: number;
+        pangram_count: number;
+      };
     };
     this.firstSuggestionKey = `${firstJson.suggestion.letters_key}:${firstJson.suggestion.center}`;
+    this.firstSuggestionWordCount = firstJson.suggestion.word_count;
+    this.firstSuggestionPangramCount = firstJson.suggestion.pangram_count;
     this.response = await app.request(
       `/api/admin/suggestion?declined=${encodeURIComponent(this.firstSuggestionKey)}`,
+      {
+        method: 'GET',
+        headers: adminGet(this.sessionCookie),
+      },
+    );
+    this.responseJson = (await this.response.json()) as Record<string, unknown>;
+  },
+);
+
+When(
+  'the admin requests a game suggestion after two previous declined suggestions',
+  async function (this: AdminWorld) {
+    this.response = await app.request(
+      '/api/admin/suggestion?declined=placeholder:a,placeholder:b',
       {
         method: 'GET',
         headers: adminGet(this.sessionCookie),
@@ -1466,6 +1652,96 @@ Then(
     assert.notEqual(
       `${suggestion.letters_key}:${suggestion.center}`,
       this.firstSuggestionKey,
+    );
+  },
+);
+
+function suggestionWordCountBand(wordCount: number): string {
+  if (wordCount < 28) return 'short';
+  if (wordCount < 40) return 'regular';
+  if (wordCount < 56) return 'open';
+  return 'long';
+}
+
+Then(
+  'the next suggested game should use a different word-count band',
+  function (this: AdminWorld) {
+    assert.ok(
+      this.firstSuggestionWordCount !== undefined,
+      'First suggestion word count missing',
+    );
+    const suggestion = this.responseJson.suggestion as { word_count: number };
+    assert.notEqual(
+      suggestionWordCountBand(suggestion.word_count),
+      suggestionWordCountBand(this.firstSuggestionWordCount),
+    );
+  },
+);
+
+Then(
+  'the suggested game should use the open word-count band with reviewed quality',
+  function (this: AdminWorld) {
+    const suggestion = this.responseJson.suggestion as {
+      word_count: number;
+      quality_grade: string;
+    };
+    assert.equal(suggestionWordCountBand(suggestion.word_count), 'open');
+    assert.notEqual(suggestion.quality_grade, 'unreviewed');
+  },
+);
+
+Then(
+  'the suggestion should use reviewed pangram quality',
+  function (this: AdminWorld) {
+    const suggestion = this.responseJson.suggestion as {
+      quality_grade: string;
+    };
+    assert.notEqual(suggestion.quality_grade, 'unreviewed');
+  },
+);
+
+Then('the suggestion should remain unreviewed', function (this: AdminWorld) {
+  const suggestion = this.responseJson.suggestion as {
+    quality_grade: string;
+  };
+  assert.equal(suggestion.quality_grade, 'unreviewed');
+});
+
+Then(
+  'the generated-risky candidate should not be suggested',
+  function (this: AdminWorld) {
+    const suggestion = this.responseJson.suggestion as { letters_key: string };
+    assert.equal(suggestion.letters_key, 'vwxyzäå');
+  },
+);
+
+Then(
+  'the suggested game should have more than one pangram',
+  function (this: AdminWorld) {
+    const suggestion = this.responseJson.suggestion as {
+      pangram_count: number;
+    };
+    assert.ok(
+      suggestion.pangram_count > 1,
+      `Expected multiple pangrams, got ${suggestion.pangram_count}`,
+    );
+  },
+);
+
+Then(
+  'the two suggestions should use different pangram counts',
+  function (this: AdminWorld) {
+    assert.ok(
+      this.firstSuggestionPangramCount !== undefined,
+      'First suggestion pangram count missing',
+    );
+    const suggestion = this.responseJson.suggestion as {
+      pangram_count: number;
+    };
+    assert.notEqual(suggestion.pangram_count, this.firstSuggestionPangramCount);
+    assert.ok(
+      suggestion.pangram_count > 1 || this.firstSuggestionPangramCount > 1,
+      'Expected one suggestion to have multiple pangrams',
     );
   },
 );

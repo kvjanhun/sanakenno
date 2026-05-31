@@ -84,7 +84,7 @@ const DUMMY_HASH = '$argon2id$v=19$m=65536,t=3,p=4$dW5rbm93bg$dW5rbm93bg';
 function setSessionCookie(c: Context, sessionId: string): void {
   setCookie(c, SESSION_COOKIE, sessionId, {
     httpOnly: true,
-    secure: true,
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'Strict',
     path: '/',
     maxAge: 7 * 24 * 60 * 60,

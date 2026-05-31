@@ -3,6 +3,7 @@ node_modules/
 dist/
 .output/
 .env
+.env.local
 *.log
 *.db*
 server/data/kotus_words.txt
@@ -17,3 +18,4 @@ playwright-report/
 package-lock.json
 .turbo/
 *.tsbuildinfo
+tmp/

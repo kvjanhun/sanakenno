@@ -28,6 +28,7 @@ interface AuthWorld extends SanakennoWorld {
   adminUsername: string;
   adminPassword: string;
   loginTimings: number[];
+  originalNodeEnv?: string;
 }
 
 const TEST_USERNAME = 'testadmin';
@@ -101,6 +102,7 @@ Before(function (this: AuthWorld, scenario: ITestCaseHookParameter) {
   this.adminUsername = TEST_USERNAME;
   this.adminPassword = TEST_PASSWORD;
   this.loginTimings = [];
+  this.originalNodeEnv = process.env.NODE_ENV;
   this.responses = [];
 
   // Seed minimal puzzle data so admin routes don't fail
@@ -119,6 +121,11 @@ Before(function (this: AuthWorld, scenario: ITestCaseHookParameter) {
 After(function (scenario: ITestCaseHookParameter) {
   if (!scenario.gherkinDocument?.uri?.includes('auth.feature')) return;
 
+  if (this.originalNodeEnv === undefined) {
+    delete process.env.NODE_ENV;
+  } else {
+    process.env.NODE_ENV = this.originalNodeEnv;
+  }
   invalidateAll();
   closeDb();
   setDb(null);
@@ -201,7 +208,7 @@ When(
   },
 );
 
-Then('set a secure HTTP-only session cookie', function (this: AuthWorld) {
+Then('set an HTTP-only session cookie', function (this: AuthWorld) {
   const setCookie = this.response.headers.get('set-cookie') || '';
   assert.ok(setCookie.includes(SESSION_COOKIE), 'Cookie should be set');
   assert.ok(
@@ -357,6 +364,14 @@ Then('it should not be rate-limited', function (this: AuthWorld) {
 
 // --- Session cookie properties ---
 
+Given('the server is running in production mode', function () {
+  process.env.NODE_ENV = 'production';
+});
+
+Given('the server is running in local development mode', function () {
+  delete process.env.NODE_ENV;
+});
+
 When('the admin logs in successfully', async function (this: AuthWorld) {
   await createTestAdmin();
   resetLoginRateLimit();
@@ -385,6 +400,11 @@ Then(
     assert.ok(setCookie.toLowerCase().includes('secure'));
   },
 );
+
+Then('the cookie should not require HTTPS', function (this: AuthWorld) {
+  const setCookie = this.response.headers.get('set-cookie') || '';
+  assert.ok(!setCookie.toLowerCase().includes('secure'));
+});
 
 Then('the cookie should have SameSite=Strict', function (this: AuthWorld) {
   const setCookie = this.response.headers.get('set-cookie') || '';

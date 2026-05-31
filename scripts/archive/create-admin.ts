@@ -14,7 +14,7 @@
 
 import { createInterface } from 'node:readline';
 import argon2 from 'argon2';
-import { initDb, getDb } from '../server/db/connection';
+import { initDb, getDb } from '../../server/db/connection';
 
 const MIN_PASSWORD_LENGTH = 12;
 
@@ -34,21 +34,24 @@ function prompt(question: string, hidden = false): Promise<string> {
       stdin.setEncoding('utf-8');
 
       let input = '';
-      const onData = (ch: string) => {
-        if (ch === '\n' || ch === '\r' || ch === '\u0004') {
-          stdin.setRawMode(false);
-          stdin.removeListener('data', onData);
-          process.stdout.write('\n');
-          rl.close();
-          resolve(input);
-        } else if (ch === '\u0003') {
-          // Ctrl+C
-          process.exit(1);
-        } else if (ch === '\u007F' || ch === '\b') {
-          // Backspace
-          input = input.slice(0, -1);
-        } else {
-          input += ch;
+      const onData = (chunk: string) => {
+        for (const ch of chunk) {
+          if (ch === '\n' || ch === '\r' || ch === '\u0004') {
+            stdin.setRawMode(false);
+            stdin.removeListener('data', onData);
+            process.stdout.write('\n');
+            rl.close();
+            resolve(input);
+            return;
+          } else if (ch === '\u0003') {
+            // Ctrl+C
+            process.exit(1);
+          } else if (ch === '\u007F' || ch === '\b') {
+            // Backspace
+            input = input.slice(0, -1);
+          } else {
+            input += ch;
+          }
         }
       };
       stdin.on('data', onData);

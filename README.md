@@ -31,6 +31,44 @@ pnpm run test:e2e    # Playwright E2E tests (dev server required)
 pnpm run lint        # ESLint + Prettier check
 ```
 
+### Pangram Review Pipeline
+
+Admin suggestions use `server/data/pangram-quality.json` for curated pangram
+quality metadata. To classify the remaining valid candidate games with an LLM,
+put the key in an untracked root `.env.local` file:
+
+```bash
+OPENAI_API_KEY=sk-...
+```
+
+Then run:
+
+```bash
+pnpm run review:export      # writes private candidates to tmp/pangram-review/
+pnpm run review:make-pilot  # grouped gpt-5.4 stratified canary batch
+pnpm run review:submit      # uploads the currently generated batch
+pnpm run review:status      # check completion
+pnpm run review:download    # downloads results
+pnpm run review:parse       # validates structured output
+pnpm run review:audit       # summarizes low-confidence/disagreement cases
+pnpm run review:make-batch  # full uncurated batch, after pilot quality is good
+pnpm run review:submit
+pnpm run review:status
+pnpm run review:download
+pnpm run review:parse
+pnpm run review:audit
+pnpm run review:promote -- --min-confidence=medium --dry-run
+```
+
+Remove `--dry-run` to merge accepted new grades after a full batch. Existing
+hand-curated grades are preserved unless `--overwrite-curated` is passed. Pilot
+results cannot be promoted unless `--allow-sample` is passed explicitly. Files
+under `tmp/pangram-review/` include pangram words and must stay local.
+
+The review batch is grouped by identical 7-letter pangram set. One LLM grade is
+expanded back to every center-letter key in the group, so the same pangrams do
+not get inconsistent grades for different centers.
+
 ## Feature specs
 
 All behaviour is defined in Gherkin specs under `features/`. The BDD suite runs against the real Hono server; E2E tests tagged `@e2e` run in Playwright with a mocked API.

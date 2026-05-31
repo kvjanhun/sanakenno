@@ -100,6 +100,12 @@ Feature: Admin tool
     And each variation should include word_count, max_score, pangram_count
     And the active center should be marked with is_active=true
 
+  @e2e
+  Scenario: Select a puzzle by number in the editor
+    Given the admin editor has 10 puzzles in rotation
+    When the admin enters puzzle number 4 and submits the puzzle selector
+    Then the editor should load puzzle 4 without using a dropdown
+
   # --- Preview ---
 
   Scenario: Preview a letter combination without saving
@@ -207,6 +213,41 @@ Feature: Admin tool
     Given candidate combinations exist for game suggestions
     When the admin declines the first suggested game and asks again
     Then the next suggested game should be different
+
+  Scenario: Suggestion varies word-count bands across retries
+    Given suggestion candidates cover multiple word-count bands
+    When the admin declines the first suggested game and asks again
+    Then the next suggested game should use a different word-count band
+
+  Scenario: Suggestion can leave the reviewed low-thirties word-count band
+    Given reviewed suggestion candidates are low-thirties and open-count
+    When the admin requests a game suggestion after two previous declined suggestions
+    Then the suggested game should use the open word-count band with reviewed quality
+
+  Scenario: Suggestion avoids unreviewed quality while reviewed alternatives remain
+    Given reviewed suggestion candidates are low-thirties and unreviewed candidates are open-count
+    When the admin requests a game suggestion after two previous declined suggestions
+    Then the suggestion should use reviewed pangram quality
+
+  Scenario: Generated preclassification does not replace reviewed quality
+    Given generated suggestion screening exists for an otherwise unreviewed candidate
+    When the admin requests a game suggestion
+    Then the suggestion should remain unreviewed
+
+  Scenario: Suggestion avoids generated-risky candidates when alternatives exist
+    Given generated suggestion screening marks one candidate risky and another ok
+    When the admin requests a game suggestion
+    Then the generated-risky candidate should not be suggested
+
+  Scenario: Suggestion can choose multiple pangrams within the same word-count band
+    Given reviewed long suggestion candidates have one and two pangrams
+    When the admin requests a game suggestion
+    Then the suggested game should have more than one pangram
+
+  Scenario: Suggestion varies pangram counts across retries
+    Given reviewed suggestion candidates cover multiple pangram counts
+    When the admin declines the first suggested game and asks again
+    Then the two suggestions should use different pangram counts
 
   Scenario: Suggestion prefers less repeated short words near append position
     Given two suggestion candidates differ by neighbor short-word overlap
