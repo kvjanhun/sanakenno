@@ -33,7 +33,7 @@ pnpm run lint        # ESLint + Prettier check
 
 ### Pangram Review Pipeline
 
-Admin suggestions use `server/data/pangram-quality.json` for curated pangram
+Admin suggestions use `server/assets/pangram-quality.json` for curated pangram
 quality metadata. To classify the remaining valid candidate games with an LLM,
 put the key in an untracked root `.env.local` file:
 

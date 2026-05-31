@@ -220,13 +220,13 @@ const ENV_LOCAL_PATH = join(process.cwd(), '.env.local');
 const CURATED_QUALITY_PATH = join(
   process.cwd(),
   'server',
-  'data',
+  'assets',
   'pangram-quality.json',
 );
 const SCREENING_PATH = join(
   process.cwd(),
   'server',
-  'data',
+  'assets',
   'pangram-quality.generated.json',
 );
 const MIN_WORDS = 18;

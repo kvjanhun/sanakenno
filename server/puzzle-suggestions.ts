@@ -103,10 +103,10 @@ const DEFAULT_MAX_WORDS = 80;
 const MAX_PANGRAMS = 5;
 const SHORT_WORD_MAX_LENGTH = 5;
 const PRELIMINARY_LIMIT = 300;
-const QUALITY_PATH = join(__dirname, 'data', 'pangram-quality.json');
+const QUALITY_PATH = join(__dirname, 'assets', 'pangram-quality.json');
 const GENERATED_SCREENING_PATH = join(
   __dirname,
-  'data',
+  'assets',
   'pangram-quality.generated.json',
 );
 const WORD_COUNT_BANDS: WordCountBand[] = [

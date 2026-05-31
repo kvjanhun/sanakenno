@@ -41,7 +41,7 @@ const MAX_PANGRAMS = 5;
 const OUTPUT_PATH = join(
   process.cwd(),
   'server',
-  'data',
+  'assets',
   'pangram-quality.generated.json',
 );
 const RARE_LETTERS = new Set(['b', 'c', 'f', 'g', 'q', 'w', 'x', 'z']);

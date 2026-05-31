@@ -1,5 +1,12 @@
 # @sanakenno/web
 
+## 1.9.1
+
+### Patch Changes
+
+- Keep pangram suggestion metadata outside the runtime data volume.
+  - @sanakenno/shared@1.9.1
+
 ## 1.9.0
 
 ### Minor Changes
