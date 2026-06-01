@@ -1,5 +1,12 @@
 # @sanakenno/web
 
+## 1.10.1
+
+### Patch Changes
+
+- Speed up admin puzzle suggestions.
+  - @sanakenno/shared@1.10.1
+
 ## 1.10.0
 
 ### Minor Changes

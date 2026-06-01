@@ -43,6 +43,12 @@ export interface FullPuzzleData extends PuzzleData {
   total_puzzles: number;
 }
 
+export interface PuzzleWordFilterOptions {
+  minLength?: number;
+  maxLength?: number;
+  pangramOnly?: boolean;
+}
+
 interface PuzzleRow {
   slot: number;
   letters: string;
@@ -157,11 +163,16 @@ function ensureWordlist(): void {
   }
 }
 
-export function computePuzzle(
+/**
+ * Return valid solution words for a letter set, optionally narrowed for
+ * admin-only analysis paths that do not need full puzzle scoring metadata.
+ */
+export function puzzleWords(
   letters: string | string[],
   center: string,
   blockedWords: string[] = [],
-): PuzzleData {
+  options: PuzzleWordFilterOptions = {},
+): string[] {
   ensureWordlist();
   const letterList =
     typeof letters === 'string'
@@ -169,20 +180,15 @@ export function computePuzzle(
       : letters;
   const allLetterSet = new Set(letterList);
   const blockedSet = new Set(blockedWords);
+  const minLength = options.minLength ?? 4;
+  const maxLength = options.maxLength ?? Infinity;
 
   const words: string[] = [];
-  let maxScore = 0;
-  let pangramCount = 0;
-  const byLetter: Record<string, number> = {};
-  const byLength: Record<string, number> = {};
-  const byPair: Record<string, number> = {};
-
   for (const word of _allWords) {
     if (blockedSet.has(word)) continue;
-    if (word.length < 4) continue;
+    if (word.length < minLength || word.length > maxLength) continue;
     if (!word.includes(center)) continue;
 
-    // Check every character is in the letter set
     let allValid = true;
     for (const c of word) {
       if (!allLetterSet.has(c)) {
@@ -191,8 +197,33 @@ export function computePuzzle(
       }
     }
     if (!allValid) continue;
+    if (options.pangramOnly && !isPangram(word, allLetterSet)) continue;
 
     words.push(word);
+  }
+
+  return words.sort();
+}
+
+export function computePuzzle(
+  letters: string | string[],
+  center: string,
+  blockedWords: string[] = [],
+): PuzzleData {
+  const letterList =
+    typeof letters === 'string'
+      ? letters.split(',').map((l) => l.trim())
+      : letters;
+  const allLetterSet = new Set(letterList);
+  const words = puzzleWords(letters, center, blockedWords);
+
+  let maxScore = 0;
+  let pangramCount = 0;
+  const byLetter: Record<string, number> = {};
+  const byLength: Record<string, number> = {};
+  const byPair: Record<string, number> = {};
+
+  for (const word of words) {
     const wordScore = scoreWord(word, allLetterSet);
     maxScore += wordScore;
 
@@ -210,7 +241,6 @@ export function computePuzzle(
     byPair[pair] = (byPair[pair] || 0) + 1;
   }
 
-  words.sort();
   const wordHashes = words.map((w) => hashWord(w));
 
   const hintData: HintData = {

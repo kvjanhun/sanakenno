@@ -13,9 +13,11 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getDb } from './db/connection';
 import {
-  computePuzzle,
   getBlockedWords,
   getPuzzleBySlot,
+  isPangram,
+  puzzleWords,
+  scoreWord,
   totalPuzzles,
   type VariationData,
 } from './puzzle-engine';
@@ -100,11 +102,19 @@ interface SuggestionTarget {
   pangrams: number;
 }
 
+interface CandidateWordSummary {
+  wordCount: number;
+  pangramCount: number;
+  maxScore: number;
+  pangrams: string[];
+}
+
 const DEFAULT_MIN_WORDS = 18;
 const DEFAULT_MAX_WORDS = 80;
 const MAX_PANGRAMS = 5;
 const SHORT_WORD_MAX_LENGTH = 5;
 const PRELIMINARY_LIMIT = 300;
+const CANDIDATE_WORD_CACHE_LIMIT = 5000;
 const QUALITY_PATH = join(__dirname, 'assets', 'pangram-quality.json');
 const GENERATED_SCREENING_PATH = join(
   __dirname,
@@ -142,12 +152,21 @@ let generatedScreeningOverride: Record<string, PangramQualityGrade> | null =
   null;
 let cachedCuratedQuality: Record<string, PangramQualityGrade> | null = null;
 let cachedGeneratedQuality: Record<string, PangramQualityGrade> | null = null;
+const candidateWordCache = new Map<
+  string,
+  {
+    shortWords?: Set<string>;
+    pangrams?: string[];
+    summary?: CandidateWordSummary;
+  }
+>();
 
 export function setSuggestionQualityForTesting(
   quality: Record<string, PangramQualityGrade> | null,
 ): void {
   qualityOverride = quality;
   cachedCuratedQuality = null;
+  candidateWordCache.clear();
 }
 
 export function setGeneratedSuggestionScreeningForTesting(
@@ -155,6 +174,7 @@ export function setGeneratedSuggestionScreeningForTesting(
 ): void {
   generatedScreeningOverride = quality;
   cachedGeneratedQuality = null;
+  candidateWordCache.clear();
 }
 
 export function normalizeLettersKey(letters: string | string[]): string {
@@ -389,17 +409,77 @@ function neighborOverlap(
   };
 }
 
-function pangramWords(words: string[], letters: string[]): string[] {
-  const required = new Set(letters);
-  return words
-    .filter((word) => {
-      const chars = new Set(Array.from(word));
-      for (const letter of required) {
-        if (!chars.has(letter)) return false;
-      }
-      return true;
-    })
-    .sort((a, b) => a.localeCompare(b, 'fi'));
+function blockedWordsSignature(blockedWords: string[]): string {
+  return blockedWords.length === 0
+    ? ''
+    : [...blockedWords].sort((a, b) => a.localeCompare(b, 'fi')).join('\0');
+}
+
+function candidateWordCacheKey(
+  lettersKey: string,
+  center: string,
+  blockedWords: string[],
+): string {
+  return `${blockedWordsSignature(blockedWords)}:${lettersKey}:${center}`;
+}
+
+function cachedCandidateWords(
+  letters: string[],
+  lettersKey: string,
+  center: string,
+  blockedWords: string[],
+): {
+  shortWords: Set<string>;
+  pangrams: () => string[];
+  summary: () => CandidateWordSummary;
+} {
+  const key = candidateWordCacheKey(lettersKey, center, blockedWords);
+  let cached = candidateWordCache.get(key);
+  if (!cached) {
+    if (candidateWordCache.size >= CANDIDATE_WORD_CACHE_LIMIT) {
+      candidateWordCache.clear();
+    }
+    cached = {};
+    candidateWordCache.set(key, cached);
+  }
+
+  cached.shortWords ??= new Set(
+    puzzleWords(letters, center, blockedWords, {
+      minLength: 4,
+      maxLength: SHORT_WORD_MAX_LENGTH,
+    }),
+  );
+
+  return {
+    shortWords: cached.shortWords,
+    pangrams: () => {
+      cached.pangrams ??= puzzleWords(letters, center, blockedWords, {
+        pangramOnly: true,
+      });
+      return cached.pangrams;
+    },
+    summary: () => {
+      cached.summary ??= (() => {
+        const allWords = puzzleWords(letters, center, blockedWords);
+        const allLetterSet = new Set(letters);
+        const pangrams: string[] = [];
+        let maxScore = 0;
+
+        for (const word of allWords) {
+          maxScore += scoreWord(word, allLetterSet);
+          if (isPangram(word, allLetterSet)) pangrams.push(word);
+        }
+
+        return {
+          wordCount: allWords.length,
+          pangramCount: pangrams.length,
+          maxScore,
+          pangrams,
+        };
+      })();
+      return cached.summary;
+    },
+  };
 }
 
 function candidateReasons(
@@ -579,25 +659,27 @@ export function suggestPuzzle(
     : null;
 
   let best: PuzzleSuggestion | null = null;
+  let bestPangrams: (() => string[]) | null = null;
+  let bestSummary: (() => CandidateWordSummary) | null = null;
 
   for (const candidate of eligible) {
-    const puzzle = computePuzzle(
+    const words = cachedCandidateWords(
       candidate.letters,
+      candidate.lettersKey,
       candidate.center,
       blockedWords,
     );
-    const shortWords = shortWordSet(puzzle.words);
     const previous = neighborOverlap(
       previousSlot,
       candidate.letters,
-      shortWords,
+      words.shortWords,
       previousShortWords,
       previousLetters,
     );
     const next = neighborOverlap(
       nextSlot,
       candidate.letters,
-      shortWords,
+      words.shortWords,
       nextShortWords,
       nextLetters,
     );
@@ -612,9 +694,9 @@ export function suggestPuzzle(
       letters: candidate.letters,
       letters_key: candidate.lettersKey,
       center: candidate.center,
-      word_count: puzzle.hint_data.word_count,
-      pangram_count: puzzle.hint_data.pangram_count,
-      max_score: puzzle.max_score,
+      word_count: candidate.variation.word_count,
+      pangram_count: candidate.variation.pangram_count,
+      max_score: candidate.variation.max_score,
       quality_grade: candidate.grade,
       quality_label: qualityLabel(candidate.grade),
       score: Math.round(finalScore),
@@ -625,9 +707,6 @@ export function suggestPuzzle(
       variations: candidate.variations,
       reasons: [],
     };
-    if (includePangrams) {
-      suggestion.pangrams = pangramWords(puzzle.words, candidate.letters);
-    }
     suggestion.reasons = candidateReasons(
       suggestion,
       preferredBand,
@@ -636,7 +715,20 @@ export function suggestPuzzle(
 
     if (!best || suggestion.score > best.score) {
       best = suggestion;
+      bestPangrams = words.pangrams;
+      bestSummary = words.summary;
     }
+  }
+
+  if (best && blockedWords.length > 0 && bestSummary) {
+    const summary = bestSummary();
+    best.word_count = summary.wordCount;
+    best.pangram_count = summary.pangramCount;
+    best.max_score = summary.maxScore;
+    best.reasons = candidateReasons(best, preferredBand, preferredPangrams);
+    if (includePangrams) best.pangrams = summary.pangrams;
+  } else if (best && includePangrams) {
+    best.pangrams = bestPangrams ? bestPangrams() : [];
   }
 
   return best;
