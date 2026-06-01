@@ -44,6 +44,8 @@ interface AdminWorld extends SanakennoWorld {
   firstSuggestionKey?: string;
   firstSuggestionWordCount?: number;
   firstSuggestionPangramCount?: number;
+  rejectedSuggestionId?: number;
+  rejectedSuggestionKey?: string;
 }
 
 const TEST_USERNAME = 'admin';
@@ -1614,6 +1616,110 @@ When(
 );
 
 When(
+  'the admin rejects the first suggested game permanently',
+  async function (this: AdminWorld) {
+    const first = await app.request('/api/admin/suggestion', {
+      method: 'GET',
+      headers: adminGet(this.sessionCookie),
+    });
+    const firstJson = (await first.json()) as {
+      suggestion: {
+        letters: string[];
+        letters_key: string;
+        center: string;
+      };
+    };
+    this.firstSuggestionKey = `${firstJson.suggestion.letters_key}:${firstJson.suggestion.center}`;
+
+    this.response = await app.request('/api/admin/suggestion-rejections', {
+      method: 'POST',
+      headers: adminHeaders(this.sessionCookie, this.csrfToken),
+      body: JSON.stringify({
+        letters: firstJson.suggestion.letters,
+        center: firstJson.suggestion.center,
+      }),
+    });
+    this.responseJson = (await this.response.json()) as Record<string, unknown>;
+    assert.equal(this.response.status, 200);
+  },
+);
+
+Given(
+  'the admin has rejected a game suggestion',
+  async function (this: AdminWorld) {
+    const first = await app.request('/api/admin/suggestion', {
+      method: 'GET',
+      headers: adminGet(this.sessionCookie),
+    });
+    const firstJson = (await first.json()) as {
+      suggestion: {
+        letters: string[];
+        letters_key: string;
+        center: string;
+      };
+    };
+    this.rejectedSuggestionKey = `${firstJson.suggestion.letters_key}:${firstJson.suggestion.center}`;
+
+    const rejection = await app.request('/api/admin/suggestion-rejections', {
+      method: 'POST',
+      headers: adminHeaders(this.sessionCookie, this.csrfToken),
+      body: JSON.stringify({
+        letters: firstJson.suggestion.letters,
+        center: firstJson.suggestion.center,
+      }),
+    });
+    const rejectionJson = (await rejection.json()) as {
+      id?: number;
+      rejection?: { id?: number };
+    };
+    assert.equal(rejection.status, 200);
+    this.rejectedSuggestionId = rejectionJson.id ?? rejectionJson.rejection?.id;
+    assert.ok(this.rejectedSuggestionId, 'Rejected suggestion id missing');
+  },
+);
+
+Given(
+  'all candidate game suggestions have been rejected',
+  function (this: AdminWorld) {
+    const db = getDb();
+    db.prepare('DELETE FROM combinations').run();
+
+    const words = [
+      ...suggestionWords('opqrstu', 'o', 36),
+      ...suggestionWords('vwxyzåä', 'v', 34),
+    ];
+    setWordlist(new Set(words));
+    seedSuggestionCombination('opqrstu', 'o', 36, 120);
+    seedSuggestionCombination('vwxyzåä', 'v', 34, 116);
+    setSuggestionQuality({
+      [suggestionKey('opqrstu', 'o')]: 'good',
+      [suggestionKey('vwxyzåä', 'v')]: 'ok',
+    });
+
+    db.prepare(
+      `INSERT INTO suggestion_rejections (letters_key, center)
+       VALUES (?, ?), (?, ?)`,
+    ).run('opqrstu', 'o', 'vwxyzäå', 'v');
+  },
+);
+
+When(
+  'the admin restores the rejected game suggestion',
+  async function (this: AdminWorld) {
+    assert.ok(this.rejectedSuggestionId, 'Rejected suggestion id missing');
+    this.response = await app.request(
+      `/api/admin/suggestion-rejections/${this.rejectedSuggestionId}`,
+      {
+        method: 'DELETE',
+        headers: adminHeaders(this.sessionCookie, this.csrfToken),
+      },
+    );
+    this.responseJson = (await this.response.json()) as Record<string, unknown>;
+    assert.equal(this.response.status, 200);
+  },
+);
+
+When(
   'the admin requests a game suggestion after two previous declined suggestions',
   async function (this: AdminWorld) {
     this.response = await app.request(
@@ -1795,6 +1901,54 @@ Then(
     const suggestion = this.responseJson.suggestion as Record<string, unknown>;
     assert.equal(suggestion.pangrams, undefined);
     assert.equal(suggestion.pangram_words, undefined);
+  },
+);
+
+Then(
+  'the restored game suggestion should be eligible again',
+  function (this: AdminWorld) {
+    const suggestion = this.responseJson.suggestion as {
+      letters_key: string;
+      center: string;
+    };
+    assert.equal(
+      `${suggestion.letters_key}:${suggestion.center}`,
+      this.rejectedSuggestionKey,
+    );
+  },
+);
+
+Then(
+  'the suggestion rejection list should include the rejected game suggestion',
+  async function (this: AdminWorld) {
+    assert.ok(this.firstSuggestionKey, 'Rejected suggestion key missing');
+    const res = await app.request('/api/admin/suggestion-rejections', {
+      method: 'GET',
+      headers: adminGet(this.sessionCookie),
+    });
+    const json = (await res.json()) as {
+      rejections: Array<{ letters_key: string; center: string }>;
+    };
+    assert.equal(res.status, 200);
+    assert.ok(
+      json.rejections.some(
+        (rejection) =>
+          `${rejection.letters_key}:${rejection.center}` ===
+          this.firstSuggestionKey,
+      ),
+      'Rejected suggestion should appear in list',
+    );
+  },
+);
+
+Then(
+  'the suggestion response should say all suitable suggestions are used or rejected',
+  function (this: AdminWorld) {
+    assert.equal(this.response.status, 404);
+    assert.equal(
+      this.responseJson.error,
+      'Kaikki sopivat ehdotukset on jo käytetty tai hylätty',
+    );
   },
 );
 

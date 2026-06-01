@@ -65,6 +65,8 @@ export function WordInput({
       className={`text-center text-[30px] font-semibold leading-none ${shake ? ` ${styles.wordShake}` : ''}`}
       style={{
         fontFamily: 'var(--font-game)',
+        fontKerning: 'normal',
+        letterSpacing: '0',
         minHeight: '44px',
       }}
       aria-live="polite"
@@ -74,8 +76,10 @@ export function WordInput({
         chars.map((c, i) => (
           <span
             key={i}
-            className="mr-0.75"
-            style={{ color: COLOR_MAP[c.color] }}
+            style={{
+              color: COLOR_MAP[c.color],
+              marginInline: '1px',
+            }}
           >
             {c.char.toUpperCase()}
           </span>

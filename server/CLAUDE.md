@@ -27,6 +27,8 @@ server/
 - All queries go through the `getDb()` helper — never open a raw connection elsewhere.
 - Use parameterised queries; never interpolate user input into SQL.
 - Schema lives in `db/schema.sql` and is applied on startup via `applySchema`. Existing prod databases are already populated; if you add a column, apply it by hand to any live DB before shipping.
+- For manual production table additions, the convenient path is to run a one-off Node command through Docker Compose with the app image's existing `better-sqlite3` dependency. This runs as the container user against mounted `/data`, avoiding host-side readonly/ownership issues:
+  `docker compose stop && docker compose run --rm --no-deps --entrypoint node sanakenno-a -e "const Database=require('better-sqlite3'); const db=new Database('/data/sanakenno.db'); db.exec(\`...\`); db.close();" && docker compose up -d`
 
 ## Environment
 - Port: `process.env.PORT` (default `3001`).

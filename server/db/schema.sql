@@ -49,6 +49,16 @@ CREATE TABLE IF NOT EXISTS combinations (
     in_rotation     INTEGER NOT NULL DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS suggestion_rejections (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    letters_key  TEXT NOT NULL,
+    center       TEXT NOT NULL,
+    rejected_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(letters_key, center)
+);
+CREATE INDEX IF NOT EXISTS idx_suggestion_rejections_rejected_at
+    ON suggestion_rejections(rejected_at);
+
 CREATE TABLE IF NOT EXISTS admins (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     username        TEXT NOT NULL UNIQUE,

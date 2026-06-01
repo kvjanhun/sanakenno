@@ -58,6 +58,13 @@ test('admin can reject and accept no-spoiler game suggestions', async ({
 }) => {
   const createPayloads: unknown[] = [];
   const suggestionUrls: string[] = [];
+  const rejectedRows: Array<{
+    id: number;
+    letters_key: string;
+    letters: string[];
+    center: string;
+    rejected_at: string;
+  }> = [];
 
   await page.route('**/api/auth/session', async (route) => {
     await route.fulfill({
@@ -142,6 +149,51 @@ test('admin can reject and accept no-spoiler game suggestions', async ({
     });
   });
 
+  await page.route('**/api/admin/suggestion-rejections**', async (route) => {
+    const request = route.request();
+    if (request.method() === 'GET') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ rejections: rejectedRows }),
+      });
+      return;
+    }
+
+    if (request.method() === 'POST') {
+      const body = await request.postDataJSON();
+      const letters = [...body.letters].sort();
+      const row = {
+        id: rejectedRows.length + 1,
+        letters_key: letters.join(''),
+        letters,
+        center: body.center,
+        rejected_at: '2026-06-01 12:00:00',
+      };
+      rejectedRows.push(row);
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ status: 'rejected', ...row }),
+      });
+      return;
+    }
+
+    if (request.method() === 'DELETE') {
+      const id = Number(new URL(request.url()).pathname.split('/').pop());
+      const index = rejectedRows.findIndex((row) => row.id === id);
+      if (index >= 0) rejectedRows.splice(index, 1);
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ status: 'restored' }),
+      });
+      return;
+    }
+
+    await route.continue();
+  });
+
   await page.route('**/api/admin/puzzle', async (route) => {
     if (route.request().method() === 'POST') {
       createPayloads.push(await route.request().postDataJSON());
@@ -174,6 +226,10 @@ test('admin can reject and accept no-spoiler game suggestions', async ({
 
   await page.getByRole('button', { name: 'Hylkää' }).click();
   await expect(page.getByText('34 sanaa')).toBeVisible();
+  await expect(page.getByLabel('Hylätyt ehdotukset')).toContainText('abcdefg');
+
+  await page.getByRole('button', { name: 'Palauta' }).click();
+  await expect(page.getByLabel('Hylätyt ehdotukset')).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Hyväksy' }).click();
   await expect(

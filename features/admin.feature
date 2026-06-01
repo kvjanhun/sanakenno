@@ -226,6 +226,29 @@ Feature: Admin tool
     When the admin declines the first suggested game and asks again
     Then the next suggested game should be different
 
+  Scenario: Persistently rejected suggestions are skipped
+    Given candidate combinations exist for game suggestions
+    When the admin rejects the first suggested game permanently
+    And the admin requests a game suggestion
+    Then the next suggested game should be different
+
+  Scenario: List rejected game suggestions
+    Given candidate combinations exist for game suggestions
+    When the admin rejects the first suggested game permanently
+    Then the suggestion rejection list should include the rejected game suggestion
+
+  Scenario: Restore a rejected game suggestion
+    Given candidate combinations exist for game suggestions
+    And the admin has rejected a game suggestion
+    When the admin restores the rejected game suggestion
+    And the admin requests a game suggestion
+    Then the restored game suggestion should be eligible again
+
+  Scenario: All rejected suggestions return a clear empty response
+    Given all candidate game suggestions have been rejected
+    When the admin requests a game suggestion
+    Then the suggestion response should say all suitable suggestions are used or rejected
+
   Scenario: Suggestion varies word-count bands across retries
     Given suggestion candidates cover multiple word-count bands
     When the admin declines the first suggested game and asks again

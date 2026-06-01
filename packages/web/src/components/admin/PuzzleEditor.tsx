@@ -74,6 +74,14 @@ interface PuzzleSuggestion {
   pangrams?: string[];
 }
 
+interface SuggestionRejection {
+  id: number;
+  letters_key: string;
+  letters: string[];
+  center: string;
+  rejected_at: string;
+}
+
 export function PuzzleEditor() {
   const currentSlot = useAdminStore((s) => s.currentSlot);
   const totalPuzzles = useAdminStore((s) => s.totalPuzzles);
@@ -125,6 +133,11 @@ export function PuzzleEditor() {
   const [suggestionLoading, setSuggestionLoading] = useState(false);
   const [suggestionError, setSuggestionError] = useState<string | null>(null);
   const [declinedSuggestions, setDeclinedSuggestions] = useState<string[]>([]);
+  const [suggestionRejections, setSuggestionRejections] = useState<
+    SuggestionRejection[]
+  >([]);
+  const [suggestionRejectionsLoading, setSuggestionRejectionsLoading] =
+    useState(false);
   const [pangramSpoilersVisible, setPangramSpoilersVisible] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -389,6 +402,24 @@ export function PuzzleEditor() {
     setSelectedVariations([]);
   }, [selectedCombo, activeLetters, activeCenter, createPuzzle]);
 
+  const fetchSuggestionRejections = useCallback(async () => {
+    setSuggestionRejectionsLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/suggestion-rejections`, {
+        credentials: 'same-origin',
+        headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {},
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSuggestionRejections(data.rejections || []);
+      }
+    } catch {
+      // Non-critical: the suggestion flow still works without the list refresh.
+    } finally {
+      setSuggestionRejectionsLoading(false);
+    }
+  }, [csrfToken]);
+
   const fetchSuggestion = useCallback(
     async (
       declined: string[] = declinedSuggestions,
@@ -432,13 +463,89 @@ export function PuzzleEditor() {
     [csrfToken, declinedSuggestions],
   );
 
+  useEffect(() => {
+    void fetchSuggestionRejections();
+  }, [fetchSuggestionRejections]);
+
   const handleRejectSuggestion = useCallback(async () => {
     if (!suggestion) return;
     const key = `${suggestion.letters_key}:${suggestion.center}`;
-    const nextDeclined = [...declinedSuggestions, key];
-    setDeclinedSuggestions(nextDeclined);
-    await fetchSuggestion(nextDeclined);
-  }, [declinedSuggestions, fetchSuggestion, suggestion]);
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/suggestion-rejections`, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
+        },
+        body: JSON.stringify({
+          letters: suggestion.letters,
+          center: suggestion.center,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSuggestionError(data.error || 'Hylkäys epäonnistui');
+        return;
+      }
+
+      const nextDeclined = [...declinedSuggestions, key];
+      setDeclinedSuggestions(nextDeclined);
+      await fetchSuggestionRejections();
+      await fetchSuggestion(nextDeclined);
+    } catch {
+      setSuggestionError('Yhteysvirhe');
+    }
+  }, [
+    csrfToken,
+    declinedSuggestions,
+    fetchSuggestion,
+    fetchSuggestionRejections,
+    suggestion,
+  ]);
+
+  const handleRestoreSuggestion = useCallback(
+    async (rejection: SuggestionRejection) => {
+      try {
+        const res = await fetch(
+          `${API_BASE}/api/admin/suggestion-rejections/${rejection.id}`,
+          {
+            method: 'DELETE',
+            credentials: 'same-origin',
+            headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {},
+          },
+        );
+        const data = await res.json();
+        if (!res.ok) {
+          setSuggestionError(data.error || 'Palautus epäonnistui');
+          return;
+        }
+
+        const restoredKey = `${rejection.letters_key}:${rejection.center}`;
+        const nextDeclined = declinedSuggestions.filter(
+          (key) => key !== restoredKey,
+        );
+        setDeclinedSuggestions(nextDeclined);
+        setSuggestionRejections((prev) =>
+          prev.filter((item) => item.id !== rejection.id),
+        );
+        setStatusMessage('Ehdotus palautettu', 'success');
+
+        if (!suggestion) {
+          await fetchSuggestion(nextDeclined);
+        }
+      } catch {
+        setSuggestionError('Yhteysvirhe');
+      }
+    },
+    [
+      csrfToken,
+      declinedSuggestions,
+      fetchSuggestion,
+      setStatusMessage,
+      suggestion,
+    ],
+  );
 
   const handleTogglePangrams = useCallback(async () => {
     if (!suggestion) return;
@@ -986,6 +1093,85 @@ export function PuzzleEditor() {
                 Hyväksy
               </button>
             </div>
+          </div>
+        )}
+
+        {(suggestionRejectionsLoading || suggestionRejections.length > 0) && (
+          <div
+            aria-label="Hylätyt ehdotukset"
+            className="space-y-2 border-t pt-3"
+            style={{ borderColor: 'var(--color-border)' }}
+          >
+            <div
+              className="flex items-center justify-between gap-2 text-xs"
+              style={{ color: 'var(--color-text-tertiary)' }}
+            >
+              <span className="font-semibold">Hylätyt ehdotukset</span>
+              {suggestionRejections.length > 0 && (
+                <span>{suggestionRejections.length} kpl</span>
+              )}
+            </div>
+
+            {suggestionRejectionsLoading ? (
+              <div
+                className="text-xs"
+                style={{ color: 'var(--color-text-tertiary)' }}
+              >
+                Ladataan...
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {suggestionRejections.map((rejection) => (
+                  <div
+                    key={rejection.id}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded px-2 py-1 text-xs"
+                    style={{
+                      backgroundColor: 'var(--color-bg-primary)',
+                      border: '1px solid var(--color-border)',
+                    }}
+                  >
+                    <span
+                      className="font-mono"
+                      style={{ color: 'var(--color-text-primary)' }}
+                    >
+                      {rejection.letters.map((letter) => (
+                        <span
+                          key={`${rejection.id}-${letter}`}
+                          style={{
+                            color:
+                              letter === rejection.center
+                                ? 'var(--color-accent)'
+                                : 'inherit',
+                            fontWeight: letter === rejection.center ? 700 : 400,
+                          }}
+                        >
+                          {letter}
+                        </span>
+                      ))}
+                    </span>
+                    <span style={{ color: 'var(--color-text-tertiary)' }}>
+                      {new Date(rejection.rejected_at + 'Z').toLocaleDateString(
+                        'fi-FI',
+                      )}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => void handleRestoreSuggestion(rejection)}
+                      disabled={suggestionLoading || saving}
+                      className="rounded px-2 py-0.5 cursor-pointer"
+                      style={{
+                        backgroundColor: 'var(--color-bg-secondary)',
+                        border: '1px solid var(--color-border)',
+                        color: 'var(--color-text-secondary)',
+                        opacity: suggestionLoading || saving ? 0.6 : 1,
+                      }}
+                    >
+                      Palauta
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -17,6 +17,9 @@
  *   GET    /api/admin/blocked             - List all blocked words
  *   GET    /api/admin/combinations        - Filterable/sortable combinations browser
  *   GET    /api/admin/suggestion          - No-spoiler next-game suggestion
+ *   GET    /api/admin/suggestion-rejections - List rejected suggestions
+ *   POST   /api/admin/suggestion-rejections - Reject a suggestion permanently
+ *   DELETE /api/admin/suggestion-rejections/:id - Restore a rejected suggestion
  *   GET    /api/admin/schedule            - 14-day upcoming puzzle rotation
  *   GET    /api/admin/achievements        - Daily achievement breakdown by rank
  *   GET    /api/admin/failed-guesses      - Daily failed-guess breakdown by word
@@ -40,9 +43,15 @@ import {
   totalPuzzles,
   FINNISH_LETTERS,
 } from '../puzzle-engine';
-import { normalizeLettersKey, suggestPuzzle } from '../puzzle-suggestions';
+import {
+  normalizeLettersKey,
+  suggestionKey,
+  suggestPuzzle,
+} from '../puzzle-suggestions';
 
 const admin = new Hono<{ Variables: AdminVariables }>();
+const SUGGESTION_EXHAUSTED_ERROR =
+  'Kaikki sopivat ehdotukset on jo käytetty tai hylätty';
 
 // --- Helpers ---
 
@@ -56,6 +65,13 @@ interface BlockedWordRow {
   id: number;
   word: string;
   blocked_at: string;
+}
+
+interface SuggestionRejectionRow {
+  id: number;
+  letters_key: string;
+  center: string;
+  rejected_at: string;
 }
 
 interface AchievementRow {
@@ -85,6 +101,48 @@ function parseOptionalPositiveInt(
   if (!value) return undefined;
   const parsed = parseInt(value, 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+function normalizedSuggestionLetters(value: unknown): string | null {
+  if (typeof value === 'string') return normalizeLettersKey(value);
+  if (Array.isArray(value) && value.every((item) => typeof item === 'string')) {
+    return normalizeLettersKey(value);
+  }
+  return null;
+}
+
+function parseSuggestionRejectionBody(body: Record<string, unknown>): {
+  lettersKey: string;
+  center: string;
+} | null {
+  const lettersKey = normalizedSuggestionLetters(
+    body.letters ?? body.letters_key,
+  );
+  const center =
+    typeof body.center === 'string' ? body.center.trim().toLowerCase() : '';
+
+  if (!lettersKey || !center || Array.from(center).length !== 1) {
+    return null;
+  }
+
+  const letters = Array.from(lettersKey);
+  if (
+    letters.length !== 7 ||
+    new Set(letters).size !== 7 ||
+    !letters.includes(center)
+  ) {
+    return null;
+  }
+
+  return { lettersKey, center };
+}
+
+function persistedSuggestionRejectionKeys(): string[] {
+  const db = getDb();
+  const rows = db
+    .prepare('SELECT letters_key, center FROM suggestion_rejections')
+    .all() as Array<Pick<SuggestionRejectionRow, 'letters_key' | 'center'>>;
+  return rows.map((row) => suggestionKey(row.letters_key, row.center));
 }
 
 /**
@@ -752,6 +810,119 @@ admin.get('/combinations', (c) => {
   return c.json({ combinations, total, page, pages, per_page: perPage });
 });
 
+// --- Suggestion rejections ---
+
+/**
+ * GET /suggestion-rejections
+ * List game suggestions that should be skipped by future admin suggestions.
+ */
+admin.get('/suggestion-rejections', (c) => {
+  const db = getDb();
+  const rows = db
+    .prepare(
+      `SELECT id, letters_key, center, rejected_at
+       FROM suggestion_rejections
+       ORDER BY rejected_at DESC, id DESC`,
+    )
+    .all() as SuggestionRejectionRow[];
+
+  return c.json({
+    rejections: rows.map((row) => ({
+      ...row,
+      letters: Array.from(row.letters_key),
+    })),
+  });
+});
+
+/**
+ * POST /suggestion-rejections
+ * Persistently reject a game suggestion so it is skipped in future sessions.
+ */
+admin.post('/suggestion-rejections', async (c) => {
+  const session = c.get('admin') as SessionData;
+
+  let body: Record<string, unknown>;
+  try {
+    body = (await c.req.json()) as Record<string, unknown>;
+  } catch {
+    return c.json({ error: 'Invalid request body' }, 400);
+  }
+
+  const parsed = parseSuggestionRejectionBody(body);
+  if (!parsed) {
+    return c.json({ error: 'Suggestion letters and center are required' }, 400);
+  }
+
+  const db = getDb();
+  const result = db
+    .prepare(
+      `INSERT OR IGNORE INTO suggestion_rejections (letters_key, center)
+       VALUES (?, ?)`,
+    )
+    .run(parsed.lettersKey, parsed.center);
+
+  const row = db
+    .prepare(
+      `SELECT id, letters_key, center, rejected_at
+       FROM suggestion_rejections
+       WHERE letters_key = ? AND center = ?`,
+    )
+    .get(parsed.lettersKey, parsed.center) as SuggestionRejectionRow;
+
+  if (result.changes > 0) {
+    logAction(
+      session.adminId,
+      'suggestion_reject',
+      `${parsed.lettersKey}:${parsed.center}`,
+    );
+  }
+
+  return c.json({
+    status: result.changes > 0 ? 'rejected' : 'already_rejected',
+    ...row,
+    letters: Array.from(row.letters_key),
+  });
+});
+
+/**
+ * DELETE /suggestion-rejections/:id
+ * Restore a previously rejected game suggestion.
+ */
+admin.delete('/suggestion-rejections/:id', async (c) => {
+  const session = c.get('admin') as SessionData;
+  const id = parseInt(c.req.param('id'), 10);
+
+  if (isNaN(id)) {
+    return c.json({ error: 'Invalid ID' }, 400);
+  }
+
+  const db = getDb();
+  const row = db
+    .prepare(
+      `SELECT id, letters_key, center, rejected_at
+       FROM suggestion_rejections
+       WHERE id = ?`,
+    )
+    .get(id) as SuggestionRejectionRow | undefined;
+
+  if (!row) {
+    return c.json({ error: 'Rejected suggestion not found' }, 404);
+  }
+
+  db.prepare('DELETE FROM suggestion_rejections WHERE id = ?').run(id);
+  logAction(
+    session.adminId,
+    'suggestion_restore',
+    `${row.letters_key}:${row.center}`,
+  );
+
+  return c.json({
+    status: 'restored',
+    ...row,
+    letters: Array.from(row.letters_key),
+  });
+});
+
 /**
  * GET /suggestion
  * Return one no-spoiler candidate for appending to the puzzle rotation.
@@ -764,18 +935,19 @@ admin.get('/suggestion', (c) => {
     .split(',')
     .map((item) => item.trim())
     .filter(Boolean);
+  const persistedDeclined = persistedSuggestionRejectionKeys();
   const includePangrams = ['1', 'true', 'yes'].includes(
     (c.req.query('include_pangrams') || '').trim().toLowerCase(),
   );
   const suggestion = suggestPuzzle({
-    declined,
+    declined: [...declined, ...persistedDeclined],
     minWords: parseOptionalPositiveInt(c.req.query('min_words')),
     maxWords: parseOptionalPositiveInt(c.req.query('max_words')),
     includePangrams,
   });
 
   if (!suggestion) {
-    return c.json({ error: 'No suitable suggestion found' }, 404);
+    return c.json({ error: SUGGESTION_EXHAUSTED_ERROR }, 404);
   }
 
   return c.json({ suggestion });

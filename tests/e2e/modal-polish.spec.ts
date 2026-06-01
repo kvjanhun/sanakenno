@@ -66,15 +66,17 @@ test.describe('Modal polish', () => {
 });
 
 test.describe('Game typography', () => {
-  test('current word uses proportional game font instead of mono', async ({
+  test('current word uses proportional game font with iOS-like spacing', async ({
     page,
   }) => {
     await loadGame(page);
 
-    await page.keyboard.press('k');
+    await page.keyboard.press('p');
+    await page.keyboard.press('a');
 
     const display = page.locator('[aria-atomic="true"]').first();
-    await expect(display).toContainText('K');
+    await expect(display).toContainText('PA');
+    await expect(display.locator('span')).toHaveCount(2);
 
     const style = await display.evaluate((el) => {
       const computed = getComputedStyle(el);
@@ -82,11 +84,28 @@ test.describe('Game typography', () => {
         fontFamily: computed.fontFamily,
         fontSize: computed.fontSize,
         fontWeight: computed.fontWeight,
+        fontKerning: computed.fontKerning,
+        letterSpacing: computed.letterSpacing,
       };
     });
+    const spacing = await display.locator('span').evaluateAll((spans) =>
+      spans.map((span) => {
+        const computed = getComputedStyle(span);
+        return {
+          marginLeft: computed.marginLeft,
+          marginRight: computed.marginRight,
+        };
+      }),
+    );
 
     expect(style.fontFamily.toLowerCase()).not.toContain('mono');
     expect(style.fontSize).toBe('30px');
     expect(Number(style.fontWeight)).toBeGreaterThanOrEqual(600);
+    expect(style.fontKerning).toBe('normal');
+    expect(['0px', 'normal']).toContain(style.letterSpacing);
+    expect(spacing).toEqual([
+      { marginLeft: '1px', marginRight: '1px' },
+      { marginLeft: '1px', marginRight: '1px' },
+    ]);
   });
 });

@@ -1,5 +1,15 @@
 # @sanakenno/web
 
+## 1.11.0
+
+### Minor Changes
+
+- Persist rejected admin game suggestions and tighten current-word spacing.
+
+### Patch Changes
+
+- @sanakenno/shared@1.11.0
+
 ## 1.10.1
 
 ### Patch Changes
