@@ -172,8 +172,11 @@ test('word analytics have their own admin page', async ({ page }) => {
   await expect(page.getByText('Löydetyt sanat')).toHaveCount(0);
 
   await page.getByRole('button', { name: /Sanadata/ }).click();
-  await expect(page.getByText('3 virheellistä arvausta')).toBeVisible();
+  await expect(page.getByText('Yhteensä: 3 virhearvausta')).toBeVisible();
 
   await page.getByRole('button', { name: 'Löydetyt sanat' }).click();
-  await expect(page.getByText('5 löytöä')).toBeVisible();
+  await expect(page.getByText('Löytöjä yhteensä')).toBeVisible();
+  await expect(
+    page.getByText('Löytöjä yhteensä').locator('..').getByText('5'),
+  ).toBeVisible();
 });

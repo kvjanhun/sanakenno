@@ -93,7 +93,10 @@ export function SuggestionRejections() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
+    <section
+      className="max-w-4xl mx-auto space-y-6 animate-fade-in"
+      aria-label="Hylätyt ehdotukset"
+    >
       <div
         className="overflow-hidden rounded-2xl border shadow-xs"
         style={{
@@ -309,6 +312,6 @@ export function SuggestionRejections() {
           </div>
         )}
       </div>
-    </div>
+    </section>
   );
 }

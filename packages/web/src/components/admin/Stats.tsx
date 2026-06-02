@@ -310,7 +310,7 @@ export function Stats() {
             className="text-base font-bold tracking-tight"
             style={{ color: 'var(--color-text-primary)' }}
           >
-            Aktivoituneet tasomäärät & ajallinen jakauma
+            Rankkijakauma & ajallinen jakauma
           </h3>
           <p
             className="text-xs"

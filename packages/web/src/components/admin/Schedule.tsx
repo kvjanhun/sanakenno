@@ -129,12 +129,13 @@ export function Schedule() {
 
           {/* Filters inside Header */}
           <div className="flex flex-wrap items-center gap-4 text-xs font-semibold">
-            <div className="flex items-center gap-2">
+            <label className="flex items-center gap-2 cursor-pointer">
               <span style={{ color: 'var(--color-text-secondary)' }}>
                 Alku:
               </span>
               <input
                 type="date"
+                aria-label="Alku"
                 value={startDate}
                 onChange={(event) => handleStartDateChange(event.target.value)}
                 className="h-9 rounded-xl px-3 border focus:outline-none focus:ring-1 focus:ring-accent font-medium shadow-xs"
@@ -144,13 +145,14 @@ export function Schedule() {
                   color: 'var(--color-text-primary)',
                 }}
               />
-            </div>
-            <div className="flex items-center gap-2">
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
               <span style={{ color: 'var(--color-text-secondary)' }}>
                 Loppu:
               </span>
               <input
                 type="date"
+                aria-label="Loppu"
                 value={endDate}
                 min={startDate}
                 max={addDays(startDate, 89)}
@@ -162,15 +164,15 @@ export function Schedule() {
                   color: 'var(--color-text-primary)',
                 }}
               />
-            </div>
-
-            <span
-              className="px-2.5 py-1 rounded-full border shrink-0 bg-[var(--color-bg-primary)] text-[var(--color-text-secondary)]"
-              style={{ borderColor: 'var(--color-border)' }}
-            >
-              {loading ? 'Ladataan...' : `${schedule.length} päivää`}
-            </span>
+            </label>
           </div>
+
+          <span
+            className="px-2.5 py-1 rounded-full border shrink-0 bg-[var(--color-bg-primary)] text-[var(--color-text-secondary)]"
+            style={{ borderColor: 'var(--color-border)' }}
+          >
+            {loading ? 'Ladataan...' : `${schedule.length} päivää`}
+          </span>
         </div>
 
         {/* Content Table */}
