@@ -2197,10 +2197,7 @@ Then(
 Given(
   'an achievement was recorded 2 days ago at 23:30 UTC',
   function (this: AdminWorld) {
-    const d = new Date();
-    d.setUTCDate(d.getUTCDate() - 2);
-    d.setUTCHours(23, 30, 0, 0);
-    const dateStr = d.toISOString().replace('T', ' ').slice(0, 19);
+    const dateStr = `${helsinkiDateByOffset(2)} 23:30:00`;
     insertAchievement('Onnistuja', dateStr);
   },
 );
