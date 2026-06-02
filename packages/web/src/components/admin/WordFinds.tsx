@@ -8,6 +8,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAdminStore } from '../../store/useAdminStore';
 import type { WordFindEntry } from '../../store/useAdminStore';
 
@@ -31,6 +32,7 @@ export function WordFinds() {
   const csrfToken = useAdminStore((s) => s.csrfToken);
   const currentSlot = useAdminStore((s) => s.currentSlot);
   const totalPuzzles = useAdminStore((s) => s.totalPuzzles);
+  const setStatusMessage = useAdminStore((s) => s.setStatusMessage);
 
   const [puzzleNumber, setPuzzleNumber] = useState(currentSlot);
   const [data, setData] = useState<WordFindsResponse | null>(null);
@@ -56,6 +58,7 @@ export function WordFinds() {
       if (!res.ok) {
         setData(null);
         setError('Sanatilastoja ei voitu ladata.');
+        setStatusMessage('Sanatilastoja ei voitu ladata.', 'error');
         return;
       }
 
@@ -64,10 +67,11 @@ export function WordFinds() {
     } catch {
       setData(null);
       setError('Sanatilastoja ei voitu ladata.');
+      setStatusMessage('Sanatilastoja ei voitu ladata.', 'error');
     } finally {
       setLoading(false);
     }
-  }, [csrfToken, puzzleNumber]);
+  }, [csrfToken, puzzleNumber, setStatusMessage]);
 
   useEffect(() => {
     fetchWordFinds();
@@ -92,35 +96,36 @@ export function WordFinds() {
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
+    <div className="space-y-6">
+      {/* Top Pagination & Controls Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div
+          className="flex items-center gap-1.5 p-1 rounded-xl border bg-[var(--color-bg-primary)]"
+          style={{ borderColor: 'var(--color-border)' }}
+        >
           <button
             type="button"
             onClick={() => setPuzzleNumber((n) => Math.max(0, n - 1))}
             disabled={!canGoPrevious}
-            className="px-2 py-1 rounded text-sm cursor-pointer disabled:cursor-default"
-            style={{
-              backgroundColor: 'var(--color-bg-secondary)',
-              color: 'var(--color-text-primary)',
-              border: '1px solid var(--color-border)',
-              opacity: canGoPrevious ? 1 : 0.4,
-            }}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg transition-all cursor-pointer disabled:cursor-default disabled:opacity-30 hover:bg-[color-mix(in srgb,var(--color-accent)_6%,var(--color-bg-secondary))]"
+            style={{ color: 'var(--color-text-primary)' }}
+            title="Edellinen peli"
           >
-            Edellinen
+            <ChevronLeft size={16} strokeWidth={2.4} aria-hidden="true" />
           </button>
+
           <label
-            className="flex items-center gap-1 text-sm"
+            className="flex items-center gap-1.5 px-2 text-xs font-bold"
             style={{ color: 'var(--color-text-secondary)' }}
           >
-            Peli
+            <span>Peli:</span>
             <input
               type="number"
               min={1}
               max={Math.max(1, totalPuzzles)}
               value={displayNumber}
               onChange={(event) => updateDisplayNumber(event.target.value)}
-              className="w-16 rounded px-2 py-1 text-sm"
+              className="w-16 h-8 rounded-lg text-center font-mono font-bold transition-all focus:ring-2 focus:ring-[var(--color-accent)] focus:outline-none"
               style={{
                 backgroundColor: 'var(--color-bg-secondary)',
                 border: '1px solid var(--color-border)',
@@ -128,6 +133,7 @@ export function WordFinds() {
               }}
             />
           </label>
+
           <button
             type="button"
             onClick={() =>
@@ -136,108 +142,268 @@ export function WordFinds() {
               )
             }
             disabled={!canGoNext}
-            className="px-2 py-1 rounded text-sm cursor-pointer disabled:cursor-default"
-            style={{
-              backgroundColor: 'var(--color-bg-secondary)',
-              color: 'var(--color-text-primary)',
-              border: '1px solid var(--color-border)',
-              opacity: canGoNext ? 1 : 0.4,
-            }}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg transition-all cursor-pointer disabled:cursor-default disabled:opacity-30 hover:bg-[color-mix(in srgb,var(--color-accent)_6%,var(--color-bg-secondary))]"
+            style={{ color: 'var(--color-text-primary)' }}
+            title="Seuraava peli"
           >
-            Seuraava
+            <ChevronRight size={16} strokeWidth={2.4} aria-hidden="true" />
           </button>
         </div>
+
+        {data && !loading && (
+          <div className="flex items-center gap-2">
+            <span
+              className="text-[11px] font-bold uppercase tracking-wider"
+              style={{ color: 'var(--color-text-tertiary)' }}
+            >
+              Kirjaimet:
+            </span>
+            <div className="flex items-center gap-1">
+              <span
+                className="h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold uppercase shadow-xs select-none"
+                style={{
+                  backgroundColor: 'var(--color-accent)',
+                  color: 'var(--color-on-accent)',
+                }}
+                title={`Keskuskirjain: ${data.center}`}
+              >
+                {data.center}
+              </span>
+              {data.letters.map((letter) => (
+                <span
+                  key={letter}
+                  className="h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold uppercase border select-none bg-[var(--color-bg-primary)]"
+                  style={{
+                    borderColor: 'var(--color-border)',
+                    color: 'var(--color-text-secondary)',
+                  }}
+                >
+                  {letter}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {loading ? (
-        <div
-          className="text-sm py-4 text-center"
-          style={{ color: 'var(--color-text-tertiary)' }}
-        >
-          Ladataan...
-        </div>
-      ) : error ? (
-        <div className="text-sm" style={{ color: 'var(--color-accent)' }}>
-          {error}
-        </div>
-      ) : data ? (
-        <>
+        <div className="py-12 text-center space-y-3">
           <div
-            className="text-xs"
+            className="h-6 w-6 border-2 border-t-transparent rounded-full animate-spin mx-auto"
+            style={{
+              borderColor: 'var(--color-accent)',
+              borderTopColor: 'transparent',
+            }}
+          />
+          <div
+            className="text-sm font-medium"
             style={{ color: 'var(--color-text-tertiary)' }}
           >
-            {data.total_finds} löytöä, {data.recorded_words}/{data.total_words}{' '}
-            sanaa löydetty ainakin kerran. Keskus{' '}
-            <span
-              className="font-mono"
-              style={{ color: 'var(--color-text-primary)' }}
+            Ladataan sanatilastoja...
+          </div>
+        </div>
+      ) : error ? (
+        <div
+          className="py-8 text-center space-y-2 border-2 border-dashed rounded-2xl"
+          style={{ borderColor: 'var(--color-border)' }}
+        >
+          <p
+            className="text-sm font-semibold"
+            style={{ color: 'var(--color-accent)' }}
+          >
+            {error}
+          </p>
+        </div>
+      ) : data ? (
+        <div className="space-y-4">
+          {/* Quick Metrics KPI cards */}
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div
+              className="p-4 rounded-xl border bg-[var(--color-bg-primary)] shadow-2xs space-y-1"
+              style={{ borderColor: 'var(--color-border)' }}
             >
-              {data.center}
-            </span>
-            .
+              <span
+                className="text-[10px] font-bold uppercase tracking-wider block"
+                style={{ color: 'var(--color-text-tertiary)' }}
+              >
+                Löydetyt sanat / Kaikki
+              </span>
+              <div
+                className="text-lg font-extrabold font-mono"
+                style={{ color: 'var(--color-text-primary)' }}
+              >
+                {data.recorded_words} / {data.total_words}
+              </div>
+              <div
+                className="text-[10px] font-medium"
+                style={{ color: 'var(--color-text-tertiary)' }}
+              >
+                {Math.round((data.recorded_words / data.total_words) * 100)}%
+                sanastosta löydetty ainakin kerran
+              </div>
+            </div>
+
+            <div
+              className="p-4 rounded-xl border bg-[var(--color-bg-primary)] shadow-2xs space-y-1"
+              style={{ borderColor: 'var(--color-border)' }}
+            >
+              <span
+                className="text-[10px] font-bold uppercase tracking-wider block"
+                style={{ color: 'var(--color-text-tertiary)' }}
+              >
+                Löytöjä yhteensä
+              </span>
+              <div
+                className="text-lg font-extrabold font-mono"
+                style={{ color: 'var(--color-accent)' }}
+              >
+                {data.total_finds}
+              </div>
+              <div
+                className="text-[10px] font-medium"
+                style={{ color: 'var(--color-text-tertiary)' }}
+              >
+                Onnistuneita havaintoja seurantajaksolla
+              </div>
+            </div>
+
+            <div
+              className="p-4 rounded-xl border bg-[var(--color-bg-primary)] shadow-2xs space-y-1"
+              style={{ borderColor: 'var(--color-border)' }}
+            >
+              <span
+                className="text-[10px] font-bold uppercase tracking-wider block"
+                style={{ color: 'var(--color-text-tertiary)' }}
+              >
+                Uniikit pelisanat
+              </span>
+              <div
+                className="text-lg font-extrabold font-mono"
+                style={{ color: 'var(--color-text-primary)' }}
+              >
+                {data.total_words}
+              </div>
+              <div
+                className="text-[10px] font-medium"
+                style={{ color: 'var(--color-text-tertiary)' }}
+              >
+                Pulmaluupin vastaussanakirjan koko
+              </div>
+            </div>
           </div>
 
+          {/* Words table list */}
           <div
-            className="max-h-72 overflow-y-auto rounded"
+            className="max-h-[30rem] overflow-y-auto rounded-xl border"
             style={{
-              border: '1px solid var(--color-border)',
-              backgroundColor: 'var(--color-bg-secondary)',
+              borderColor: 'var(--color-border)',
+              backgroundColor: 'var(--color-bg-primary)',
             }}
           >
             {data.words.length === 0 ? (
               <div
-                className="text-xs p-3"
+                className="text-xs p-6 text-center"
                 style={{ color: 'var(--color-text-tertiary)' }}
               >
-                Ei sanoja.
+                Tässä pelissä ei ole tilastoraportteja.
               </div>
             ) : (
-              <ul
-                className="divide-y"
-                style={{ borderColor: 'var(--color-border)' }}
-              >
-                {data.words.map((item) => {
-                  const width =
-                    item.find_count > 0
-                      ? Math.max(4, (item.find_count / maxFindCount) * 100)
-                      : 0;
-
-                  return (
-                    <li
-                      key={item.word}
-                      className="flex items-center gap-3 px-3 py-2 text-sm"
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr
+                    className="border-b text-left"
+                    style={{
+                      borderColor: 'var(--color-border)',
+                      backgroundColor: 'var(--color-bg-secondary)',
+                    }}
+                  >
+                    <th
+                      className="px-5 py-3 text-xs font-bold uppercase tracking-wider"
+                      style={{ color: 'var(--color-text-tertiary)' }}
                     >
-                      <span
-                        className="font-mono flex-1 min-w-0 truncate"
-                        style={{ color: 'var(--color-text-primary)' }}
+                      Sana
+                    </th>
+                    <th
+                      className="px-5 py-3 text-xs font-bold uppercase tracking-wider"
+                      style={{ color: 'var(--color-text-tertiary)' }}
+                    >
+                      Arvauskertojen jakauma
+                    </th>
+                    <th
+                      className="px-5 py-3 text-xs font-bold uppercase tracking-wider text-right"
+                      style={{ color: 'var(--color-text-tertiary)' }}
+                    >
+                      Määrä
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--color-border)]">
+                  {data.words.map((item) => {
+                    const findPercentage =
+                      item.find_count > 0
+                        ? Math.round((item.find_count / maxFindCount) * 100)
+                        : 0;
+
+                    const width = Math.max(3, findPercentage);
+
+                    return (
+                      <tr
+                        key={item.word}
+                        className="hover:bg-[color-mix(in srgb,var(--color-accent)_2%,var(--color-bg-secondary))] transition-colors group"
                       >
-                        {item.word}
-                      </span>
-                      <div
-                        className="w-24 h-2 rounded overflow-hidden"
-                        style={{ backgroundColor: 'var(--color-bg-primary)' }}
-                      >
-                        <div
-                          className="h-full rounded"
-                          style={{
-                            width: `${width}%`,
-                            backgroundColor: 'var(--color-accent)',
-                          }}
-                        />
-                      </div>
-                      <span
-                        className="w-8 text-right text-xs"
-                        style={{ color: 'var(--color-text-tertiary)' }}
-                      >
-                        {item.find_count}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
+                        <td className="px-5 py-3 text-sm">
+                          <span
+                            className="font-mono font-bold tracking-wide text-sm"
+                            style={{ color: 'var(--color-text-primary)' }}
+                          >
+                            {item.word}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3">
+                          <div className="flex items-center gap-3 max-w-[20rem]">
+                            <div
+                              className="h-2 flex-1 rounded-full overflow-hidden"
+                              style={{
+                                backgroundColor: 'var(--color-bg-secondary)',
+                              }}
+                            >
+                              <div
+                                className="h-full rounded-full transition-all duration-500"
+                                style={{
+                                  width: `${width}%`,
+                                  backgroundColor:
+                                    item.find_count > 0
+                                      ? 'var(--color-accent)'
+                                      : 'var(--color-border)',
+                                }}
+                              />
+                            </div>
+                            <span className="text-[10px] font-mono text-[var(--color-text-tertiary)] w-8 text-right font-medium">
+                              {findPercentage}%
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3 text-right">
+                          <span
+                            className="font-mono font-bold px-2 py-0.5 rounded-md text-xs bg-[var(--color-bg-secondary)]"
+                            style={{
+                              color:
+                                item.find_count > 0
+                                  ? 'var(--color-accent)'
+                                  : 'var(--color-text-tertiary)',
+                            }}
+                          >
+                            {item.find_count}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             )}
           </div>
-        </>
+        </div>
       ) : null}
     </div>
   );

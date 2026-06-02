@@ -16,6 +16,7 @@ import {
   LayoutDashboard,
   LogOut,
   PanelTop,
+  X,
 } from 'lucide-react';
 import { useAdminStore } from '../../store/useAdminStore';
 import { LoginPage } from './LoginPage';
@@ -80,9 +81,20 @@ export function AdminLayout() {
   const checkSession = useAdminStore((s) => s.checkSession);
   const logout = useAdminStore((s) => s.logout);
   const totalPuzzles = useAdminStore((s) => s.totalPuzzles);
+  const statusMessage = useAdminStore((s) => s.statusMessage);
+  const statusType = useAdminStore((s) => s.statusType);
+  const setStatusMessage = useAdminStore((s) => s.setStatusMessage);
 
   const [checking, setChecking] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('editor');
+
+  // Clear status message after 3.5 seconds
+  useEffect(() => {
+    if (statusMessage) {
+      const t = setTimeout(() => setStatusMessage(null), 3500);
+      return () => clearTimeout(t);
+    }
+  }, [statusMessage, setStatusMessage]);
 
   // Check session on mount
   useEffect(() => {
@@ -270,6 +282,56 @@ export function AdminLayout() {
         {activeTab === 'stats' && <Stats />}
         {activeTab === 'words' && <WordData />}
       </main>
+
+      {/* Central Floating Toast Notification System */}
+      {statusMessage && (
+        <div
+          role="alert"
+          className="fixed top-6 right-6 z-[9999] max-w-sm w-full md:w-85 p-4 rounded-xl border flex items-start gap-3 shadow-xl animate-fade-in pointer-events-auto"
+          style={{
+            backgroundColor: 'var(--color-bg-secondary)',
+            borderColor: 'var(--color-border)',
+          }}
+        >
+          <div
+            className="h-6 w-6 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+            style={{
+              backgroundColor:
+                statusType === 'error'
+                  ? 'rgba(239, 68, 68, 0.1)'
+                  : statusType === 'warning'
+                    ? 'rgba(245, 158, 11, 0.1)'
+                    : 'rgba(34, 197, 94, 0.1)',
+              color:
+                statusType === 'error'
+                  ? 'rgb(239, 68, 68)'
+                  : statusType === 'warning'
+                    ? 'rgb(245, 158, 11)'
+                    : 'rgb(34, 197, 94)',
+            }}
+          >
+            {statusType === 'error'
+              ? '!'
+              : statusType === 'warning'
+                ? '?'
+                : '✓'}
+          </div>
+          <div
+            className="flex-1 text-sm font-semibold leading-snug"
+            style={{ color: 'var(--color-text-primary)' }}
+          >
+            {statusMessage}
+          </div>
+          <button
+            type="button"
+            onClick={() => setStatusMessage(null)}
+            className="text-neutral-400 hover:text-neutral-200 transition-colors cursor-pointer shrink-0 mt-0.5"
+            aria-label="Sulje"
+          >
+            <X size={15} strokeWidth={2.5} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

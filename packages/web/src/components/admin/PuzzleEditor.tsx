@@ -104,7 +104,6 @@ export function PuzzleEditor() {
 
   const loadSlot = useAdminStore((s) => s.loadSlot);
   const saveSlot = useAdminStore((s) => s.saveSlot);
-  const changeCenter = useAdminStore((s) => s.changeCenter);
   const swapSlots = useAdminStore((s) => s.swapSlots);
   const deleteSlot = useAdminStore((s) => s.deleteSlot);
   const createPuzzle = useAdminStore((s) => s.createPuzzle);
@@ -265,23 +264,12 @@ export function PuzzleEditor() {
           activeCenter: center,
         });
         previewCombo(letters, center);
-      } else if (center === savedCenter && activeLetters === savedLetters) {
-        // Current puzzle, no local changes — persist center change to DB
-        changeCenter(center);
       } else {
-        // Current puzzle with local changes — just update local state
+        // Just update local state which handles highlights, stats and calculates isDirty
         setActiveCenter(center);
       }
     },
-    [
-      selectedCombo,
-      savedCenter,
-      savedLetters,
-      activeLetters,
-      previewCombo,
-      changeCenter,
-      setActiveCenter,
-    ],
+    [selectedCombo, previewCombo, setActiveCenter],
   );
 
   // --- Slot navigation ---
@@ -517,64 +505,8 @@ export function PuzzleEditor() {
     border: '1px solid var(--color-error)',
     color: 'var(--color-error)',
   };
-  const statusColor =
-    statusType === 'error'
-      ? 'var(--color-error)'
-      : statusType === 'warning'
-        ? 'var(--color-accent)'
-        : 'var(--color-accent)';
-  const statusBackground =
-    statusType === 'error'
-      ? 'color-mix(in srgb, var(--color-error) 12%, var(--color-bg-primary))'
-      : 'color-mix(in srgb, var(--color-accent) 12%, var(--color-bg-primary))';
-
   return (
     <div className="space-y-6 max-w-7xl mx-auto px-1 py-4 sm:px-4">
-      {/* Alert Messages / Status */}
-      <div className="space-y-2">
-        {isDirty && (
-          <div
-            className="rounded-xl p-4 text-sm font-medium border flex items-center gap-3 shadow-sm"
-            style={{
-              backgroundColor:
-                'color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-secondary))',
-              borderColor: 'var(--color-accent)',
-              color: 'var(--color-text-primary)',
-            }}
-          >
-            <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
-            <span className="flex-1">
-              Tallentamattomia muutoksia pelissä #{currentSlot + 1}. Muista
-              tallentaa!
-            </span>
-            <button
-              onClick={() => saveSlot()}
-              disabled={saving}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
-              style={primaryButtonStyle}
-            >
-              {saving ? 'Tallennetaan...' : 'Tallenna'}
-            </button>
-          </div>
-        )}
-        {statusMessage && (
-          <div
-            className="rounded-xl p-4 text-sm font-medium border flex items-center gap-3 shadow-md animate-fade-in"
-            style={{
-              backgroundColor: statusBackground,
-              color: statusColor,
-              borderColor:
-                'color-mix(in srgb, var(--color-accent) 20%, var(--color-border))',
-            }}
-          >
-            <div className="h-5 w-5 rounded-full flex items-center justify-center bg-current opacity-10 shrink-0">
-              {statusType === 'error' ? '!' : '✓'}
-            </div>
-            <span className="flex-1">{statusMessage}</span>
-          </div>
-        )}
-      </div>
-
       {/* Main Two-Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* LEFT COLUMN: Active Puzzle Controls & AI Suggestions */}
@@ -684,57 +616,64 @@ export function PuzzleEditor() {
             </div>
 
             <div className="p-5 space-y-5">
-              {/* Visual Word Letters Display */}
-              <div className="flex flex-col gap-2">
+              {/* Header: Title and Stable Save Status Area */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 h-auto sm:h-11">
                 <span
-                  className="text-xs font-semibold uppercase tracking-wider animate-pulse"
+                  className="text-xs font-bold uppercase tracking-wider block"
                   style={{ color: 'var(--color-text-tertiary)' }}
                 >
-                  Pelin kirjaimet
+                  Pelin kirjaimet ja tilastot
                 </span>
-                <div className="flex flex-wrap gap-2 items-center">
-                  {activeLetters.split('').map((letter) => (
-                    <button
-                      key={letter}
-                      type="button"
-                      onClick={() => handleCenterSelect(letter)}
-                      className="h-12 w-12 rounded-xl font-mono text-xl font-bold flex items-center justify-center shadow-sm select-none hover:scale-[1.05] active:scale-[0.95] transition-all cursor-pointer"
-                      style={{
-                        backgroundColor:
-                          letter === activeCenter
-                            ? 'var(--color-accent)'
-                            : 'var(--color-bg-primary)',
-                        borderColor:
-                          letter === activeCenter
-                            ? 'var(--color-accent)'
-                            : 'var(--color-border)',
-                        color:
-                          letter === activeCenter
-                            ? 'var(--color-on-accent)'
-                            : 'var(--color-text-primary)',
-                        borderWidth: '1px',
-                      }}
-                      title={
-                        letter === activeCenter
-                          ? `${letter} on valittu keskuskirjain`
-                          : `Valitse ${letter} keskuskirjaimeksi`
-                      }
+
+                <div className="shrink-0 flex items-center h-11">
+                  {isDirty ? (
+                    <div
+                      className="flex items-center gap-3 bg-[color-mix(in srgb,var(--color-accent)_10%,var(--color-bg-secondary))] px-3.5 py-1.5 rounded-xl border animate-fade-in"
+                      style={{ borderColor: 'var(--color-accent)' }}
                     >
-                      {letter}
-                    </button>
-                  ))}
+                      <div
+                        className="flex items-center gap-1.5 text-xs font-bold"
+                        style={{ color: 'var(--color-text-primary)' }}
+                      >
+                        <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+                        <span>Muutoksia tallentamatta</span>
+                      </div>
+                      <div className="flex gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => saveSlot()}
+                          disabled={saving}
+                          className="px-3 py-1.5 rounded-lg text-xs font-bold shadow-xs hover:scale-[1.03] active:scale-[0.97] transition-all cursor-pointer whitespace-nowrap"
+                          style={primaryButtonStyle}
+                        >
+                          {saving ? 'Tallennetaan...' : 'Tallenna'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleRestore}
+                          disabled={saving}
+                          className="p-1.5 rounded-lg border hover:scale-[1.03] active:scale-[0.97] transition-all cursor-pointer"
+                          style={surfaceButtonStyle}
+                          title="Kumoa muutokset"
+                        >
+                          <Undo2 size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  ) : statusMessage === 'Tallenna' ||
+                    statusMessage === 'Tallennettu' ||
+                    (statusMessage && statusType === 'success') ? (
+                    <div className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-500 bg-emerald-500/10 px-3.5 py-1.5 rounded-xl border border-emerald-500/20 animate-fade-in">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                      <span>Kaikki muutokset tallennettu</span>
+                    </div>
+                  ) : null}
                 </div>
               </div>
 
               {/* Variations Grid */}
               {displayVariations.length > 0 && (
                 <div className="space-y-2">
-                  <span
-                    className="text-xs font-semibold uppercase tracking-wider"
-                    style={{ color: 'var(--color-text-tertiary)' }}
-                  >
-                    Keskuskirjaimen vaihtoehdot ja tilastot
-                  </span>
                   <VariationsGrid
                     variations={displayVariations}
                     activeCenter={activeCenter}

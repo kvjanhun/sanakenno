@@ -26,14 +26,13 @@ interface SuggestionRejection {
  */
 export function SuggestionRejections() {
   const csrfToken = useAdminStore((s) => s.csrfToken);
+  const setStatusMessage = useAdminStore((s) => s.setStatusMessage);
   const [rejections, setRejections] = useState<SuggestionRejection[]>([]);
   const [loading, setLoading] = useState(true);
   const [restoringId, setRestoringId] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   const fetchRejections = useCallback(async () => {
     setLoading(true);
-    setError(null);
     try {
       const res = await fetch(`${API_BASE}/api/admin/suggestion-rejections`, {
         credentials: 'same-origin',
@@ -42,7 +41,7 @@ export function SuggestionRejections() {
 
       if (!res.ok) {
         setRejections([]);
-        setError('Hylättyjä ehdotuksia ei voitu ladata.');
+        setStatusMessage('Hylättyjä ehdotuksia ei voitu ladata.', 'error');
         return;
       }
 
@@ -50,11 +49,11 @@ export function SuggestionRejections() {
       setRejections(data.rejections || []);
     } catch {
       setRejections([]);
-      setError('Hylättyjä ehdotuksia ei voitu ladata.');
+      setStatusMessage('Hylättyjä ehdotuksia ei voitu ladata.', 'error');
     } finally {
       setLoading(false);
     }
-  }, [csrfToken]);
+  }, [csrfToken, setStatusMessage]);
 
   useEffect(() => {
     fetchRejections();
@@ -62,7 +61,6 @@ export function SuggestionRejections() {
 
   const restoreSuggestion = async (rejection: SuggestionRejection) => {
     setRestoringId(rejection.id);
-    setError(null);
     try {
       const res = await fetch(
         `${API_BASE}/api/admin/suggestion-rejections/${rejection.id}`,
@@ -75,188 +73,233 @@ export function SuggestionRejections() {
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || 'Palautus epäonnistui.');
+        setStatusMessage(data.error || 'Palautus epäonnistui.', 'error');
         return;
       }
 
       setRejections((prev) => prev.filter((item) => item.id !== rejection.id));
+      setStatusMessage('Ehdotus palautettu takaisin jonoon!', 'success');
     } catch {
-      setError('Palautus epäonnistui.');
+      setStatusMessage('Palautus epäonnistui.', 'error');
     } finally {
       setRestoringId(null);
     }
   };
 
-  return (
-    <section className="space-y-2" aria-label="Hylätyt ehdotukset">
-      {error && (
-        <div
-          className="rounded px-2 py-1 text-xs"
-          style={{
-            backgroundColor:
-              'color-mix(in srgb, var(--color-error) 12%, var(--color-bg-primary))',
-            color: 'var(--color-error)',
-          }}
-        >
-          {error}
-        </div>
-      )}
+  const surfaceButtonStyle = {
+    backgroundColor: 'var(--color-bg-primary)',
+    borderColor: 'var(--color-border)',
+    color: 'var(--color-text-primary)',
+  };
 
+  return (
+    <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
       <div
-        className="overflow-hidden rounded-lg"
+        className="overflow-hidden rounded-2xl border shadow-xs"
         style={{
           backgroundColor: 'var(--color-bg-secondary)',
-          border: '1px solid var(--color-border)',
+          borderColor: 'var(--color-border)',
         }}
       >
+        {/* Header */}
         <div
-          className="flex items-center justify-between gap-2 px-2 py-1.5"
-          style={{
-            borderBottom: '1px solid var(--color-border)',
-            color: 'var(--color-text-tertiary)',
-          }}
+          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-6 py-5 border-b"
+          style={{ borderColor: 'var(--color-border)' }}
         >
-          <span className="text-xs">
-            {loading ? 'Ladataan...' : `${rejections.length} hylättyä`}
-          </span>
-          <button
-            type="button"
-            onClick={() => void fetchRejections()}
-            disabled={loading}
-            title="Päivitä lista"
-            aria-label="Päivitä lista"
-            className="inline-flex h-6 w-6 items-center justify-center rounded cursor-pointer disabled:cursor-default"
-            style={{
-              backgroundColor: 'var(--color-bg-primary)',
-              border: '1px solid var(--color-border)',
-              color: 'var(--color-text-primary)',
-              opacity: loading ? 0.6 : 1,
-            }}
-          >
-            <RefreshCw size={13} strokeWidth={2.2} aria-hidden="true" />
-          </button>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2.5">
+              <ArchiveRestore
+                className="h-5 w-5"
+                style={{ color: 'var(--color-accent)' }}
+              />
+              <h2
+                className="text-lg font-bold tracking-tight"
+                style={{ color: 'var(--color-text-primary)' }}
+              >
+                Hylätyt ehdotukset
+              </h2>
+            </div>
+            <p
+              className="text-xs"
+              style={{ color: 'var(--color-text-tertiary)' }}
+            >
+              Lista pysyvästi hylätyistä kirjainyhdistelmistä, jotka on
+              poistettu peliehdotuksista. Palauta takaisin kiertoon
+              tarvittaessa.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span
+              className="text-xs font-semibold px-2.5 py-1 rounded-full border"
+              style={{
+                backgroundColor: 'var(--color-bg-primary)',
+                borderColor: 'var(--color-border)',
+                color: 'var(--color-text-secondary)',
+              }}
+            >
+              {loading ? 'Ladataan...' : `${rejections.length} hylättyä`}
+            </span>
+            <button
+              type="button"
+              onClick={() => void fetchRejections()}
+              disabled={loading}
+              title="Päivitä lista"
+              aria-label="Päivitä lista"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border shadow-xs hover:scale-[1.05] active:scale-[0.95] transition-all cursor-pointer disabled:cursor-default disabled:opacity-50"
+              style={surfaceButtonStyle}
+            >
+              <RefreshCw
+                size={15}
+                strokeWidth={2.4}
+                className={loading ? 'animate-spin' : ''}
+              />
+            </button>
+          </div>
         </div>
+
+        {/* Content Body */}
         {loading ? (
-          <div
-            className="py-8 text-center text-sm"
-            style={{ color: 'var(--color-text-tertiary)' }}
-          >
-            Ladataan...
+          <div className="py-16 text-center space-y-3">
+            <div
+              className="h-6 w-6 border-2 border-t-transparent rounded-full animate-spin mx-auto"
+              style={{
+                borderColor: 'var(--color-accent)',
+                borderTopColor: 'transparent',
+              }}
+            />
+            <div
+              className="text-sm font-medium"
+              style={{ color: 'var(--color-text-tertiary)' }}
+            >
+              Ladataan hylättyjä ehdotuksia...
+            </div>
           </div>
         ) : rejections.length === 0 ? (
-          <div className="px-4 py-8 text-center">
-            <ArchiveRestore
-              size={28}
-              strokeWidth={1.8}
-              aria-hidden="true"
-              className="mx-auto mb-3"
-              style={{ color: 'var(--color-text-tertiary)' }}
-            />
+          <div className="px-6 py-16 text-center max-w-sm mx-auto">
+            <div
+              className="h-12 w-12 rounded-full flex items-center justify-center mx-auto mb-4"
+              style={{
+                backgroundColor:
+                  'color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-primary))',
+              }}
+            >
+              <ArchiveRestore
+                size={22}
+                strokeWidth={2}
+                style={{ color: 'var(--color-accent)' }}
+              />
+            </div>
             <p
-              className="text-sm font-medium"
+              className="text-sm font-bold"
               style={{ color: 'var(--color-text-primary)' }}
             >
               Ei hylättyjä ehdotuksia
             </p>
             <p
-              className="mt-1 text-xs"
+              className="mt-1.5 text-xs leading-relaxed"
               style={{ color: 'var(--color-text-tertiary)' }}
             >
-              Pysyvästi hylätyt ehdotukset ilmestyvät tähän.
+              Kaikki hylätyt peli-ehdotukset ovat tyhjänä tai palautettu
+              takaisin ehdotusjonoon.
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-auto min-w-[36rem] max-w-full text-xs">
+            <table className="w-full text-left border-collapse min-w-[36rem]">
               <thead>
                 <tr
-                  className="text-left text-xs"
+                  className="text-xs font-bold uppercase tracking-wider border-b"
                   style={{
                     color: 'var(--color-text-tertiary)',
-                    borderBottom: '1px solid var(--color-border)',
+                    borderColor: 'var(--color-border)',
                   }}
                 >
-                  <th className="px-2 py-1 font-semibold">Kirjaimet</th>
-                  <th className="px-2 py-1 font-semibold">Keskus</th>
-                  <th className="px-2 py-1 font-semibold">Hylätty</th>
-                  <th className="px-2 py-1 text-right font-semibold">
+                  <th className="px-6 py-4 font-semibold">
+                    Peliratkaisun kirjaimet
+                  </th>
+                  <th className="px-6 py-4 font-semibold text-center">
+                    Keskuskirjain
+                  </th>
+                  <th className="px-6 py-4 font-semibold">Hylkäyspäivä</th>
+                  <th className="px-6 py-4 text-right font-semibold">
                     Toiminto
                   </th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-[var(--color-border)]">
                 {rejections.map((rejection) => (
                   <tr
                     key={rejection.id}
-                    style={{
-                      borderBottom: '1px solid var(--color-border)',
-                    }}
+                    className="hover:bg-[color-mix(in srgb,var(--color-text-primary)_1%,transparent)] transition-all"
                   >
-                    <td className="px-2 py-1">
-                      <span
-                        className="inline-flex items-center gap-0.5 font-mono text-xs"
-                        style={{ color: 'var(--color-text-primary)' }}
-                      >
-                        {rejection.letters.map((letter) => (
-                          <span
-                            key={`${rejection.id}-${letter}`}
-                            className="inline-flex h-5 w-5 items-center justify-center rounded"
-                            style={{
-                              backgroundColor:
-                                letter === rejection.center
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center gap-1.5">
+                        {rejection.letters.map((letter) => {
+                          const isCenter = letter === rejection.center;
+                          return (
+                            <span
+                              key={`${rejection.id}-${letter}`}
+                              className="inline-flex h-7 w-7 items-center justify-center rounded-lg font-mono text-sm font-bold shadow-xs select-none"
+                              style={{
+                                backgroundColor: isCenter
                                   ? 'var(--color-accent)'
                                   : 'var(--color-bg-primary)',
-                              color:
-                                letter === rejection.center
+                                color: isCenter
                                   ? 'var(--color-on-accent)'
                                   : 'var(--color-text-primary)',
-                              border:
-                                letter === rejection.center
+                                border: isCenter
                                   ? '1px solid var(--color-accent)'
                                   : '1px solid var(--color-border)',
-                            }}
-                          >
-                            {letter}
-                          </span>
-                        ))}
+                              }}
+                            >
+                              {letter}
+                            </span>
+                          );
+                        })}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span
+                        className="font-mono font-bold text-sm uppercase px-2 py-0.5 rounded border"
+                        style={{
+                          backgroundColor: 'var(--color-bg-primary)',
+                          borderColor: 'var(--color-border)',
+                          color: 'var(--color-accent)',
+                        }}
+                      >
+                        {rejection.center}
                       </span>
                     </td>
                     <td
-                      className="px-2 py-1 font-mono"
-                      style={{ color: 'var(--color-text-primary)' }}
-                    >
-                      {rejection.center}
-                    </td>
-                    <td
-                      className="px-2 py-1"
+                      className="px-6 py-4 text-xs font-medium"
                       style={{ color: 'var(--color-text-secondary)' }}
                     >
                       {new Date(rejection.rejected_at + 'Z').toLocaleDateString(
                         'fi-FI',
+                        {
+                          day: 'numeric',
+                          month: 'numeric',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        },
                       )}
                     </td>
-                    <td className="px-2 py-1 text-right">
+                    <td className="px-6 py-4 text-right">
                       <button
                         type="button"
                         onClick={() => void restoreSuggestion(rejection)}
                         disabled={restoringId !== null}
-                        title="Palauta ehdotus jonoon"
-                        className="inline-flex h-6 items-center justify-center gap-1 rounded px-2 text-xs font-semibold cursor-pointer disabled:cursor-default"
-                        style={{
-                          backgroundColor: 'var(--color-bg-primary)',
-                          border: '1px solid var(--color-border)',
-                          color: 'var(--color-text-primary)',
-                          opacity: restoringId !== null ? 0.6 : 1,
-                        }}
+                        className="inline-flex h-8 items-center gap-1.5 rounded-lg border px-3 text-xs font-semibold shadow-xs hover:border-accent hover:text-accent hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-default"
+                        style={surfaceButtonStyle}
                       >
-                        <ArchiveRestore
-                          size={14}
-                          strokeWidth={2.2}
-                          aria-hidden="true"
-                        />
-                        {restoringId === rejection.id
-                          ? 'Palautetaan...'
-                          : 'Palauta'}
+                        <ArchiveRestore size={13} strokeWidth={2.4} />
+                        <span>
+                          {restoringId === rejection.id
+                            ? 'Palautetaan...'
+                            : 'Palauta'}
+                        </span>
                       </button>
                     </td>
                   </tr>
@@ -266,6 +309,6 @@ export function SuggestionRejections() {
           </div>
         )}
       </div>
-    </section>
+    </div>
   );
 }

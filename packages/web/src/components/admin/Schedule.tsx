@@ -42,7 +42,7 @@ const DEFAULT_END = addDays(DEFAULT_START, 13);
 
 export function Schedule() {
   const csrfToken = useAdminStore((s) => s.csrfToken);
-  const loadSlot = useAdminStore((s) => s.loadSlot);
+  const setStatusMessage = useAdminStore((s) => s.setStatusMessage);
   const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [startDate, setStartDate] = useState(DEFAULT_START);
@@ -63,12 +63,14 @@ export function Schedule() {
       if (res.ok) {
         const data = await res.json();
         setSchedule(data.schedule);
+      } else {
+        setStatusMessage('Aikataulua ei voitu ladata.', 'error');
       }
     } catch {
-      // Ignore
+      setStatusMessage('Aikataulua ei voitu ladata.', 'error');
     }
     setLoading(false);
-  }, [csrfToken, endDate, startDate]);
+  }, [csrfToken, endDate, startDate, setStatusMessage]);
 
   useEffect(() => {
     fetchSchedule();
@@ -91,150 +93,225 @@ export function Schedule() {
   };
 
   return (
-    <section className="w-full" aria-label="Aikataulu">
+    <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
       <div
-        className="overflow-hidden rounded-lg"
+        className="overflow-hidden rounded-2xl border shadow-xs"
         style={{
           backgroundColor: 'var(--color-bg-secondary)',
-          border: '1px solid var(--color-border)',
+          borderColor: 'var(--color-border)',
         }}
       >
+        {/* Header */}
         <div
-          className="flex flex-wrap items-center gap-2 px-2 py-1.5"
-          style={{ borderBottom: '1px solid var(--color-border)' }}
+          className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 px-6 py-5 border-b"
+          style={{ borderColor: 'var(--color-border)' }}
         >
-          <CalendarDays
-            size={15}
-            strokeWidth={2.2}
-            aria-hidden="true"
-            style={{ color: 'var(--color-accent)' }}
-          />
-          <label
-            className="flex items-center gap-1 text-xs"
-            style={{ color: 'var(--color-text-secondary)' }}
-          >
-            Alku
-            <input
-              type="date"
-              value={startDate}
-              onChange={(event) => handleStartDateChange(event.target.value)}
-              className="h-7 rounded px-2 text-xs"
-              style={{
-                backgroundColor: 'var(--color-bg-primary)',
-                border: '1px solid var(--color-border)',
-                color: 'var(--color-text-primary)',
-              }}
-            />
-          </label>
-          <label
-            className="flex items-center gap-1 text-xs"
-            style={{ color: 'var(--color-text-secondary)' }}
-          >
-            Loppu
-            <input
-              type="date"
-              value={endDate}
-              min={startDate}
-              max={addDays(startDate, 89)}
-              onChange={(event) => handleEndDateChange(event.target.value)}
-              className="h-7 rounded px-2 text-xs"
-              style={{
-                backgroundColor: 'var(--color-bg-primary)',
-                border: '1px solid var(--color-border)',
-                color: 'var(--color-text-primary)',
-              }}
-            />
-          </label>
-          <span
-            className="ml-auto text-xs"
-            style={{ color: 'var(--color-text-tertiary)' }}
-          >
-            {loading ? 'Ladataan...' : `${schedule.length} päivää`}
-          </span>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2.5">
+              <CalendarDays
+                className="h-5 w-5"
+                style={{ color: 'var(--color-accent)' }}
+              />
+              <h2
+                className="text-lg font-bold tracking-tight"
+                style={{ color: 'var(--color-text-primary)' }}
+              >
+                Julkaisuaikataulu
+              </h2>
+            </div>
+            <p
+              className="text-xs"
+              style={{ color: 'var(--color-text-tertiary)' }}
+            >
+              Uusien ja vanhojen pelien kierto aikajanalla.
+            </p>
+          </div>
+
+          {/* Filters inside Header */}
+          <div className="flex flex-wrap items-center gap-4 text-xs font-semibold">
+            <div className="flex items-center gap-2">
+              <span style={{ color: 'var(--color-text-secondary)' }}>
+                Alku:
+              </span>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(event) => handleStartDateChange(event.target.value)}
+                className="h-9 rounded-xl px-3 border focus:outline-none focus:ring-1 focus:ring-accent font-medium shadow-xs"
+                style={{
+                  backgroundColor: 'var(--color-bg-primary)',
+                  borderColor: 'var(--color-border)',
+                  color: 'var(--color-text-primary)',
+                }}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span style={{ color: 'var(--color-text-secondary)' }}>
+                Loppu:
+              </span>
+              <input
+                type="date"
+                value={endDate}
+                min={startDate}
+                max={addDays(startDate, 89)}
+                onChange={(event) => handleEndDateChange(event.target.value)}
+                className="h-9 rounded-xl px-3 border focus:outline-none focus:ring-1 focus:ring-accent font-medium shadow-xs"
+                style={{
+                  backgroundColor: 'var(--color-bg-primary)',
+                  borderColor: 'var(--color-border)',
+                  color: 'var(--color-text-primary)',
+                }}
+              />
+            </div>
+
+            <span
+              className="px-2.5 py-1 rounded-full border shrink-0 bg-[var(--color-bg-primary)] text-[var(--color-text-secondary)]"
+              style={{ borderColor: 'var(--color-border)' }}
+            >
+              {loading ? 'Ladataan...' : `${schedule.length} päivää`}
+            </span>
+          </div>
         </div>
 
-        <div className="max-h-[min(36rem,72vh)] overflow-auto">
-          <table className="w-auto min-w-[32rem] max-w-full text-sm">
-            <thead
-              className="sticky top-0 z-10"
-              style={{ backgroundColor: 'var(--color-bg-secondary)' }}
+        {/* Content Table */}
+        {loading ? (
+          <div className="py-16 text-center space-y-3">
+            <div
+              className="h-6 w-6 border-2 border-t-transparent rounded-full animate-spin mx-auto"
+              style={{
+                borderColor: 'var(--color-accent)',
+                borderTopColor: 'transparent',
+              }}
+            />
+            <div
+              className="text-sm font-medium"
+              style={{ color: 'var(--color-text-tertiary)' }}
             >
-              <tr
-                className="text-left text-xs"
-                style={{
-                  borderBottom: '1px solid var(--color-border)',
-                  color: 'var(--color-text-tertiary)',
-                }}
+              Ladataan aikataulua...
+            </div>
+          </div>
+        ) : (
+          <div className="overflow-x-auto max-h-[min(38rem,72vh)]">
+            <table className="w-full text-left border-collapse min-w-[32rem]">
+              <thead
+                className="sticky top-0 z-10"
+                style={{ backgroundColor: 'var(--color-bg-secondary)' }}
               >
-                <th className="px-2 py-1 font-semibold">Päivä</th>
-                <th className="px-2 py-1 text-right font-semibold">#</th>
-                <th className="px-2 py-1 font-semibold">Kirjaimet</th>
-                <th className="px-2 py-1 text-center font-semibold">Keskus</th>
-              </tr>
-            </thead>
-            <tbody>
-              {schedule.map((entry) => (
                 <tr
-                  key={entry.date}
-                  className="cursor-pointer"
-                  onClick={() => loadSlot(entry.slot)}
+                  className="text-xs font-bold uppercase tracking-wider border-b"
                   style={{
-                    borderBottom: '1px solid var(--color-border)',
-                    backgroundColor: entry.is_today
-                      ? 'color-mix(in srgb, var(--color-accent) 10%, transparent)'
-                      : 'transparent',
+                    color: 'var(--color-text-tertiary)',
+                    borderColor: 'var(--color-border)',
                   }}
                 >
-                  <td
-                    className="px-2 py-0.5 text-xs"
-                    style={{
-                      color: entry.is_today
-                        ? 'var(--color-accent)'
-                        : 'var(--color-text-primary)',
-                      fontWeight: entry.is_today ? 600 : 400,
-                    }}
-                  >
-                    {new Date(entry.date + 'T12:00:00').toLocaleDateString(
-                      'fi-FI',
-                      { weekday: 'short', day: 'numeric', month: 'numeric' },
-                    )}
-                  </td>
-                  <td
-                    className="px-2 py-0.5 text-right font-mono text-xs"
-                    style={{ color: 'var(--color-text-secondary)' }}
-                  >
-                    {entry.display_number}
-                  </td>
-                  <td
-                    className="px-2 py-0.5 font-mono text-xs"
-                    style={{ color: 'var(--color-text-primary)' }}
-                  >
-                    {entry.letters?.join('') || '-'}
-                  </td>
-                  <td className="px-2 py-0.5 text-center">
-                    <span
-                      className="inline-flex h-5 w-5 items-center justify-center rounded font-mono text-[11px] font-bold"
+                  <th className="px-6 py-4 font-semibold">Päivämäärä</th>
+                  <th className="px-6 py-4 font-semibold text-center w-24">
+                    Pelinumero
+                  </th>
+                  <th className="px-6 py-4 font-semibold">Kirjaimet</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--color-border)]">
+                {schedule.map((entry) => {
+                  const dayDate = new Date(entry.date + 'T12:00:00');
+                  const weekday = dayDate.toLocaleDateString('fi-FI', {
+                    weekday: 'short',
+                  });
+                  const dateString = dayDate.toLocaleDateString('fi-FI', {
+                    day: 'numeric',
+                    month: 'numeric',
+                  });
+
+                  return (
+                    <tr
+                      key={entry.date}
+                      className="transition-colors select-none"
                       style={{
-                        backgroundColor: entry.center
-                          ? 'var(--color-accent)'
-                          : 'var(--color-bg-primary)',
-                        border: entry.center
-                          ? '1px solid var(--color-accent)'
-                          : '1px solid var(--color-border)',
-                        color: entry.center
-                          ? 'var(--color-on-accent)'
-                          : 'var(--color-text-tertiary)',
+                        backgroundColor: entry.is_today
+                          ? 'color-mix(in srgb, var(--color-accent) 7%, var(--color-bg-secondary))'
+                          : 'transparent',
                       }}
                     >
-                      {entry.center || '-'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                      <td className="px-6 py-3.5">
+                        <div className="flex items-center gap-3">
+                          {entry.is_today && (
+                            <span
+                              className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-md tracking-wider shadow-xs shrink-0"
+                              style={{
+                                backgroundColor: 'var(--color-accent)',
+                                color: 'var(--color-on-accent)',
+                              }}
+                            >
+                              Tänään
+                            </span>
+                          )}
+                          <span
+                            className="text-sm font-semibold capitalize"
+                            style={{
+                              color: entry.is_today
+                                ? 'var(--color-accent)'
+                                : 'var(--color-text-primary)',
+                            }}
+                          >
+                            {weekday} {dateString}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-3.5 text-center">
+                        <span
+                          className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-md border text-center inline-block min-w-[2.5rem]"
+                          style={{
+                            backgroundColor: 'var(--color-bg-primary)',
+                            borderColor: 'var(--color-border)',
+                            color: 'var(--color-text-primary)',
+                          }}
+                        >
+                          #{entry.display_number}
+                        </span>
+                      </td>
+                      <td className="px-6 py-3.5">
+                        <div className="flex items-center gap-1">
+                          {entry.letters ? (
+                            entry.letters.map((letter) => {
+                              const isCenter = letter === entry.center;
+                              return (
+                                <span
+                                  key={letter}
+                                  className="inline-flex h-6 w-6 items-center justify-center rounded-lg font-mono text-xs font-bold shadow-xs select-none uppercase"
+                                  style={{
+                                    backgroundColor: isCenter
+                                      ? 'var(--color-accent)'
+                                      : 'var(--color-bg-primary)',
+                                    color: isCenter
+                                      ? 'var(--color-on-accent)'
+                                      : 'var(--color-text-primary)',
+                                    border: isCenter
+                                      ? '1px solid var(--color-accent)'
+                                      : '1px solid var(--color-border)',
+                                  }}
+                                >
+                                  {letter}
+                                </span>
+                              );
+                            })
+                          ) : (
+                            <span
+                              className="text-xs italic"
+                              style={{ color: 'var(--color-text-tertiary)' }}
+                            >
+                              Ei asetettua peliä
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
-    </section>
+    </div>
   );
 }

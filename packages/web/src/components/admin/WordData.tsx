@@ -27,19 +27,46 @@ export function WordData() {
   const [activeTab, setActiveTab] = useState<WordDataTab>('failed');
 
   return (
-    <section className="w-full" aria-label="Sanadata">
+    <section
+      className="max-w-7xl mx-auto space-y-6 animate-fade-in"
+      aria-label="Sanadata"
+    >
+      {/* Title & Stats Navigation */}
       <div
-        className="rounded-lg"
+        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl border"
         style={{
           backgroundColor: 'var(--color-bg-secondary)',
-          border: '1px solid var(--color-border)',
+          borderColor: 'var(--color-border)',
         }}
       >
+        <div className="flex items-center gap-3">
+          <div
+            className="h-10 w-10 rounded-xl flex items-center justify-center bg-[color-mix(in srgb,var(--color-accent)_8%,var(--color-bg-primary))]"
+            style={{ borderColor: 'var(--color-border)' }}
+          >
+            <BarChart3 size={20} className="text-[var(--color-accent)]" />
+          </div>
+          <div>
+            <h2
+              className="text-lg font-bold tracking-tight"
+              style={{ color: 'var(--color-text-primary)' }}
+            >
+              Pelitilastot & Sanadata
+            </h2>
+            <p
+              className="text-xs"
+              style={{ color: 'var(--color-text-tertiary)' }}
+            >
+              Seuraa vääriä arvauksia ja tarkastele jokaisen pelipulman sanojen
+              vaikeustasoja.
+            </p>
+          </div>
+        </div>
+
+        {/* Tab Selection */}
         <div
-          className="flex flex-wrap items-center gap-1 px-2 py-1.5"
-          style={{
-            borderBottom: '1px solid var(--color-border)',
-          }}
+          className="inline-flex rounded-xl p-1 border bg-[var(--color-bg-primary)] h-10 items-center justify-start"
+          style={{ borderColor: 'var(--color-border)' }}
         >
           {TABS.map((tab) => {
             const active = activeTab === tab.key;
@@ -50,27 +77,33 @@ export function WordData() {
                 key={tab.key}
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
-                className="inline-flex h-7 items-center gap-2 rounded px-2 text-xs font-medium cursor-pointer"
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg px-4 text-xs font-bold transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
                 style={{
                   backgroundColor: active
-                    ? 'var(--color-bg-primary)'
+                    ? 'var(--color-accent)'
                     : 'transparent',
                   color: active
-                    ? 'var(--color-text-primary)'
+                    ? 'var(--color-on-accent)'
                     : 'var(--color-text-secondary)',
-                  border: active
-                    ? '1px solid var(--color-border)'
-                    : '1px solid transparent',
                 }}
               >
-                <Icon size={15} strokeWidth={2.2} aria-hidden="true" />
-                {tab.label}
+                <Icon size={14} strokeWidth={2.4} aria-hidden="true" />
+                <span>{tab.label}</span>
               </button>
             );
           })}
         </div>
+      </div>
 
-        <div className="p-2">
+      {/* Main Panel Content container */}
+      <div
+        className="rounded-2xl border p-6 shadow-xs"
+        style={{
+          backgroundColor: 'var(--color-bg-secondary)',
+          borderColor: 'var(--color-border)',
+        }}
+      >
+        <div className="transition-all duration-300">
           {activeTab === 'failed' ? <FailedGuesses /> : <WordFinds />}
         </div>
       </div>
