@@ -36,7 +36,9 @@ export function VariationsGrid({
               backgroundColor: isActive
                 ? 'var(--color-accent)'
                 : 'var(--color-bg-secondary)',
-              color: isActive ? '#fff' : 'var(--color-text-primary)',
+              color: isActive
+                ? 'var(--color-on-accent)'
+                : 'var(--color-text-primary)',
               border: `1px solid ${isActive ? 'var(--color-accent)' : 'var(--color-border)'}`,
               fontSize: '0.75rem',
               lineHeight: 1.3,

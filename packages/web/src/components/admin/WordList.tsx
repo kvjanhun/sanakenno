@@ -8,6 +8,7 @@
  */
 
 import { useMemo } from 'react';
+import { Trash2 } from 'lucide-react';
 
 interface WordListProps {
   words: string[];
@@ -74,15 +75,16 @@ export function WordList({ words, letters, loading, onBlock }: WordListProps) {
               <button
                 type="button"
                 onClick={() => onBlock(word)}
-                className="opacity-0 group-hover:opacity-100 text-xs cursor-pointer px-1"
+                className="inline-flex h-5 w-5 items-center justify-center rounded opacity-0 group-hover:opacity-100 cursor-pointer"
                 style={{
-                  color: '#dc2626',
+                  color: 'var(--color-error)',
                   background: 'none',
                   border: 'none',
                 }}
                 title={`Estä "${word}"`}
+                aria-label={`Estä ${word}`}
               >
-                x
+                <Trash2 size={13} strokeWidth={2.1} aria-hidden="true" />
               </button>
               <span
                 style={{

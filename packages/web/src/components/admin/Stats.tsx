@@ -1,18 +1,16 @@
 /**
- * Achievement statistics panel.
+ * Admin statistics dashboard.
  *
- * Shows daily achievement breakdown by rank with period and mode selectors.
- * "Sessions" mode shows only the highest rank each player session reached.
- * Includes a compact digit summary and stacked bar visualization per day.
+ * Shows achievement distribution by rank, with a stable-user mode and raw
+ * achievement-event mode.
  *
  * @module src/components/admin/Stats
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Activity, Hash, Trophy, Users } from 'lucide-react';
 import { useAdminStore } from '../../store/useAdminStore';
 import type { AchievementDay } from '../../store/useAdminStore';
-import { FailedGuesses } from './FailedGuesses';
-import { WordFinds } from './WordFinds';
 
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -26,31 +24,35 @@ const RANKS = [
   'Täysi kenno',
 ];
 
-const SHORT_RANKS = ['ES', 'HA', 'NM', 'ON', 'SV', 'ÄL', 'TK'];
+const PERIODS = [7, 30, 90];
 
-/** Colors for each rank, from cool (low) to warm (high). */
-const RANK_COLORS = [
-  '#94a3b8', // ES - slate
-  '#60a5fa', // HA - blue
-  '#34d399', // NM - green
-  '#a78bfa', // ON - purple
-  '#fbbf24', // SV - amber
-  '#f97316', // ÄL - orange
-  '#ef4444', // TK - red
+const RANK_FILLS = [
+  'var(--color-text-tertiary)',
+  'color-mix(in srgb, var(--color-accent) 24%, var(--color-bg-primary))',
+  'color-mix(in srgb, var(--color-accent) 38%, var(--color-bg-primary))',
+  'color-mix(in srgb, var(--color-accent) 54%, var(--color-bg-primary))',
+  'color-mix(in srgb, var(--color-accent) 70%, var(--color-bg-primary))',
+  'color-mix(in srgb, var(--color-accent) 84%, var(--color-bg-primary))',
+  'var(--color-accent)',
 ];
 
-/**
- * Build a compact digit string: one digit per rank, showing count of
- * sessions that peaked at each rank. e.g. "0000201" = 2x Sanavalmis, 1x TK.
- */
-function digitSummary(counts: Record<string, number>): string {
-  return RANKS.map((r) => Math.min(9, counts[r] || 0).toString()).join('');
+type AchievementMode = 'users' | 'all';
+
+function formatAdminDate(date: string): string {
+  return new Date(date + 'T12:00:00').toLocaleDateString('fi-FI', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'numeric',
+  });
 }
 
+/**
+ * Achievement statistics dashboard for admin users.
+ */
 export function Stats() {
   const csrfToken = useAdminStore((s) => s.csrfToken);
   const [days, setDays] = useState(7);
-  const [mode, setMode] = useState<'sessions' | 'all'>('sessions');
+  const [mode, setMode] = useState<AchievementMode>('users');
   const [daily, setDaily] = useState<AchievementDay[]>([]);
   const [totals, setTotals] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
@@ -67,245 +69,352 @@ export function Stats() {
       );
       if (res.ok) {
         const data = await res.json();
-        setDaily(data.daily);
-        setTotals(data.totals);
+        setDaily(data.daily || []);
+        setTotals(data.totals || {});
       }
     } catch {
-      // Ignore
+      setDaily([]);
+      setTotals({});
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [days, mode, csrfToken]);
 
   useEffect(() => {
     fetchStats();
   }, [fetchStats]);
 
-  const grandTotal = Object.values(totals).reduce((a, b) => a + b, 0);
-  const maxDayTotal = Math.max(1, ...daily.map((d) => d.total));
+  const grandTotal = useMemo(
+    () => Object.values(totals).reduce((sum, count) => sum + count, 0),
+    [totals],
+  );
+
+  const activeDays = useMemo(
+    () => daily.filter((day) => day.total > 0).length,
+    [daily],
+  );
+
+  const bestDay = useMemo(
+    () =>
+      daily.reduce<AchievementDay | null>((best, day) => {
+        if (!best || day.total > best.total) return day;
+        return best;
+      }, null),
+    [daily],
+  );
+
+  const topRank = useMemo(() => {
+    return RANKS.reduce(
+      (best, rank) => {
+        const count = totals[rank] || 0;
+        return count > best.count ? { rank, count } : best;
+      },
+      { rank: RANKS[0], count: 0 },
+    );
+  }, [totals]);
+
+  const maxRankTotal = Math.max(1, ...RANKS.map((rank) => totals[rank] || 0));
+  const maxDayTotal = Math.max(1, ...daily.map((day) => day.total));
+  const unitLabel = mode === 'users' ? 'käyttäjää' : 'saavutusta';
 
   return (
-    <div className="space-y-3">
-      {/* Controls */}
-      <div className="flex justify-between items-center">
-        <div className="flex gap-2">
-          {[7, 30, 90].map((d) => (
-            <button
-              key={d}
-              type="button"
-              onClick={() => setDays(d)}
-              className="px-3 py-1 rounded text-sm cursor-pointer"
-              style={{
-                backgroundColor:
-                  days === d
-                    ? 'var(--color-accent)'
-                    : 'var(--color-bg-secondary)',
-                color: days === d ? '#fff' : 'var(--color-text-primary)',
-                border: `1px solid ${days === d ? 'var(--color-accent)' : 'var(--color-border)'}`,
-              }}
-            >
-              {d} pv
-            </button>
-          ))}
-        </div>
-        <div className="flex gap-1">
-          {(['sessions', 'all'] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => setMode(m)}
-              className="px-2 py-1 rounded text-xs cursor-pointer"
-              style={{
-                backgroundColor:
-                  mode === m
-                    ? 'var(--color-accent)'
-                    : 'var(--color-bg-secondary)',
-                color: mode === m ? '#fff' : 'var(--color-text-primary)',
-                border: `1px solid ${mode === m ? 'var(--color-accent)' : 'var(--color-border)'}`,
-              }}
-            >
-              {m === 'sessions' ? 'Pelaajat' : 'Kaikki'}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {loading ? (
-        <div
-          className="text-sm py-4 text-center"
-          style={{ color: 'var(--color-text-tertiary)' }}
-        >
-          Ladataan...
-        </div>
-      ) : (
-        <>
-          {/* Summary line */}
+    <div className="space-y-2" aria-label="Tilastot">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
           <div
-            className="flex justify-between items-baseline text-xs"
-            style={{ color: 'var(--color-text-tertiary)' }}
+            className="inline-flex rounded p-1"
+            style={{
+              backgroundColor: 'var(--color-bg-secondary)',
+              border: '1px solid var(--color-border)',
+            }}
           >
-            <span>
-              {grandTotal} {mode === 'sessions' ? 'pelaajaa' : 'saavutusta'}{' '}
-              {days} päivän ajalta
-            </span>
-            <span className="font-mono" title={RANKS.join(' | ')}>
-              {digitSummary(totals)}
-            </span>
-          </div>
-
-          {/* Legend */}
-          <div className="flex gap-2 flex-wrap">
-            {RANKS.map((rank, i) => (
-              <span
-                key={rank}
-                className="flex items-center gap-1 text-xs"
-                style={{ color: 'var(--color-text-secondary)' }}
-              >
-                <span
-                  className="inline-block w-2.5 h-2.5 rounded-sm"
-                  style={{ backgroundColor: RANK_COLORS[i] }}
-                />
-                {rank}
-              </span>
-            ))}
-          </div>
-
-          {/* Stacked bars + table */}
-          <div className="space-y-0">
-            {daily.map((day) => {
-              const dateLabel = new Date(
-                day.date + 'T12:00:00',
-              ).toLocaleDateString('fi-FI', {
-                weekday: 'short',
-                day: 'numeric',
-                month: 'numeric',
-              });
-              const barWidth =
-                day.total > 0
-                  ? Math.max(2, (day.total / maxDayTotal) * 100)
-                  : 0;
-
+            {PERIODS.map((period) => {
+              const active = days === period;
               return (
-                <div
-                  key={day.date}
-                  className="flex items-center gap-2 py-1"
+                <button
+                  key={period}
+                  type="button"
+                  onClick={() => setDays(period)}
+                  className="h-8 rounded px-3 text-sm font-medium cursor-pointer"
                   style={{
-                    borderBottom: '1px solid var(--color-border)',
+                    backgroundColor: active
+                      ? 'var(--color-bg-primary)'
+                      : 'transparent',
+                    color: active
+                      ? 'var(--color-text-primary)'
+                      : 'var(--color-text-secondary)',
+                    border: active
+                      ? '1px solid var(--color-border)'
+                      : '1px solid transparent',
                   }}
                 >
-                  {/* Date */}
-                  <span
-                    className="text-xs w-16 shrink-0"
-                    style={{ color: 'var(--color-text-primary)' }}
-                  >
-                    {dateLabel}
-                  </span>
-
-                  {/* Stacked bar — wrapper constrains width */}
-                  <div className="flex-1 min-w-0 overflow-hidden">
-                    <div
-                      className="flex h-4 rounded-sm overflow-hidden"
-                      style={{
-                        width: `${barWidth}%`,
-                        minWidth: day.total > 0 ? '4px' : '0',
-                      }}
-                    >
-                      {RANKS.map((rank, i) => {
-                        const count = day.counts[rank] || 0;
-                        if (count === 0) return null;
-                        const pct = (count / day.total) * 100;
-                        return (
-                          <div
-                            key={rank}
-                            title={`${RANKS[i]}: ${count}`}
-                            style={{
-                              width: `${pct}%`,
-                              backgroundColor: RANK_COLORS[i],
-                              minWidth: '2px',
-                            }}
-                          />
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Digit summary + total */}
-                  <span
-                    className="font-mono text-xs ml-auto shrink-0"
-                    style={{ color: 'var(--color-text-tertiary)' }}
-                    title={RANKS.map(
-                      (r, i) => `${SHORT_RANKS[i]}: ${day.counts[r] || 0}`,
-                    ).join(', ')}
-                  >
-                    {digitSummary(day.counts)}
-                  </span>
-                  <span
-                    className="text-xs font-semibold w-6 text-right shrink-0"
-                    style={{ color: 'var(--color-text-primary)' }}
-                  >
-                    {day.total}
-                  </span>
-                </div>
+                  {period} pv
+                </button>
               );
             })}
           </div>
 
-          {/* Totals row */}
           <div
-            className="flex items-center gap-2 pt-1"
-            style={{ borderTop: '2px solid var(--color-border)' }}
+            className="inline-flex rounded p-1"
+            style={{
+              backgroundColor: 'var(--color-bg-secondary)',
+              border: '1px solid var(--color-border)',
+            }}
           >
-            <span
-              className="text-xs w-16 shrink-0 font-semibold"
-              style={{ color: 'var(--color-text-primary)' }}
-            >
-              Yhteensä
-            </span>
-            <div className="flex-1" />
-            <span
-              className="font-mono text-xs font-semibold shrink-0"
-              style={{ color: 'var(--color-text-primary)' }}
-            >
-              {digitSummary(totals)}
-            </span>
-            <span
-              className="text-xs font-semibold w-6 text-right shrink-0"
-              style={{ color: 'var(--color-accent)' }}
-            >
-              {grandTotal}
-            </span>
+            {[
+              { key: 'users', label: 'Käyttäjät', icon: Users },
+              { key: 'all', label: 'Saavutukset', icon: Activity },
+            ].map((item) => {
+              const active = mode === item.key;
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => setMode(item.key as AchievementMode)}
+                  className="inline-flex h-8 items-center gap-2 rounded px-3 text-sm font-medium cursor-pointer"
+                  style={{
+                    backgroundColor: active
+                      ? 'var(--color-accent)'
+                      : 'transparent',
+                    color: active
+                      ? 'var(--color-on-accent)'
+                      : 'var(--color-text-secondary)',
+                    border: '1px solid transparent',
+                  }}
+                >
+                  <Icon size={15} strokeWidth={2.2} aria-hidden="true" />
+                  {item.label}
+                </button>
+              );
+            })}
           </div>
+        </div>
+        <div
+          className="text-xs"
+          style={{ color: 'var(--color-text-tertiary)' }}
+        >
+          {grandTotal} {unitLabel} / {days} pv
+        </div>
+      </div>
 
-          <section className="pt-4 space-y-3">
+      <div className="grid gap-2 md:grid-cols-4">
+        {[
+          {
+            label: mode === 'users' ? 'Käyttäjät' : 'Saavutukset',
+            value: grandTotal,
+            meta:
+              mode === 'users'
+                ? 'vakaalla tunnisteella'
+                : 'kaikki rankkitapahtumat',
+            icon: Users,
+          },
+          {
+            label: 'Aktiiviset päivät',
+            value: activeDays,
+            meta: `${days} päivän ikkunasta`,
+            icon: Activity,
+          },
+          {
+            label: 'Huippupäivä',
+            value: bestDay?.total ?? 0,
+            meta: bestDay ? formatAdminDate(bestDay.date) : '-',
+            icon: Trophy,
+          },
+          {
+            label: 'Yleisin rankki',
+            value: topRank.count,
+            meta: topRank.count > 0 ? topRank.rank : '-',
+            icon: Hash,
+          },
+        ].map((item) => {
+          const Icon = item.icon;
+          return (
             <div
-              className="pt-3"
-              style={{ borderTop: '1px solid var(--color-border)' }}
+              key={item.label}
+              className="rounded-lg p-2.5"
+              style={{
+                backgroundColor: 'var(--color-bg-secondary)',
+                border: '1px solid var(--color-border)',
+              }}
             >
-              <h3
-                className="text-sm font-semibold"
+              <div className="flex items-center justify-between gap-3">
+                <span
+                  className="text-xs font-semibold uppercase"
+                  style={{ color: 'var(--color-text-tertiary)' }}
+                >
+                  {item.label}
+                </span>
+                <Icon
+                  size={17}
+                  strokeWidth={2.1}
+                  aria-hidden="true"
+                  style={{ color: 'var(--color-accent)' }}
+                />
+              </div>
+              <div
+                className="mt-2 text-2xl font-semibold leading-none"
                 style={{ color: 'var(--color-text-primary)' }}
               >
-                Vieraat sanat
-              </h3>
-            </div>
-            <FailedGuesses />
-          </section>
-
-          <section className="pt-4 space-y-3">
-            <div
-              className="pt-3"
-              style={{ borderTop: '1px solid var(--color-border)' }}
-            >
-              <h3
-                className="text-sm font-semibold"
-                style={{ color: 'var(--color-text-primary)' }}
+                {item.value}
+              </div>
+              <div
+                className="mt-1 truncate text-xs"
+                style={{ color: 'var(--color-text-tertiary)' }}
               >
-                Löydetyt sanat
-              </h3>
+                {item.meta}
+              </div>
             </div>
-            <WordFinds />
-          </section>
-        </>
-      )}
+          );
+        })}
+      </div>
+
+      <section
+        className="rounded-lg"
+        style={{
+          backgroundColor: 'var(--color-bg-secondary)',
+          border: '1px solid var(--color-border)',
+        }}
+      >
+        <div
+          className="flex flex-col gap-1 border-b px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+          style={{ borderColor: 'var(--color-border)' }}
+        >
+          <div>
+            <h3
+              className="text-base font-semibold"
+              style={{ color: 'var(--color-text-primary)' }}
+            >
+              Rankkijakauma
+            </h3>
+            <p
+              className="text-xs"
+              style={{ color: 'var(--color-text-tertiary)' }}
+            >
+              {mode === 'users'
+                ? 'Korkein päivän aikana saavutettu rankki per käyttäjä'
+                : 'Kaikki tallennetut rankkisiirtymät'}
+            </p>
+          </div>
+        </div>
+
+        {loading ? (
+          <div
+            className="py-12 text-center text-sm"
+            style={{ color: 'var(--color-text-tertiary)' }}
+          >
+            Ladataan...
+          </div>
+        ) : (
+          <div className="grid gap-0 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+            <div
+              className="space-y-2 p-3 md:border-r"
+              style={{ borderColor: 'var(--color-border)' }}
+            >
+              {RANKS.map((rank, index) => {
+                const count = totals[rank] || 0;
+                const width = count > 0 ? (count / maxRankTotal) * 100 : 0;
+                return (
+                  <div
+                    key={rank}
+                    className="grid grid-cols-[6.5rem_minmax(0,1fr)_2rem] items-center gap-3 text-sm"
+                  >
+                    <span
+                      className="truncate"
+                      style={{ color: 'var(--color-text-secondary)' }}
+                    >
+                      {rank}
+                    </span>
+                    <div
+                      className="h-2 rounded"
+                      style={{ backgroundColor: 'var(--color-bg-primary)' }}
+                    >
+                      <div
+                        className="h-full rounded"
+                        style={{
+                          width: `${width}%`,
+                          minWidth: count > 0 ? '0.4rem' : 0,
+                          backgroundColor: RANK_FILLS[index],
+                        }}
+                      />
+                    </div>
+                    <span
+                      className="text-right font-mono text-xs"
+                      style={{ color: 'var(--color-text-tertiary)' }}
+                    >
+                      {count}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="p-3">
+              <div className="space-y-1.5">
+                {daily.map((day) => {
+                  const barWidth =
+                    day.total > 0
+                      ? Math.max(4, (day.total / maxDayTotal) * 100)
+                      : 0;
+
+                  return (
+                    <div
+                      key={day.date}
+                      className="grid grid-cols-[4.75rem_minmax(0,1fr)_4.25rem] items-center gap-3"
+                    >
+                      <span
+                        className="truncate text-xs"
+                        style={{ color: 'var(--color-text-secondary)' }}
+                      >
+                        {formatAdminDate(day.date)}
+                      </span>
+
+                      <div
+                        className="h-5 overflow-hidden rounded"
+                        style={{ backgroundColor: 'var(--color-bg-primary)' }}
+                      >
+                        <div
+                          className="flex h-full overflow-hidden rounded"
+                          style={{
+                            width: `${barWidth}%`,
+                            minWidth: day.total > 0 ? '0.35rem' : 0,
+                          }}
+                        >
+                          {RANKS.map((rank, index) => {
+                            const count = day.counts[rank] || 0;
+                            if (count === 0) return null;
+                            return (
+                              <div
+                                key={rank}
+                                title={`${rank}: ${count}`}
+                                style={{
+                                  width: `${(count / day.total) * 100}%`,
+                                  minWidth: '0.25rem',
+                                  backgroundColor: RANK_FILLS[index],
+                                }}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <span
+                        className="text-right font-mono text-xs"
+                        title={RANKS.map(
+                          (rank) => `${rank}: ${day.counts[rank] || 0}`,
+                        ).join(', ')}
+                        style={{ color: 'var(--color-text-tertiary)' }}
+                      >
+                        {day.total}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+      </section>
     </div>
   );
 }

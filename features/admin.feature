@@ -237,6 +237,14 @@ Feature: Admin tool
     When the admin rejects the first suggested game permanently
     Then the suggestion rejection list should include the rejected game suggestion
 
+  @e2e
+  Scenario: Rejected game suggestions are managed away from the active suggestion panel
+    Given the admin has opened a game suggestion
+    When the admin rejects the suggested game permanently
+    Then the active suggestion panel should show the next suggestion
+    And the rejected suggestion should be listed on the rejected suggestions tab
+    And the active suggestion panel should not include the rejected suggestions list
+
   Scenario: Restore a rejected game suggestion
     Given candidate combinations exist for game suggestions
     And the admin has rejected a game suggestion
@@ -311,6 +319,19 @@ Feature: Admin tool
     Given there are 41 puzzles in rotation
     Then the schedule should cycle through all 41 before repeating
 
+  Scenario: Schedule can start from a selected date
+    When the admin requests the schedule starting 7 days from today for 3 days
+    Then the response should include 3 entries
+    And the first schedule entry should be 7 days from today
+    And no schedule entry should be marked as today
+
+  @e2e
+  Scenario: Select a schedule date range in the admin schedule
+    Given the admin views the puzzle schedule
+    When the admin selects a schedule start and end date
+    Then the schedule should request the selected date range
+    And the schedule should show the selected entries
+
   # --- Achievement stats ---
 
   Scenario: View daily achievement counts
@@ -318,6 +339,15 @@ Feature: Admin tool
     Then the response should include 7 daily entries
     And each entry should include counts per rank and a total
     And a totals summary should be included
+
+  Scenario: Player achievement stats count each stable user once per day
+    Given one identified player reached ranks "Hyvä alku|Onnistuja|Sanavalmis" today
+    And another identified player reached rank "Onnistuja" today
+    And one achievement without a stable user identity was recorded today
+    When the admin requests player achievement stats for the last 7 days
+    Then today's player stats total should be 2
+    And today's player stats should count "Sanavalmis" as 1
+    And today's player stats should count "Onnistuja" as 1
 
   Scenario: Achievement stats grouped by Helsinki timezone
     Given an achievement was recorded 2 days ago at 23:30 UTC
@@ -328,6 +358,13 @@ Feature: Admin tool
     Given no achievements were recorded 5 days ago
     When the admin requests stats covering that date
     Then the date 5 days ago should appear with all rank counts as 0
+
+  @e2e
+  Scenario: Word data is managed away from usage statistics
+    Given the admin views usage statistics
+    When the admin opens the word data admin page
+    Then failed-guess and word-find analytics should be available there
+    And the usage statistics page should not include word data panels
 
   # --- Failed guesses stats ---
 

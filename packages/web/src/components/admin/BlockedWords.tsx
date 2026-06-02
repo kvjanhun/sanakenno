@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { Ban, Trash2 } from 'lucide-react';
 import { useAdminStore } from '../../store/useAdminStore';
 import type { BlockedWord } from '../../store/useAdminStore';
 
@@ -56,7 +57,7 @@ export function BlockedWords() {
   if (loading) {
     return (
       <div
-        className="text-sm py-4 text-center"
+        className="py-10 text-center text-sm"
         style={{ color: 'var(--color-text-tertiary)' }}
       >
         Ladataan...
@@ -66,57 +67,109 @@ export function BlockedWords() {
 
   if (blockedWords.length === 0) {
     return (
-      <div
-        className="text-sm py-4 text-center"
-        style={{ color: 'var(--color-text-tertiary)' }}
-      >
-        Ei estettyjä sanoja
-      </div>
+      <section className="w-full" aria-label="Estetyt sanat">
+        <div
+          className="rounded-lg px-3 py-6 text-center"
+          style={{
+            backgroundColor: 'var(--color-bg-secondary)',
+            border: '1px solid var(--color-border)',
+          }}
+        >
+          <Ban
+            size={28}
+            strokeWidth={1.8}
+            aria-hidden="true"
+            className="mx-auto mb-3"
+            style={{ color: 'var(--color-text-tertiary)' }}
+          />
+          <p
+            className="text-sm font-medium"
+            style={{ color: 'var(--color-text-primary)' }}
+          >
+            Ei estettyjä sanoja
+          </p>
+        </div>
+      </section>
     );
   }
 
   return (
-    <div>
+    <section className="w-full" aria-label="Estetyt sanat">
       <div
-        className="text-xs mb-2"
-        style={{ color: 'var(--color-text-tertiary)' }}
+        className="overflow-hidden rounded-lg"
+        style={{
+          backgroundColor: 'var(--color-bg-secondary)',
+          border: '1px solid var(--color-border)',
+        }}
       >
-        {blockedWords.length} estettyä sanaa
-      </div>
-      <div className="space-y-1">
-        {blockedWords.map((bw) => (
-          <div
-            key={bw.id}
-            className="flex items-center justify-between py-1 px-2 rounded text-sm"
-            style={{
-              backgroundColor: 'var(--color-bg-secondary)',
-              border: '1px solid var(--color-border)',
-            }}
-          >
-            <span style={{ color: 'var(--color-text-primary)' }}>
-              {bw.word}
-              <span
-                className="ml-2 text-xs"
-                style={{ color: 'var(--color-text-tertiary)' }}
-              >
-                {new Date(bw.blocked_at + 'Z').toLocaleDateString('fi-FI')}
-              </span>
-            </span>
-            <button
-              type="button"
-              onClick={() => handleUnblock(bw.id, bw.word)}
-              className="text-xs px-2 py-0.5 rounded cursor-pointer"
-              style={{
-                backgroundColor: 'var(--color-bg-primary)',
-                border: '1px solid var(--color-border)',
-                color: 'var(--color-text-secondary)',
-              }}
+        <div
+          className="px-2 py-1 text-xs"
+          style={{
+            borderBottom: '1px solid var(--color-border)',
+            color: 'var(--color-text-tertiary)',
+          }}
+        >
+          {blockedWords.length} sanaa
+        </div>
+        <div className="max-h-[min(34rem,70vh)] overflow-auto">
+          <table className="w-auto min-w-[24rem] max-w-full text-xs">
+            <thead
+              className="sticky top-0 z-10"
+              style={{ backgroundColor: 'var(--color-bg-secondary)' }}
             >
-              Poista esto
-            </button>
-          </div>
-        ))}
+              <tr
+                className="text-left text-xs"
+                style={{
+                  color: 'var(--color-text-tertiary)',
+                  borderBottom: '1px solid var(--color-border)',
+                }}
+              >
+                <th className="px-2 py-1 font-semibold">Sana</th>
+                <th className="px-2 py-1 font-semibold">Estetty</th>
+                <th className="px-2 py-1 text-right font-semibold"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {blockedWords.map((bw) => (
+                <tr
+                  key={bw.id}
+                  style={{ borderBottom: '1px solid var(--color-border)' }}
+                >
+                  <td
+                    className="px-2 py-0.5 font-mono"
+                    style={{ color: 'var(--color-text-primary)' }}
+                  >
+                    {bw.word}
+                  </td>
+                  <td
+                    className="px-2 py-0.5"
+                    style={{ color: 'var(--color-text-secondary)' }}
+                  >
+                    {new Date(bw.blocked_at + 'Z').toLocaleDateString('fi-FI')}
+                  </td>
+                  <td className="px-2 py-0.5 text-right">
+                    <button
+                      type="button"
+                      onClick={() => handleUnblock(bw.id, bw.word)}
+                      title="Poista esto"
+                      aria-label={`Poista esto sanalta ${bw.word}`}
+                      className="inline-flex h-5 w-5 items-center justify-center rounded cursor-pointer"
+                      style={{
+                        backgroundColor:
+                          'color-mix(in srgb, var(--color-error) 10%, var(--color-bg-primary))',
+                        border: '1px solid var(--color-error)',
+                        color: 'var(--color-error)',
+                      }}
+                    >
+                      <Trash2 size={12} strokeWidth={2.2} aria-hidden="true" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+    </section>
   );
 }

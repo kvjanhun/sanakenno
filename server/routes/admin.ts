@@ -21,7 +21,7 @@
  *   POST   /api/admin/suggestion-rejections - Reject a suggestion permanently
  *   DELETE /api/admin/suggestion-rejections/:id - Restore a rejected suggestion
  *   GET    /api/admin/schedule            - 14-day upcoming puzzle rotation
- *   GET    /api/admin/achievements        - Daily achievement breakdown by rank
+ *   GET    /api/admin/achievements        - Daily user/event achievement breakdown by rank
  *   GET    /api/admin/failed-guesses      - Daily failed-guess breakdown by word
  *   GET    /api/admin/word-finds          - Per-puzzle successful word-find counts
  *
@@ -72,16 +72,6 @@ interface SuggestionRejectionRow {
   letters_key: string;
   center: string;
   rejected_at: string;
-}
-
-interface AchievementRow {
-  puzzle_number: number;
-  rank: string;
-  score: number;
-  max_score: number;
-  words_found: number;
-  elapsed_ms: number | null;
-  achieved_at: string;
 }
 
 interface FailedGuessStatRow {
@@ -957,12 +947,16 @@ admin.get('/suggestion', (c) => {
 
 /**
  * GET /schedule
- * Upcoming puzzle rotation for the next N days (default 14).
+ * Puzzle rotation for a selected date range.
+ * Query params:
+ *   start=YYYY-MM-DD — optional Helsinki calendar date, defaults to today
+ *   days=14 — range length, capped at 90
  */
 admin.get('/schedule', (c) => {
+  const requestedDays = parseInt(c.req.query('days') || '14', 10);
   const days = Math.min(
     90,
-    Math.max(1, parseInt(c.req.query('days') || '14', 10)),
+    Math.max(1, Number.isFinite(requestedDays) ? requestedDays : 14),
   );
 
   const now = new Date();
@@ -971,7 +965,33 @@ admin.get('/schedule', (c) => {
   );
   today.setHours(0, 0, 0, 0);
 
-  const _todaySlot = todaysSlot();
+  const startParam = c.req.query('start');
+  let startDate = new Date(today);
+  if (startParam) {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(startParam);
+    if (!match) {
+      return c.json({ error: 'Invalid start date' }, 400);
+    }
+
+    startDate = new Date(
+      Number(match[1]),
+      Number(match[2]) - 1,
+      Number(match[3]),
+    );
+    if (
+      startDate.getFullYear() !== Number(match[1]) ||
+      startDate.getMonth() !== Number(match[2]) - 1 ||
+      startDate.getDate() !== Number(match[3])
+    ) {
+      return c.json({ error: 'Invalid start date' }, 400);
+    }
+  }
+
+  const formatDate = (date: Date) =>
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
+      date.getDate(),
+    ).padStart(2, '0')}`;
+  const todayKey = formatDate(today);
   const db = getDb();
   const schedule: Array<{
     date: string;
@@ -983,23 +1003,29 @@ admin.get('/schedule', (c) => {
   }> = [];
 
   for (let d = 0; d < days; d++) {
-    const date = new Date(today.getTime() + d * 86400000);
+    const date = new Date(startDate.getTime() + d * 86400000);
+    const dateKey = formatDate(date);
     const slot = getPuzzleForDate(date);
     const puzzle = db
       .prepare('SELECT letters, center FROM puzzles WHERE slot = ?')
       .get(slot) as { letters: string; center: string } | undefined;
 
     schedule.push({
-      date: date.toISOString().slice(0, 10),
+      date: dateKey,
       slot,
       display_number: slot + 1,
       letters: puzzle ? puzzle.letters.split(',').map((l) => l.trim()) : null,
       center: puzzle?.center ?? null,
-      is_today: d === 0,
+      is_today: dateKey === todayKey,
     });
   }
 
-  return c.json({ schedule, total_puzzles: totalPuzzles() });
+  return c.json({
+    start: formatDate(startDate),
+    days,
+    schedule,
+    total_puzzles: totalPuzzles(),
+  });
 });
 
 // --- Achievement stats ---
@@ -1018,7 +1044,7 @@ const RANKS = [
 /** Map rank name to numeric index for comparison. */
 const RANK_INDEX = new Map(RANKS.map((r, i) => [r, i]));
 
-interface AchievementRow {
+interface AchievementStatRow {
   rank: string;
   achieved_at: string;
   session_id: string | null;
@@ -1026,11 +1052,12 @@ interface AchievementRow {
 
 /**
  * Group rows by Helsinki date, counting per rank.
- * When `bySession` is true, only the highest rank per session_id is counted.
+ * User mode counts only rows with a stable client identity and keeps the
+ * highest rank each identity reached on that Helsinki day.
  */
 function groupByDay(
-  rows: AchievementRow[],
-  bySession: boolean,
+  rows: AchievementStatRow[],
+  mode: 'users' | 'all',
 ): {
   dailyMap: Map<string, Record<string, number>>;
   totals: Record<string, number>;
@@ -1039,18 +1066,15 @@ function groupByDay(
   const totals: Record<string, number> = {};
   for (const rank of RANKS) totals[rank] = 0;
 
-  if (bySession) {
-    // First pass: find best rank per (date, session_id)
+  if (mode === 'users') {
     const sessionBest = new Map<string, { date: string; rankIdx: number }>();
     for (const row of rows) {
+      if (!row.session_id) continue;
       const utcDate = new Date(row.achieved_at + 'Z');
       const dateStr = utcDate.toLocaleDateString('en-CA', {
         timeZone: 'Europe/Helsinki',
       });
-      // Use session_id if available, fall back to row-level counting
-      const key = row.session_id
-        ? `${dateStr}:${row.session_id}`
-        : `${dateStr}:${row.achieved_at}`;
+      const key = `${dateStr}:${row.session_id}`;
       const idx = RANK_INDEX.get(row.rank) ?? 0;
       const existing = sessionBest.get(key);
       if (!existing || idx > existing.rankIdx) {
@@ -1091,14 +1115,17 @@ function groupByDay(
  * Daily achievement breakdown by rank.
  * Query params:
  *   days=7 (default) — period length
- *   mode=sessions — count only highest rank per session (default: all events)
+ *   mode=users — count one highest rank per stable user identity
+ *   mode=all — count every achievement event (default)
  */
 admin.get('/achievements', (c) => {
   const days = Math.min(
     90,
     Math.max(1, parseInt(c.req.query('days') || '7', 10)),
   );
-  const bySession = c.req.query('mode') === 'sessions';
+  const requestedMode = c.req.query('mode');
+  const mode: 'users' | 'all' =
+    requestedMode === 'users' || requestedMode === 'sessions' ? 'users' : 'all';
 
   const db = getDb();
 
@@ -1108,9 +1135,9 @@ admin.get('/achievements', (c) => {
        WHERE achieved_at >= datetime('now', ?)
        ORDER BY achieved_at DESC`,
     )
-    .all(`-${days} days`) as AchievementRow[];
+    .all(`-${days} days`) as AchievementStatRow[];
 
-  const { dailyMap, totals } = groupByDay(rows, bySession);
+  const { dailyMap, totals } = groupByDay(rows, mode);
 
   // Fill missing days using Helsinki dates (must match groupByDay keys).
   // Anchor at noon UTC to avoid DST edge cases when subtracting days.
@@ -1134,7 +1161,7 @@ admin.get('/achievements', (c) => {
     daily.push({ date: dateStr, counts, total });
   }
 
-  return c.json({ days, daily, totals, mode: bySession ? 'sessions' : 'all' });
+  return c.json({ days, daily, totals, mode });
 });
 
 /**

@@ -1965,6 +1965,21 @@ When(
   },
 );
 
+When(
+  'the admin requests the schedule starting {int} days from today for {int} days',
+  async function (this: AdminWorld, daysFromToday: number, days: number) {
+    const start = helsinkiDateByOffset(-daysFromToday);
+    this.response = await app.request(
+      `/api/admin/schedule?start=${start}&days=${days}`,
+      {
+        method: 'GET',
+        headers: adminGet(this.sessionCookie),
+      },
+    );
+    this.responseJson = (await this.response.json()) as Record<string, unknown>;
+  },
+);
+
 Then(
   'the response should include {int} entries',
   function (this: AdminWorld, count: number) {
@@ -1993,6 +2008,25 @@ Then("today's entry should have is_today=true", function (this: AdminWorld) {
   }>;
   assert.equal(schedule[0].is_today, true);
 });
+
+Then(
+  'the first schedule entry should be {int} days from today',
+  function (this: AdminWorld, daysFromToday: number) {
+    const schedule = this.responseJson.schedule as Array<{ date: string }>;
+    assert.equal(schedule[0].date, helsinkiDateByOffset(-daysFromToday));
+  },
+);
+
+Then(
+  'no schedule entry should be marked as today',
+  function (this: AdminWorld) {
+    const schedule = this.responseJson.schedule as Array<{ is_today: boolean }>;
+    assert.equal(
+      schedule.some((entry) => entry.is_today),
+      false,
+    );
+  },
+);
 
 Given('the schedule includes slot 0', function (this: AdminWorld) {
   // Slot 0 exists from Before hook seeding
@@ -2079,17 +2113,95 @@ Then('a totals summary should be included', function (this: AdminWorld) {
   assert.ok(this.responseJson.totals, 'Missing totals');
 });
 
+function insertAchievement(
+  rank: string,
+  achievedAt: string,
+  sessionId?: string,
+): void {
+  const db = getDb();
+  db.prepare(
+    `INSERT INTO achievements
+     (puzzle_number, rank, score, max_score, words_found, session_id, achieved_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  ).run(1, rank, 25, 100, 8, sessionId ?? null, achievedAt);
+}
+
+Given(
+  'one identified player reached ranks {string} today',
+  function (this: AdminWorld, ranksStr: string) {
+    const achievedAt = `${helsinkiDateByOffset(0)} 10:00:00`;
+    for (const rank of ranksStr.split('|')) {
+      insertAchievement(rank, achievedAt, 'player-a');
+    }
+  },
+);
+
+Given(
+  'another identified player reached rank {string} today',
+  function (this: AdminWorld, rank: string) {
+    insertAchievement(rank, `${helsinkiDateByOffset(0)} 10:05:00`, 'player-b');
+  },
+);
+
+Given(
+  'one achievement without a stable user identity was recorded today',
+  function (this: AdminWorld) {
+    insertAchievement('Täysi kenno', `${helsinkiDateByOffset(0)} 10:10:00`);
+  },
+);
+
+When(
+  'the admin requests player achievement stats for the last {int} days',
+  async function (this: AdminWorld, days: number) {
+    this.response = await app.request(
+      `/api/admin/achievements?days=${days}&mode=users`,
+      {
+        method: 'GET',
+        headers: adminGet(this.sessionCookie),
+      },
+    );
+    this.responseJson = (await this.response.json()) as Record<string, unknown>;
+  },
+);
+
+function todayPlayerStatsEntry(world: AdminWorld): {
+  date: string;
+  counts: Record<string, number>;
+  total: number;
+} {
+  const daily = world.responseJson.daily as Array<{
+    date: string;
+    counts: Record<string, number>;
+    total: number;
+  }>;
+  const today = helsinkiDateByOffset(0);
+  const entry = daily.find((item) => item.date === today);
+  assert.ok(entry, `Date ${today} should appear in player stats`);
+  return entry;
+}
+
+Then(
+  "today's player stats total should be {int}",
+  function (this: AdminWorld, expectedTotal: number) {
+    assert.equal(todayPlayerStatsEntry(this).total, expectedTotal);
+  },
+);
+
+Then(
+  "today's player stats should count {string} as {int}",
+  function (this: AdminWorld, rank: string, expectedCount: number) {
+    assert.equal(todayPlayerStatsEntry(this).counts[rank] || 0, expectedCount);
+  },
+);
+
 Given(
   'an achievement was recorded 2 days ago at 23:30 UTC',
   function (this: AdminWorld) {
-    const db = getDb();
     const d = new Date();
     d.setUTCDate(d.getUTCDate() - 2);
     d.setUTCHours(23, 30, 0, 0);
     const dateStr = d.toISOString().replace('T', ' ').slice(0, 19);
-    db.prepare(
-      'INSERT INTO achievements (puzzle_number, rank, score, max_score, words_found, achieved_at) VALUES (?, ?, ?, ?, ?, ?)',
-    ).run(1, 'Onnistuja', 25, 100, 8, dateStr);
+    insertAchievement('Onnistuja', dateStr);
   },
 );
 

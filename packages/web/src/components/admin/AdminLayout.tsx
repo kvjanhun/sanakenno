@@ -8,22 +8,70 @@
  */
 
 import { useEffect, useState, useCallback } from 'react';
+import {
+  Ban,
+  BarChart3,
+  CalendarDays,
+  Search,
+  LayoutDashboard,
+  LogOut,
+  PanelTop,
+} from 'lucide-react';
 import { useAdminStore } from '../../store/useAdminStore';
 import { LoginPage } from './LoginPage';
 import { PuzzleEditor } from './PuzzleEditor';
 import { BlockedWords } from './BlockedWords';
 import { Schedule } from './Schedule';
 import { Stats } from './Stats';
+import { SuggestionRejections } from './SuggestionRejections';
+import { WordData } from './WordData';
 
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
-type Tab = 'editor' | 'blocked' | 'schedule' | 'stats';
+type Tab = 'editor' | 'rejected' | 'blocked' | 'schedule' | 'stats' | 'words';
 
-const TABS: { key: Tab; label: string }[] = [
-  { key: 'editor', label: 'Työkalu' },
-  { key: 'blocked', label: 'Estetyt' },
-  { key: 'schedule', label: 'Aikataulu' },
-  { key: 'stats', label: 'Tilastot' },
+const TABS: {
+  key: Tab;
+  label: string;
+  description: string;
+  icon: typeof LayoutDashboard;
+}[] = [
+  {
+    key: 'editor',
+    label: 'Pelit',
+    description: 'Muokkaus ja ehdotukset',
+    icon: LayoutDashboard,
+  },
+  {
+    key: 'rejected',
+    label: 'Hylätyt',
+    description: 'Ehdotusjono',
+    icon: PanelTop,
+  },
+  {
+    key: 'blocked',
+    label: 'Estot',
+    description: 'Sanat',
+    icon: Ban,
+  },
+  {
+    key: 'schedule',
+    label: 'Aikataulu',
+    description: 'Kierto',
+    icon: CalendarDays,
+  },
+  {
+    key: 'stats',
+    label: 'Tilastot',
+    description: 'Pelaaminen',
+    icon: BarChart3,
+  },
+  {
+    key: 'words',
+    label: 'Sanadata',
+    description: 'Virheet ja löydöt',
+    icon: Search,
+  },
 ];
 
 export function AdminLayout() {
@@ -95,7 +143,6 @@ export function AdminLayout() {
       className="min-h-screen"
       style={{ backgroundColor: 'var(--color-bg-primary)' }}
     >
-      {/* Header */}
       <header
         className="sticky top-0 z-50"
         style={{
@@ -103,75 +150,125 @@ export function AdminLayout() {
           borderBottom: '1px solid var(--color-border)',
         }}
       >
-        <div className="max-w-3xl mx-auto px-4 h-12 flex justify-between items-center">
-          <h1
-            className="text-base font-semibold"
-            style={{ color: 'var(--color-text-primary)' }}
-          >
-            Sanakenno Admin
-            <span
-              className="ml-2 text-xs font-normal"
-              style={{ color: 'var(--color-text-tertiary)' }}
-            >
-              {totalPuzzles} peliä
-            </span>
-          </h1>
-          <div className="flex items-center gap-3">
-            <span
-              className="text-xs"
-              style={{ color: 'var(--color-text-tertiary)' }}
-            >
-              {username}
-            </span>
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="text-xs px-2 py-1 rounded cursor-pointer"
-              style={{
-                backgroundColor: 'var(--color-bg-secondary)',
-                border: '1px solid var(--color-border)',
-                color: 'var(--color-text-secondary)',
-              }}
-            >
-              Kirjaudu ulos
-            </button>
-          </div>
-        </div>
+        <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-2 lg:px-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span
+                  className="inline-flex h-8 w-8 items-center justify-center rounded"
+                  style={{
+                    backgroundColor: 'var(--color-accent)',
+                    color: 'var(--color-on-accent)',
+                  }}
+                  aria-hidden="true"
+                >
+                  <PanelTop size={17} strokeWidth={2.4} />
+                </span>
+                <div className="min-w-0">
+                  <h1
+                    className="truncate text-base font-semibold leading-tight"
+                    style={{ color: 'var(--color-text-primary)' }}
+                  >
+                    Sanakenno Admin
+                  </h1>
+                  <p
+                    className="text-xs"
+                    style={{ color: 'var(--color-text-tertiary)' }}
+                  >
+                    {totalPuzzles} peliä kierrossa
+                  </p>
+                </div>
+              </div>
+            </div>
 
-        {/* Tabs */}
-        <div className="max-w-3xl mx-auto px-4 flex gap-0 overflow-x-auto">
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setActiveTab(tab.key)}
-              className="px-3 py-2 text-sm cursor-pointer whitespace-nowrap"
-              style={{
-                backgroundColor: 'transparent',
-                border: 'none',
-                borderBottom:
-                  activeTab === tab.key
-                    ? '2px solid var(--color-accent)'
-                    : '2px solid transparent',
-                color:
-                  activeTab === tab.key
-                    ? 'var(--color-accent)'
-                    : 'var(--color-text-secondary)',
-                fontWeight: activeTab === tab.key ? 600 : 400,
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
+            <div className="flex items-center gap-2 sm:justify-end">
+              <span
+                className="truncate text-sm"
+                style={{ color: 'var(--color-text-secondary)' }}
+              >
+                {username}
+              </span>
+              <button
+                type="button"
+                onClick={handleLogout}
+                title="Kirjaudu ulos"
+                className="inline-flex h-9 items-center justify-center gap-2 rounded px-3 text-sm font-medium cursor-pointer"
+                style={{
+                  backgroundColor: 'var(--color-bg-secondary)',
+                  border: '1px solid var(--color-border)',
+                  color: 'var(--color-text-primary)',
+                }}
+              >
+                <LogOut size={15} strokeWidth={2.2} aria-hidden="true" />
+                Kirjaudu ulos
+              </button>
+            </div>
+          </div>
+
+          <nav
+            aria-label="Admin-osiot"
+            className="flex gap-1 overflow-x-auto rounded p-0.5"
+            style={{
+              backgroundColor: 'var(--color-bg-secondary)',
+              border: '1px solid var(--color-border)',
+            }}
+          >
+            {TABS.map((tab) => {
+              const Icon = tab.icon;
+              const active = activeTab === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActiveTab(tab.key)}
+                  title={tab.description}
+                  className="flex h-8 min-w-[6.5rem] items-center gap-2 rounded px-2 text-left cursor-pointer"
+                  style={{
+                    backgroundColor: active
+                      ? 'var(--color-bg-primary)'
+                      : 'transparent',
+                    border: active
+                      ? '1px solid var(--color-border)'
+                      : '1px solid transparent',
+                    color: active
+                      ? 'var(--color-text-primary)'
+                      : 'var(--color-text-secondary)',
+                    boxShadow: active
+                      ? '0 1px 2px color-mix(in srgb, var(--color-text-primary) 8%, transparent)'
+                      : 'none',
+                  }}
+                >
+                  <Icon
+                    size={17}
+                    strokeWidth={2.1}
+                    aria-hidden="true"
+                    style={{
+                      color: active
+                        ? 'var(--color-accent)'
+                        : 'var(--color-text-tertiary)',
+                    }}
+                  />
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-semibold">
+                      {tab.label}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </nav>
         </div>
       </header>
 
-      {/* Content */}
-      <main className="max-w-3xl mx-auto px-4 py-4">
-        {activeTab === 'editor' && <PuzzleEditor />}
+      <main className="mx-auto max-w-7xl px-4 py-1.5 lg:px-6">
+        <div hidden={activeTab !== 'editor'}>
+          <PuzzleEditor />
+        </div>
+        {activeTab === 'rejected' && <SuggestionRejections />}
         {activeTab === 'blocked' && <BlockedWords />}
         {activeTab === 'schedule' && <Schedule />}
         {activeTab === 'stats' && <Stats />}
+        {activeTab === 'words' && <WordData />}
       </main>
     </div>
   );

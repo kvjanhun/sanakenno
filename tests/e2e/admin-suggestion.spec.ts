@@ -226,10 +226,18 @@ test('admin can reject and accept no-spoiler game suggestions', async ({
 
   await page.getByRole('button', { name: 'Hylkää' }).click();
   await expect(page.getByText('34 sanaa')).toBeVisible();
+  await expect(page.getByLabel('Hylätyt ehdotukset')).toHaveCount(0);
+
+  await page.getByRole('button', { name: /Hylätyt/ }).click();
   await expect(page.getByLabel('Hylätyt ehdotukset')).toContainText('abcdefg');
 
   await page.getByRole('button', { name: 'Palauta' }).click();
-  await expect(page.getByLabel('Hylätyt ehdotukset')).toHaveCount(0);
+  await expect(page.getByLabel('Hylätyt ehdotukset')).toContainText(
+    'Ei hylättyjä ehdotuksia',
+  );
+
+  await page.getByRole('button', { name: /Pelit/ }).click();
+  await expect(page.getByText('34 sanaa')).toBeVisible();
 
   await page.getByRole('button', { name: 'Hyväksy' }).click();
   await expect(

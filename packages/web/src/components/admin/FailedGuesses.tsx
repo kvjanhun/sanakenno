@@ -76,7 +76,10 @@ export function FailedGuesses() {
                 days === d
                   ? 'var(--color-accent)'
                   : 'var(--color-bg-secondary)',
-              color: days === d ? '#fff' : 'var(--color-text-primary)',
+              color:
+                days === d
+                  ? 'var(--color-on-accent)'
+                  : 'var(--color-text-primary)',
               border: `1px solid ${days === d ? 'var(--color-accent)' : 'var(--color-border)'}`,
             }}
           >
