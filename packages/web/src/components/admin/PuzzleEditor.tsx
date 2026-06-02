@@ -24,6 +24,9 @@ import {
   Trash2,
   Undo2,
   WandSparkles,
+  Grid,
+  Search,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { useAdminStore } from '../../store/useAdminStore';
 import type {
@@ -32,7 +35,6 @@ import type {
 } from '../../store/useAdminStore';
 import { VariationsGrid } from './VariationsGrid';
 import { WordList } from './WordList';
-import { EyeIcon } from '../icons';
 
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -527,310 +529,541 @@ export function PuzzleEditor() {
       : 'color-mix(in srgb, var(--color-accent) 12%, var(--color-bg-primary))';
 
   return (
-    <div className="space-y-2">
-      {isDirty && (
-        <div
-          className="rounded px-2 py-1 text-xs font-medium"
-          style={{
-            backgroundColor:
-              'color-mix(in srgb, var(--color-accent) 10%, var(--color-bg-primary))',
-            color: 'var(--color-text-primary)',
-            border: '1px solid var(--color-accent)',
-          }}
-        >
-          Tallentamattomia muutoksia
-        </div>
-      )}
-      {statusMessage && (
-        <div
-          className="rounded px-2 py-1 text-xs font-medium"
-          style={{
-            backgroundColor: statusBackground,
-            color: statusColor,
-          }}
-        >
-          {statusMessage}
-        </div>
-      )}
-
-      <section
-        className="overflow-hidden rounded-lg"
-        style={{
-          backgroundColor: 'var(--color-bg-secondary)',
-          border: '1px solid var(--color-border)',
-        }}
-      >
-        <div
-          className="grid gap-2 p-2 lg:grid-cols-[minmax(0,1fr)_auto]"
-          style={{ borderBottom: '1px solid var(--color-border)' }}
-        >
-          <div className="flex flex-wrap items-center gap-2">
-            <div
-              className="inline-flex items-center rounded p-1"
-              style={{
-                backgroundColor: 'var(--color-bg-primary)',
-                border: '1px solid var(--color-border)',
-              }}
-            >
-              <button
-                type="button"
-                onClick={handlePrev}
-                disabled={currentSlot <= 0 || puzzleLoading}
-                title="Edellinen peli"
-                aria-label="Edellinen peli"
-                className="inline-flex h-8 w-8 items-center justify-center rounded cursor-pointer disabled:cursor-default"
-                style={{
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  color: 'var(--color-text-primary)',
-                  opacity: currentSlot <= 0 || puzzleLoading ? 0.35 : 1,
-                }}
-              >
-                <ChevronLeft size={17} strokeWidth={2.4} aria-hidden="true" />
-              </button>
-              <span
-                className="min-w-20 px-2 text-center font-mono text-sm font-semibold"
-                style={{ color: 'var(--color-text-primary)' }}
-              >
-                {puzzleLoading ? '...' : `${currentSlot + 1} / ${totalPuzzles}`}
-              </span>
-              <button
-                type="button"
-                onClick={handleNext}
-                disabled={currentSlot >= totalPuzzles - 1 || puzzleLoading}
-                title="Seuraava peli"
-                aria-label="Seuraava peli"
-                className="inline-flex h-8 w-8 items-center justify-center rounded cursor-pointer disabled:cursor-default"
-                style={{
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  color: 'var(--color-text-primary)',
-                  opacity:
-                    currentSlot >= totalPuzzles - 1 || puzzleLoading ? 0.35 : 1,
-                }}
-              >
-                <ChevronRight size={17} strokeWidth={2.4} aria-hidden="true" />
-              </button>
-            </div>
-
-            <form onSubmit={handleJump} className="flex items-center gap-2">
-              <label
-                htmlFor="admin-puzzle-jump"
-                className="text-xs"
-                style={{ color: 'var(--color-text-tertiary)' }}
-              >
-                Peli
-              </label>
-              <input
-                id="admin-puzzle-jump"
-                type="number"
-                value={jumpTarget}
-                onChange={(e) => setJumpTarget(e.target.value)}
-                min={1}
-                max={Math.max(1, totalPuzzles)}
-                disabled={puzzleLoading || totalPuzzles <= 0}
-                aria-label="Siirry pelinumeroon"
-                className="h-9 w-20 rounded px-2 text-center text-sm"
-                style={inputStyle}
-              />
-              <button
-                type="submit"
-                disabled={puzzleLoading || totalPuzzles <= 0}
-                className="h-9 rounded px-3 text-sm font-medium cursor-pointer disabled:cursor-default"
-                style={{
-                  ...surfaceButtonStyle,
-                  opacity: puzzleLoading || totalPuzzles <= 0 ? 0.6 : 1,
-                }}
-              >
-                Siirry
-              </button>
-            </form>
-
-            {isDirty && (
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => saveSlot()}
-                  disabled={saving}
-                  className="inline-flex h-9 items-center gap-2 rounded px-3 text-sm font-semibold cursor-pointer disabled:cursor-default"
-                  style={{
-                    ...primaryButtonStyle,
-                    opacity: saving ? 0.6 : 1,
-                  }}
-                >
-                  <Save size={15} strokeWidth={2.2} aria-hidden="true" />
-                  {saving ? 'Tallennetaan...' : 'Tallenna'}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleRestore}
-                  disabled={saving}
-                  className="inline-flex h-9 items-center gap-2 rounded px-3 text-sm font-medium cursor-pointer disabled:cursor-default"
-                  style={surfaceButtonStyle}
-                >
-                  <Undo2 size={15} strokeWidth={2.2} aria-hidden="true" />
-                  Palauta
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                value={swapTarget}
-                onChange={(e) => setSwapTarget(e.target.value)}
-                placeholder="#"
-                min={1}
-                max={totalPuzzles}
-                aria-label="Vaihda pelin kanssa"
-                className="h-9 w-16 rounded px-2 text-center text-sm"
-                style={inputStyle}
-              />
-              <button
-                type="button"
-                onClick={() => void handleSwap()}
-                disabled={saving}
-                className="inline-flex h-9 items-center gap-2 rounded px-3 text-sm font-medium cursor-pointer disabled:cursor-default"
-                style={surfaceButtonStyle}
-              >
-                <Shuffle size={15} strokeWidth={2.2} aria-hidden="true" />
-                Vaihda
-              </button>
-            </div>
-            <button
-              type="button"
-              onClick={handleDelete}
-              disabled={saving || totalPuzzles <= 0}
-              className="inline-flex h-9 items-center gap-2 rounded px-3 text-sm font-medium cursor-pointer disabled:cursor-default"
-              style={{
-                ...dangerButtonStyle,
-                opacity: saving || totalPuzzles <= 0 ? 0.6 : 1,
-              }}
-            >
-              <Trash2 size={15} strokeWidth={2.2} aria-hidden="true" />
-              Poista
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setCreateMode((v) => !v);
-                setNewLetters('');
-                setNewCenter('');
-              }}
-              disabled={saving}
-              className="inline-flex h-9 items-center gap-2 rounded px-3 text-sm font-semibold cursor-pointer disabled:cursor-default"
-              style={{
-                backgroundColor: createMode
-                  ? 'color-mix(in srgb, var(--color-accent) 14%, var(--color-bg-primary))'
-                  : 'var(--color-bg-primary)',
-                border: createMode
-                  ? '1px solid var(--color-accent)'
-                  : '1px solid var(--color-border)',
-                color: createMode
-                  ? 'var(--color-accent)'
-                  : 'var(--color-text-primary)',
-              }}
-              aria-label="Luo uusi peli"
-            >
-              <Plus size={15} strokeWidth={2.3} aria-hidden="true" />
-              Uusi
-            </button>
-          </div>
-        </div>
-
-        {/* New-puzzle creation form */}
-        {createMode && (
+    <div className="space-y-6 max-w-7xl mx-auto px-1 py-4 sm:px-4">
+      {/* Alert Messages / Status */}
+      <div className="space-y-2">
+        {isDirty && (
           <div
-            className="p-2"
+            className="rounded-xl p-4 text-sm font-medium border flex items-center gap-3 shadow-sm"
             style={{
               backgroundColor:
-                'color-mix(in srgb, var(--color-accent) 5%, var(--color-bg-secondary))',
-              borderBottom: '1px solid var(--color-border)',
+                'color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-secondary))',
+              borderColor: 'var(--color-accent)',
+              color: 'var(--color-text-primary)',
             }}
           >
-            <div
-              className="mb-2 text-sm font-semibold"
-              style={{ color: 'var(--color-text-primary)' }}
+            <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+            <span className="flex-1">
+              Tallentamattomia muutoksia pelissä #{currentSlot + 1}. Muista
+              tallentaa!
+            </span>
+            <button
+              onClick={() => saveSlot()}
+              disabled={saving}
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+              style={primaryButtonStyle}
             >
-              Uusi peli
-            </div>
-            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_6rem_auto]">
-              <input
-                type="text"
-                value={newLetters}
-                onChange={(e) => setNewLetters(e.target.value)}
-                placeholder="Kirjaimet (a,b,c,d,e,f,g)"
-                className="h-9 rounded px-3 text-sm font-mono"
-                style={inputStyle}
-                aria-label="Uuden pelin kirjaimet"
-              />
-              <input
-                type="text"
-                value={newCenter}
-                onChange={(e) => setNewCenter(e.target.value)}
-                placeholder="Keskus"
-                maxLength={1}
-                className="h-9 rounded px-3 text-center text-sm font-mono"
-                style={inputStyle}
-                aria-label="Uuden pelin keskuskirjain"
-              />
-              <button
-                type="button"
-                onClick={handleCreateFromForm}
-                disabled={saving || !newLetters.trim() || !newCenter.trim()}
-                className="inline-flex h-9 items-center justify-center gap-2 rounded px-4 text-sm font-semibold cursor-pointer disabled:cursor-default"
-                style={{
-                  ...primaryButtonStyle,
-                  opacity:
-                    saving || !newLetters.trim() || !newCenter.trim() ? 0.5 : 1,
-                }}
-              >
-                <Plus size={15} strokeWidth={2.3} aria-hidden="true" />
-                {saving ? 'Luodaan...' : 'Luo'}
-              </button>
-            </div>
+              {saving ? 'Tallennetaan...' : 'Tallenna'}
+            </button>
           </div>
         )}
+        {statusMessage && (
+          <div
+            className="rounded-xl p-4 text-sm font-medium border flex items-center gap-3 shadow-md animate-fade-in"
+            style={{
+              backgroundColor: statusBackground,
+              color: statusColor,
+              borderColor:
+                'color-mix(in srgb, var(--color-accent) 20%, var(--color-border))',
+            }}
+          >
+            <div className="h-5 w-5 rounded-full flex items-center justify-center bg-current opacity-10 shrink-0">
+              {statusType === 'error' ? '!' : '✓'}
+            </div>
+            <span className="flex-1">{statusMessage}</span>
+          </div>
+        )}
+      </div>
 
-        {/* No-spoiler game suggestion */}
-        <div
-          className="p-2"
-          style={{ borderBottom: '1px solid var(--color-border)' }}
-        >
-          <div className="grid gap-1.5">
-            <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-              <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+      {/* Main Two-Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* LEFT COLUMN: Active Puzzle Controls & AI Suggestions */}
+        <div className="lg:col-span-7 space-y-6">
+          {/* CARD 1: Pelin hallinta (Active Puzzle / Preview) */}
+          <section
+            className="rounded-2xl border shadow-sm overflow-hidden"
+            style={{
+              backgroundColor: 'var(--color-bg-secondary)',
+              borderColor: 'var(--color-border)',
+            }}
+          >
+            {/* Header */}
+            <div
+              className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between border-b"
+              style={{ borderColor: 'var(--color-border)' }}
+            >
+              <div className="flex items-center gap-3">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl font-semibold bg-indigo-500/10 text-indigo-400">
+                  {selectedCombo ? (
+                    <SlidersHorizontal size={18} />
+                  ) : (
+                    <Grid size={18} />
+                  )}
+                </span>
+                <div>
+                  <h2
+                    className="text-md font-bold flex items-center gap-2"
+                    style={{ color: 'var(--color-text-primary)' }}
+                  >
+                    {selectedCombo
+                      ? 'Esikatseltava peli'
+                      : `Peli ${currentSlot + 1} / ${totalPuzzles}`}
+                  </h2>
+                  <p
+                    className="text-xs"
+                    style={{ color: 'var(--color-text-tertiary)' }}
+                  >
+                    {selectedCombo
+                      ? 'Yhdistelmähaustatustietojen esikatselu'
+                      : 'Kierrossa oleva peli'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Navigation Carousel (Only active in rotation mode, hidden in preview combo) */}
+              {!selectedCombo && (
+                <div
+                  className="inline-flex items-center rounded-xl p-1 shadow-sm"
+                  style={{
+                    backgroundColor: 'var(--color-bg-primary)',
+                    border: '1px solid var(--color-border)',
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={handlePrev}
+                    disabled={currentSlot <= 0 || puzzleLoading}
+                    title="Edellinen peli"
+                    aria-label="Edellinen peli"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg hover:bg-[color-mix(in srgb,var(--color-text-primary)_5%,transparent)] transition-all cursor-pointer disabled:opacity-30 disabled:cursor-default"
+                    style={{
+                      color: 'var(--color-text-primary)',
+                      border: 'none',
+                      background: 'none',
+                    }}
+                  >
+                    <ChevronLeft size={18} strokeWidth={2.4} />
+                  </button>
+                  <span
+                    className="px-3 font-mono text-xs font-bold leading-none min-w-[70px] text-center"
+                    style={{ color: 'var(--color-text-secondary)' }}
+                  >
+                    {puzzleLoading ? '...' : `#${currentSlot + 1}`}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleNext}
+                    disabled={currentSlot >= totalPuzzles - 1 || puzzleLoading}
+                    title="Seuraava peli"
+                    aria-label="Seuraava peli"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg hover:bg-[color-mix(in srgb,var(--color-text-primary)_5%,transparent)] transition-all cursor-pointer disabled:opacity-30 disabled:cursor-default"
+                    style={{
+                      color: 'var(--color-text-primary)',
+                      border: 'none',
+                      background: 'none',
+                    }}
+                  >
+                    <ChevronRight size={18} strokeWidth={2.4} />
+                  </button>
+                </div>
+              )}
+
+              {selectedCombo && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCombo(null);
+                    setSelectedVariations([]);
+                  }}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-[color-mix(in srgb,var(--color-text-primary)_5%,transparent)] border shadow-sm cursor-pointer transition-all shrink-0"
+                  style={surfaceButtonStyle}
+                >
+                  ← Kiertoon
+                </button>
+              )}
+            </div>
+
+            <div className="p-5 space-y-5">
+              {/* Visual Word Letters Display */}
+              <div className="flex flex-col gap-2">
                 <span
-                  className="inline-flex items-center gap-1 text-xs font-semibold uppercase"
+                  className="text-xs font-semibold uppercase tracking-wider animate-pulse"
                   style={{ color: 'var(--color-text-tertiary)' }}
                 >
-                  <WandSparkles
-                    size={14}
-                    strokeWidth={2.2}
-                    aria-hidden="true"
-                    style={{ color: 'var(--color-accent)' }}
-                  />
-                  Ehdotus
+                  Pelin kirjaimet
                 </span>
+                <div className="flex flex-wrap gap-2 items-center">
+                  {activeLetters.split('').map((letter) => (
+                    <button
+                      key={letter}
+                      type="button"
+                      onClick={() => handleCenterSelect(letter)}
+                      className="h-12 w-12 rounded-xl font-mono text-xl font-bold flex items-center justify-center shadow-sm select-none hover:scale-[1.05] active:scale-[0.95] transition-all cursor-pointer"
+                      style={{
+                        backgroundColor:
+                          letter === activeCenter
+                            ? 'var(--color-accent)'
+                            : 'var(--color-bg-primary)',
+                        borderColor:
+                          letter === activeCenter
+                            ? 'var(--color-accent)'
+                            : 'var(--color-border)',
+                        color:
+                          letter === activeCenter
+                            ? 'var(--color-on-accent)'
+                            : 'var(--color-text-primary)',
+                        borderWidth: '1px',
+                      }}
+                      title={
+                        letter === activeCenter
+                          ? `${letter} on valittu keskuskirjain`
+                          : `Valitse ${letter} keskuskirjaimeksi`
+                      }
+                    >
+                      {letter}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-                {suggestion ? (
-                  <>
-                    <span className="flex flex-wrap items-center gap-0.5">
+              {/* Variations Grid */}
+              {displayVariations.length > 0 && (
+                <div className="space-y-2">
+                  <span
+                    className="text-xs font-semibold uppercase tracking-wider"
+                    style={{ color: 'var(--color-text-tertiary)' }}
+                  >
+                    Keskuskirjaimen vaihtoehdot ja tilastot
+                  </span>
+                  <VariationsGrid
+                    variations={displayVariations}
+                    activeCenter={activeCenter}
+                    onSelect={handleCenterSelect}
+                  />
+                </div>
+              )}
+
+              {/* Quick Actions / Configuration */}
+              <div
+                className="pt-4 border-t space-y-4"
+                style={{ borderColor: 'var(--color-border)' }}
+              >
+                {/* If previewing select combo */}
+                {selectedCombo && activeCenter && (
+                  <div
+                    className="bg-[color-mix(in srgb,var(--color-accent)_5%,var(--color-bg-primary))] p-4 rounded-xl border border-dashed flex flex-col sm:flex-row items-center justify-between gap-3"
+                    style={{ borderColor: 'var(--color-accent)' }}
+                  >
+                    <div
+                      className="text-sm"
+                      style={{ color: 'var(--color-text-secondary)' }}
+                    >
+                      Vaihtoehto{' '}
+                      <strong
+                        className="font-mono text-base"
+                        style={{ color: 'var(--color-text-primary)' }}
+                      >
+                        {selectedCombo}
+                      </strong>{' '}
+                      valittu keskuksella{' '}
+                      <strong
+                        className="font-mono text-base uppercase"
+                        style={{ color: 'var(--color-accent)' }}
+                      >
+                        {activeCenter}
+                      </strong>
+                      .
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleCreateFromCombo}
+                      disabled={saving}
+                      className="px-4 py-2 rounded-xl text-sm font-bold shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer w-full sm:w-auto"
+                      style={primaryButtonStyle}
+                    >
+                      {saving ? 'Lisätään...' : 'Lisää uutena pelinä'}
+                    </button>
+                  </div>
+                )}
+
+                {/* Grid of slot operations */}
+                {!selectedCombo && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Jump & Swap controls */}
+                    <div className="space-y-3">
+                      <form
+                        onSubmit={handleJump}
+                        className="flex items-center gap-2"
+                      >
+                        <label
+                          htmlFor="admin-puzzle-jump"
+                          className="text-xs font-medium shrink-0 w-16"
+                          style={{ color: 'var(--color-text-secondary)' }}
+                        >
+                          Selaa peliä
+                        </label>
+                        <input
+                          id="admin-puzzle-jump"
+                          type="number"
+                          value={jumpTarget}
+                          onChange={(e) => setJumpTarget(e.target.value)}
+                          min={1}
+                          max={Math.max(1, totalPuzzles)}
+                          disabled={puzzleLoading || totalPuzzles <= 0}
+                          aria-label="Siirry pelinumeroon"
+                          className="h-9 w-20 rounded-lg px-2 text-center text-sm border focus:outline-none focus:ring-1 focus:ring-accent"
+                          style={inputStyle}
+                        />
+                        <button
+                          type="submit"
+                          disabled={puzzleLoading || totalPuzzles <= 0}
+                          className="h-9 rounded-lg px-3 text-xs font-semibold shadow-sm hover:scale-[1.02] transition-all cursor-pointer"
+                          style={surfaceButtonStyle}
+                        >
+                          Siirry
+                        </button>
+                      </form>
+
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="text-xs font-medium shrink-0 w-16"
+                          style={{ color: 'var(--color-text-secondary)' }}
+                        >
+                          Vaihda sij.
+                        </span>
+                        <input
+                          type="number"
+                          value={swapTarget}
+                          onChange={(e) => setSwapTarget(e.target.value)}
+                          placeholder="#"
+                          min={1}
+                          max={totalPuzzles}
+                          className="h-9 w-20 rounded-lg px-2 text-center text-sm border focus:outline-none focus:ring-1 focus:ring-accent"
+                          style={inputStyle}
+                          aria-label="Vaihda pelin sijainti"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => void handleSwap()}
+                          disabled={saving}
+                          className="h-9 rounded-lg px-3 text-xs font-semibold inline-flex items-center gap-1 hover:scale-[1.02] transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                          style={surfaceButtonStyle}
+                        >
+                          <Shuffle size={13} strokeWidth={2.4} />
+                          Vaihda
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Dirty State / Create Manual / Delete / Commands */}
+                    <div className="flex flex-col justify-end gap-2">
+                      {/* Primary save/restore when dirty */}
+                      {isDirty && (
+                        <div className="flex items-center gap-2 w-full">
+                          <button
+                            type="button"
+                            onClick={() => saveSlot()}
+                            disabled={saving}
+                            className="flex-1 inline-flex h-9 items-center justify-center gap-1.5 rounded-lg text-xs font-bold shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
+                            style={primaryButtonStyle}
+                          >
+                            <Save size={14} />
+                            Tallenna muutokset
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleRestore}
+                            disabled={saving}
+                            className="px-3 h-9 rounded-lg text-xs font-semibold border shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+                            style={surfaceButtonStyle}
+                          >
+                            <Undo2 size={14} />
+                          </button>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2 w-full">
+                        <button
+                          type="button"
+                          onClick={handleDelete}
+                          disabled={saving || totalPuzzles <= 0}
+                          className="flex-1 inline-flex h-9 items-center justify-center gap-1.5 rounded-lg text-xs font-semibold hover:bg-[color-mix(in srgb,var(--color-error)_12%,var(--color-bg-primary))] transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                          style={{
+                            ...dangerButtonStyle,
+                          }}
+                        >
+                          <Trash2 size={13} />
+                          Poista peli #{currentSlot + 1}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCreateMode((v) => !v);
+                            setNewLetters('');
+                            setNewCenter('');
+                          }}
+                          disabled={saving}
+                          className="h-9 rounded-lg px-3 text-xs font-semibold inline-flex items-center gap-1 border shadow-sm cursor-pointer transition-all"
+                          style={{
+                            backgroundColor: createMode
+                              ? 'color-mix(in srgb, var(--color-accent) 12%, var(--color-bg-secondary))'
+                              : 'var(--color-bg-primary)',
+                            borderColor: createMode
+                              ? 'var(--color-accent)'
+                              : 'var(--color-border)',
+                            color: createMode
+                              ? 'var(--color-accent)'
+                              : 'var(--color-text-primary)',
+                          }}
+                        >
+                          <Plus size={14} />
+                          Uusi peli
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* New manual game form */}
+            {createMode && (
+              <div
+                className="p-5 border-t animate-slide-down"
+                style={{
+                  backgroundColor:
+                    'color-mix(in srgb, var(--color-accent) 4%, var(--color-bg-secondary))',
+                  borderColor: 'var(--color-border)',
+                }}
+              >
+                <h3
+                  className="text-sm font-bold mb-3"
+                  style={{ color: 'var(--color-text-primary)' }}
+                >
+                  Luo peli käsin
+                </h3>
+                <div className="grid gap-3 sm:grid-cols-12">
+                  <div className="sm:col-span-7">
+                    <input
+                      type="text"
+                      value={newLetters}
+                      onChange={(e) => setNewLetters(e.target.value)}
+                      placeholder="7 kirjainta (esim. a,b,c,d,e,f,g)"
+                      className="h-10 w-full rounded-lg px-3 text-sm font-mono border focus:outline-none focus:ring-1 focus:ring-accent"
+                      style={inputStyle}
+                    />
+                  </div>
+                  <div className="sm:col-span-3">
+                    <input
+                      type="text"
+                      value={newCenter}
+                      onChange={(e) => setNewCenter(e.target.value)}
+                      placeholder="Keskus"
+                      maxLength={1}
+                      className="h-10 w-full rounded-lg px-3 text-center text-sm font-mono border focus:outline-none focus:ring-1 focus:ring-accent uppercase"
+                      style={inputStyle}
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <button
+                      type="button"
+                      onClick={handleCreateFromForm}
+                      disabled={
+                        saving || !newLetters.trim() || !newCenter.trim()
+                      }
+                      className="h-10 w-full rounded-lg text-sm font-bold shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer disabled:opacity-40"
+                      style={primaryButtonStyle}
+                    >
+                      Luo
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* CARD 2: Peliehdotukset (AI Game Suggestions Assistant) */}
+          <section
+            className="rounded-2xl border shadow-sm overflow-hidden"
+            style={{
+              backgroundColor: 'var(--color-bg-secondary)',
+              borderColor: 'var(--color-border)',
+            }}
+          >
+            {/* Header */}
+            <div
+              className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between border-b"
+              style={{ borderColor: 'var(--color-border)' }}
+            >
+              <div className="flex items-center gap-3">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl font-semibold bg-emerald-500/10 text-emerald-500">
+                  <WandSparkles size={18} />
+                </span>
+                <div>
+                  <h2
+                    className="text-md font-bold"
+                    style={{ color: 'var(--color-text-primary)' }}
+                  >
+                    Peliavustaja
+                  </h2>
+                  <p
+                    className="text-xs"
+                    style={{ color: 'var(--color-text-tertiary)' }}
+                  >
+                    Ehdota automaattisesti laadukkaita, arvioituja pelejä
+                    kiertoon
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => void fetchSuggestion()}
+                disabled={suggestionLoading || saving}
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold shadow-sm hover:scale-[1.02] transition-all cursor-pointer disabled:opacity-50"
+                style={surfaceButtonStyle}
+              >
+                <WandSparkles size={13} />
+                {suggestionLoading ? 'Haetaan...' : 'Ehdota peliä'}
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-5">
+              {suggestionError && (
+                <div
+                  className="text-sm p-3 rounded-lg border border-red-500/10 bg-red-500/5"
+                  style={{ color: 'var(--color-error)' }}
+                >
+                  {suggestionError}
+                </div>
+              )}
+
+              {suggestion ? (
+                <div className="space-y-5">
+                  {/* Visual Letters of the Suggestion */}
+                  <div className="flex flex-col gap-2">
+                    <span
+                      className="text-xs font-semibold uppercase tracking-wider"
+                      style={{ color: 'var(--color-text-tertiary)' }}
+                    >
+                      Ehdotetun pelin kirjaimet
+                    </span>
+                    <div className="flex flex-wrap gap-2">
                       {suggestion.letters.map((letter) => (
                         <span
                           key={letter}
-                          className="inline-flex h-6 w-6 items-center justify-center rounded font-mono text-xs font-semibold"
+                          className="h-10 w-10 rounded-xl font-mono font-bold text-lg flex items-center justify-center shadow-xs select-none border"
                           style={{
                             backgroundColor:
                               letter === suggestion.center
                                 ? 'var(--color-accent)'
                                 : 'var(--color-bg-primary)',
-                            border:
+                            borderColor:
                               letter === suggestion.center
-                                ? '1px solid var(--color-accent)'
-                                : '1px solid var(--color-border)',
+                                ? 'var(--color-accent)'
+                                : 'var(--color-border)',
                             color:
                               letter === suggestion.center
                                 ? 'var(--color-on-accent)'
@@ -840,525 +1073,681 @@ export function PuzzleEditor() {
                           {letter}
                         </span>
                       ))}
-                    </span>
+                    </div>
+                  </div>
 
-                    <span
-                      className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm"
-                      style={{ color: 'var(--color-text-secondary)' }}
+                  {/* KPI Metrics Dashboard inside suggestions */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <div
+                      className="p-3 rounded-xl border"
+                      style={{
+                        backgroundColor: 'var(--color-bg-primary)',
+                        borderColor: 'var(--color-border)',
+                      }}
                     >
-                      <span>
-                        <strong style={{ color: 'var(--color-text-primary)' }}>
-                          {suggestion.word_count}
-                        </strong>{' '}
-                        sanaa
-                        <span
-                          className="ml-1 text-xs"
-                          style={{ color: 'var(--color-text-tertiary)' }}
-                        >
-                          {suggestion.max_score} p
+                      <div
+                        className="text-xs font-semibold"
+                        style={{ color: 'var(--color-text-tertiary)' }}
+                      >
+                        Sanamäärä
+                      </div>
+                      <div
+                        className="text-lg font-bold mt-1"
+                        style={{ color: 'var(--color-text-primary)' }}
+                      >
+                        {suggestion.word_count}{' '}
+                        <span className="text-xs font-normal opacity-70">
+                          sanaa
                         </span>
-                      </span>
-                      <span style={{ color: 'var(--color-text-tertiary)' }}>
-                        /
-                      </span>
-                      <span>
-                        <strong style={{ color: 'var(--color-text-primary)' }}>
-                          {suggestion.pangram_count}
-                        </strong>{' '}
-                        {suggestion.pangram_count === 1
-                          ? 'pangrammi'
-                          : 'pangrammia'}
+                      </div>
+                      <div
+                        className="text-xs mt-0.5"
+                        style={{ color: 'var(--color-text-tertiary)' }}
+                      >
+                        {suggestion.max_score} p maksimi
+                      </div>
+                    </div>
+
+                    <div
+                      className="p-3 rounded-xl border"
+                      style={{
+                        backgroundColor: 'var(--color-bg-primary)',
+                        borderColor: 'var(--color-border)',
+                      }}
+                    >
+                      <div
+                        className="text-xs font-semibold"
+                        style={{ color: 'var(--color-text-tertiary)' }}
+                      >
+                        Pangrammit
+                      </div>
+                      <div
+                        className="text-lg font-bold mt-1"
+                        style={{ color: 'var(--color-text-primary)' }}
+                      >
+                        {suggestion.pangram_count}{' '}
+                        <span className="text-xs font-normal opacity-70">
+                          kpl
+                        </span>
+                      </div>
+                      <div className="text-xs mt-0.5 truncate font-medium flex items-center gap-1">
                         <span
-                          className="ml-1 text-xs"
-                          title={suggestion.quality_label}
-                          style={{ color: 'var(--color-text-tertiary)' }}
-                        >
+                          className={`inline-block h-1.5 w-1.5 rounded-full ${
+                            suggestion.quality_grade === 'good'
+                              ? 'bg-emerald-500'
+                              : suggestion.quality_grade === 'ok'
+                                ? 'bg-sky-500'
+                                : 'bg-amber-500'
+                          }`}
+                        />
+                        <span style={{ color: 'var(--color-text-secondary)' }}>
                           {suggestion.quality_label}
                         </span>
-                      </span>
-                      <span style={{ color: 'var(--color-text-tertiary)' }}>
-                        /
-                      </span>
-                      <span>
-                        <strong style={{ color: 'var(--color-text-primary)' }}>
-                          {suggestion.score}
-                        </strong>{' '}
-                        valinta
-                      </span>
-                    </span>
-                  </>
-                ) : (
-                  <span
-                    className="text-xs"
-                    style={{ color: 'var(--color-text-tertiary)' }}
+                      </div>
+                    </div>
+
+                    <div
+                      className="p-3 rounded-xl border col-span-2 sm:col-span-1"
+                      style={{
+                        backgroundColor: 'var(--color-bg-primary)',
+                        borderColor: 'var(--color-border)',
+                      }}
+                    >
+                      <div
+                        className="text-xs font-semibold"
+                        style={{ color: 'var(--color-text-tertiary)' }}
+                      >
+                        Valintatesti
+                      </div>
+                      <div
+                        className="text-lg font-bold mt-1"
+                        style={{ color: 'var(--color-text-primary)' }}
+                      >
+                        {suggestion.score}{' '}
+                        <span className="text-xs font-normal opacity-70">
+                          valintaa
+                        </span>
+                      </div>
+                      <div
+                        className="text-xs mt-0.5 truncate"
+                        style={{ color: 'var(--color-text-tertiary)' }}
+                      >
+                        Havaitut kandidaatit
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Overlaps and Metadata Info */}
+                  <div
+                    className="p-3.5 rounded-xl border text-xs space-y-2"
+                    style={{
+                      backgroundColor: 'var(--color-bg-primary)',
+                      borderColor: 'var(--color-border)',
+                    }}
                   >
-                    Ei haettua ehdotusta
-                  </span>
-                )}
-              </div>
+                    <div
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b pb-2"
+                      style={{ borderColor: 'var(--color-border)' }}
+                    >
+                      <span
+                        className="font-semibold"
+                        style={{ color: 'var(--color-text-secondary)' }}
+                      >
+                        Päällekkäisyys kierrossa:
+                      </span>
+                      <div
+                        className="flex flex-wrap gap-x-4 gap-y-1"
+                        style={{ color: 'var(--color-text-primary)' }}
+                      >
+                        <span>
+                          <strong className="opacity-70">Edellinen:</strong>{' '}
+                          {suggestion.overlaps.previous.shared_short_words}{' '}
+                          lyhyttä /{' '}
+                          {suggestion.overlaps.previous.shared_letters}{' '}
+                          kirjainta
+                        </span>
+                        <span>
+                          <strong className="opacity-70">Alku:</strong>{' '}
+                          {suggestion.overlaps.next.shared_short_words} lyhyttä
+                          / {suggestion.overlaps.next.shared_letters} kirjainta
+                        </span>
+                      </div>
+                    </div>
 
-              <div className="flex flex-wrap items-center gap-1 lg:justify-end">
-                <button
-                  type="button"
-                  onClick={() => void fetchSuggestion()}
-                  disabled={suggestionLoading || saving}
-                  className="inline-flex h-7 items-center gap-1.5 rounded px-2 text-xs font-semibold cursor-pointer disabled:cursor-default"
-                  style={{
-                    ...surfaceButtonStyle,
-                    opacity: suggestionLoading || saving ? 0.6 : 1,
-                  }}
-                >
-                  <WandSparkles
-                    size={13}
-                    strokeWidth={2.2}
-                    aria-hidden="true"
-                  />
-                  {suggestionLoading ? 'Haetaan...' : 'Ehdota peliä'}
-                </button>
+                    {suggestion.reasons.length > 0 && (
+                      <div className="flex gap-2">
+                        <span
+                          className="font-semibold shrink-0"
+                          style={{ color: 'var(--color-text-secondary)' }}
+                        >
+                          Huomiot:
+                        </span>
+                        <div className="flex flex-wrap gap-1">
+                          {suggestion.reasons.map((reason, idx) => (
+                            <span
+                              key={idx}
+                              className="inline-flex px-1.5 py-0.5 rounded-md text-[10px] font-medium border bg-amber-500/5 text-amber-500 border-amber-500/10"
+                            >
+                              {reason}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
-                {suggestion && (
-                  <>
+                  {/* Spoilers & Pangrams view */}
+                  {pangramSpoilersVisible && suggestion.pangrams && (
+                    <div
+                      aria-label="Pangrammien spoilerit"
+                      className="p-4 rounded-xl border border-dashed text-xs space-y-2 animate-fade-in"
+                      style={{
+                        backgroundColor: 'var(--color-bg-primary)',
+                        borderColor: 'var(--color-border)',
+                      }}
+                    >
+                      <div
+                        className="font-bold uppercase tracking-wider"
+                        style={{ color: 'var(--color-text-tertiary)' }}
+                      >
+                        Pangrammit sanakirjassa
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {suggestion.pangrams.map((pangram) => (
+                          <span
+                            key={pangram}
+                            className="bg-neutral-800 border border-neutral-700 font-mono font-bold text-xs text-neutral-200 rounded-lg px-2 py-0.5"
+                          >
+                            {pangram}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Actions bottom bar */}
+                  <div
+                    className="pt-4 border-t flex flex-wrap items-center justify-between gap-3"
+                    style={{ borderColor: 'var(--color-border)' }}
+                  >
                     <button
                       type="button"
                       onClick={() => void handleTogglePangrams()}
-                      disabled={suggestionLoading || saving}
-                      className="inline-flex h-7 items-center gap-1 rounded px-2 text-xs cursor-pointer"
-                      style={{
-                        backgroundColor: 'var(--color-bg-primary)',
-                        border: '1px solid var(--color-border)',
-                        color: 'var(--color-text-primary)',
-                        opacity: suggestionLoading || saving ? 0.6 : 1,
-                      }}
+                      className="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold border shadow-xs hover:bg-[color-mix(in srgb,var(--color-text-primary)_5%,transparent)] transition-all cursor-pointer"
+                      style={surfaceButtonStyle}
                       aria-expanded={pangramSpoilersVisible}
                     >
-                      <EyeIcon />
                       {pangramSpoilersVisible
                         ? 'Piilota pangrammit'
                         : 'Näytä pangrammit'}
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => void handleRejectSuggestion()}
-                      disabled={suggestionLoading || saving}
-                      className="h-7 rounded px-2 text-xs cursor-pointer"
-                      style={{
-                        backgroundColor: 'var(--color-bg-primary)',
-                        border: '1px solid var(--color-border)',
-                        color: 'var(--color-text-primary)',
-                        opacity: suggestionLoading || saving ? 0.6 : 1,
-                      }}
-                    >
-                      Hylkää
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void handleAcceptSuggestion()}
-                      disabled={suggestionLoading || saving}
-                      className="h-7 rounded px-2 text-xs font-semibold cursor-pointer"
-                      style={{
-                        ...primaryButtonStyle,
-                        opacity: suggestionLoading || saving ? 0.6 : 1,
-                      }}
-                    >
-                      Hyväksy
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
 
-            {suggestionError && (
-              <div className="text-xs" style={{ color: 'var(--color-error)' }}>
-                {suggestionError}
-              </div>
-            )}
-
-            {suggestion && (
-              <>
-                <div className="grid gap-1 text-xs md:grid-cols-[auto_minmax(0,1fr)]">
-                  <div
-                    className="flex flex-wrap gap-x-3 gap-y-0.5"
-                    style={{ color: 'var(--color-text-secondary)' }}
-                  >
-                    <span>
-                      <span style={{ color: 'var(--color-text-tertiary)' }}>
-                        Edellinen:
-                      </span>{' '}
-                      {suggestion.overlaps.previous.shared_short_words} lyhyttä,{' '}
-                      {suggestion.overlaps.previous.shared_letters} kirjainta
-                    </span>
-                    <span>
-                      <span style={{ color: 'var(--color-text-tertiary)' }}>
-                        Alku:
-                      </span>{' '}
-                      {suggestion.overlaps.next.shared_short_words} lyhyttä,{' '}
-                      {suggestion.overlaps.next.shared_letters} kirjainta
-                    </span>
-                  </div>
-
-                  {suggestion.reasons.length > 0 && (
-                    <div
-                      className="min-w-0 truncate"
-                      title={suggestion.reasons.join(' / ')}
-                      style={{ color: 'var(--color-text-tertiary)' }}
-                    >
-                      {suggestion.reasons.join(' / ')}
-                    </div>
-                  )}
-                </div>
-
-                {pangramSpoilersVisible && suggestion.pangrams && (
-                  <div
-                    aria-label="Pangrammien spoilerit"
-                    className="flex min-w-0 flex-wrap gap-1"
-                  >
-                    {suggestion.pangrams.map((pangram) => (
-                      <span
-                        key={pangram}
-                        className="rounded px-1.5 py-0.5 font-mono text-xs"
+                    <div className="flex gap-2 w-full sm:w-auto">
+                      <button
+                        type="button"
+                        onClick={() => void handleRejectSuggestion()}
+                        className="flex-1 sm:flex-initial h-9 rounded-lg px-4 text-xs font-semibold hover:bg-[color-mix(in srgb,var(--color-error)_12%,var(--color-bg-primary))] transition-all shadow-xs border cursor-pointer"
+                        style={dangerButtonStyle}
+                      >
+                        Hylkää
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleAcceptSuggestion()}
+                        className="flex-1 sm:flex-initial h-9 rounded-lg px-4 text-xs font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md cursor-pointer"
                         style={{
-                          backgroundColor: 'var(--color-bg-primary)',
-                          color: 'var(--color-text-primary)',
-                          border: '1px solid var(--color-border)',
+                          backgroundColor: 'var(--color-accent)',
+                          color: 'var(--color-on-accent)',
+                          border: '1px solid var(--color-accent)',
                         }}
                       >
-                        {pangram}
-                      </span>
-                    ))}
+                        Hyväksy
+                      </button>
+                    </div>
                   </div>
-                )}
-              </>
-            )}
-          </div>
+                </div>
+              ) : (
+                <div
+                  className="text-center py-6 border border-dashed rounded-xl"
+                  style={{ borderColor: 'var(--color-border)' }}
+                >
+                  <p
+                    className="text-sm font-medium"
+                    style={{ color: 'var(--color-text-tertiary)' }}
+                  >
+                    Paina "Ehdota peliä" saadaksesi tekoälyn valitseman uuden
+                    peliehdotuksen.
+                  </p>
+                </div>
+              )}
+            </div>
+          </section>
         </div>
 
-        {/* Center letter selector, with "add as new puzzle" button when browsing a combo */}
-        {displayVariations.length > 0 && (
-          <div
-            className="space-y-2 p-2"
-            style={{ borderBottom: '1px solid var(--color-border)' }}
+        {/* RIGHT COLUMN: Combinations Browser Search */}
+        <div className="lg:col-span-5 space-y-6">
+          {/* CARD 3: Yhdistelmähaku (Combinations Search) */}
+          <section
+            className="rounded-2xl border shadow-sm overflow-hidden"
+            style={{
+              backgroundColor: 'var(--color-bg-secondary)',
+              borderColor: 'var(--color-border)',
+            }}
           >
-            <VariationsGrid
-              variations={displayVariations}
-              activeCenter={activeCenter}
-              onSelect={handleCenterSelect}
-            />
-            {selectedCombo && activeCenter && (
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={handleCreateFromCombo}
-                  disabled={saving}
-                  className="px-3 py-1 rounded text-xs font-semibold cursor-pointer"
-                  style={{
-                    ...primaryButtonStyle,
-                    opacity: saving ? 0.5 : 1,
-                  }}
-                  aria-label="Lisää valittu yhdistelmä uutena pelinä"
-                >
-                  {saving ? 'Lisätään...' : 'Lisää uutena pelinä'}
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Combinations search */}
-        <div
-          className="space-y-2 p-2"
-          style={{ borderBottom: '1px solid var(--color-border)' }}
-        >
-          <div
-            className="text-xs font-semibold mb-1"
-            style={{ color: 'var(--color-text-secondary)' }}
-          >
-            Yhdistelmähaku
-            {!comboLoading && (
-              <span
-                className="font-normal ml-2"
-                style={{ color: 'var(--color-text-tertiary)' }}
-              >
-                {comboTotal} tulosta
-              </span>
-            )}
-          </div>
-          <div className="grid grid-cols-3 gap-2 text-sm">
-            <input
-              type="text"
-              value={filters.requires}
-              onChange={(e) => updateFilter('requires', e.target.value)}
-              placeholder="Sisältää..."
-              className="px-2 py-1 rounded text-sm"
-              style={inputStyle}
-            />
-            <input
-              type="text"
-              value={filters.excludes}
-              onChange={(e) => updateFilter('excludes', e.target.value)}
-              placeholder="Ei sisällä..."
-              className="px-2 py-1 rounded text-sm"
-              style={inputStyle}
-            />
-            <select
-              value={filters.in_rotation}
-              onChange={(e) => updateFilter('in_rotation', e.target.value)}
-              className="px-2 py-1 rounded text-sm"
-              style={inputStyle}
+            {/* Header */}
+            <div
+              className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between border-b"
+              style={{ borderColor: 'var(--color-border)' }}
             >
-              <option value="">Kaikki</option>
-              <option value="true">Kierrossa</option>
-              <option value="false">Ei kierrossa</option>
-            </select>
-          </div>
-          <div className="grid grid-cols-3 gap-2 text-sm">
-            {/* Pangrams range */}
-            <div className="space-y-1">
-              <div
-                className="text-xs"
-                style={{ color: 'var(--color-text-tertiary)' }}
-              >
-                Pangrammeja
-              </div>
-              <div className="flex items-center gap-1">
-                <input
-                  type="number"
-                  value={filters.min_pangrams}
-                  onChange={(e) => updateFilter('min_pangrams', e.target.value)}
-                  placeholder="min"
-                  min={0}
-                  className="w-full px-2 py-1 rounded text-sm"
-                  style={inputStyle}
-                  aria-label="Pangrammeja vähintään"
-                />
-                <span
-                  className="text-xs shrink-0"
-                  style={{ color: 'var(--color-text-tertiary)' }}
-                >
-                  –
+              <div className="flex items-center gap-3">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-400">
+                  <Search size={18} />
                 </span>
-                <input
-                  type="number"
-                  value={filters.max_pangrams}
-                  onChange={(e) => updateFilter('max_pangrams', e.target.value)}
-                  placeholder="max"
-                  min={0}
-                  className="w-full px-2 py-1 rounded text-sm"
-                  style={inputStyle}
-                  aria-label="Pangrammeja enintään"
-                />
+                <div>
+                  <h2
+                    className="text-md font-bold"
+                    style={{ color: 'var(--color-text-primary)' }}
+                  >
+                    Yhdistelmähaku
+                  </h2>
+                  <p
+                    className="text-xs"
+                    style={{ color: 'var(--color-text-tertiary)' }}
+                  >
+                    Selaa ja suodata kaikkia suomen kielen kirjainkombinaatioita
+                  </p>
+                </div>
               </div>
-            </div>
-            {/* Min words per center (least) range */}
-            <div className="space-y-1">
-              <div
-                className="text-xs"
-                style={{ color: 'var(--color-text-tertiary)' }}
-              >
-                Väh. sanoja/keskus
-              </div>
-              <div className="flex items-center gap-1">
-                <input
-                  type="number"
-                  value={filters.min_words_min}
-                  onChange={(e) =>
-                    updateFilter('min_words_min', e.target.value)
-                  }
-                  placeholder="min"
-                  min={0}
-                  className="w-full px-2 py-1 rounded text-sm"
-                  style={inputStyle}
-                  aria-label="Vähemmän sanojen määrä vähintään"
-                />
-                <span
-                  className="text-xs shrink-0"
-                  style={{ color: 'var(--color-text-tertiary)' }}
-                >
-                  –
-                </span>
-                <input
-                  type="number"
-                  value={filters.max_words_min}
-                  onChange={(e) =>
-                    updateFilter('max_words_min', e.target.value)
-                  }
-                  placeholder="max"
-                  min={0}
-                  className="w-full px-2 py-1 rounded text-sm"
-                  style={inputStyle}
-                  aria-label="Vähemmän sanojen määrä enintään"
-                />
-              </div>
-            </div>
-            {/* Max words per center (most) range */}
-            <div className="space-y-1">
-              <div
-                className="text-xs"
-                style={{ color: 'var(--color-text-tertiary)' }}
-              >
-                En. sanoja/keskus
-              </div>
-              <div className="flex items-center gap-1">
-                <input
-                  type="number"
-                  value={filters.min_words}
-                  onChange={(e) => updateFilter('min_words', e.target.value)}
-                  placeholder="min"
-                  min={0}
-                  className="w-full px-2 py-1 rounded text-sm"
-                  style={inputStyle}
-                  aria-label="Enemmän sanojen määrä vähintään"
-                />
-                <span
-                  className="text-xs shrink-0"
-                  style={{ color: 'var(--color-text-tertiary)' }}
-                >
-                  –
-                </span>
-                <input
-                  type="number"
-                  value={filters.max_words}
-                  onChange={(e) => updateFilter('max_words', e.target.value)}
-                  placeholder="max"
-                  min={0}
-                  className="w-full px-2 py-1 rounded text-sm"
-                  style={inputStyle}
-                  aria-label="Enemmän sanojen määrä enintään"
-                />
-              </div>
-            </div>
-          </div>
 
-          {/* Scrollable results table */}
-          <div className="overflow-y-auto" style={{ maxHeight: '280px' }}>
-            <table
-              className="w-full text-sm"
-              style={{ borderCollapse: 'collapse' }}
-            >
-              <thead
-                className="sticky top-0"
-                style={{ backgroundColor: 'var(--color-bg-secondary)' }}
-              >
-                <tr
-                  style={{
-                    borderBottom: '1px solid var(--color-border)',
-                    color: 'var(--color-text-secondary)',
-                  }}
+              {!comboLoading && (
+                <span
+                  className="text-xs font-semibold px-2 py-1 rounded bg-[color-mix(in srgb,var(--color-text-primary)_6%,transparent)] text-neutral-400 shrink-0"
+                  style={{ color: 'var(--color-text-secondary)' }}
                 >
-                  <th
-                    className="text-left py-1 px-2 cursor-pointer"
-                    onClick={() => handleSort('letters')}
+                  {comboTotal} tulosta
+                </span>
+              )}
+            </div>
+
+            {/* Search form controls */}
+            <div className="p-5 space-y-4">
+              {/* Primary Text Queries */}
+              <div
+                className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-3 border-b"
+                style={{ borderColor: 'var(--color-border)' }}
+              >
+                <div className="space-y-1">
+                  <label
+                    className="text-xs font-semibold"
+                    style={{ color: 'var(--color-text-secondary)' }}
                   >
-                    Kirjaimet{sortIndicator('letters')}
-                  </th>
-                  <th
-                    className="text-right py-1 px-2 cursor-pointer"
-                    onClick={() => handleSort('pangrams')}
+                    Sisältää kirjaimet
+                  </label>
+                  <input
+                    type="text"
+                    value={filters.requires}
+                    onChange={(e) => updateFilter('requires', e.target.value)}
+                    placeholder="Sisältää..."
+                    className="w-full h-9 px-3 rounded-lg text-sm border focus:outline-none focus:ring-1 focus:ring-accent font-mono"
+                    style={inputStyle}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label
+                    className="text-xs font-semibold"
+                    style={{ color: 'var(--color-text-secondary)' }}
                   >
-                    Pg{sortIndicator('pangrams')}
-                  </th>
-                  <th
-                    className="text-right py-1 px-2 cursor-pointer"
-                    onClick={() => handleSort('words_max')}
+                    Ei sisällä
+                  </label>
+                  <input
+                    type="text"
+                    value={filters.excludes}
+                    onChange={(e) => updateFilter('excludes', e.target.value)}
+                    placeholder="Poissulje kirjaimet"
+                    className="w-full h-9 px-3 rounded-lg text-sm border focus:outline-none focus:ring-1 focus:ring-accent font-mono"
+                    style={inputStyle}
+                  />
+                </div>
+
+                <div className="space-y-1 col-span-2">
+                  <label
+                    className="text-xs font-semibold"
+                    style={{ color: 'var(--color-text-secondary)' }}
                   >
-                    Max{sortIndicator('words_max')}
-                  </th>
-                  <th
-                    className="text-right py-1 px-2 cursor-pointer"
-                    onClick={() => handleSort('words_min')}
+                    Kierron status
+                  </label>
+                  <select
+                    value={filters.in_rotation}
+                    onChange={(e) =>
+                      updateFilter('in_rotation', e.target.value)
+                    }
+                    className="w-full h-9 px-3 rounded-lg text-sm border focus:outline-none focus:ring-1 focus:ring-accent cursor-pointer"
+                    style={inputStyle}
                   >
-                    Min{sortIndicator('words_min')}
-                  </th>
-                  <th
-                    className="text-right py-1 px-2 cursor-pointer"
-                    onClick={() => handleSort('score_max')}
+                    <option value="">Kaikki yhdistelmät</option>
+                    <option value="true">Nykyisessä kierrossa (*)</option>
+                    <option value="false">Kierron ulkopuoliset</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Numeric ranges inputs under collapsible/mini columns */}
+              <div className="space-y-3">
+                <span
+                  className="text-xs font-semibold uppercase tracking-wider block"
+                  style={{ color: 'var(--color-text-tertiary)' }}
+                >
+                  Yhdistelmätason rajoitukset
+                </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div
+                    className="space-y-1 bg-neutral-900/10 p-2.5 rounded-lg border border-neutral-800/10"
+                    style={{
+                      backgroundColor: 'var(--color-bg-primary)',
+                      borderColor: 'var(--color-border)',
+                    }}
                   >
-                    Pisteet{sortIndicator('score_max')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {comboLoading && (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      className="py-2 text-center text-xs"
-                      style={{ color: 'var(--color-text-tertiary)' }}
+                    <span
+                      className="text-xs font-semibold block"
+                      style={{ color: 'var(--color-text-secondary)' }}
                     >
-                      Ladataan...
-                    </td>
-                  </tr>
-                )}
-                {!comboLoading &&
-                  comboResults.map((combo) => (
-                    <tr
-                      key={combo.letters}
-                      className="cursor-pointer"
-                      onClick={() => handleSelectCombo(combo)}
+                      Pangrammit
+                    </span>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <input
+                        type="number"
+                        value={filters.min_pangrams}
+                        onChange={(e) =>
+                          updateFilter('min_pangrams', e.target.value)
+                        }
+                        placeholder="min"
+                        className="w-full h-8 px-1 rounded text-center text-xs"
+                        style={inputStyle}
+                        aria-label="Pangrammeja vähintään"
+                      />
+                      <span className="text-xs text-neutral-400">–</span>
+                      <input
+                        type="number"
+                        value={filters.max_pangrams}
+                        onChange={(e) =>
+                          updateFilter('max_pangrams', e.target.value)
+                        }
+                        placeholder="max"
+                        className="w-full h-8 px-1 rounded text-center text-xs"
+                        style={inputStyle}
+                        aria-label="Pangrammeja enintään"
+                      />
+                    </div>
+                  </div>
+
+                  <div
+                    className="space-y-1 bg-neutral-900/10 p-2.5 rounded-lg border border-neutral-800/10"
+                    style={{
+                      backgroundColor: 'var(--color-bg-primary)',
+                      borderColor: 'var(--color-border)',
+                    }}
+                  >
+                    <span
+                      className="text-xs font-semibold block"
+                      style={{ color: 'var(--color-text-secondary)' }}
+                    >
+                      Väh. sanoja/keskus
+                    </span>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <input
+                        type="number"
+                        value={filters.min_words_min}
+                        onChange={(e) =>
+                          updateFilter('min_words_min', e.target.value)
+                        }
+                        placeholder="min"
+                        className="w-full h-8 px-1 rounded text-center text-xs"
+                        style={inputStyle}
+                        aria-label="Vähemmän sanojen määrä vähintään"
+                      />
+                      <span className="text-xs text-neutral-400">–</span>
+                      <input
+                        type="number"
+                        value={filters.max_words_min}
+                        onChange={(e) =>
+                          updateFilter('max_words_min', e.target.value)
+                        }
+                        placeholder="max"
+                        className="w-full h-8 px-1 rounded text-center text-xs"
+                        style={inputStyle}
+                        aria-label="Vähemmän sanojen määrä enintään"
+                      />
+                    </div>
+                  </div>
+
+                  <div
+                    className="space-y-1 bg-neutral-900/10 p-2.5 rounded-lg border border-neutral-800/10"
+                    style={{
+                      backgroundColor: 'var(--color-bg-primary)',
+                      borderColor: 'var(--color-border)',
+                    }}
+                  >
+                    <span
+                      className="text-xs font-semibold block"
+                      style={{ color: 'var(--color-text-secondary)' }}
+                    >
+                      Naj. sanoja/keskus
+                    </span>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <input
+                        type="number"
+                        value={filters.min_words}
+                        onChange={(e) =>
+                          updateFilter('min_words', e.target.value)
+                        }
+                        placeholder="min"
+                        className="w-full h-8 px-1 rounded text-center text-xs"
+                        style={inputStyle}
+                        aria-label="Enemmän sanojen määrä vähintään"
+                      />
+                      <span className="text-xs text-neutral-400">–</span>
+                      <input
+                        type="number"
+                        value={filters.max_words}
+                        onChange={(e) =>
+                          updateFilter('max_words', e.target.value)
+                        }
+                        placeholder="max"
+                        className="w-full h-8 px-1 rounded text-center text-xs"
+                        style={inputStyle}
+                        aria-label="Enemmän sanojen määrä enintään"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Scrollable results table inside card */}
+              <div
+                className="rounded-xl border overflow-hidden mt-4 shadow-sm"
+                style={{ borderColor: 'var(--color-border)' }}
+              >
+                <div className="overflow-y-auto" style={{ maxHeight: '280px' }}>
+                  <table
+                    className="w-full text-xs"
+                    style={{ borderCollapse: 'collapse' }}
+                  >
+                    <thead
+                      className="sticky top-0 z-10"
                       style={{
+                        backgroundColor: 'var(--color-bg-primary)',
                         borderBottom: '1px solid var(--color-border)',
-                        backgroundColor:
-                          selectedCombo === combo.letters
-                            ? 'color-mix(in srgb, var(--color-accent) 10%, transparent)'
-                            : combo.letters === savedLetters
-                              ? 'color-mix(in srgb, var(--color-accent) 6%, transparent)'
-                              : 'transparent',
                       }}
                     >
-                      <td
-                        className="py-1 px-2 font-mono"
-                        style={{ color: 'var(--color-text-primary)' }}
-                      >
-                        {combo.letters}
-                        {combo.in_rotation && (
-                          <span
-                            className="ml-1 text-xs"
-                            style={{ color: 'var(--color-accent)' }}
+                      <tr style={{ color: 'var(--color-text-secondary)' }}>
+                        <th
+                          className="text-left py-2 px-3 cursor-pointer hover:bg-neutral-800/20"
+                          onClick={() => handleSort('letters')}
+                        >
+                          Kirjaimet{sortIndicator('letters')}
+                        </th>
+                        <th
+                          className="text-right py-2 px-3 cursor-pointer hover:bg-neutral-800/20"
+                          onClick={() => handleSort('pangrams')}
+                        >
+                          Pg{sortIndicator('pangrams')}
+                        </th>
+                        <th
+                          className="text-right py-2 px-3 cursor-pointer hover:bg-neutral-800/20"
+                          onClick={() => handleSort('words_max')}
+                        >
+                          Max{sortIndicator('words_max')}
+                        </th>
+                        <th
+                          className="text-right py-2 px-3 cursor-pointer hover:bg-neutral-800/20"
+                          onClick={() => handleSort('words_min')}
+                        >
+                          Min{sortIndicator('words_min')}
+                        </th>
+                        <th
+                          className="text-right py-2 px-3 cursor-pointer hover:bg-neutral-800/20"
+                          onClick={() => handleSort('score_max')}
+                        >
+                          Pisteet{sortIndicator('score_max')}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {comboLoading && (
+                        <tr>
+                          <td
+                            colSpan={5}
+                            className="py-8 text-center text-[11px]"
+                            style={{ color: 'var(--color-text-tertiary)' }}
                           >
-                            *
-                          </span>
-                        )}
-                      </td>
-                      <td
-                        className="py-1 px-2 text-right"
-                        style={{ color: 'var(--color-text-secondary)' }}
-                      >
-                        {combo.total_pangrams}
-                      </td>
-                      <td
-                        className="py-1 px-2 text-right"
-                        style={{ color: 'var(--color-text-secondary)' }}
-                      >
-                        {combo.max_word_count}
-                      </td>
-                      <td
-                        className="py-1 px-2 text-right"
-                        style={{ color: 'var(--color-text-secondary)' }}
-                      >
-                        {combo.min_word_count}
-                      </td>
-                      <td
-                        className="py-1 px-2 text-right"
-                        style={{ color: 'var(--color-text-secondary)' }}
-                      >
-                        {combo.max_max_score}
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
+                            Ladataan yhdistelmiä...
+                          </td>
+                        </tr>
+                      )}
+                      {!comboLoading && comboResults.length === 0 && (
+                        <tr>
+                          <td
+                            colSpan={5}
+                            className="py-8 text-center text-[11px]"
+                            style={{ color: 'var(--color-text-tertiary)' }}
+                          >
+                            Ei hakua vastaavia tuloksia.
+                          </td>
+                        </tr>
+                      )}
+                      {!comboLoading &&
+                        comboResults.map((combo) => (
+                          <tr
+                            key={combo.letters}
+                            className="cursor-pointer transition-colors"
+                            onClick={() => handleSelectCombo(combo)}
+                            style={{
+                              borderBottom: '1px solid var(--color-border)',
+                              backgroundColor:
+                                selectedCombo === combo.letters
+                                  ? 'color-mix(in srgb, var(--color-accent) 12%, transparent)'
+                                  : combo.letters === savedLetters
+                                    ? 'color-mix(in srgb, var(--color-accent) 5%, transparent)'
+                                    : 'transparent',
+                            }}
+                          >
+                            <td
+                              className="py-2.5 px-3 font-mono font-semibold uppercase text-xs"
+                              style={{ color: 'var(--color-text-primary)' }}
+                            >
+                              {combo.letters}
+                              {combo.in_rotation && (
+                                <span
+                                  className="ml-1.5 inline-block text-[10px] font-bold px-1 rounded bg-indigo-500/10"
+                                  style={{ color: 'var(--color-accent)' }}
+                                  title="On jo kiertoryhmässä"
+                                >
+                                  *
+                                </span>
+                              )}
+                            </td>
+                            <td
+                              className="py-2.5 px-3 text-right"
+                              style={{ color: 'var(--color-text-secondary)' }}
+                            >
+                              {combo.total_pangrams}
+                            </td>
+                            <td
+                              className="py-2.5 px-3 text-right"
+                              style={{ color: 'var(--color-text-secondary)' }}
+                            >
+                              {combo.max_word_count}
+                            </td>
+                            <td
+                              className="py-2.5 px-3 text-right"
+                              style={{ color: 'var(--color-text-secondary)' }}
+                            >
+                              {combo.min_word_count}
+                            </td>
+                            <td
+                              className="py-2.5 px-3 text-right"
+                              style={{ color: 'var(--color-text-secondary)' }}
+                            >
+                              {combo.max_max_score}
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
 
-        {/* Word list */}
-        <div className="p-2">
-          <WordList
-            words={words}
-            letters={activeLetters}
-            loading={wordsLoading}
-            onBlock={handleBlock}
-          />
+        {/* FULL WIDTH BOTTOM COLUMN: Word List Card */}
+        <div className="lg:col-span-12">
+          {/* CARD 4: Sanalista (Word List) */}
+          <section
+            className="rounded-2xl border shadow-sm overflow-hidden"
+            style={{
+              backgroundColor: 'var(--color-bg-secondary)',
+              borderColor: 'var(--color-border)',
+            }}
+          >
+            {/* Header */}
+            <div
+              className="flex items-center gap-3 p-5 border-b"
+              style={{ borderColor: 'var(--color-border)' }}
+            >
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500/10 text-orange-400">
+                <Search size={18} />
+              </span>
+              <div>
+                <h2
+                  className="text-md font-bold"
+                  style={{ color: 'var(--color-text-primary)' }}
+                >
+                  Sanalista
+                </h2>
+                <p
+                  className="text-xs"
+                  style={{ color: 'var(--color-text-tertiary)' }}
+                >
+                  Pelin kaikki sallitut sanat. Vie hiiri sanan päälle ja paina
+                  roskakoria estääksesi sen pysyvästi.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-5">
+              <WordList
+                words={words}
+                letters={activeLetters}
+                loading={wordsLoading}
+                onBlock={handleBlock}
+              />
+            </div>
+          </section>
         </div>
-      </section>
+      </div>
     </div>
   );
 }
