@@ -19,3 +19,6 @@ package-lock.json
 .turbo/
 *.tsbuildinfo
 tmp/
+.agent
+.agents/skills
+
