@@ -27,6 +27,7 @@ import {
   Grid,
   Search,
   SlidersHorizontal,
+  RefreshCw,
 } from 'lucide-react';
 import { useAdminStore } from '../../store/useAdminStore';
 import type {
@@ -107,6 +108,7 @@ export function PuzzleEditor() {
   const saveSlot = useAdminStore((s) => s.saveSlot);
   const swapSlots = useAdminStore((s) => s.swapSlots);
   const deleteSlot = useAdminStore((s) => s.deleteSlot);
+  const reactivateSlot = useAdminStore((s) => s.reactivateSlot);
   const createPuzzle = useAdminStore((s) => s.createPuzzle);
   const blockWord = useAdminStore((s) => s.blockWord);
   const previewCombo = useAdminStore((s) => s.previewCombo);
@@ -342,6 +344,16 @@ export function PuzzleEditor() {
       deleteSlot();
     }
   }, [currentSlot, deleteSlot]);
+
+  const handleReactivate = useCallback(() => {
+    if (
+      window.confirm(
+        `Palautetaanko peli #${currentSlot + 1} takaisin kiertoon?`,
+      )
+    ) {
+      reactivateSlot();
+    }
+  }, [currentSlot, reactivateSlot]);
 
   const handleRestore = useCallback(() => {
     setSelectedCombo(null);
@@ -830,20 +842,33 @@ export function PuzzleEditor() {
                       )}
 
                       <div className="flex items-center gap-2 w-full">
-                        <button
-                          type="button"
-                          onClick={handleDelete}
-                          disabled={saving || totalPuzzles <= 0 || !isActive}
-                          className="flex-1 inline-flex h-9 items-center justify-center gap-1.5 rounded-lg text-xs font-semibold hover:bg-[color-mix(in srgb,var(--color-error)_12%,var(--color-bg-primary))] transition-all shadow-sm cursor-pointer disabled:opacity-50"
-                          style={{
-                            ...dangerButtonStyle,
-                          }}
-                        >
-                          <Trash2 size={13} />
-                          {isActive
-                            ? `Poista peli #${currentSlot + 1}`
-                            : 'Poistettu kierrosta'}
-                        </button>
+                        {isActive ? (
+                          <button
+                            type="button"
+                            onClick={handleDelete}
+                            disabled={saving || totalPuzzles <= 0}
+                            className="flex-1 inline-flex h-9 items-center justify-center gap-1.5 rounded-lg text-xs font-semibold hover:bg-[color-mix(in srgb,var(--color-error)_12%,var(--color-bg-primary))] transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                            style={{
+                              ...dangerButtonStyle,
+                            }}
+                          >
+                            <Trash2 size={13} />
+                            Poista peli #{currentSlot + 1}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={handleReactivate}
+                            disabled={saving}
+                            className="flex-1 inline-flex h-9 items-center justify-center gap-1.5 rounded-lg text-xs font-semibold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                            style={{
+                              ...primaryButtonStyle,
+                            }}
+                          >
+                            <RefreshCw size={13} />
+                            Palauta kiertoon
+                          </button>
+                        )}
 
                         <button
                           type="button"

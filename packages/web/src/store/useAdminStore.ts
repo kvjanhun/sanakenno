@@ -100,6 +100,7 @@ interface AdminState {
     force?: boolean,
   ) => Promise<'ok' | 'needs_force' | 'error'>;
   deleteSlot: (force?: boolean) => Promise<void>;
+  reactivateSlot: () => Promise<void>;
   createPuzzle: (
     letters: string[],
     center: string,
@@ -438,6 +439,41 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       if (newTotal > 0) {
         get().loadSlot(Math.max(0, newSlot));
       }
+    } catch {
+      set({ saving: false, statusMessage: 'Yhteysvirhe', statusType: 'error' });
+    }
+  },
+
+  reactivateSlot: async () => {
+    const { csrfToken, currentSlot, activeLetters, activeCenter } = get();
+    set({ saving: true });
+    try {
+      const letters = activeLetters.split('');
+      const res = await adminFetch('/api/admin/puzzle', csrfToken, {
+        method: 'POST',
+        body: JSON.stringify({
+          slot: currentSlot,
+          letters,
+          center: activeCenter,
+          force: true,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        set({
+          saving: false,
+          statusMessage: data.error || 'Palautus epäonnistui',
+          statusType: 'error',
+        });
+        return;
+      }
+      set({
+        saving: false,
+        isActive: true,
+        statusMessage: 'Peli palautettu kiertoon',
+        statusType: 'success',
+      });
+      get().loadSlot(currentSlot);
     } catch {
       set({ saving: false, statusMessage: 'Yhteysvirhe', statusType: 'error' });
     }
