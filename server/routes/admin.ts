@@ -1067,7 +1067,10 @@ function groupByDay(
   for (const rank of RANKS) totals[rank] = 0;
 
   if (mode === 'users') {
-    const sessionBestDaily = new Map<string, { date: string; rankIdx: number }>();
+    const sessionBestDaily = new Map<
+      string,
+      { date: string; rankIdx: number }
+    >();
     const sessionBestOverall = new Map<string, number>(); // session_id -> max rankIdx in the period
 
     for (const row of rows) {
