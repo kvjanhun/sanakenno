@@ -169,11 +169,12 @@ function getDeviceId(): string {
 }
 
 /**
- * Build a deterministic session ID from deviceId.
+ * Build a deterministic session ID from playerKey (if logged in) or deviceId (fallback).
  * Uses a simple hash to keep it short and non-reversible.
  */
 async function buildSessionId(): Promise<string> {
-  const input = getDeviceId();
+  const playerKey = useAuthStore.getState().playerKey;
+  const input = playerKey || getDeviceId();
   const fullHash = await crypto.hashSHA256(input);
   return fullHash.slice(0, 32);
 }
@@ -442,21 +443,23 @@ export const useGameStore = create<GameState>()((set, get) => ({
 
       // Fire-and-forget achievement POST
       const elapsed = Date.now() - state.startedAt - state.totalPausedMs;
-      fetch(`${API_BASE}/api/achievement`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          puzzle_number: puzzle.puzzle_number,
-          rank: newRank,
-          score: newScore,
-          max_score: puzzle.max_score,
-          words_found: newFoundWords.size,
-          elapsed_ms: elapsed,
-          session_id: state.sessionId || undefined,
-        }),
-      }).catch((err) => {
-        // eslint-disable-next-line no-console
-        console.warn('Achievement POST failed:', err);
+      buildSessionId().then((dynSessionId) => {
+        fetch(`${API_BASE}/api/achievement`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            puzzle_number: puzzle.puzzle_number,
+            rank: newRank,
+            score: newScore,
+            max_score: puzzle.max_score,
+            words_found: newFoundWords.size,
+            elapsed_ms: elapsed,
+            session_id: dynSessionId || undefined,
+          }),
+        }).catch((err) => {
+          // eslint-disable-next-line no-console
+          console.warn('Achievement POST failed:', err);
+        });
       });
     }
 
