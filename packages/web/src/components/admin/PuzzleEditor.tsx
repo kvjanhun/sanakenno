@@ -507,10 +507,10 @@ export function PuzzleEditor() {
   };
   return (
     <div className="space-y-6 max-w-7xl mx-auto px-1 py-4 sm:px-4">
-      {/* Main Two-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      {/* Main Grid Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start lg:items-stretch">
         {/* LEFT COLUMN: Active Puzzle Controls & AI Suggestions */}
-        <div className="lg:col-span-7 space-y-6">
+        <div className="lg:col-span-7 space-y-6 flex flex-col justify-start">
           {/* CARD 1: Pelin hallinta (Active Puzzle / Preview) */}
           <section
             className="rounded-2xl border shadow-sm overflow-hidden"
@@ -968,11 +968,11 @@ export function PuzzleEditor() {
               </button>
             </div>
 
-            {/* Body */}
-            <div className="p-5">
+            {/* Body with reserved height to match suggestion UI */}
+            <div className="p-5 min-h-[340px] flex flex-col justify-between">
               {suggestionError && (
                 <div
-                  className="text-sm p-3 rounded-lg border border-red-500/10 bg-red-500/5"
+                  className="text-sm p-3 rounded-lg border border-red-500/10 bg-red-500/5 mb-4"
                   style={{ color: 'var(--color-error)' }}
                 >
                   {suggestionError}
@@ -980,7 +980,7 @@ export function PuzzleEditor() {
               )}
 
               {suggestion ? (
-                <div className="space-y-5">
+                <div className="space-y-5 flex-1 flex flex-col justify-between">
                   {/* Visual Letters of the Suggestion */}
                   <div className="flex flex-col gap-2">
                     <span
@@ -1247,7 +1247,7 @@ export function PuzzleEditor() {
                 </div>
               ) : (
                 <div
-                  className="text-center py-6 border border-dashed rounded-xl"
+                  className="text-center py-6 border border-dashed rounded-xl flex-1 flex items-center justify-center p-6"
                   style={{ borderColor: 'var(--color-border)' }}
                 >
                   <p
@@ -1263,8 +1263,54 @@ export function PuzzleEditor() {
           </section>
         </div>
 
-        {/* RIGHT COLUMN: Combinations Browser Search */}
-        <div className="lg:col-span-5 space-y-6">
+        {/* RIGHT COLUMN: Word List Card (replaces Search on desktop) */}
+        <div className="lg:col-span-5 flex flex-col lg:h-full">
+          {/* CARD 4: Sanalista (Word List) */}
+          <section
+            className="rounded-2xl border shadow-sm overflow-hidden flex flex-col flex-1 lg:h-full lg:overflow-hidden lg:min-h-0"
+            style={{
+              backgroundColor: 'var(--color-bg-secondary)',
+              borderColor: 'var(--color-border)',
+            }}
+          >
+            {/* Header */}
+            <div
+              className="flex items-center gap-3 p-5 border-b shrink-0"
+              style={{ borderColor: 'var(--color-border)' }}
+            >
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500/10 text-orange-400">
+                <Search size={18} />
+              </span>
+              <div>
+                <h2
+                  className="text-md font-bold"
+                  style={{ color: 'var(--color-text-primary)' }}
+                >
+                  Sanalista
+                </h2>
+                <p
+                  className="text-xs"
+                  style={{ color: 'var(--color-text-tertiary)' }}
+                >
+                  Pelin kaikki sallitut sanat. Vie hiiri sanan päälle ja paina
+                  roskakoria estääksesi sen pysyvästi.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-5 flex-1 overflow-y-auto min-h-0 lg:max-h-full">
+              <WordList
+                words={words}
+                letters={activeLetters}
+                loading={wordsLoading}
+                onBlock={handleBlock}
+              />
+            </div>
+          </section>
+        </div>
+
+        {/* BOTTOM COLUMN: Combinations Browser Search (takes full width) */}
+        <div className="lg:col-span-12">
           {/* CARD 3: Yhdistelmähaku (Combinations Search) */}
           <section
             className="rounded-2xl border shadow-sm overflow-hidden"
@@ -1637,52 +1683,6 @@ export function PuzzleEditor() {
                   </table>
                 </div>
               </div>
-            </div>
-          </section>
-        </div>
-
-        {/* FULL WIDTH BOTTOM COLUMN: Word List Card */}
-        <div className="lg:col-span-12">
-          {/* CARD 4: Sanalista (Word List) */}
-          <section
-            className="rounded-2xl border shadow-sm overflow-hidden"
-            style={{
-              backgroundColor: 'var(--color-bg-secondary)',
-              borderColor: 'var(--color-border)',
-            }}
-          >
-            {/* Header */}
-            <div
-              className="flex items-center gap-3 p-5 border-b"
-              style={{ borderColor: 'var(--color-border)' }}
-            >
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500/10 text-orange-400">
-                <Search size={18} />
-              </span>
-              <div>
-                <h2
-                  className="text-md font-bold"
-                  style={{ color: 'var(--color-text-primary)' }}
-                >
-                  Sanalista
-                </h2>
-                <p
-                  className="text-xs"
-                  style={{ color: 'var(--color-text-tertiary)' }}
-                >
-                  Pelin kaikki sallitut sanat. Vie hiiri sanan päälle ja paina
-                  roskakoria estääksesi sen pysyvästi.
-                </p>
-              </div>
-            </div>
-
-            <div className="p-5">
-              <WordList
-                words={words}
-                letters={activeLetters}
-                loading={wordsLoading}
-                onBlock={handleBlock}
-              />
             </div>
           </section>
         </div>
