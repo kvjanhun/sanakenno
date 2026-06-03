@@ -10,18 +10,32 @@
  */
 
 import { useCallback } from 'react';
+import type { ThemePreference } from '@sanakenno/shared';
 import {
   useThemePreferenceStore,
   resolveScheme,
 } from '../store/useThemePreferenceStore';
 import { SunIcon, MoonIcon } from './icons';
 
+export interface ThemeToggleProps {
+  preference?: ThemePreference;
+  setPreference?: (pref: ThemePreference) => void;
+}
+
 /**
  * Render a small icon button that toggles dark/light mode.
  */
-export function ThemeToggle(): React.JSX.Element {
-  const preference = useThemePreferenceStore((s) => s.preference);
-  const setPreference = useThemePreferenceStore((s) => s.setPreference);
+export function ThemeToggle({
+  preference: propPreference,
+  setPreference: propSetPreference,
+}: ThemeToggleProps = {}): React.JSX.Element {
+  const storePreference = useThemePreferenceStore((s) => s.preference);
+  const storeSetPreference = useThemePreferenceStore((s) => s.setPreference);
+
+  const preference =
+    propPreference !== undefined ? propPreference : storePreference;
+  const setPreference =
+    propSetPreference !== undefined ? propSetPreference : storeSetPreference;
   const resolved = resolveScheme(preference);
 
   const toggle = useCallback(() => {

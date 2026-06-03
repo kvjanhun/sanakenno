@@ -19,6 +19,9 @@ import {
   X,
 } from 'lucide-react';
 import { useAdminStore } from '../../store/useAdminStore';
+import { useAdminThemeStore } from '../../store/useAdminThemeStore';
+import { ThemeSelector } from '../ThemeSelector';
+import { ThemeToggle } from '../ThemeToggle';
 import { LoginPage } from './LoginPage';
 import { PuzzleEditor } from './PuzzleEditor';
 import { BlockedWords } from './BlockedWords';
@@ -85,8 +88,42 @@ export function AdminLayout() {
   const statusType = useAdminStore((s) => s.statusType);
   const setStatusMessage = useAdminStore((s) => s.setStatusMessage);
 
+  const adminThemeId = useAdminThemeStore((s) => s.themeId);
+  const adminPreference = useAdminThemeStore((s) => s.preference);
+  const setAdminThemeId = useAdminThemeStore((s) => s.setThemeId);
+  const setAdminPreference = useAdminThemeStore((s) => s.setPreference);
+
   const [checking, setChecking] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('editor');
+
+  // Manage body/html classes/attributes for the admin theme while mounted.
+  useEffect(() => {
+    // Read previous values to restore on unmount.
+    const oldPalette = document.documentElement.getAttribute('data-palette');
+    const oldTheme = document.documentElement.getAttribute('data-theme');
+
+    // Apply admin values
+    document.documentElement.setAttribute('data-palette', adminThemeId);
+    if (adminPreference === 'system') {
+      document.documentElement.removeAttribute('data-theme');
+    } else {
+      document.documentElement.setAttribute('data-theme', adminPreference);
+    }
+
+    return () => {
+      // Restore previous values
+      if (oldPalette) {
+        document.documentElement.setAttribute('data-palette', oldPalette);
+      } else {
+        document.documentElement.removeAttribute('data-palette');
+      }
+      if (oldTheme) {
+        document.documentElement.setAttribute('data-theme', oldTheme);
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+      }
+    };
+  }, [adminThemeId, adminPreference]);
 
   // Clear status message after 3.5 seconds
   useEffect(() => {
@@ -194,6 +231,15 @@ export function AdminLayout() {
             </div>
 
             <div className="flex items-center gap-2 sm:justify-end">
+              <ThemeSelector
+                themeId={adminThemeId}
+                setThemeId={setAdminThemeId}
+                preference={adminPreference}
+              />
+              <ThemeToggle
+                preference={adminPreference}
+                setPreference={setAdminPreference}
+              />
               <span
                 className="truncate text-sm"
                 style={{ color: 'var(--color-text-secondary)' }}

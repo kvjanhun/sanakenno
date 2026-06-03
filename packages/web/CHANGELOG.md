@@ -1,5 +1,15 @@
 # @sanakenno/web
 
+## 1.12.0
+
+### Minor Changes
+
+- Add separate color palette and dark theme settings to the admin panel, saving them independently of the main game, and add theme and darkmode selection controls to the admin header.
+
+### Patch Changes
+
+- @sanakenno/shared@1.12.0
+
 ## 1.11.1
 
 ### Patch Changes

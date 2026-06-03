@@ -11,21 +11,39 @@ import { useEffect, useRef, useState } from 'react';
 import { Check, Palette } from 'lucide-react';
 import { THEME_IDS } from '@sanakenno/shared';
 import { usePaletteStore } from '../store/usePaletteStore';
+import type { ThemeId, ThemePreference } from '@sanakenno/shared';
 import {
   resolveScheme,
   useThemePreferenceStore,
 } from '../store/useThemePreferenceStore';
 import { PALETTE_LABELS, paletteAccent } from '../utils/palette';
 
+export interface ThemeSelectorProps {
+  themeId?: ThemeId;
+  setThemeId?: (id: ThemeId) => void;
+  preference?: ThemePreference;
+}
+
 /**
  * Render the color-palette selector button and popover.
  */
-export function ThemeSelector(): React.JSX.Element {
+export function ThemeSelector({
+  themeId: propThemeId,
+  setThemeId: propSetThemeId,
+  preference: propPreference,
+}: ThemeSelectorProps = {}): React.JSX.Element {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
-  const themeId = usePaletteStore((s) => s.themeId);
-  const setThemeId = usePaletteStore((s) => s.setThemeId);
-  const preference = useThemePreferenceStore((s) => s.preference);
+
+  const storeThemeId = usePaletteStore((s) => s.themeId);
+  const storeSetThemeId = usePaletteStore((s) => s.setThemeId);
+  const storePreference = useThemePreferenceStore((s) => s.preference);
+
+  const themeId = propThemeId !== undefined ? propThemeId : storeThemeId;
+  const setThemeId =
+    propSetThemeId !== undefined ? propSetThemeId : storeSetThemeId;
+  const preference =
+    propPreference !== undefined ? propPreference : storePreference;
   const scheme = resolveScheme(preference);
 
   useEffect(() => {
