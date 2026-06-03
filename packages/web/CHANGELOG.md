@@ -1,5 +1,12 @@
 # @sanakenno/web
 
+## 1.11.1
+
+### Patch Changes
+
+- Deduplicate admin statistics period totals by player device ID and stabilize client session ID generation.
+  - @sanakenno/shared@1.11.1
+
 ## 1.11.0
 
 ### Minor Changes

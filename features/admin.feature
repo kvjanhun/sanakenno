@@ -349,6 +349,15 @@ Feature: Admin tool
     And today's player stats should count "Sanavalmis" as 1
     And today's player stats should count "Onnistuja" as 1
 
+  Scenario: Player achievement stats count each stable user once across the entire period in overall totals
+    Given player "player-x" reached rank "Hyvä alku" 2 days ago
+    And player "player-x" reached rank "Sanavalmis" today
+    When the admin requests player achievement stats for the last 7 days
+    Then today's player stats total should be 1
+    And today's player stats should count "Sanavalmis" as 1
+    And the overall totals should count "Sanavalmis" as 1
+    And the overall totals should count "Hyvä alku" as 0
+
   Scenario: Achievement stats grouped by Helsinki timezone
     Given an achievement was recorded 2 days ago at 23:30 UTC
     Then it should appear under yesterday in Helsinki timezone stats

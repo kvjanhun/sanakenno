@@ -169,11 +169,11 @@ function getDeviceId(): string {
 }
 
 /**
- * Build a deterministic session ID from deviceId + puzzle number.
+ * Build a deterministic session ID from deviceId.
  * Uses a simple hash to keep it short and non-reversible.
  */
-async function buildSessionId(puzzleNumber: number): Promise<string> {
-  const input = `${getDeviceId()}:${puzzleNumber}`;
+async function buildSessionId(): Promise<string> {
+  const input = getDeviceId();
   const fullHash = await crypto.hashSHA256(input);
   return fullHash.slice(0, 32);
 }
@@ -280,7 +280,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
       const data = (await res.json()) as Puzzle;
 
       const outerLetters = data.letters.filter((l) => l !== data.center);
-      const sessionId = await buildSessionId(data.puzzle_number);
+      const sessionId = await buildSessionId();
       set({
         puzzle: data,
         outerLetters,

@@ -1067,7 +1067,9 @@ function groupByDay(
   for (const rank of RANKS) totals[rank] = 0;
 
   if (mode === 'users') {
-    const sessionBest = new Map<string, { date: string; rankIdx: number }>();
+    const sessionBestDaily = new Map<string, { date: string; rankIdx: number }>();
+    const sessionBestOverall = new Map<string, number>(); // session_id -> max rankIdx in the period
+
     for (const row of rows) {
       if (!row.session_id) continue;
       const utcDate = new Date(row.achieved_at + 'Z');
@@ -1076,19 +1078,32 @@ function groupByDay(
       });
       const key = `${dateStr}:${row.session_id}`;
       const idx = RANK_INDEX.get(row.rank) ?? 0;
-      const existing = sessionBest.get(key);
-      if (!existing || idx > existing.rankIdx) {
-        sessionBest.set(key, { date: dateStr, rankIdx: idx });
+
+      // Track daily best rank for the player (to count active players per day)
+      const existingDaily = sessionBestDaily.get(key);
+      if (!existingDaily || idx > existingDaily.rankIdx) {
+        sessionBestDaily.set(key, { date: dateStr, rankIdx: idx });
+      }
+
+      // Track overall best rank for the player across the entire period
+      const existingOverall = sessionBestOverall.get(row.session_id);
+      if (existingOverall === undefined || idx > existingOverall) {
+        sessionBestOverall.set(row.session_id, idx);
       }
     }
 
-    // Second pass: count best ranks per day
-    for (const { date, rankIdx } of sessionBest.values()) {
+    // Populate dailyMap with daily best ranks
+    for (const { date, rankIdx } of sessionBestDaily.values()) {
       if (!dailyMap.has(date)) {
         dailyMap.set(date, Object.fromEntries(RANKS.map((r) => [r, 0])));
       }
       const rankName = RANKS[rankIdx];
       dailyMap.get(date)![rankName]++;
+    }
+
+    // Populate totals with overall best ranks for each unique user over the period
+    for (const rankIdx of sessionBestOverall.values()) {
+      const rankName = RANKS[rankIdx];
       totals[rankName]++;
     }
   } else {

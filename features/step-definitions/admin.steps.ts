@@ -2113,6 +2113,30 @@ Then('a totals summary should be included', function (this: AdminWorld) {
   assert.ok(this.responseJson.totals, 'Missing totals');
 });
 
+Then(
+  'the overall totals should count {string} as {int}',
+  function (this: AdminWorld, rank: string, expectedCount: number) {
+    const totals = this.responseJson.totals as Record<string, number>;
+    assert.equal(totals[rank] || 0, expectedCount);
+  },
+);
+
+Given(
+  'player {string} reached rank {string} {int} days ago',
+  function (this: AdminWorld, sessionId: string, rank: string, offset: number) {
+    const achievedAt = `${helsinkiDateByOffset(offset)} 10:00:00`;
+    insertAchievement(rank, achievedAt, sessionId);
+  },
+);
+
+Given(
+  'player {string} reached rank {string} today',
+  function (this: AdminWorld, sessionId: string, rank: string) {
+    const achievedAt = `${helsinkiDateByOffset(0)} 10:00:00`;
+    insertAchievement(rank, achievedAt, sessionId);
+  },
+);
+
 function insertAchievement(
   rank: string,
   achievedAt: string,
