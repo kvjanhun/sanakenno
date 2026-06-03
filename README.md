@@ -31,6 +31,13 @@ pnpm run test:e2e    # Playwright E2E tests (dev server required)
 pnpm run lint        # ESLint + Prettier check
 ```
 
+## Development Rules
+
+Shared project and agent instructions live in [AGENTS.md](AGENTS.md). Scoped
+implementation rules live near the relevant code in
+`packages/web/src/CLAUDE.md`, `packages/mobile/CLAUDE.md`, and
+`server/CLAUDE.md`.
+
 ### Pangram Review Pipeline
 
 Admin suggestions use `server/assets/pangram-quality.json` for curated pangram

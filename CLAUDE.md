@@ -1,108 +1,163 @@
-# Sanakenno — Project Rules
+# Sanakenno - Project Rules
 
-## What this is
-A Finnish word-puzzle game with a web app and a Hono backend (SQLite). Live at **sanakenno.fi**. Native app code remains in the repo, but mobile development and publishing are paused.
-See `packages/web/src/CLAUDE.md` for web rules, `packages/mobile/CLAUDE.md` for mobile rules, `server/CLAUDE.md` for backend rules.
+## What This Is
+
+Sanakenno is a Finnish word-puzzle game with a web app and a Hono backend
+using SQLite. The production site is live at **sanakenno.fi**.
+
+Native app code remains in the repo as a reference surface, but mobile
+development and publishing are paused.
+
+For scoped implementation rules, also read:
+
+- [packages/web/src/CLAUDE.md](packages/web/src/CLAUDE.md) for web frontend rules.
+- [packages/mobile/CLAUDE.md](packages/mobile/CLAUDE.md) for mobile rules.
+- [server/CLAUDE.md](server/CLAUDE.md) for backend rules.
 
 ## Tech Stack
+
 | Layer | Tech |
-|---|---|
-| Web Frontend | React 19, Vite, Zustand, Tailwind 4 |
-| Mobile App | Expo 55, React Native 0.83, Zustand, MMKV (paused reference surface) |
-| Shared Domain | `packages/shared` — pure game logic, types, platform interfaces |
-| Backend | Hono on Node.js (tsx) |
-| Storage | SQLite (better-sqlite3) |
-| Testing | Vitest · Cucumber.js (BDD) · Playwright (E2E) |
-| PWA | vite-plugin-pwa |
-| Monorepo | pnpm workspace + Turborepo |
+| --- | --- |
+| Web frontend | React 19, Vite, Zustand, Tailwind CSS 4 |
+| Mobile app | Expo 55, React Native 0.83, Zustand, MMKV (paused reference surface) |
+| Shared domain | `packages/shared` - pure game logic, types, platform interfaces |
+| Backend | Hono on Node.js via `tsx` |
+| Storage | SQLite with `better-sqlite3` |
+| Testing | Vitest, Cucumber.js BDD, Playwright E2E |
+| PWA | `vite-plugin-pwa` |
+| Monorepo | pnpm workspace and Turborepo |
 
 ## BDD-First Development
-Feature files in `features/` are the source of truth for behaviour.
 
-- **New feature**: write or update the `.feature` file first, get it agreed, then implement.
-- **Modifying existing behaviour**: update the `.feature` file in the same commit as the code change.
-- **Never** ship code whose behaviour contradicts or is absent from the feature files.
-- Step definitions test pure logic (Vitest-compatible); browser behaviour goes in E2E specs under `tests/e2e/`.
+Feature files in `features/` are the source of truth for product behaviour.
+
+- New features: write or update the `.feature` file first, get it agreed, then
+  implement.
+- Behaviour changes: update the matching `.feature` file in the same commit as
+  the code change.
+- Do not ship code whose behaviour contradicts or is absent from the feature
+  files.
+- Step definitions test pure logic in a Vitest-compatible shape. Browser
+  behaviour belongs in E2E specs under `tests/e2e/`.
 
 ## Git Discipline
-- One logical unit of work per commit. Use the imperative mood.
-- All checks must pass before committing to `main`: typecheck → lint → unit → BDD → E2E → build.
-- Never commit broken code to `main`; use a feature branch for incomplete work.
+
+- Keep commits to one logical unit of work.
+- Use Conventional Commit subjects in the imperative mood.
+- Before committing to `main`, the relevant checks must pass in CI order:
+  typecheck, lint, unit, BDD, E2E, build.
+- Never commit broken or intentionally incomplete code to `main`; use a feature
+  branch for incomplete work.
 
 ## Workspace
-pnpm mono-repo with `packages/shared` (pure domain logic, types, platform interfaces).
-Shared code is imported as `@sanakenno/shared`.
+
+This is a pnpm monorepo. Shared game logic lives in `packages/shared` and is
+imported as `@sanakenno/shared`.
+
+Prefer existing package boundaries:
+
+- UI and browser state in `packages/web`.
+- Pure game rules and shared types in `packages/shared`.
+- API routes, auth, persistence, and operational scripts in `server`.
+- Mobile code only when explicitly working on the paused native surface.
 
 ## Versioning
 
-Each deployable target has its **own independent version**. Do not bump one when only the other changes.
+Each deployable target has its own independent version. Do not bump one target
+when only another target changed.
 
 | Package | Version source | Notes |
-|---|---|---|
-| Web + server (root) | `package.json` + `packages/web/package.json` | Synced by `scripts/sync-versions.js` |
+| --- | --- | --- |
+| Web and server | `package.json` and `packages/web/package.json` | Synced by `scripts/sync-versions.js` |
 | Shared | `packages/shared/package.json` | Synced with web automatically |
-| Mobile (iOS) | `packages/mobile/package.json` | Independent — also reflected in `app.json` via `app.config.js` |
+| Mobile iOS | `packages/mobile/package.json` | Independent; also reflected in `app.json` through `app.config.js` |
 
-### How to bump versions
+### Web, Server, and Shared
 
-**Web / server / shared** (changesets workflow):
-```
-pnpm run version:changeset   # create a changeset describing the change
-pnpm run version:bump         # apply changesets → bumps web, syncs root + shared
+Use the changesets workflow:
+
+```sh
+pnpm run version:changeset
+pnpm run version:bump
 ```
 
-**Mobile** (manual — bump directly in `packages/mobile/package.json`):
-```
+### Mobile
+
+Bump `packages/mobile/package.json` directly only when mobile changes are in
+scope:
+
+```sh
 cd packages/mobile
-npm version patch   # 0.2.4 → 0.2.5 (bug fix, small tweak)
-npm version minor   # 0.2.4 → 0.3.0 (new feature)
-npm version major   # 0.2.4 → 1.0.0 (breaking / major milestone)
+npm version patch
+npm version minor
+npm version major
 ```
-This updates both `package.json` and `app.json` is overridden at build time via `app.config.js`.
 
-### Semver guide
-- **patch** (0.0.X): bug fixes, copy changes, minor UI tweaks
-- **minor** (0.X.0): new features, new screens, notable UX changes
-- **major** (X.0.0): breaking changes, major redesigns, first stable release
+The mobile runtime version is reflected into `app.json` by `app.config.js`.
+
+### Semver Guide
+
+- Patch: bug fixes, copy changes, minor UI tweaks.
+- Minor: new features, new screens, notable UX changes.
+- Major: breaking changes, major redesigns, first stable release.
 
 ## CI Pipelines
 
-Two separate GitHub Actions workflows handle web/server and mobile independently.
+Two GitHub Actions workflows handle web/server and mobile independently.
 
 | Workflow | File | Triggers on | What it does |
-|---|---|---|---|
-| Web & Server | `ci-web.yml` | Any push/PR **except** `packages/mobile/**` and `patches/**` | typecheck (excl. mobile), lint, unit, BDD, E2E, build, deploy |
-| Mobile (iOS) | `ci-mobile.yml` | Push/PR touching `packages/mobile/**`, `patches/**`, or `pnpm-lock.yaml` | typecheck (mobile + shared), lint |
+| --- | --- | --- | --- |
+| Web and server | `ci-web.yml` | Any push or PR except `packages/mobile/**` and `patches/**` | typecheck except mobile, lint, unit, BDD, E2E, build, deploy |
+| Mobile iOS | `ci-mobile.yml` | Pushes or PRs touching `packages/mobile/**`, `patches/**`, or `pnpm-lock.yaml` | typecheck mobile and shared, lint |
 
-The typecheck step uses Turborepo to run each package's own `tsc --noEmit` respecting dependency order (`shared` → `web`/`mobile`). The root package (server) is not a turbo workspace package, so it is checked separately via `pnpm run typecheck`.
+Typecheck uses Turborepo for workspace packages in dependency order
+(`shared` before `web` or `mobile`). The root package is the server and is not a
+Turbo workspace package, so it is checked separately.
 
-- `ci-web.yml`: `pnpm run typecheck` (server) + `pnpm turbo run typecheck --filter=!@sanakenno/mobile` (shared, web)
-- `ci-mobile.yml`: `pnpm turbo run typecheck --filter=@sanakenno/mobile` (shared + mobile, via `dependsOn`)
+- `pnpm run typecheck` checks the server/root package.
+- `pnpm turbo run typecheck --filter=!@sanakenno/mobile` checks shared and web.
+- `pnpm turbo run typecheck --filter=@sanakenno/mobile` checks shared and mobile.
 
-When native development resumes and Android becomes active, add a `ci-android.yml` following the same pattern as `ci-mobile.yml`.
+When native development resumes and Android becomes active, add a matching
+Android CI workflow.
 
 ## Commands
+
+```sh
+pnpm install                              # install dependencies
+pnpm run dev                              # start Vite + API; Vite uses :5173 and proxies to :3001
+pnpm run typecheck                        # typecheck server/root package
+pnpm turbo run typecheck                  # typecheck all workspace packages
+pnpm turbo run typecheck --filter=<pkg>   # typecheck one package and its deps
+pnpm run lint                             # ESLint + Prettier check
+pnpm run test:unit                        # Vitest
+pnpm run test:bdd                         # Cucumber.js
+pnpm run test:e2e                         # Playwright E2E; requires dev server
+pnpm run build                            # production build
 ```
-pnpm install                              install dependencies
-pnpm run dev                              start dev server + API (localhost:5173 → proxy :3001)
-pnpm run typecheck                        typecheck server (root) only
-pnpm turbo run typecheck                  typecheck all packages via Turborepo
-pnpm turbo run typecheck --filter=<pkg>   typecheck a specific package (and its deps)
-pnpm run lint                             eslint + prettier check
-pnpm run test:unit                        vitest
-pnpm run test:bdd                         cucumber.js
-pnpm run test:e2e                         playwright E2E tests (requires dev server running)
-pnpm run build                            production build → dist/
-```
+
+Do not start a dev server unless the task requires it. If a server is needed,
+prefer the standard ports already used by the project.
 
 ## Workflow Skills
-Project-specific Claude Code skills live in `.claude/skills/<name>/SKILL.md`. They auto-trigger on matching intent and can also be invoked with `/<name>`.
 
-| Skill | When |
-|---|---|
-| `bdd-feature` | Any behavioural change — writes the `.feature` file first, gets agreement, then step definitions in `features/step-definitions/` |
-| `bump-version` | After implementation — writes the changeset for web/server/shared OR runs `npm version` for mobile; defaults to patch, suggests minor for new behaviour |
-| `pre-push` | Before every push — runs the local CI gauntlet matching the change set (web / mobile / both); halts on first failure; supports `--skip-e2e`, `--docs-only`, `--web`, `--mobile`, `--full` |
-| `verify-locally` | After `pre-push` passes — pings dev servers (`:5173`/`:3001`, doesn't start them) and produces browser + iOS-surface checklists |
-| `commit` | Any standalone commit — Conventional Commits format matching recent history, includes Co-Authored-By trailer, never pushes |
-| `ship-feature` | Full feature pipeline — chains `bdd-feature` → implement → `pre-push` → `verify-locally` → `bump-version` → `commit` |
+Project workflow skills may be agent-local and are not guaranteed to be tracked
+in this repository. When the named skill is available, use it. Otherwise, follow
+the same workflow manually.
+
+| Workflow | When |
+| --- | --- |
+| `bdd-feature` | Behaviour changes: update feature specs first, then implementation and step definitions. |
+| `bump-version` | After implemented and tested changes: create the correct web/server/shared changeset or mobile version bump. |
+| `pre-push` | Before push or PR: run the local CI gauntlet matching the changed surface. |
+| `verify-locally` | After checks pass: inspect the real local web/API surfaces or produce manual mobile verification steps. |
+| `commit` | For standalone commits: create an atomic local Conventional Commit with a co-author trailer; never push. |
+| `ship-feature` | For full feature work: chain BDD, implementation, checks, local verification, version bump, and commit. |
+
+## Documentation Upkeep
+
+- Keep `README.md`, `AGENTS.md`/`CLAUDE.md`, and scoped package guides in sync
+  when stack, CI, commands, or workflow rules change.
+- Use `AGENTS.md` as the canonical cross-agent project guide. It is tracked as
+  the standard entry point for non-Claude agents.
+- Keep scoped implementation rules near the code they govern.
