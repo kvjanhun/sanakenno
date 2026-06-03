@@ -252,7 +252,10 @@ describe('POST /api/achievement', () => {
   beforeEach(() => {
     closeDb();
     setDb(null);
-    getDb({ inMemory: true });
+    const db = getDb({ inMemory: true });
+    db.prepare(
+      'INSERT OR REPLACE INTO puzzles (slot, letters, center, is_active) VALUES (?, ?, ?, 1)',
+    ).run(5, 'a,e,k,l,n,s,t', 'a');
     resetRateLimit();
   });
 
@@ -376,6 +379,31 @@ describe('POST /api/achievement', () => {
       const json = (await res.json()) as ErrorResponse;
       expect(json.error).toContain('Rate limit');
     });
+  });
+
+  it('returns 404 for non-existent puzzle_number', async () => {
+    const res = await postJson('/api/achievement', {
+      ...validPayload,
+      puzzle_number: 999,
+    });
+    expect(res.status).toBe(404);
+    const json = (await res.json()) as ErrorResponse;
+    expect(json.error).toContain('ei löydy tai se ei ole aktiivinen');
+  });
+
+  it('returns 404 for inactive puzzle', async () => {
+    const db = getDb();
+    db.prepare(
+      'INSERT OR REPLACE INTO puzzles (slot, letters, center, is_active) VALUES (?, ?, ?, 0)',
+    ).run(6, 'a,e,k,l,n,s,t', 'a');
+
+    const res = await postJson('/api/achievement', {
+      ...validPayload,
+      puzzle_number: 6,
+    });
+    expect(res.status).toBe(404);
+    const json = (await res.json()) as ErrorResponse;
+    expect(json.error).toContain('ei löydy tai se ei ole aktiivinen');
   });
 });
 

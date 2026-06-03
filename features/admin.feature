@@ -48,8 +48,8 @@ Feature: Admin tool
   Scenario: Delete a puzzle
     Given puzzle slot 5 exists
     When the admin deletes slot 5
-    Then slot 5 should no longer exist
-    And the total puzzle count should decrease by 1
+    Then slot 5 should be inactive
+    And the total puzzle count should be returned
 
   Scenario: Swap two puzzle slots
     Given slot 3 has letters "a,e,k,l,n,s,ö" and slot 7 has letters "a,d,e,h,l,r,s"

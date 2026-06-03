@@ -94,6 +94,7 @@ export function PuzzleEditor() {
   const activeLetters = useAdminStore((s) => s.activeLetters);
   const activeCenter = useAdminStore((s) => s.activeCenter);
   const variations = useAdminStore((s) => s.variations);
+  const isActive = useAdminStore((s) => s.isActive);
   const words = useAdminStore((s) => s.words);
   const wordsLoading = useAdminStore((s) => s.wordsLoading);
   const puzzleLoading = useAdminStore((s) => s.puzzleLoading);
@@ -540,6 +541,11 @@ export function PuzzleEditor() {
                     {selectedCombo
                       ? 'Esikatseltava peli'
                       : `Peli ${currentSlot + 1} / ${totalPuzzles}`}
+                    {!selectedCombo && !isActive && (
+                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-red-500/10 text-red-500">
+                        Poistettu / Ei kierrossa
+                      </span>
+                    )}
                   </h2>
                   <p
                     className="text-xs"
@@ -547,7 +553,9 @@ export function PuzzleEditor() {
                   >
                     {selectedCombo
                       ? 'Yhdistelmähaustatustietojen esikatselu'
-                      : 'Kierrossa oleva peli'}
+                      : isActive
+                        ? 'Kierrossa oleva peli'
+                        : 'Peli on poistettu aktiivisesta kierrosta'}
                   </p>
                 </div>
               </div>
@@ -825,14 +833,16 @@ export function PuzzleEditor() {
                         <button
                           type="button"
                           onClick={handleDelete}
-                          disabled={saving || totalPuzzles <= 0}
+                          disabled={saving || totalPuzzles <= 0 || !isActive}
                           className="flex-1 inline-flex h-9 items-center justify-center gap-1.5 rounded-lg text-xs font-semibold hover:bg-[color-mix(in srgb,var(--color-error)_12%,var(--color-bg-primary))] transition-all shadow-sm cursor-pointer disabled:opacity-50"
                           style={{
                             ...dangerButtonStyle,
                           }}
                         >
                           <Trash2 size={13} />
-                          Poista peli #{currentSlot + 1}
+                          {isActive
+                            ? `Poista peli #${currentSlot + 1}`
+                            : 'Poistettu kierrosta'}
                         </button>
 
                         <button

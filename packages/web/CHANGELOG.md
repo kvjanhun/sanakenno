@@ -1,5 +1,12 @@
 # @sanakenno/web
 
+## 1.12.1
+
+### Patch Changes
+
+- soft delete puzzles, validate achievement endpoint, add subtle PWA hint, and configure Loki/Nginx logs
+  - @sanakenno/shared@1.12.1
+
 ## 1.12.0
 
 ### Minor Changes

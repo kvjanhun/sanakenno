@@ -192,6 +192,21 @@ export function RulesModal({
           </p>
         </div>
 
+        <div>
+          <p
+            className="font-medium mb-1"
+            style={{ color: 'var(--color-text-primary)' }}
+          >
+            Pelaa sovelluksena
+          </p>
+          <p>
+            Voit asentaa Sanakennon sovelluksena kotinäytöllesi selaimesi
+            valikon kautta (&quot;Lisää kotinäytölle&quot; tai &quot;Asenna
+            sovellus&quot;), jolloin se toimii itsenäisesti myös ilman
+            verkkoyhteyttä.
+          </p>
+        </div>
+
         <hr
           style={{
             border: 'none',

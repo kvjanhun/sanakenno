@@ -80,6 +80,7 @@ interface AdminState {
   activeLetters: string;
   activeCenter: string;
   variations: VariationData[];
+  isActive: boolean;
   words: string[];
   wordsLoading: boolean;
   puzzleLoading: boolean;
@@ -154,6 +155,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   activeLetters: '',
   activeCenter: '',
   variations: [],
+  isActive: true,
   words: [],
   wordsLoading: false,
   puzzleLoading: false,
@@ -260,6 +262,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
         activeLetters: letters,
         activeCenter: activeCenter,
         variations: data.variations,
+        isActive: data.is_active ?? true,
         puzzleLoading: false,
         totalPuzzles: get().totalPuzzles,
       });

@@ -497,18 +497,20 @@ When(
 );
 
 Then(
-  'slot {int} should no longer exist',
-  function (this: AdminWorld, _slot: number) {
+  'slot {int} should be inactive',
+  function (this: AdminWorld, slot: number) {
     assert.equal(this.responseJson.status, 'deleted');
+    const db = getDb();
+    const puzzle = db
+      .prepare('SELECT is_active FROM puzzles WHERE slot = ?')
+      .get(slot) as { is_active: number } | undefined;
+    assert.equal(puzzle?.is_active, 0);
   },
 );
 
-Then(
-  'the total puzzle count should decrease by 1',
-  function (this: AdminWorld) {
-    assert.ok(this.responseJson.total_puzzles !== undefined);
-  },
-);
+Then('the total puzzle count should be returned', function (this: AdminWorld) {
+  assert.ok(this.responseJson.total_puzzles !== undefined);
+});
 
 Given(
   'slot {int} has letters {string} and slot {int} has letters {string}',

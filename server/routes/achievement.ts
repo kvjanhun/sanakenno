@@ -142,6 +142,19 @@ achievement.post('/', rateLimitMiddleware, async (c) => {
 
   try {
     const db = getDb();
+
+    // Check if the puzzle exists and is active
+    const puzzle = db
+      .prepare('SELECT is_active FROM puzzles WHERE slot = ?')
+      .get(puzzle_number) as { is_active: number } | undefined;
+
+    if (!puzzle || puzzle.is_active !== 1) {
+      return c.json(
+        { error: 'Valittua peliä ei löydy tai se ei ole aktiivinen' },
+        404,
+      );
+    }
+
     const stmt = db.prepare(`
       INSERT INTO achievements (puzzle_number, rank, score, max_score, words_found, elapsed_ms, session_id)
       VALUES (?, ?, ?, ?, ?, ?, ?)

@@ -343,17 +343,35 @@ export function bumpPuzzleCacheGeneration(): void {
   _cacheGeneration = readPuzzleCacheGeneration();
 }
 
+/**
+ * Get all active puzzle slot numbers (is_active = 1).
+ */
+export function getActiveSlots(): number[] {
+  const db = getDb();
+  const rows = db
+    .prepare('SELECT slot FROM puzzles WHERE is_active = 1 ORDER BY slot')
+    .all() as Array<{ slot: number }>;
+  return rows.map((r) => r.slot);
+}
+
+/**
+ * Get the maximum slot number in the DB + 1 (total slots size).
+ */
+export function totalSlots(): number {
+  const db = getDb();
+  const row = db.prepare('SELECT MAX(slot) AS max_slot FROM puzzles').get() as
+    | MaxSlotRow
+    | undefined;
+  return row && row.max_slot !== null ? row.max_slot + 1 : 0;
+}
+
 // --- Database helpers ---
 
 /**
  * Get the total number of puzzle slots in the DB.
  */
 export function totalPuzzles(): number {
-  const db = getDb();
-  const row = db.prepare('SELECT MAX(slot) AS max_slot FROM puzzles').get() as
-    | MaxSlotRow
-    | undefined;
-  return row && row.max_slot !== null ? row.max_slot + 1 : 0;
+  return totalSlots();
 }
 
 /**
@@ -384,13 +402,14 @@ export function getRotationEpoch(): Date {
 /**
  * Compute the puzzle slot for a given date based on the rotation epoch.
  * Puzzles rotate sequentially: epoch date maps to slot determined by START_INDEX,
- * cycling through all puzzles.
+ * cycling through all active puzzles.
  */
 export function getPuzzleForDate(date: Date): number {
   const epoch = getRotationEpoch();
   const START_INDEX = 1;
-  const total = totalPuzzles();
-  if (total === 0) return 0;
+  const activeSlots = getActiveSlots();
+  const totalActive = activeSlots.length;
+  if (totalActive === 0) return 0;
 
   const dateOnly = new Date(
     date.getFullYear(),
@@ -406,7 +425,9 @@ export function getPuzzleForDate(date: Date): number {
     (dateOnly.getTime() - epochOnly.getTime()) / (1000 * 60 * 60 * 24),
   );
 
-  return (((START_INDEX + daysDiff) % total) + total) % total;
+  const activeIndex =
+    (((START_INDEX + daysDiff) % totalActive) + totalActive) % totalActive;
+  return activeSlots[activeIndex];
 }
 
 /**

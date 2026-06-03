@@ -142,7 +142,9 @@ function persistedSuggestionRejectionKeys(): string[] {
  */
 function syncCombinationRotationFlags(): void {
   const db = getDb();
-  const rows = db.prepare('SELECT letters FROM puzzles').all() as Array<{
+  const rows = db
+    .prepare('SELECT letters FROM puzzles WHERE is_active = 1')
+    .all() as Array<{
     letters: string;
   }>;
   const mark = db.prepare(
@@ -324,11 +326,11 @@ admin.post('/puzzle', async (c) => {
 
   if (isNew) {
     db.prepare(
-      'INSERT INTO puzzles (slot, letters, center) VALUES (?, ?, ?)',
+      'INSERT INTO puzzles (slot, letters, center, is_active) VALUES (?, ?, ?, 1)',
     ).run(slot, lettersStr, center);
   } else {
     db.prepare(
-      "UPDATE puzzles SET letters = ?, center = ?, updated_at = datetime('now') WHERE slot = ?",
+      "UPDATE puzzles SET letters = ?, center = ?, is_active = 1, updated_at = datetime('now') WHERE slot = ?",
     ).run(lettersStr, center, slot);
   }
   syncCombinationRotationFlags();
@@ -375,11 +377,10 @@ admin.delete('/puzzle/:slot', async (c) => {
   const blocked = checkTodayProtection(c, slot, force);
   if (blocked) return blocked;
 
-  // Delete and renumber in a transaction
-  db.transaction(() => {
-    db.prepare('DELETE FROM puzzles WHERE slot = ?').run(slot);
-    db.prepare('UPDATE puzzles SET slot = slot - 1 WHERE slot > ?').run(slot);
-  })();
+  // Soft-delete the puzzle by setting is_active = 0
+  db.prepare(
+    "UPDATE puzzles SET is_active = 0, updated_at = datetime('now') WHERE slot = ?",
+  ).run(slot);
   syncCombinationRotationFlags();
 
   bumpPuzzleCacheGeneration();
@@ -529,8 +530,10 @@ admin.get('/puzzle/variations', (c) => {
 
   const db = getDb();
   const puzzle = db
-    .prepare('SELECT letters, center FROM puzzles WHERE slot = ?')
-    .get(slot) as { letters: string; center: string } | undefined;
+    .prepare('SELECT letters, center, is_active FROM puzzles WHERE slot = ?')
+    .get(slot) as
+    | { letters: string; center: string; is_active: number }
+    | undefined;
 
   if (!puzzle) {
     return c.json({ error: 'Puzzle not found' }, 404);
@@ -543,7 +546,12 @@ admin.get('/puzzle/variations', (c) => {
     is_active: v.center === puzzle.center,
   }));
 
-  return c.json({ slot, letters, variations });
+  return c.json({
+    slot,
+    letters,
+    variations,
+    is_active: puzzle.is_active === 1,
+  });
 });
 
 // --- Preview ---

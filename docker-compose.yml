@@ -22,11 +22,10 @@ services:
       retries: 3
       start_period: 10s
     logging:
-      driver: json-file
+      driver: loki
       options:
-        max-size: '10m'
-        max-file: '3'
-        tag: 'sanakenno-a'
+        loki-url: 'http://127.0.0.1:3100/loki/api/v1/push'
+        loki-external-labels: 'compose_service=sanakenno-a'
 
   sanakenno-b:
     build: .
@@ -51,8 +50,7 @@ services:
       retries: 3
       start_period: 10s
     logging:
-      driver: json-file
+      driver: loki
       options:
-        max-size: '10m'
-        max-file: '3'
-        tag: 'sanakenno-b'
+        loki-url: 'http://127.0.0.1:3100/loki/api/v1/push'
+        loki-external-labels: 'compose_service=sanakenno-b'
