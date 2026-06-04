@@ -91,7 +91,9 @@ app.use('*', async (c, next) => {
     response_time_ms: elapsed,
   };
 
-  console.log(JSON.stringify(logEntry));
+  if (process.env.LOG_LEVEL !== 'silent') {
+    console.log(JSON.stringify(logEntry));
+  }
 });
 
 // --- Health endpoint ---
