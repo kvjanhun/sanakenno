@@ -572,10 +572,11 @@ export function PuzzleEditor() {
                 </div>
               </div>
 
-              {/* Navigation Carousel (Only active in rotation mode, hidden in preview combo) */}
+              {/* Navigation Carousel with integrated selector (Only active in rotation mode, hidden in preview combo) */}
               {!selectedCombo && (
-                <div
-                  className="inline-flex items-center rounded-xl p-1 shadow-sm"
+                <form
+                  onSubmit={handleJump}
+                  className="inline-flex items-center rounded-xl p-1 shadow-sm gap-1.5"
                   style={{
                     backgroundColor: 'var(--color-bg-primary)',
                     border: '1px solid var(--color-border)',
@@ -596,12 +597,30 @@ export function PuzzleEditor() {
                   >
                     <ChevronLeft size={18} strokeWidth={2.4} />
                   </button>
-                  <span
-                    className="px-3 font-mono text-xs font-bold leading-none min-w-[70px] text-center"
-                    style={{ color: 'var(--color-text-secondary)' }}
+                  <div className="flex items-center gap-1 font-mono text-xs font-bold">
+                    <span style={{ color: 'var(--color-text-secondary)' }}>
+                      #
+                    </span>
+                    <input
+                      type="number"
+                      value={jumpTarget}
+                      onChange={(e) => setJumpTarget(e.target.value)}
+                      min={1}
+                      max={Math.max(1, totalPuzzles)}
+                      disabled={puzzleLoading || totalPuzzles <= 0}
+                      aria-label="Siirry pelinumeroon"
+                      className="h-8 w-14 rounded-lg text-center text-xs font-bold font-mono focus:outline-none focus:ring-1 focus:ring-accent"
+                      style={inputStyle}
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={puzzleLoading || totalPuzzles <= 0}
+                    className="h-8 rounded-lg px-2.5 text-xs font-semibold shadow-xs hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+                    style={surfaceButtonStyle}
                   >
-                    {puzzleLoading ? '...' : `#${currentSlot + 1}`}
-                  </span>
+                    Siirry
+                  </button>
                   <button
                     type="button"
                     onClick={handleNext}
@@ -617,7 +636,7 @@ export function PuzzleEditor() {
                   >
                     <ChevronRight size={18} strokeWidth={2.4} />
                   </button>
-                </div>
+                </form>
               )}
 
               {selectedCombo && (
@@ -635,7 +654,7 @@ export function PuzzleEditor() {
               )}
             </div>
 
-            <div className="p-5 space-y-5">
+            <div className="p-5 space-y-4">
               {/* Header: Title and Stable Save Status Area */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 h-auto sm:h-11">
                 <span
@@ -704,7 +723,7 @@ export function PuzzleEditor() {
 
               {/* Quick Actions / Configuration */}
               <div
-                className="pt-4 border-t space-y-4"
+                className="pt-3 border-t space-y-3"
                 style={{ borderColor: 'var(--color-border)' }}
               >
                 {/* If previewing select combo */}
@@ -747,71 +766,36 @@ export function PuzzleEditor() {
 
                 {/* Grid of slot operations */}
                 {!selectedCombo && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Jump & Swap controls */}
-                    <div className="space-y-3">
-                      <form
-                        onSubmit={handleJump}
-                        className="flex items-center gap-2"
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {/* Swap controls */}
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="text-xs font-medium shrink-0 w-16"
+                        style={{ color: 'var(--color-text-secondary)' }}
                       >
-                        <label
-                          htmlFor="admin-puzzle-jump"
-                          className="text-xs font-medium shrink-0 w-16"
-                          style={{ color: 'var(--color-text-secondary)' }}
-                        >
-                          Selaa peliä
-                        </label>
-                        <input
-                          id="admin-puzzle-jump"
-                          type="number"
-                          value={jumpTarget}
-                          onChange={(e) => setJumpTarget(e.target.value)}
-                          min={1}
-                          max={Math.max(1, totalPuzzles)}
-                          disabled={puzzleLoading || totalPuzzles <= 0}
-                          aria-label="Siirry pelinumeroon"
-                          className="h-9 w-20 rounded-lg px-2 text-center text-sm border focus:outline-none focus:ring-1 focus:ring-accent"
-                          style={inputStyle}
-                        />
-                        <button
-                          type="submit"
-                          disabled={puzzleLoading || totalPuzzles <= 0}
-                          className="h-9 rounded-lg px-3 text-xs font-semibold shadow-sm hover:scale-[1.02] transition-all cursor-pointer"
-                          style={surfaceButtonStyle}
-                        >
-                          Siirry
-                        </button>
-                      </form>
-
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="text-xs font-medium shrink-0 w-16"
-                          style={{ color: 'var(--color-text-secondary)' }}
-                        >
-                          Vaihda sij.
-                        </span>
-                        <input
-                          type="number"
-                          value={swapTarget}
-                          onChange={(e) => setSwapTarget(e.target.value)}
-                          placeholder="#"
-                          min={1}
-                          max={totalPuzzles}
-                          className="h-9 w-20 rounded-lg px-2 text-center text-sm border focus:outline-none focus:ring-1 focus:ring-accent"
-                          style={inputStyle}
-                          aria-label="Vaihda pelin sijainti"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => void handleSwap()}
-                          disabled={saving}
-                          className="h-9 rounded-lg px-3 text-xs font-semibold inline-flex items-center gap-1 hover:scale-[1.02] transition-all shadow-sm cursor-pointer disabled:opacity-50"
-                          style={surfaceButtonStyle}
-                        >
-                          <Shuffle size={13} strokeWidth={2.4} />
-                          Vaihda
-                        </button>
-                      </div>
+                        Vaihda sij.
+                      </span>
+                      <input
+                        type="number"
+                        value={swapTarget}
+                        onChange={(e) => setSwapTarget(e.target.value)}
+                        placeholder="#"
+                        min={1}
+                        max={totalPuzzles}
+                        className="h-9 w-20 rounded-lg px-2 text-center text-sm border focus:outline-none focus:ring-1 focus:ring-accent"
+                        style={inputStyle}
+                        aria-label="Vaihda pelin sijainti"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => void handleSwap()}
+                        disabled={saving}
+                        className="h-9 rounded-lg px-3 text-xs font-semibold inline-flex items-center gap-1 hover:scale-[1.02] transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                        style={surfaceButtonStyle}
+                      >
+                        <Shuffle size={13} strokeWidth={2.4} />
+                        Vaihda
+                      </button>
                     </div>
 
                     {/* Dirty State / Create Manual / Delete / Commands */}
