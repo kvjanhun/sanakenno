@@ -1,5 +1,12 @@
 # @sanakenno/web
 
+## 1.12.4
+
+### Patch Changes
+
+- add standard favicon.ico fallback file to public folder to prevent 404s
+  - @sanakenno/shared@1.12.4
+
 ## 1.12.3
 
 ### Patch Changes
