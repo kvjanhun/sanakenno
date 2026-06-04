@@ -534,194 +534,253 @@ export function PuzzleEditor() {
           >
             {/* Header */}
             <div
-              className="flex flex-row items-center justify-between gap-1.5 sm:gap-4 p-4 sm:p-5 border-b"
+              className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between border-b"
               style={{ borderColor: 'var(--color-border)' }}
             >
-              <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                <span className="inline-flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg sm:rounded-xl font-semibold bg-indigo-500/10 text-indigo-400 shrink-0">
-                  {selectedCombo ? (
-                    <SlidersHorizontal
-                      size={16}
-                      className="sm:h-[18px] sm:w-[18px]"
-                    />
-                  ) : (
-                    <Grid
-                      size={18}
-                      className="h-4 w-4 sm:h-[18px] sm:w-[18px]"
-                    />
-                  )}
-                </span>
-                <div className="min-w-0">
-                  <h2
-                    className="text-sm sm:text-md font-bold flex items-center gap-1.5 sm:gap-2 whitespace-nowrap"
-                    style={{ color: 'var(--color-text-primary)' }}
-                  >
-                    {selectedCombo
-                      ? 'Esikatseltava peli'
-                      : `Peli ${currentSlot + 1} / ${totalPuzzles}`}
-                    {!selectedCombo && !isActive && (
-                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-red-500/10 text-red-500">
-                        Poistettu
-                      </span>
+              {/* Row 1: Title and Indicator wrapper for mobile, plain elements for desktop */}
+              <div className="flex items-center justify-between w-full sm:w-auto gap-3">
+                {/* Title */}
+                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                  <span className="inline-flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg sm:rounded-xl font-semibold bg-indigo-500/10 text-indigo-400 shrink-0">
+                    {selectedCombo ? (
+                      <SlidersHorizontal
+                        size={16}
+                        className="sm:h-[18px] sm:w-[18px]"
+                      />
+                    ) : (
+                      <Grid
+                        size={18}
+                        className="h-4 w-4 sm:h-[18px] sm:w-[18px]"
+                      />
                     )}
-                  </h2>
-                  <p
-                    className={`text-[10px] sm:text-xs text-ellipsis overflow-hidden ${
-                      selectedCombo ? 'line-clamp-1' : 'whitespace-nowrap'
-                    }`}
-                    style={{ color: 'var(--color-text-tertiary)' }}
-                  >
-                    {selectedCombo
-                      ? 'Yhdistelmähaustatustietojen esikatselu'
-                      : isActive
-                        ? 'Kierrossa oleva peli'
-                        : 'Peli on poistettu aktiivisesta kierrosta'}
-                  </p>
+                  </span>
+                  <div className="min-w-0">
+                    <h2
+                      className="text-sm sm:text-md font-bold flex items-center gap-1.5 sm:gap-2 whitespace-nowrap"
+                      style={{ color: 'var(--color-text-primary)' }}
+                    >
+                      {selectedCombo
+                        ? 'Esikatseltava peli'
+                        : `Peli ${currentSlot + 1} / ${totalPuzzles}`}
+                      {!selectedCombo && !isActive && (
+                        <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-red-500/10 text-red-500">
+                          Poistettu
+                        </span>
+                      )}
+                    </h2>
+                    <p
+                      className={`text-[10px] sm:text-xs text-ellipsis overflow-hidden ${
+                        selectedCombo ? 'line-clamp-1' : 'whitespace-nowrap'
+                      }`}
+                      style={{ color: 'var(--color-text-tertiary)' }}
+                    >
+                      {selectedCombo
+                        ? 'Yhdistelmähaustatustietojen esikatselu'
+                        : isActive
+                          ? 'Kierrossa oleva peli'
+                          : 'Peli on poistettu aktiivisesta kierrosta'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Unsaved Changes Status Announcement (mobile: next to Title inside the wrapper) */}
+                <div className="sm:hidden">
+                  {(isDirty ||
+                    statusMessage === 'Tallenna' ||
+                    statusMessage === 'Tallennettu' ||
+                    (statusMessage && statusType === 'success')) && (
+                    <div className="flex justify-end">
+                      {isDirty ? (
+                        <div
+                          className="flex items-center gap-1.5 bg-[color-mix(in srgb,var(--color-accent)_10%,var(--color-bg-secondary))] px-2.5 py-1 rounded-lg border animate-fade-in"
+                          style={{ borderColor: 'var(--color-accent)' }}
+                        >
+                          <div
+                            className="flex items-center gap-1 text-[10px] font-bold"
+                            style={{ color: 'var(--color-text-primary)' }}
+                          >
+                            <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
+                          </div>
+                          <div className="flex gap-1">
+                            <button
+                              type="button"
+                              onClick={() => saveSlot()}
+                              disabled={saving}
+                              className="px-2 py-1 rounded-lg text-[10px] font-bold shadow-xs hover:scale-[1.03] active:scale-[0.97] transition-all cursor-pointer whitespace-nowrap"
+                              style={primaryButtonStyle}
+                            >
+                              {saving ? 'Tallennetaan...' : 'Tallenna'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleRestore}
+                              disabled={saving}
+                              className="p-1 rounded-lg border hover:scale-[1.03] active:scale-[0.97] transition-all cursor-pointer"
+                              style={surfaceButtonStyle}
+                              title="Kumoa muutokset"
+                            >
+                              <Undo2 size={12} />
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-lg border border-emerald-500/20 animate-fade-in">
+                          <span className="h-1 w-1 rounded-full bg-emerald-500 shrink-0" />
+                          <span>Tallennettu</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Unsaved Changes Status Announcement */}
-              {(isDirty ||
-                statusMessage === 'Tallenna' ||
-                statusMessage === 'Tallennettu' ||
-                (statusMessage && statusType === 'success')) && (
-                <div className="flex-1 flex justify-center px-1 sm:px-4 min-w-0">
-                  {isDirty ? (
-                    <div
-                      className="flex items-center gap-1.5 sm:gap-3 bg-[color-mix(in srgb,var(--color-accent)_10%,var(--color-bg-secondary))] px-2 py-1 sm:px-3.5 sm:py-1.5 rounded-lg sm:rounded-xl border animate-fade-in min-w-0"
-                      style={{ borderColor: 'var(--color-accent)' }}
-                    >
+              {/* Unsaved Changes Status Announcement (desktop: in the center) */}
+              <div className="hidden sm:flex flex-1 justify-center px-4 min-w-0">
+                {(isDirty ||
+                  statusMessage === 'Tallenna' ||
+                  statusMessage === 'Tallennettu' ||
+                  (statusMessage && statusType === 'success')) && (
+                  <>
+                    {isDirty ? (
                       <div
-                        className="flex items-center gap-1 text-[10px] sm:text-xs font-bold shrink-0"
-                        style={{ color: 'var(--color-text-primary)' }}
+                        className="flex items-center gap-3 bg-[color-mix(in srgb,var(--color-accent)_10%,var(--color-bg-secondary))] px-3.5 py-1.5 rounded-xl border animate-fade-in"
+                        style={{ borderColor: 'var(--color-accent)' }}
                       >
-                        <span className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
-                        <span className="hidden md:inline">Muutoksia</span>
-                      </div>
-                      <div className="flex gap-1 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => saveSlot()}
-                          disabled={saving}
-                          className="px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-bold shadow-xs hover:scale-[1.03] active:scale-[0.97] transition-all cursor-pointer whitespace-nowrap"
-                          style={primaryButtonStyle}
+                        <div
+                          className="flex items-center gap-1.5 text-xs font-bold shrink-0"
+                          style={{ color: 'var(--color-text-primary)' }}
                         >
-                          {saving ? 'Tallennetaan...' : 'Tallenna'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleRestore}
-                          disabled={saving}
-                          className="p-1 sm:p-1.5 rounded-lg border hover:scale-[1.03] active:scale-[0.97] transition-all cursor-pointer"
-                          style={surfaceButtonStyle}
-                          title="Kumoa muutokset"
-                        >
-                          <Undo2
-                            size={12}
-                            className="sm:h-[13px] sm:w-[13px]"
-                          />
-                        </button>
+                          <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+                          <span className="hidden md:inline">Muutoksia</span>
+                        </div>
+                        <div className="flex gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => saveSlot()}
+                            disabled={saving}
+                            className="px-3 py-1.5 rounded-lg text-xs font-bold shadow-xs hover:scale-[1.03] active:scale-[0.97] transition-all cursor-pointer whitespace-nowrap"
+                            style={primaryButtonStyle}
+                          >
+                            {saving ? 'Tallennetaan...' : 'Tallenna'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleRestore}
+                            disabled={saving}
+                            className="p-1.5 rounded-lg border hover:scale-[1.03] active:scale-[0.97] transition-all cursor-pointer"
+                            style={surfaceButtonStyle}
+                            title="Kumoa muutokset"
+                          >
+                            <Undo2 size={13} />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="inline-flex items-center gap-1 text-[10px] sm:text-xs font-bold text-emerald-500 bg-emerald-500/10 px-2 py-1 sm:px-3.5 sm:py-1.5 rounded-lg sm:rounded-xl border border-emerald-500/20 animate-fade-in shrink-0">
-                      <span className="h-1 w-1 sm:h-1.5 sm:w-1.5 rounded-full bg-emerald-500 shrink-0" />
-                      <span className="hidden md:inline">
-                        Kaikki muutokset tallennettu
-                      </span>
-                      <span className="md:hidden">Tallennettu</span>
-                    </div>
-                  )}
-                </div>
-              )}
+                    ) : (
+                      <div className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-500 bg-emerald-500/10 px-3.5 py-1.5 rounded-xl border border-emerald-500/20 animate-fade-in shrink-0">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
+                        <span className="hidden md:inline">
+                          Kaikki muutokset tallennettu
+                        </span>
+                        <span className="md:hidden">Tallennettu</span>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
 
               {/* Navigation Carousel with integrated selector (Only active in rotation mode, hidden in preview combo) */}
               {!selectedCombo && (
-                <form
-                  onSubmit={handleJump}
-                  className="inline-flex items-center rounded-xl p-0.5 sm:p-1 shadow-sm gap-1 shrink-0"
-                  style={{
-                    backgroundColor: 'var(--color-bg-primary)',
-                    border: '1px solid var(--color-border)',
-                  }}
-                >
-                  <button
-                    type="button"
-                    onClick={handlePrev}
-                    disabled={currentSlot <= 0 || puzzleLoading}
-                    title="Edellinen peli"
-                    aria-label="Edellinen peli"
-                    className="inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg hover:bg-[color-mix(in srgb,var(--color-text-primary)_5%,transparent)] transition-all cursor-pointer disabled:opacity-30 disabled:cursor-default shrink-0"
+                <div className="w-full sm:w-auto flex justify-end">
+                  <form
+                    onSubmit={handleJump}
+                    className="inline-flex items-center rounded-xl p-0.5 sm:p-1 shadow-sm gap-1 shrink-0 w-full sm:w-auto justify-between sm:justify-end"
                     style={{
-                      color: 'var(--color-text-primary)',
-                      border: 'none',
-                      background: 'none',
+                      backgroundColor: 'var(--color-bg-primary)',
+                      border: '1px solid var(--color-border)',
                     }}
                   >
-                    <ChevronLeft
-                      size={16}
-                      strokeWidth={2.4}
-                      className="sm:h-[18px] sm:w-[18px]"
-                    />
-                  </button>
-                  <div className="flex items-center gap-0.5 sm:gap-1 font-mono text-[10px] sm:text-xs font-bold shrink-0">
-                    <span style={{ color: 'var(--color-text-secondary)' }}>
-                      #
-                    </span>
-                    <input
-                      type="number"
-                      value={jumpTarget}
-                      onChange={(e) => setJumpTarget(e.target.value)}
-                      min={1}
-                      max={Math.max(1, totalPuzzles)}
+                    <button
+                      type="button"
+                      onClick={handlePrev}
+                      disabled={currentSlot <= 0 || puzzleLoading}
+                      title="Edellinen peli"
+                      aria-label="Edellinen peli"
+                      className="inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg hover:bg-[color-mix(in srgb,var(--color-text-primary)_5%,transparent)] transition-all cursor-pointer disabled:opacity-30 disabled:cursor-default shrink-0"
+                      style={{
+                        color: 'var(--color-text-primary)',
+                        border: 'none',
+                        background: 'none',
+                      }}
+                    >
+                      <ChevronLeft
+                        size={16}
+                        strokeWidth={2.4}
+                        className="sm:h-[18px] sm:w-[18px]"
+                      />
+                    </button>
+                    <div className="flex items-center gap-0.5 sm:gap-1 font-mono text-[10px] sm:text-xs font-bold shrink-0">
+                      <span style={{ color: 'var(--color-text-secondary)' }}>
+                        #
+                      </span>
+                      <input
+                        type="number"
+                        value={jumpTarget}
+                        onChange={(e) => setJumpTarget(e.target.value)}
+                        min={1}
+                        max={Math.max(1, totalPuzzles)}
+                        disabled={puzzleLoading || totalPuzzles <= 0}
+                        aria-label="Siirry pelinumeroon"
+                        className="h-7 w-11 sm:h-8 sm:w-14 rounded-lg text-center text-[10px] sm:text-xs font-bold font-mono focus:outline-none focus:ring-1 focus:ring-accent"
+                        style={inputStyle}
+                      />
+                    </div>
+                    <button
+                      type="submit"
                       disabled={puzzleLoading || totalPuzzles <= 0}
-                      aria-label="Siirry pelinumeroon"
-                      className="h-7 w-11 sm:h-8 sm:w-14 rounded-lg text-center text-[10px] sm:text-xs font-bold font-mono focus:outline-none focus:ring-1 focus:ring-accent"
-                      style={inputStyle}
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={puzzleLoading || totalPuzzles <= 0}
-                    className="h-7 rounded-lg px-2 text-[10px] sm:text-xs font-semibold shadow-xs hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer shrink-0"
-                    style={surfaceButtonStyle}
-                  >
-                    Siirry
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleNext}
-                    disabled={currentSlot >= totalPuzzles - 1 || puzzleLoading}
-                    title="Seuraava peli"
-                    aria-label="Seuraava peli"
-                    className="inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg hover:bg-[color-mix(in srgb,var(--color-text-primary)_5%,transparent)] transition-all cursor-pointer disabled:opacity-30 disabled:cursor-default shrink-0"
-                    style={{
-                      color: 'var(--color-text-primary)',
-                      border: 'none',
-                      background: 'none',
-                    }}
-                  >
-                    <ChevronRight
-                      size={16}
-                      strokeWidth={2.4}
-                      className="sm:h-[18px] sm:w-[18px]"
-                    />
-                  </button>
-                </form>
+                      className="h-7 rounded-lg px-2 text-[10px] sm:text-xs font-semibold shadow-xs hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer shrink-0"
+                      style={surfaceButtonStyle}
+                    >
+                      Siirry
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleNext}
+                      disabled={
+                        currentSlot >= totalPuzzles - 1 || puzzleLoading
+                      }
+                      title="Seuraava peli"
+                      aria-label="Seuraava peli"
+                      className="inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg hover:bg-[color-mix(in srgb,var(--color-text-primary)_5%,transparent)] transition-all cursor-pointer disabled:opacity-30 disabled:cursor-default shrink-0"
+                      style={{
+                        color: 'var(--color-text-primary)',
+                        border: 'none',
+                        background: 'none',
+                      }}
+                    >
+                      <ChevronRight
+                        size={16}
+                        strokeWidth={2.4}
+                        className="sm:h-[18px] sm:w-[18px]"
+                      />
+                    </button>
+                  </form>
+                </div>
               )}
 
               {selectedCombo && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedCombo(null);
-                    setSelectedVariations([]);
-                  }}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-[color-mix(in srgb,var(--color-text-primary)_5%,transparent)] border shadow-sm cursor-pointer transition-all shrink-0"
-                  style={surfaceButtonStyle}
-                >
-                  ← Kiertoon
-                </button>
+                <div className="w-full sm:w-auto flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedCombo(null);
+                      setSelectedVariations([]);
+                    }}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-[color-mix(in srgb,var(--color-text-primary)_5%,transparent)] border shadow-sm cursor-pointer transition-all shrink-0"
+                    style={surfaceButtonStyle}
+                  >
+                    ← Kiertoon
+                  </button>
+                </div>
               )}
             </div>
 
