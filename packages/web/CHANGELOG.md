@@ -1,5 +1,12 @@
 # @sanakenno/web
 
+## 1.12.3
+
+### Patch Changes
+
+- add standard apple-touch-icon fallbacks to public folder to prevent nginx 404s
+  - @sanakenno/shared@1.12.3
+
 ## 1.12.2
 
 ### Patch Changes
