@@ -572,6 +572,55 @@ export function PuzzleEditor() {
                 </div>
               </div>
 
+              {/* Unsaved Changes Status Announcement */}
+              {(isDirty ||
+                statusMessage === 'Tallenna' ||
+                statusMessage === 'Tallennettu' ||
+                (statusMessage && statusType === 'success')) && (
+                <div className="flex-1 flex justify-center px-4">
+                  {isDirty ? (
+                    <div
+                      className="flex items-center gap-3 bg-[color-mix(in srgb,var(--color-accent)_10%,var(--color-bg-secondary))] px-3.5 py-1.5 rounded-xl border animate-fade-in"
+                      style={{ borderColor: 'var(--color-accent)' }}
+                    >
+                      <div
+                        className="flex items-center gap-1.5 text-xs font-bold"
+                        style={{ color: 'var(--color-text-primary)' }}
+                      >
+                        <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+                        <span>Muutoksia tallentamatta</span>
+                      </div>
+                      <div className="flex gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => saveSlot()}
+                          disabled={saving}
+                          className="px-3 py-1.5 rounded-lg text-xs font-bold shadow-xs hover:scale-[1.03] active:scale-[0.97] transition-all cursor-pointer whitespace-nowrap"
+                          style={primaryButtonStyle}
+                        >
+                          {saving ? 'Tallennetaan...' : 'Tallenna'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleRestore}
+                          disabled={saving}
+                          className="p-1.5 rounded-lg border hover:scale-[1.03] active:scale-[0.97] transition-all cursor-pointer"
+                          style={surfaceButtonStyle}
+                          title="Kumoa muutokset"
+                        >
+                          <Undo2 size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-500 bg-emerald-500/10 px-3.5 py-1.5 rounded-xl border border-emerald-500/20 animate-fade-in">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                      <span>Kaikki muutokset tallennettu</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Navigation Carousel with integrated selector (Only active in rotation mode, hidden in preview combo) */}
               {!selectedCombo && (
                 <form
@@ -654,62 +703,7 @@ export function PuzzleEditor() {
               )}
             </div>
 
-            <div className="p-5 space-y-4">
-              {/* Header: Title and Stable Save Status Area */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 h-auto sm:h-11">
-                <span
-                  className="text-xs font-bold uppercase tracking-wider block"
-                  style={{ color: 'var(--color-text-tertiary)' }}
-                >
-                  Pelin kirjaimet ja tilastot
-                </span>
-
-                <div className="shrink-0 flex items-center h-11">
-                  {isDirty ? (
-                    <div
-                      className="flex items-center gap-3 bg-[color-mix(in srgb,var(--color-accent)_10%,var(--color-bg-secondary))] px-3.5 py-1.5 rounded-xl border animate-fade-in"
-                      style={{ borderColor: 'var(--color-accent)' }}
-                    >
-                      <div
-                        className="flex items-center gap-1.5 text-xs font-bold"
-                        style={{ color: 'var(--color-text-primary)' }}
-                      >
-                        <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
-                        <span>Muutoksia tallentamatta</span>
-                      </div>
-                      <div className="flex gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => saveSlot()}
-                          disabled={saving}
-                          className="px-3 py-1.5 rounded-lg text-xs font-bold shadow-xs hover:scale-[1.03] active:scale-[0.97] transition-all cursor-pointer whitespace-nowrap"
-                          style={primaryButtonStyle}
-                        >
-                          {saving ? 'Tallennetaan...' : 'Tallenna'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleRestore}
-                          disabled={saving}
-                          className="p-1.5 rounded-lg border hover:scale-[1.03] active:scale-[0.97] transition-all cursor-pointer"
-                          style={surfaceButtonStyle}
-                          title="Kumoa muutokset"
-                        >
-                          <Undo2 size={13} />
-                        </button>
-                      </div>
-                    </div>
-                  ) : statusMessage === 'Tallenna' ||
-                    statusMessage === 'Tallennettu' ||
-                    (statusMessage && statusType === 'success') ? (
-                    <div className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-500 bg-emerald-500/10 px-3.5 py-1.5 rounded-xl border border-emerald-500/20 animate-fade-in">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                      <span>Kaikki muutokset tallennettu</span>
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-
+            <div className="p-5 space-y-3">
               {/* Variations Grid */}
               {displayVariations.length > 0 && (
                 <div className="space-y-2">
