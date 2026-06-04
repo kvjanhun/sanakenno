@@ -693,7 +693,7 @@ export function PuzzleEditor() {
                 <div className="w-full sm:w-auto flex justify-end">
                   <form
                     onSubmit={handleJump}
-                    className="inline-flex items-center rounded-xl p-0.5 sm:p-1 shadow-sm gap-1 shrink-0 w-full sm:w-auto justify-between sm:justify-end"
+                    className="inline-flex items-center rounded-xl p-0.5 sm:p-1 shadow-sm gap-1 shrink-0"
                     style={{
                       backgroundColor: 'var(--color-bg-primary)',
                       border: '1px solid var(--color-border)',
