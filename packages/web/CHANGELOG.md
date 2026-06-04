@@ -1,5 +1,12 @@
 # @sanakenno/web
 
+## 1.12.5
+
+### Patch Changes
+
+- Improve admin panel layout and letter combinations styling on mobile
+  - @sanakenno/shared@1.12.5
+
 ## 1.12.4
 
 ### Patch Changes
