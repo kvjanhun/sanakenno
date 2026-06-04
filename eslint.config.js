@@ -35,6 +35,8 @@ export default tseslint.config(
   {
     files: [
       'playwright.config.*',
+      'vitest.config.*',
+      'cucumber.js',
       'scripts/**/*',
       'server/**/*',
       'packages/web/src/platform/web.*',
