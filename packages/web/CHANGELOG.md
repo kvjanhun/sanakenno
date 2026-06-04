@@ -1,5 +1,12 @@
 # @sanakenno/web
 
+## 1.12.2
+
+### Patch Changes
+
+- Optimize admin header top area layout on mobile for cleaner vertical spacing and unified styling
+  - @sanakenno/shared@1.12.2
+
 ## 1.12.1
 
 ### Patch Changes

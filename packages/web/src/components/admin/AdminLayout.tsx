@@ -199,12 +199,12 @@ export function AdminLayout() {
           borderBottom: '1px solid var(--color-border)',
         }}
       >
-        <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-2 lg:px-6">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mx-auto flex max-w-7xl flex-col gap-1.5 sm:gap-2 px-4 py-1.5 sm:py-2 lg:px-6">
+          <div className="flex flex-row items-center justify-between gap-2 sm:gap-4">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <span
-                  className="inline-flex h-8 w-8 items-center justify-center rounded"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded shrink-0"
                   style={{
                     backgroundColor: 'var(--color-accent)',
                     color: 'var(--color-on-accent)',
@@ -213,15 +213,27 @@ export function AdminLayout() {
                 >
                   <PanelTop size={17} strokeWidth={2.4} />
                 </span>
-                <div className="min-w-0">
-                  <h1
-                    className="truncate text-base font-semibold leading-tight"
-                    style={{ color: 'var(--color-text-primary)' }}
-                  >
-                    Sanakenno Admin
-                  </h1>
+                <div className="flex flex-col sm:block min-w-0">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <h1
+                      className="truncate text-sm sm:text-base font-semibold leading-tight"
+                      style={{ color: 'var(--color-text-primary)' }}
+                    >
+                      Sanakenno Admin
+                    </h1>
+                    <span
+                      className="inline-flex sm:hidden items-center rounded-full px-1.5 py-0.5 text-[9px] font-semibold shrink-0"
+                      style={{
+                        backgroundColor: 'var(--color-bg-secondary)',
+                        color: 'var(--color-text-secondary)',
+                        border: '1px solid var(--color-border)',
+                      }}
+                    >
+                      {totalPuzzles} peliä
+                    </span>
+                  </div>
                   <p
-                    className="text-xs"
+                    className="hidden sm:block text-xs"
                     style={{ color: 'var(--color-text-tertiary)' }}
                   >
                     {totalPuzzles} peliä kierrossa
@@ -230,7 +242,7 @@ export function AdminLayout() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 sm:justify-end">
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
               <ThemeSelector
                 themeId={adminThemeId}
                 setThemeId={setAdminThemeId}
@@ -241,31 +253,46 @@ export function AdminLayout() {
                 setPreference={setAdminPreference}
               />
               <span
-                className="truncate text-sm"
+                className="hidden sm:inline truncate text-sm"
                 style={{ color: 'var(--color-text-secondary)' }}
               >
                 {username}
               </span>
+
+              {/* Mobile logout button (clean icon-only) */}
               <button
                 type="button"
                 onClick={handleLogout}
                 title="Kirjaudu ulos"
-                className="inline-flex h-9 items-center justify-center gap-2 rounded px-3 text-sm font-medium cursor-pointer"
+                className="sm:hidden bg-transparent border-none cursor-pointer py-2 pl-1 leading-none flex items-center justify-center"
+                style={{
+                  color: 'var(--color-text-primary)',
+                }}
+              >
+                <LogOut size={20} strokeWidth={2.5} aria-hidden="true" />
+              </button>
+
+              {/* Desktop logout button (bordered with text) */}
+              <button
+                type="button"
+                onClick={handleLogout}
+                title="Kirjaudu ulos"
+                className="hidden sm:inline-flex h-9 items-center justify-center gap-2 rounded px-3 text-sm font-medium cursor-pointer border"
                 style={{
                   backgroundColor: 'var(--color-bg-secondary)',
-                  border: '1px solid var(--color-border)',
+                  borderColor: 'var(--color-border)',
                   color: 'var(--color-text-primary)',
                 }}
               >
                 <LogOut size={15} strokeWidth={2.2} aria-hidden="true" />
-                Kirjaudu ulos
+                <span>Kirjaudu ulos</span>
               </button>
             </div>
           </div>
 
           <nav
             aria-label="Admin-osiot"
-            className="flex gap-1 overflow-x-auto rounded p-0.5"
+            className="flex gap-1 overflow-x-auto rounded p-0.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
             style={{
               backgroundColor: 'var(--color-bg-secondary)',
               border: '1px solid var(--color-border)',
@@ -280,7 +307,7 @@ export function AdminLayout() {
                   type="button"
                   onClick={() => setActiveTab(tab.key)}
                   title={tab.description}
-                  className="flex h-8 min-w-[6.5rem] items-center gap-2 rounded px-2 text-left cursor-pointer"
+                  className="flex h-8 min-w-[5.5rem] sm:min-w-[6.5rem] items-center justify-center sm:justify-start gap-1.5 sm:gap-2 rounded px-1.5 sm:px-2 text-center sm:text-left cursor-pointer"
                   style={{
                     backgroundColor: active
                       ? 'var(--color-bg-primary)'
@@ -297,7 +324,7 @@ export function AdminLayout() {
                   }}
                 >
                   <Icon
-                    size={17}
+                    className="w-4 h-4 sm:w-[17px] sm:h-[17px] shrink-0"
                     strokeWidth={2.1}
                     aria-hidden="true"
                     style={{
@@ -307,7 +334,7 @@ export function AdminLayout() {
                     }}
                   />
                   <span className="min-w-0">
-                    <span className="block truncate text-sm font-semibold">
+                    <span className="block truncate text-xs sm:text-sm font-semibold">
                       {tab.label}
                     </span>
                   </span>
