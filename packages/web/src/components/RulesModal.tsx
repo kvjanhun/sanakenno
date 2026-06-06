@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { Check, Sparkles, HelpCircle } from 'lucide-react';
+import { Check, Sparkles, HelpCircle, Smartphone } from 'lucide-react';
 import { msUntilMidnight } from '../hooks/useMidnightRollover';
 import { ModalShell } from './ModalShell';
 
@@ -331,11 +331,38 @@ export function RulesModal({
           >
             Pelaa sovelluksena
           </div>
-          <p className="text-xs m-0 leading-relaxed">
-            Voit asentaa Sanakennon sovelluksena kotinäytöllesi selaimesi
-            valikon kautta (&quot;Lisää kotinäytölle&quot; tai &quot;Asenna
-            sovellus&quot;), jolloin se toimii myös ilman verkkoyhteyttä.
-          </p>
+          <ul className="space-y-1.5 pl-0 m-0 list-none">
+            <li className="flex items-start gap-2 text-xs">
+              <Smartphone
+                size={14}
+                style={{
+                  color: 'var(--color-accent)',
+                  marginTop: '2px',
+                  flexShrink: 0,
+                }}
+              />
+              <span>
+                Voit asentaa Sanakennon sovelluksena kotinäytöllesi selaimesi
+                valikon kautta (&quot;Lisää kotinäytölle&quot; tai &quot;Asenna
+                sovellus&quot;).
+              </span>
+            </li>
+            <li className="flex items-start gap-2 text-xs">
+              <Smartphone
+                size={14}
+                style={{
+                  color: 'var(--color-accent)',
+                  marginTop: '2px',
+                  flexShrink: 0,
+                }}
+              />
+              <span>
+                Jo ladattua päivän peliä ja tilastojasi voi jatkaa myös ilman
+                verkkoyhteyttä. Uuden päivän peli tai synkronointi vaatii
+                internetyhteyden.
+              </span>
+            </li>
+          </ul>
         </div>
 
         <p
