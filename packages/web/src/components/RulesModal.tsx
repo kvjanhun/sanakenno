@@ -150,7 +150,7 @@ export function RulesModal({
         style={{ color: 'var(--color-text-secondary)' }}
       >
         <p>
-          Yritä löytää mahdollisimman monta sanaa seitsemästä annetusta
+          Tavoitteenasi on löytää mahdollisimman monta sanaa seitsemästä annetusta
           kirjaimesta.
         </p>
 
@@ -179,9 +179,9 @@ export function RulesModal({
                 Sanan täytyy sisältää{' '}
                 <span
                   className="font-semibold"
-                  style={{ color: 'var(--color-text-primary)' }}
+                  style={{ color: 'var(--color-accent)' }}
                 >
-                  keskimmäinen kirjain
+                  keskimmäinen kirjain.
                 </span>
               </span>
             </li>
@@ -194,7 +194,9 @@ export function RulesModal({
                   }}
                 />
               </span>
-              <span>Sanan pituus on vähintään 4 kirjainta</span>
+              <span>
+                Sanan pituus on vähintään 4 kirjainta.
+              </span>
             </li>
             <li className="flex items-start gap-2 text-xs">
               <span className="h-4 flex items-center shrink-0">
@@ -206,7 +208,7 @@ export function RulesModal({
                 />
               </span>
               <span>
-                Vain annettuja kirjaimia (samaa kirjainta voi käyttää useasti)
+                Samaa kirjainta voi käyttää useasti.
               </span>
             </li>
             <li className="flex items-start gap-2 text-xs">
@@ -231,7 +233,7 @@ export function RulesModal({
                 >
                   Kotus
                 </a>
-                )
+                ).
               </span>
             </li>
           </ul>
@@ -319,7 +321,7 @@ export function RulesModal({
                   }}
                 />
               </span>
-              <span>Pituudet: jäljellä olevien sanojen pituusjakauma</span>
+              <span>Pituudet: sanojen pituusjakauma</span>
             </li>
             <li className="flex items-start gap-2 text-xs">
               <span className="h-4 flex items-center shrink-0">
@@ -348,7 +350,7 @@ export function RulesModal({
           </div>
           <p className="text-xs m-0 leading-relaxed">
             Sanalista sisältää myös yhdyssanoja. Yhdysviivallisen sanan voi
-            kirjoittaa joko viivalla tai ilman (esim.{' '}
+            kirjoittaa joko viivalla tai ilman. Esimerkiksi {' '}
             <span
               className="font-mono bg-[var(--color-bg-primary)] px-1 py-0.5 rounded border"
               style={{ borderColor: 'var(--color-border)' }}
@@ -362,7 +364,7 @@ export function RulesModal({
             >
               paloovi
             </span>
-            ).
+            ovat molemmat hyväksyttäviä.
           </p>
         </div>
 
@@ -403,8 +405,8 @@ export function RulesModal({
                 />
               </span>
               <span>
-                Jo ladattua päivän peliä ja tilastojasi voi jatkaa myös ilman
-                verkkoyhteyttä. Uuden päivän peli tai synkronointi vaatii
+                Jo ladattua peliä voi pelata ilman internet-yhteyttä.
+                Uuden pelin lataaminen tai edistymisen synkronointi vaatii
                 internetyhteyden.
               </span>
             </li>
