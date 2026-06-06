@@ -1,5 +1,12 @@
 # @sanakenno/web
 
+## 1.14.1
+
+### Patch Changes
+
+- Polish modal styling, layout affordances, theme preference options, PWA card details, and open-source licenses layout.
+  - @sanakenno/shared@1.14.1
+
 ## 1.14.0
 
 ### Minor Changes
