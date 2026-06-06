@@ -38,6 +38,24 @@ async function expectStandardCloseButton(page: Page) {
 }
 
 test.describe('Modal polish', () => {
+  test('header icon buttons use large touch targets', async ({ page }) => {
+    await loadGame(page);
+
+    for (const label of [
+      'Lisää laite',
+      'Arkisto',
+      'Tilastot',
+      'Säännöt',
+      'Ulkoasu',
+    ]) {
+      const button = page.getByRole('button', { name: label });
+      await expect(button).toBeVisible();
+      const box = await button.boundingBox();
+      expect(box?.width).toBeGreaterThanOrEqual(40);
+      expect(box?.height).toBeGreaterThanOrEqual(40);
+    }
+  });
+
   test('standard overlays share the same accent close button', async ({
     page,
   }) => {
@@ -53,10 +71,35 @@ test.describe('Modal polish', () => {
     }
   });
 
+  test('modal focus is trapped and restored to the opener', async ({
+    page,
+  }) => {
+    await loadGame(page);
+
+    const opener = page.getByRole('button', { name: 'Säännöt' });
+    await opener.click();
+    const dialog = page.getByRole('dialog', { name: 'Pelin säännöt' });
+    await expect(dialog).toBeVisible();
+
+    for (let i = 0; i < 8; i++) {
+      await page.keyboard.press('Tab');
+      expect(
+        await dialog.evaluate((el) => el.contains(document.activeElement)),
+      ).toBe(true);
+    }
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).not.toBeVisible();
+    await expect(opener).toBeFocused();
+  });
+
   test('sync modal linked view has no horizontal divider', async ({ page }) => {
     await loadGame(page);
 
     await page.getByRole('button', { name: 'Lisää laite' }).click();
+    await expect(
+      page.getByRole('dialog', { name: 'Tallennus ja synkronointi' }),
+    ).toBeVisible();
     await page.getByRole('button', { name: 'Tallenna' }).click();
     await expect(
       page.getByRole('button', { name: 'Kopioi linkki' }),

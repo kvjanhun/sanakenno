@@ -18,6 +18,7 @@ import {
   useRef,
   type PointerEvent,
 } from 'react';
+import { Check, Delete, Shuffle, type LucideIcon } from 'lucide-react';
 import { usePaletteStore } from '../store/usePaletteStore';
 import {
   resolveScheme,
@@ -55,11 +56,13 @@ function ControlButton({
   variant,
   onPointerDown,
   accentGloss,
+  Icon,
 }: {
   label: string;
   variant: ControlVariant;
   onPointerDown: (e: PointerEvent<HTMLButtonElement>) => void;
   accentGloss: string;
+  Icon: LucideIcon;
 }): React.JSX.Element {
   const isAccent = variant === 'accent';
 
@@ -67,6 +70,7 @@ function ControlButton({
     <button
       type="button"
       onPointerDown={onPointerDown}
+      aria-label={label}
       className="relative min-w-0 flex-1 overflow-hidden rounded-xl px-4 py-2.5 text-sm font-medium cursor-pointer transition-transform duration-100 active:translate-y-px active:scale-[0.985] focus-visible:outline-2 focus-visible:outline-offset-2"
       style={{
         backgroundColor: 'transparent',
@@ -98,7 +102,9 @@ function ControlButton({
           opacity: isAccent ? 0.7 : 1,
         }}
       />
-      <span className="pointer-events-none relative z-10">{label}</span>
+      <span className="pointer-events-none relative z-10 flex items-center justify-center">
+        <Icon size={18} strokeWidth={2.4} aria-hidden="true" />
+      </span>
     </button>
   );
 }
@@ -146,6 +152,7 @@ export function GameControls({
       <ControlButton
         label="Poista"
         variant="neutral"
+        Icon={Delete}
         accentGloss={accentGloss}
         onPointerDown={(e) => {
           prepare(e);
@@ -155,6 +162,7 @@ export function GameControls({
       <ControlButton
         label="Sekoita"
         variant="neutral"
+        Icon={Shuffle}
         accentGloss={accentGloss}
         onPointerDown={(e) => {
           prepare(e);
@@ -164,6 +172,7 @@ export function GameControls({
       <ControlButton
         label="OK"
         variant="accent"
+        Icon={Check}
         accentGloss={accentGloss}
         onPointerDown={(e) => {
           prepare(e);

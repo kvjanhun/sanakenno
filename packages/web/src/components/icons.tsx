@@ -21,6 +21,7 @@ import {
   UserCheck,
   Copy,
   Eye,
+  ArrowLeft,
 } from 'lucide-react';
 
 const HEADER_SIZE = 20;
@@ -153,4 +154,9 @@ export function CopyIcon(): React.JSX.Element {
 /** Eye icon used to flag puzzles whose answers have been revealed. */
 export function EyeIcon(): React.JSX.Element {
   return <Eye size={14} strokeWidth={2} aria-hidden="true" />;
+}
+
+/** Left arrow icon for returning from an archived puzzle to today. */
+export function ArrowLeftIcon(): React.JSX.Element {
+  return <ArrowLeft size={18} strokeWidth={SW} aria-hidden="true" />;
 }

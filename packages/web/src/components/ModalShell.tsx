@@ -4,7 +4,96 @@
  * @module src/components/ModalShell
  */
 
-import { useEffect, type CSSProperties, type ReactNode } from 'react';
+import {
+  useEffect,
+  useRef,
+  type CSSProperties,
+  type ReactNode,
+  type RefObject,
+} from 'react';
+import { X } from 'lucide-react';
+
+const FOCUSABLE_SELECTOR = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',');
+
+function focusableChildren(root: HTMLElement): HTMLElement[] {
+  return Array.from(
+    root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+  ).filter(
+    (el) =>
+      !el.hasAttribute('disabled') &&
+      el.getAttribute('aria-hidden') !== 'true' &&
+      el.offsetParent !== null,
+  );
+}
+
+/**
+ * Trap keyboard focus inside an active dialog and restore focus on close.
+ */
+export function useDialogFocusTrap(
+  dialogRef: RefObject<HTMLElement | null>,
+  onClose: () => void,
+  onEscape?: () => void,
+  enabled = true,
+): void {
+  useEffect(() => {
+    if (!enabled) return;
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    const opener =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    const frame = requestAnimationFrame(() => {
+      const target = focusableChildren(dialog)[0] ?? dialog;
+      target.focus({ preventScroll: true });
+    });
+
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        (onEscape ?? onClose)();
+        return;
+      }
+      if (e.key !== 'Tab') return;
+
+      const focusable = focusableChildren(dialog);
+      if (focusable.length === 0) {
+        e.preventDefault();
+        dialog.focus({ preventScroll: true });
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+
+      if (e.shiftKey && (active === first || !dialog.contains(active))) {
+        e.preventDefault();
+        last.focus({ preventScroll: true });
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus({ preventScroll: true });
+      }
+    };
+
+    window.addEventListener('keydown', handleKey);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('keydown', handleKey);
+      if (opener && document.contains(opener)) {
+        opener.focus({ preventScroll: true });
+      }
+    };
+  }, [dialogRef, enabled, onClose, onEscape]);
+}
 
 /** Props for {@link ModalShell}. */
 export interface ModalShellProps {
@@ -24,6 +113,8 @@ export interface ModalShellProps {
   style?: CSSProperties;
   /** Extra classes for the shared header. */
   headerClassName?: string;
+  /** When false, disables focus trapping for temporarily covered nested dialogs. */
+  trapFocus?: boolean;
 }
 
 /**
@@ -38,14 +129,11 @@ export function ModalShell({
   className = '',
   style,
   headerClassName = 'mb-1',
+  trapFocus = true,
 }: ModalShellProps): React.JSX.Element {
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') (onEscape ?? onClose)();
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [onClose, onEscape]);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+
+  useDialogFocusTrap(dialogRef, onClose, onEscape, trapFocus);
 
   return (
     <div
@@ -54,6 +142,7 @@ export function ModalShell({
       onClick={onClose}
     >
       <div
+        ref={dialogRef}
         className={`w-full max-w-sm rounded-xl p-4 overflow-y-auto max-h-[90vh] ${className}`}
         style={{
           backgroundColor: 'var(--color-bg-primary)',
@@ -64,6 +153,7 @@ export function ModalShell({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
       >
         <div className={`flex items-center justify-between ${headerClassName}`}>
@@ -77,7 +167,7 @@ export function ModalShell({
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded text-xl leading-none bg-transparent border-none cursor-pointer"
+            className="p-1 rounded leading-none bg-transparent border-none cursor-pointer flex items-center justify-center"
             style={{
               color: 'var(--color-accent)',
               height: '32px',
@@ -86,7 +176,7 @@ export function ModalShell({
             }}
             aria-label="Sulje"
           >
-            ✕
+            <X size={20} strokeWidth={2.5} aria-hidden="true" />
           </button>
         </div>
         {children}

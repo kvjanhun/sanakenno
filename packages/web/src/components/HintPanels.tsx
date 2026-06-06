@@ -12,6 +12,7 @@
  */
 
 import { useCallback, useState } from 'react';
+import { Check, Lock } from 'lucide-react';
 import { toColumns } from '@sanakenno/shared';
 import { useHintData } from '../hooks/useHintData';
 import type { DerivedHintData } from '../hooks/useHintData';
@@ -490,10 +491,12 @@ export function HintPanels({
                   type="button"
                   onClick={() => handleTabClick(panel.id)}
                   aria-pressed={isActive}
+                  data-hint-tab={panel.id}
+                  data-hint-state={isUnlocked ? 'unlocked' : 'locked'}
                   style={{
                     flex: 1,
                     minHeight: '30px',
-                    padding: '4px 6px',
+                    padding: '4px 14px',
                     borderRadius: '7px',
                     border: 'none',
                     background: isActive
@@ -511,59 +514,29 @@ export function HintPanels({
                     position: 'relative',
                   }}
                 >
-                  {panel.label}
+                  <span className="flex min-w-0 items-center justify-center">
+                    <span className="min-w-0 truncate max-w-[calc(100%-18px)]">
+                      {panel.label}
+                    </span>
+                  </span>
                   <span
                     aria-hidden="true"
-                    className="pointer-events-none absolute"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex shrink-0"
                     style={{
-                      left: '24%',
-                      right: '24%',
-                      bottom: '3px',
-                      height: '3px',
-                      borderRadius: '999px',
-                      background: isUnlocked
+                      color: isUnlocked
                         ? 'var(--color-accent)'
-                        : 'var(--color-border)',
-                      opacity: isActive ? 1 : 0,
+                        : 'var(--color-text-tertiary)',
                     }}
-                  />
+                  >
+                    {isUnlocked ? (
+                      <Check size={11} strokeWidth={3} />
+                    ) : (
+                      <Lock size={10} strokeWidth={2.5} />
+                    )}
+                  </span>
                 </button>
               );
             })}
-            <div
-              className="flex items-center gap-1"
-              style={{
-                alignSelf: 'stretch',
-                borderLeft: `1px solid ${SOFT_PANEL_BORDER}`,
-                flexShrink: 0,
-                gap: '4px',
-                marginLeft: '4px',
-                padding: '0 6px 0 8px',
-              }}
-            >
-              {VISIBLE_PANELS.map((panel) => {
-                const isActive = activeTab === panel.id;
-                const isUnlocked = hintsUnlocked.has(panel.id);
-
-                return (
-                  <div
-                    key={panel.id}
-                    style={{
-                      width: isActive ? '6px' : '5px',
-                      height: isActive ? '20px' : '18px',
-                      borderRadius: '999px',
-                      background: isUnlocked
-                        ? 'var(--color-accent)'
-                        : 'var(--color-border)',
-                      boxShadow: isActive
-                        ? '0 0 0 1px var(--color-accent-faded), 0 0 6px color-mix(in srgb, var(--color-accent) 22%, transparent)'
-                        : 'none',
-                      opacity: isUnlocked || isActive ? 1 : 0.72,
-                    }}
-                  />
-                );
-              })}
-            </div>
           </div>
         </div>
 

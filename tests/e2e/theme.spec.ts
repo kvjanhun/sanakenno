@@ -1,7 +1,8 @@
 /**
  * E2E tests for theme toggle functionality.
  *
- * Covers: system preference default, manual toggle, localStorage persistence.
+ * Covers: system preference default, appearance menu changes, localStorage
+ * persistence.
  *
  * Corresponds to: theme.feature
  */
@@ -34,8 +35,8 @@ test.describe('Theme toggle', () => {
 
     expect(await effectiveScheme(page)).toBe('light');
 
-    const toggleButton = page.locator('button[aria-label*="teemaan"]');
-    await toggleButton.click();
+    await page.getByRole('button', { name: 'Ulkoasu' }).click();
+    await page.getByRole('menuitemradio', { name: 'Tumma' }).click();
 
     expect(await effectiveScheme(page)).toBe('dark');
   });
@@ -44,9 +45,8 @@ test.describe('Theme toggle', () => {
     await page.emulateMedia({ colorScheme: 'light' });
     await loadGame(page);
 
-    // Toggle to dark
-    const toggleButton = page.locator('button[aria-label*="teemaan"]');
-    await toggleButton.click();
+    await page.getByRole('button', { name: 'Ulkoasu' }).click();
+    await page.getByRole('menuitemradio', { name: 'Tumma' }).click();
 
     // Check localStorage
     const stored = await page.evaluate(() =>
@@ -59,7 +59,8 @@ test.describe('Theme toggle', () => {
     await page.emulateMedia({ colorScheme: 'light' });
     await loadGame(page);
 
-    await page.locator('button[aria-label*="teemaan"]').click();
+    await page.getByRole('button', { name: 'Ulkoasu' }).click();
+    await page.getByRole('menuitemradio', { name: 'Tumma' }).click();
     expect(await effectiveScheme(page)).toBe('dark');
 
     await loadGame(page);
@@ -67,19 +68,22 @@ test.describe('Theme toggle', () => {
     expect(await effectiveScheme(page)).toBe('dark');
   });
 
-  test('palette selector opens from the header and persists selection', async ({
+  test('appearance menu changes palette and persists selection', async ({
     page,
   }) => {
     await loadGame(page);
 
-    const selector = page.getByRole('button', { name: 'Valitse väriteema' });
-    await expect(selector).toBeVisible();
-    await selector.click();
+    const appearance = page.getByRole('button', { name: 'Ulkoasu' });
+    await expect(appearance).toBeVisible();
+    await appearance.click();
 
-    const menu = page.getByRole('menu', { name: 'Väriteema' });
+    const menu = page.getByRole('menu', { name: 'Ulkoasu' });
     await expect(menu).toBeVisible();
     await expect(
       menu.getByRole('menuitemradio', { name: 'Hehku' }),
+    ).toHaveAttribute('aria-checked', 'true');
+    await expect(
+      menu.getByRole('menuitemradio', { name: 'Laite' }),
     ).toHaveAttribute('aria-checked', 'true');
 
     await menu.getByRole('menuitemradio', { name: 'Meri' }).click();
@@ -95,25 +99,38 @@ test.describe('Theme toggle', () => {
     ).toBe('"meri"');
   });
 
-  test('palette selector closes on Escape and outside click', async ({
+  test('appearance menu can save system theme preference', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'light' });
+    await loadGame(page);
+
+    await page.getByRole('button', { name: 'Ulkoasu' }).click();
+    await page.getByRole('menuitemradio', { name: 'Tumma' }).click();
+    expect(await effectiveScheme(page)).toBe('dark');
+
+    await page.getByRole('button', { name: 'Ulkoasu' }).click();
+    await page.getByRole('menuitemradio', { name: 'Laite' }).click();
+
+    expect(await effectiveScheme(page)).toBe('light');
+    expect(
+      await page.evaluate(() => localStorage.getItem('sanakenno_theme')),
+    ).toBe('"system"');
+  });
+
+  test('appearance menu closes on Escape and outside click', async ({
     page,
   }) => {
     await loadGame(page);
 
-    const selector = page.getByRole('button', { name: 'Valitse väriteema' });
-    await selector.click();
-    await expect(page.getByRole('menu', { name: 'Väriteema' })).toBeVisible();
+    const appearance = page.getByRole('button', { name: 'Ulkoasu' });
+    await appearance.click();
+    await expect(page.getByRole('menu', { name: 'Ulkoasu' })).toBeVisible();
 
     await page.keyboard.press('Escape');
-    await expect(
-      page.getByRole('menu', { name: 'Väriteema' }),
-    ).not.toBeVisible();
+    await expect(page.getByRole('menu', { name: 'Ulkoasu' })).not.toBeVisible();
 
-    await selector.click();
-    await expect(page.getByRole('menu', { name: 'Väriteema' })).toBeVisible();
+    await appearance.click();
+    await expect(page.getByRole('menu', { name: 'Ulkoasu' })).toBeVisible();
     await page.mouse.click(10, 200);
-    await expect(
-      page.getByRole('menu', { name: 'Väriteema' }),
-    ).not.toBeVisible();
+    await expect(page.getByRole('menu', { name: 'Ulkoasu' })).not.toBeVisible();
   });
 });

@@ -92,6 +92,12 @@ Feature: Puzzle archive
     Then today's entry should be visually highlighted
 
   @e2e
+  Scenario: Played archive entries show found word count
+    Given the player has found words in a past puzzle
+    When the player opens the archive modal
+    Then that past puzzle row should show the rank and found word count
+
+  @e2e
   Scenario: Clicking a past date opens an action sheet
     When the player opens the archive modal
     And clicks on a past day's entry
@@ -111,8 +117,18 @@ Feature: Puzzle archive
     When the player opens the archive modal
     And clicks on a past day's entry
     And clicks the "Näytä vastaukset" option
+    Then the reveal confirmation should be shown
+    When the player confirms reveal answers
     Then the word list for that puzzle should be shown
     And the list should display each word from that puzzle's solution
+
+  @e2e
+  Scenario: Cancelling first reveal keeps the word list hidden
+    When the player opens the archive modal
+    And clicks on a past day's entry
+    And clicks the "Näytä vastaukset" option
+    And cancels the reveal confirmation
+    Then the word list should not be shown
 
   @e2e
   Scenario: A revealed past puzzle is marked with an eye indicator

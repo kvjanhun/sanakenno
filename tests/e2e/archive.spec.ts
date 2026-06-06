@@ -54,6 +54,28 @@ test.describe('Archive', () => {
     await expect(page.getByText('tänään')).toBeVisible();
   });
 
+  test('played archive row shows rank and found word count', async ({
+    page,
+  }) => {
+    await mockArchiveApi(page);
+    await loadGame(page);
+
+    await page.evaluate(() => {
+      localStorage.setItem(
+        'sanakenno_state_1',
+        JSON.stringify({
+          score: 12,
+          foundWords: ['kala', 'kana', 'taka', 'alas', 'saat'],
+        }),
+      );
+    });
+
+    await page.locator('button[aria-label="Arkisto"]').click();
+    const playedRow = page.locator('button:has-text("Kenno #2")');
+    await expect(playedRow.getByText('Onnistuja')).toBeVisible();
+    await expect(playedRow.getByText('5 sanaa')).toBeVisible();
+  });
+
   test('clicking a past date opens an action sheet with Pelaa / Näytä vastaukset', async ({
     page,
   }) => {
@@ -108,6 +130,8 @@ test.describe('Archive', () => {
     await entries.nth(1).click();
 
     await page.getByRole('button', { name: 'Näytä vastaukset' }).click();
+    await expect(page.getByText('Paljasta vastaukset?')).toBeVisible();
+    await page.getByRole('button', { name: 'Paljasta vastaukset' }).click();
 
     // Words modal opens with the puzzle title and the full word list
     const wordsDialog = page.getByRole('dialog', {
@@ -117,6 +141,28 @@ test.describe('Archive', () => {
     for (const word of TEST_WORDS) {
       await expect(wordsDialog.getByText(word, { exact: true })).toBeVisible();
     }
+  });
+
+  test('cancelling first reveal keeps the word list hidden', async ({
+    page,
+  }) => {
+    await mockArchiveApi(page);
+    await loadGame(page);
+
+    await page.locator('button[aria-label="Arkisto"]').click();
+    const entries = page.locator('button:has-text("Kenno #")');
+    await entries.nth(1).click();
+
+    await page.getByRole('button', { name: 'Näytä vastaukset' }).click();
+    await expect(page.getByText('Paljasta vastaukset?')).toBeVisible();
+    await page.getByRole('button', { name: 'Takaisin' }).click();
+
+    await expect(
+      page.getByText(TEST_WORDS[0], { exact: true }),
+    ).not.toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Näytä vastaukset' }),
+    ).toBeVisible();
   });
 
   test('a previously revealed past puzzle shows an eye indicator', async ({
@@ -130,6 +176,7 @@ test.describe('Archive', () => {
     const entries = page.locator('button:has-text("Kenno #")');
     await entries.nth(1).click();
     await page.getByRole('button', { name: 'Näytä vastaukset' }).click();
+    await page.getByRole('button', { name: 'Paljasta vastaukset' }).click();
     await page
       .getByRole('dialog', { name: /Kenno #/ })
       .getByLabel('Sulje')

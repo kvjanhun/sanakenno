@@ -37,7 +37,7 @@ test.describe('Honeycomb', () => {
 
     // Click shuffle multiple times to overcome the 1/720 same-order chance
     for (let attempt = 0; attempt < 5; attempt++) {
-      await page.getByText('Sekoita').click();
+      await page.getByRole('button', { name: 'Sekoita' }).click();
     }
 
     const after: string[] = [];
@@ -79,10 +79,33 @@ test.describe('Keyboard input', () => {
 });
 
 test.describe('Button controls', () => {
+  test('action buttons show icons without changing row layout', async ({
+    page,
+  }) => {
+    await loadGame(page);
+
+    const buttons = ['Poista', 'Sekoita', 'OK'].map((name) =>
+      page.getByRole('button', { name }),
+    );
+
+    const boxes = [];
+    for (const button of buttons) {
+      await expect(button.locator('svg')).toBeVisible();
+      const box = await button.boundingBox();
+      if (!box) throw new Error('Control button should be visible');
+      boxes.push(box);
+      expect(box.height).toBeGreaterThanOrEqual(38);
+      expect(box.height).toBeLessThanOrEqual(46);
+    }
+
+    expect(Math.abs(boxes[0].width - boxes[1].width)).toBeLessThanOrEqual(2);
+    expect(Math.abs(boxes[1].width - boxes[2].width)).toBeLessThanOrEqual(2);
+  });
+
   test('Poista removes the last letter', async ({ page }) => {
     await loadGame(page);
     await typeWord(page, 'kal');
-    await page.getByText('Poista').click();
+    await page.getByRole('button', { name: 'Poista' }).click();
 
     const display = page.locator('[aria-atomic="true"]').first();
     await expect(display).toContainText('KA');
@@ -91,7 +114,7 @@ test.describe('Button controls', () => {
   test('OK submits the word', async ({ page }) => {
     await loadGame(page);
     await typeWord(page, 'ka');
-    await page.getByText('OK').click();
+    await page.getByRole('button', { name: 'OK' }).click();
 
     await expect(page.getByText('Liian lyhyt!')).toBeVisible();
   });

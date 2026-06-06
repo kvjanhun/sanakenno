@@ -36,6 +36,12 @@ Feature: Game interaction
     When the player taps the "OK" button
     Then the word should be submitted for validation
 
+  @e2e
+  Scenario: Game control buttons keep their size while showing icons
+    When the puzzle loads
+    Then the "Poista", "Sekoita", and "OK" controls should show action icons
+    And the controls should keep the same button row layout
+
   # --- Rules modal ---
 
   Scenario: Rules modal opens when question mark is clicked

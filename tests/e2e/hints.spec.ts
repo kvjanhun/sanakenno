@@ -11,6 +11,11 @@ import { test, expect } from '@playwright/test';
 import { loadGame } from './helpers';
 
 const VISIBLE_HINT_TABS = ['Yleiskuva', 'Pituudet', 'Alkuparit'] as const;
+const HINT_TAB_IDS = {
+  Yleiskuva: 'summary',
+  Pituudet: 'distribution',
+  Alkuparit: 'pairs',
+} as const;
 
 /** Open a hint tab and unlock it via the "Aktivoi apu" button. */
 async function unlockHint(
@@ -83,6 +88,24 @@ test.describe('Hint unlock persistence', () => {
 
       await page.getByRole('button', { name: tabLabel }).click();
     }
+  });
+
+  test('hint state is shown inside each tab', async ({ page }) => {
+    await loadGame(page);
+
+    for (const tabLabel of VISIBLE_HINT_TABS) {
+      await expect(
+        page.locator(`[data-hint-tab="${HINT_TAB_IDS[tabLabel]}"]`),
+      ).toHaveAttribute('data-hint-state', 'locked');
+    }
+
+    await unlockHint(page, 'Yleiskuva');
+
+    await expect(page.locator('[data-hint-tab="summary"]')).toHaveAttribute(
+      'data-hint-state',
+      'unlocked',
+    );
+    await expect(page.locator('[data-hint-state]')).toHaveCount(3);
   });
 });
 

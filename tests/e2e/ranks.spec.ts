@@ -49,6 +49,20 @@ async function loadGameWithState(
 }
 
 test.describe('Rank celebrations', () => {
+  test('rank control indicates expandability and next-rank distance', async ({
+    page,
+  }) => {
+    await mockPuzzleApi(page);
+    await page.goto('/');
+    await page.locator('svg polygon').first().waitFor({ timeout: 10_000 });
+
+    const rankButton = page.getByRole('button', { name: 'Etsi sanoja!' });
+    await expect(rankButton).toHaveAttribute('aria-expanded', 'false');
+
+    await rankButton.click();
+    await expect(rankButton).toHaveAttribute('aria-expanded', 'true');
+  });
+
   test('Ällistyttävä rank shows celebration overlay', async ({ page }) => {
     // Pre-seed: 23 pts (Sanavalmis). Submit laskenta (pangram, +15) → 38 pts → Ällistyttävä
     await loadGameWithState(page, {

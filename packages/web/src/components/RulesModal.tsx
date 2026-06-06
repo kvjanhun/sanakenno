@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
+import { Check, Sparkles, HelpCircle } from 'lucide-react';
 import { msUntilMidnight } from '../hooks/useMidnightRollover';
 import { ModalShell } from './ModalShell';
 
@@ -99,7 +100,7 @@ export function RulesModal({
       </div>
 
       <div
-        className="text-sm space-y-3"
+        className="text-sm space-y-4"
         style={{ color: 'var(--color-text-secondary)' }}
       >
         <p>
@@ -107,113 +108,235 @@ export function RulesModal({
           kirjaimesta.
         </p>
 
-        <div>
-          <p
-            className="font-medium mb-1"
+        {/* Säännöt card */}
+        <div
+          className="rounded-xl p-3 space-y-2"
+          style={{ backgroundColor: 'var(--color-bg-secondary)' }}
+        >
+          <div
+            className="font-semibold text-xs uppercase tracking-wider mb-1"
             style={{ color: 'var(--color-text-primary)' }}
           >
-            Hyväksyttävien sanojen täytyy
-          </p>
-          <ul className="space-y-1 list-none pl-0">
-            <li>
-              • Sisältää{' '}
-              <span style={{ color: 'var(--color-accent)' }}>
-                värillinen keskikirjain
-              </span>
-            </li>
-            <li>• Olla vähintään 4 kirjaimen pituisia</li>
-            <li>
-              • Koostua vain annetuista kirjaimista — samaa kirjainta voi
-              käyttää useasti
-            </li>
-            <li>
-              • Löytyä Kotuksen sanalistasta (
-              <a
-                href="https://kotus.fi/sanakirjat/kielitoimiston-sanakirja/nykysuomen-sana-aineistot/nykysuomen-sanalista"
-                target="_blank"
-                rel="noopener"
+            Säännöt
+          </div>
+          <ul className="space-y-1.5 pl-0 m-0 list-none">
+            <li className="flex items-start gap-2 text-xs">
+              <Check
+                size={14}
                 style={{
                   color: 'var(--color-accent)',
-                  textDecoration: 'underline',
+                  marginTop: '2px',
+                  flexShrink: 0,
                 }}
-              >
-                Kotus
-              </a>
-              )
+              />
+              <span>
+                Sanan täytyy sisältää{' '}
+                <span
+                  className="font-semibold"
+                  style={{ color: 'var(--color-text-primary)' }}
+                >
+                  keskimmäinen kirjain
+                </span>
+              </span>
+            </li>
+            <li className="flex items-start gap-2 text-xs">
+              <Check
+                size={14}
+                style={{
+                  color: 'var(--color-accent)',
+                  marginTop: '2px',
+                  flexShrink: 0,
+                }}
+              />
+              <span>Sanan pituus on vähintään 4 kirjainta</span>
+            </li>
+            <li className="flex items-start gap-2 text-xs">
+              <Check
+                size={14}
+                style={{
+                  color: 'var(--color-accent)',
+                  marginTop: '2px',
+                  flexShrink: 0,
+                }}
+              />
+              <span>
+                Vain annettuja kirjaimia (samaa kirjainta voi käyttää useasti)
+              </span>
+            </li>
+            <li className="flex items-start gap-2 text-xs">
+              <Check
+                size={14}
+                style={{
+                  color: 'var(--color-accent)',
+                  marginTop: '2px',
+                  flexShrink: 0,
+                }}
+              />
+              <span>
+                Sanan täytyy löytyä Kotuksen sanalistasta (
+                <a
+                  href="https://kotus.fi/sanakirjat/kielitoimiston-sanakirja/nykysuomen-sana-aineistot/nykysuomen-sanalista"
+                  target="_blank"
+                  rel="noopener"
+                  style={{
+                    color: 'var(--color-accent)',
+                    textDecoration: 'underline',
+                  }}
+                >
+                  Kotus
+                </a>
+                )
+              </span>
             </li>
           </ul>
         </div>
 
-        <div>
-          <p
-            className="font-medium mb-1"
+        {/* Pisteytys card */}
+        <div
+          className="rounded-xl p-3 space-y-2"
+          style={{ backgroundColor: 'var(--color-bg-secondary)' }}
+        >
+          <div
+            className="font-semibold text-xs uppercase tracking-wider mb-1"
             style={{ color: 'var(--color-text-primary)' }}
           >
             Pisteytys
-          </p>
-          <ul className="space-y-1 list-none pl-0">
-            <li>• 4-kirjaiminen sana: 1 piste</li>
-            <li>• Pidempi sana: pisteitä sanan pituuden verran</li>
-            <li>• Pangrammi: +7 lisäpistettä</li>
-            <li style={{ color: 'var(--color-text-tertiary)' }}>
-              Sana on pangrammi sen sisältäessä kaikki 7 kirjainta.
+          </div>
+          <ul className="space-y-1.5 pl-0 m-0 list-none">
+            <li className="flex items-start gap-2 text-xs">
+              <Sparkles
+                size={14}
+                style={{
+                  color: 'var(--color-accent)',
+                  marginTop: '2px',
+                  flexShrink: 0,
+                }}
+              />
+              <span>4-kirjaiminen sana: 1 piste</span>
+            </li>
+            <li className="flex items-start gap-2 text-xs">
+              <Sparkles
+                size={14}
+                style={{
+                  color: 'var(--color-accent)',
+                  marginTop: '2px',
+                  flexShrink: 0,
+                }}
+              />
+              <span>Pidempi sana: 1 piste jokaisesta kirjaimesta</span>
+            </li>
+            <li className="flex items-start gap-2 text-xs">
+              <Sparkles
+                size={14}
+                style={{
+                  color: 'var(--color-accent)',
+                  marginTop: '2px',
+                  flexShrink: 0,
+                }}
+              />
+              <span>
+                Pangrammi (sisältää kaikki 7 kirjainta): +7 lisäpistettä
+              </span>
             </li>
           </ul>
         </div>
 
-        <div>
-          <p
-            className="font-medium mb-1"
+        {/* Avut card */}
+        <div
+          className="rounded-xl p-3 space-y-2"
+          style={{ backgroundColor: 'var(--color-bg-secondary)' }}
+        >
+          <div
+            className="font-semibold text-xs uppercase tracking-wider mb-1"
             style={{ color: 'var(--color-text-primary)' }}
           >
-            Avut:
-          </p>
-          <ul className="space-y-1 list-none pl-0">
-            <li>• Yleiskuva: mm. sanojen ja pangrammien määrä</li>
-            <li>• Pituudet: jäljellä olevien sanojen pituusjakauma</li>
-            <li>• Alkuparit: sanojen ensimmäiset 2 kirjainta</li>
+            Avut
+          </div>
+          <ul className="space-y-1.5 pl-0 m-0 list-none">
+            <li className="flex items-start gap-2 text-xs">
+              <HelpCircle
+                size={14}
+                style={{
+                  color: 'var(--color-accent)',
+                  marginTop: '2px',
+                  flexShrink: 0,
+                }}
+              />
+              <span>Yleiskuva: sanojen ja pangrammien kokonaismäärä</span>
+            </li>
+            <li className="flex items-start gap-2 text-xs">
+              <HelpCircle
+                size={14}
+                style={{
+                  color: 'var(--color-accent)',
+                  marginTop: '2px',
+                  flexShrink: 0,
+                }}
+              />
+              <span>Pituudet: jäljellä olevien sanojen pituusjakauma</span>
+            </li>
+            <li className="flex items-start gap-2 text-xs">
+              <HelpCircle
+                size={14}
+                style={{
+                  color: 'var(--color-accent)',
+                  marginTop: '2px',
+                  flexShrink: 0,
+                }}
+              />
+              <span>Alkuparit: sanojen ensimmäiset 2 kirjainta</span>
+            </li>
           </ul>
         </div>
 
-        <div>
-          <p
-            className="font-medium mb-1"
+        {/* Yhdyssanat card */}
+        <div
+          className="rounded-xl p-3 space-y-2"
+          style={{ backgroundColor: 'var(--color-bg-secondary)' }}
+        >
+          <div
+            className="font-semibold text-xs uppercase tracking-wider mb-1"
             style={{ color: 'var(--color-text-primary)' }}
           >
             Yhdyssanat
-          </p>
-          <p>Sanalista sisältää myös yhdyssanoja.</p>
-          <p>
-            Yhdysviivallisen sanan voi kirjoittaa joko viivalla tai ilman eli
-            esimerkiksi{' '}
-            <span style={{ fontFamily: 'var(--font-mono)' }}>palo-ovi</span> tai{' '}
-            <span style={{ fontFamily: 'var(--font-mono)' }}>paloovi</span> ovat
-            molemmat hyväksyttyjä muotoja.
+          </div>
+          <p className="text-xs m-0 leading-relaxed">
+            Sanalista sisältää myös yhdyssanoja. Yhdysviivallisen sanan voi
+            kirjoittaa joko viivalla tai ilman (esim.{' '}
+            <span
+              className="font-mono bg-[var(--color-bg-primary)] px-1 py-0.5 rounded border"
+              style={{ borderColor: 'var(--color-border)' }}
+            >
+              palo-ovi
+            </span>{' '}
+            tai{' '}
+            <span
+              className="font-mono bg-[var(--color-bg-primary)] px-1 py-0.5 rounded border"
+              style={{ borderColor: 'var(--color-border)' }}
+            >
+              paloovi
+            </span>
+            ).
           </p>
         </div>
 
-        <div>
-          <p
-            className="font-medium mb-1"
+        {/* Asennus card */}
+        <div
+          className="rounded-xl p-3 space-y-2"
+          style={{ backgroundColor: 'var(--color-bg-secondary)' }}
+        >
+          <div
+            className="font-semibold text-xs uppercase tracking-wider mb-1"
             style={{ color: 'var(--color-text-primary)' }}
           >
             Pelaa sovelluksena
-          </p>
-          <p>
+          </div>
+          <p className="text-xs m-0 leading-relaxed">
             Voit asentaa Sanakennon sovelluksena kotinäytöllesi selaimesi
             valikon kautta (&quot;Lisää kotinäytölle&quot; tai &quot;Asenna
-            sovellus&quot;), jolloin se toimii itsenäisesti myös ilman
-            verkkoyhteyttä.
+            sovellus&quot;), jolloin se toimii myös ilman verkkoyhteyttä.
           </p>
         </div>
-
-        <hr
-          style={{
-            border: 'none',
-            borderTop: '1px solid var(--color-border)',
-            margin: '0.5rem 0 0.5rem 0',
-          }}
-        />
 
         <p
           className="text-xs text-center"

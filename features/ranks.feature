@@ -38,6 +38,11 @@ Feature: Rank progression
     When the player's score is 100
     Then the progress should be 100%
 
+  @e2e
+  Scenario: Rank control indicates it can expand
+    Given the player has started a puzzle
+    Then the rank control should indicate it can expand
+
   # --- Rank threshold visibility ---
 
   Scenario: Täysi kenno is always visible in the rank list

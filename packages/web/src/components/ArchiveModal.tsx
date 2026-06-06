@@ -11,12 +11,12 @@
  * @module src/components/ArchiveModal
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { rankForScore } from '@sanakenno/shared';
 import { loadFromStorage } from '../utils/storage';
 import { storage } from '../platform';
 import { EyeIcon } from './icons';
-import { ModalShell } from './ModalShell';
+import { ModalShell, useDialogFocusTrap } from './ModalShell';
 
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -81,6 +81,160 @@ function formatFinnishDate(dateStr: string): string {
 
 const PAST_PAGE_SIZE = 8;
 
+interface ArchiveActionSheetProps {
+  entry: ArchiveEntry;
+  isRevealed: boolean;
+  confirmReveal: boolean;
+  onPlay: () => void;
+  onReveal: () => void;
+  onConfirmReveal: () => void;
+  onCancelConfirm: () => void;
+  onClose: () => void;
+}
+
+function ArchiveActionSheet({
+  entry,
+  isRevealed,
+  confirmReveal,
+  onPlay,
+  onReveal,
+  onConfirmReveal,
+  onCancelConfirm,
+  onClose,
+}: ArchiveActionSheetProps): React.JSX.Element {
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const handleEscape = useCallback(() => {
+    if (confirmReveal) onCancelConfirm();
+    else onClose();
+  }, [confirmReveal, onCancelConfirm, onClose]);
+  const handleOverlayClose = useCallback(() => {
+    if (confirmReveal) onCancelConfirm();
+    else onClose();
+  }, [confirmReveal, onCancelConfirm, onClose]);
+
+  useDialogFocusTrap(dialogRef, onClose, handleEscape);
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4"
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+      onClick={handleOverlayClose}
+    >
+      <div
+        ref={dialogRef}
+        className="w-full max-w-sm rounded-xl p-5 flex flex-col gap-3"
+        style={{
+          backgroundColor: 'var(--color-bg-primary)',
+          color: 'var(--color-text-primary)',
+        }}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="puzzle-action-title"
+        tabIndex={-1}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3
+          id="puzzle-action-title"
+          className="text-sm text-center"
+          style={{ color: 'var(--color-text-secondary)' }}
+        >
+          {confirmReveal
+            ? 'Paljasta vastaukset?'
+            : `Kenno #${entry.puzzle_number + 1} · ${formatFinnishDate(entry.date)}`}
+        </h3>
+
+        {confirmReveal ? (
+          <>
+            <div
+              className="rounded-lg px-3 py-2 text-xs text-center"
+              style={{
+                backgroundColor: 'var(--color-bg-secondary)',
+                color: 'var(--color-text-secondary)',
+                border: '1px solid var(--color-border)',
+              }}
+            >
+              Vastauksien paljastamisen jälkeen tästä kennosta ei enää kerry
+              tilastoja.
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={onCancelConfirm}
+                className="w-1/2 py-3 rounded-lg font-medium text-base cursor-pointer border"
+                style={{
+                  backgroundColor: 'transparent',
+                  borderColor: 'var(--color-border)',
+                  color: 'var(--color-text-primary)',
+                }}
+              >
+                Takaisin
+              </button>
+              <button
+                type="button"
+                onClick={onConfirmReveal}
+                className="w-1/2 py-3 rounded-lg font-medium text-base cursor-pointer border-none"
+                style={{
+                  backgroundColor: 'var(--color-accent)',
+                  color: 'var(--color-on-accent)',
+                }}
+              >
+                Paljasta vastaukset
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            {isRevealed && (
+              <div
+                className="rounded-lg px-3 py-2 text-xs text-center"
+                style={{
+                  backgroundColor: 'var(--color-bg-secondary)',
+                  color: 'var(--color-text-secondary)',
+                  border: '1px solid var(--color-border)',
+                }}
+              >
+                Vastaukset on jo paljastettu. Tästä kennosta ei enää kerry
+                tilastoja.
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={onPlay}
+              className="w-full py-3 rounded-lg font-medium text-base cursor-pointer border-none"
+              style={{
+                backgroundColor: 'var(--color-accent)',
+                color: 'var(--color-on-accent)',
+              }}
+            >
+              Pelaa
+            </button>
+            <button
+              type="button"
+              onClick={onReveal}
+              className="w-full py-3 rounded-lg font-medium text-base cursor-pointer border-none"
+              style={{
+                backgroundColor: 'var(--color-bg-secondary)',
+                color: 'var(--color-text-primary)',
+              }}
+            >
+              Näytä vastaukset
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full py-2 text-sm bg-transparent border-none cursor-pointer"
+              style={{ color: 'var(--color-text-secondary)' }}
+            >
+              Peruuta
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /**
  * Archive modal component.
  */
@@ -96,6 +250,7 @@ export function ArchiveModal({
   const [error, setError] = useState(false);
   const [page, setPage] = useState(0);
   const [selectedEntry, setSelectedEntry] = useState<ArchiveEntry | null>(null);
+  const [confirmReveal, setConfirmReveal] = useState(false);
 
   const fetchArchive = useCallback(async () => {
     setLoading(true);
@@ -113,6 +268,7 @@ export function ArchiveModal({
   useEffect(() => {
     if (show) {
       setSelectedEntry(null);
+      setConfirmReveal(false);
       fetchArchive();
     }
   }, [show, fetchArchive]);
@@ -157,6 +313,7 @@ export function ArchiveModal({
 
   const handleEntryClick = useCallback(
     (entry: ArchiveEntry) => {
+      setConfirmReveal(false);
       if (entry.is_today) {
         onSelectPuzzle(entry.puzzle_number, null);
         return;
@@ -166,6 +323,11 @@ export function ArchiveModal({
     [onSelectPuzzle],
   );
 
+  const closeActionSheet = useCallback(() => {
+    setConfirmReveal(false);
+    setSelectedEntry(null);
+  }, []);
+
   const handlePlay = useCallback(() => {
     if (!selectedEntry) return;
     onSelectPuzzle(selectedEntry.puzzle_number, selectedEntry.date);
@@ -174,6 +336,18 @@ export function ArchiveModal({
   const handleReveal = useCallback(() => {
     if (!selectedEntry) return;
     const number = selectedEntry.puzzle_number;
+    if (!revealedPuzzles.has(number)) {
+      setConfirmReveal(true);
+      return;
+    }
+    setSelectedEntry(null);
+    onRevealAnswers(number);
+  }, [revealedPuzzles, selectedEntry, onRevealAnswers]);
+
+  const handleConfirmReveal = useCallback(() => {
+    if (!selectedEntry) return;
+    const number = selectedEntry.puzzle_number;
+    setConfirmReveal(false);
     setSelectedEntry(null);
     onRevealAnswers(number);
   }, [selectedEntry, onRevealAnswers]);
@@ -190,6 +364,7 @@ export function ArchiveModal({
         className="flex flex-col"
         style={{ height: '80vh', overflowY: 'hidden' }}
         headerClassName="mb-3"
+        trapFocus={!selectedEntry}
       >
         {loading ? (
           <div
@@ -278,7 +453,7 @@ export function ArchiveModal({
                       </div>
 
                       {/* Play / reveal status */}
-                      <div className="shrink-0 w-20 flex items-center justify-end gap-1.5 text-xs">
+                      <div className="shrink-0 w-24 flex items-center justify-end gap-1.5 text-xs">
                         {isRevealed && (
                           <span
                             aria-label="Vastaukset paljastettu"
@@ -290,11 +465,22 @@ export function ArchiveModal({
                         )}
                         {status.played && (
                           <span
-                            className="truncate"
+                            className="min-w-0 text-right"
                             title={`${status.wordsFound} sanaa, ${status.rank}`}
-                            style={{ color: 'var(--color-accent)' }}
+                            aria-label={`${status.rank}, ${status.wordsFound} sanaa`}
                           >
-                            {status.rank}
+                            <span
+                              className="block truncate"
+                              style={{ color: 'var(--color-accent)' }}
+                            >
+                              {status.rank}
+                            </span>
+                            <span
+                              className="block"
+                              style={{ color: 'var(--color-text-tertiary)' }}
+                            >
+                              {status.wordsFound} sanaa
+                            </span>
                           </span>
                         )}
                       </div>
@@ -355,74 +541,16 @@ export function ArchiveModal({
 
       {/* Action sheet for past puzzles — sits above the list modal */}
       {selectedEntry && (
-        <div
-          className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4"
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
-          onClick={() => setSelectedEntry(null)}
-        >
-          <div
-            className="w-full max-w-sm rounded-xl p-5 flex flex-col gap-3"
-            style={{ backgroundColor: 'var(--color-bg-primary)' }}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="puzzle-action-title"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3
-              id="puzzle-action-title"
-              className="text-sm text-center"
-              style={{ color: 'var(--color-text-secondary)' }}
-            >
-              Kenno #{selectedEntry.puzzle_number + 1} ·{' '}
-              {formatFinnishDate(selectedEntry.date)}
-            </h3>
-
-            {revealedPuzzles.has(selectedEntry.puzzle_number) && (
-              <div
-                className="rounded-lg px-3 py-2 text-xs text-center"
-                style={{
-                  backgroundColor: 'var(--color-bg-secondary)',
-                  color: 'var(--color-text-secondary)',
-                  border: '1px solid var(--color-border)',
-                }}
-              >
-                Vastaukset on jo paljastettu. Tästä kennosta ei enää kerry
-                tilastoja.
-              </div>
-            )}
-
-            <button
-              type="button"
-              onClick={handlePlay}
-              className="w-full py-3 rounded-lg font-medium text-base cursor-pointer border-none"
-              style={{
-                backgroundColor: 'var(--color-accent)',
-                color: 'var(--color-on-accent)',
-              }}
-            >
-              Pelaa
-            </button>
-            <button
-              type="button"
-              onClick={handleReveal}
-              className="w-full py-3 rounded-lg font-medium text-base cursor-pointer border-none"
-              style={{
-                backgroundColor: 'var(--color-bg-secondary)',
-                color: 'var(--color-text-primary)',
-              }}
-            >
-              Näytä vastaukset
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelectedEntry(null)}
-              className="w-full py-2 text-sm bg-transparent border-none cursor-pointer"
-              style={{ color: 'var(--color-text-secondary)' }}
-            >
-              Peruuta
-            </button>
-          </div>
-        </div>
+        <ArchiveActionSheet
+          entry={selectedEntry}
+          isRevealed={revealedPuzzles.has(selectedEntry.puzzle_number)}
+          confirmReveal={confirmReveal}
+          onPlay={handlePlay}
+          onReveal={handleReveal}
+          onConfirmReveal={handleConfirmReveal}
+          onCancelConfirm={() => setConfirmReveal(false)}
+          onClose={closeActionSheet}
+        />
       )}
     </>
   );

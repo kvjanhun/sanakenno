@@ -2,9 +2,8 @@
  * Light / dark / system preference for the web app.
  *
  * Holds the tri-state preference (`'light' | 'dark' | 'system'`) so it can
- * round-trip with mobile via sync. The existing `ThemeToggle` in the header
- * consumes this store and flips between explicit light / dark; a value of
- * `'system'` pushed from another device is respected on initial load.
+ * round-trip with mobile via sync. The web appearance menu consumes this store
+ * and exposes all three choices.
  *
  * @module src/store/useThemePreferenceStore
  */

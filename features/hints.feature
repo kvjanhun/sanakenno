@@ -63,6 +63,14 @@ Feature: Hint panels
     When the player opens the "summary" tab
     Then the honeycomb position should not change
 
+  @e2e
+  Scenario: Hint tab state is shown inside each tab
+    When the player loads a fresh puzzle
+    Then each visible hint tab should show a locked state indicator
+    When the player unlocks the "summary" hint
+    Then the "summary" tab should show an unlocked state indicator
+    And no separate hint status column should be shown
+
   # --- Pre-hint score tracking ---
 
   Scenario: Pre-hint score is captured when the first hint is unlocked

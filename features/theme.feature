@@ -8,9 +8,9 @@ Feature: Theme Toggle
   yö (indigo), aamu (amber), mustavalko (monochrome) — each with hand-tuned
   light and dark variants.
 
-  On the web app, the palette picker is surfaced in the header between
-  the Rules button and the light/dark toggle, while on mobile it lives on
-  the settings screen.
+  On the web app, palette and light/dark/system choices are grouped in one
+  appearance menu in the header, while on mobile they live on the settings
+  screen.
 
   The active palette and the light/dark preference sync between devices via
   the player account (last-write-wins by timestamp).
@@ -96,24 +96,34 @@ Feature: Theme Toggle
     Then the active color palette should still be "metsä"
 
   @web
-  Scenario: Palette selector button is visible in the header
+  Scenario: Appearance menu button is visible in the header
     When the player first loads the app
-    Then a button with aria-label "Valitse väriteema" should be visible in the header
+    Then a button with aria-label "Ulkoasu" should be visible in the header
 
   @web
-  Scenario: Palette selector menu opens below the header button
-    When the player opens the palette selector
-    Then the color palette menu should be shown above game content
+  Scenario: Appearance menu opens below the header button
+    When the player opens the appearance menu
+    Then the appearance menu should be shown above game content
     And the currently active palette should be marked as selected
+    And the current theme preference should be marked as selected
 
   @web
-  Scenario: Palette selector closes on Escape and outside click
-    Given the palette selector is open
+  Scenario: Appearance menu can choose palette and theme
+    Given the appearance menu is open
+    When the player selects the "Meri" color palette
+    Then the active palette should be "meri"
+    When the player opens the appearance menu
+    And the player selects system theme
+    Then the theme preference should be saved as system
+
+  @web
+  Scenario: Appearance menu closes on Escape and outside click
+    Given the appearance menu is open
     When the player presses Escape
-    Then the color palette menu should close
-    When the player opens the palette selector
-    And clicks outside the palette selector
-    Then the color palette menu should close
+    Then the appearance menu should close
+    When the player opens the appearance menu
+    And clicks outside the appearance menu
+    Then the appearance menu should close
 
   Scenario: Preference changes on one device sync to another
     Given the player is linked on two devices

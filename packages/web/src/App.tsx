@@ -21,8 +21,7 @@ import { FoundWords } from './components/FoundWords';
 import { RankProgress } from './components/RankProgress';
 import { RulesModal } from './components/RulesModal';
 import { ErrorState } from './components/ErrorState';
-import { ThemeToggle } from './components/ThemeToggle';
-import { ThemeSelector } from './components/ThemeSelector';
+import { AppearanceMenu } from './components/AppearanceMenu';
 import { Celebration } from './components/Celebration';
 import { MessageBar } from './components/MessageBar';
 import { GameControls } from './components/GameControls';
@@ -36,6 +35,7 @@ import {
   StatsIcon,
   UserIcon,
   CircleHelpIcon,
+  ArrowLeftIcon,
 } from './components/icons';
 
 /* ------------------------------------------------------------------ */
@@ -226,12 +226,12 @@ function App() {
           paddingTop: 'env(safe-area-inset-top)',
         }}
       >
-        <div className="max-w-sm mx-auto h-12 flex justify-between items-center">
-          <div className="flex items-center">
+        <div className="max-w-sm mx-auto h-12 flex items-center">
+          <div className="flex w-[120px] shrink-0 items-center">
             <button
               type="button"
               onClick={() => setShowAuth(true)}
-              className="py-2 pr-1 rounded-lg bg-transparent border-none cursor-pointer"
+              className="h-10 w-10 rounded-lg bg-transparent border-none cursor-pointer flex items-center justify-center"
               style={{ color: 'var(--color-text-primary)' }}
               aria-label={
                 authIsLinked ? 'Synkronointi aktiivinen' : 'Lisää laite'
@@ -243,7 +243,7 @@ function App() {
             <button
               type="button"
               onClick={() => setShowArchive(true)}
-              className="py-2 px-1 rounded-lg bg-transparent border-none cursor-pointer"
+              className="h-10 w-10 rounded-lg bg-transparent border-none cursor-pointer flex items-center justify-center"
               style={{ color: 'var(--color-text-primary)' }}
               aria-label="Arkisto"
             >
@@ -252,7 +252,7 @@ function App() {
             <button
               type="button"
               onClick={() => setShowStats(true)}
-              className="py-2 pl-1 rounded-lg bg-transparent border-none cursor-pointer"
+              className="h-10 w-10 rounded-lg bg-transparent border-none cursor-pointer flex items-center justify-center"
               style={{ color: 'var(--color-text-primary)' }}
               aria-label="Tilastot"
             >
@@ -260,25 +260,24 @@ function App() {
             </button>
           </div>
           <h1
-            className="text-lg font-semibold"
+            className="min-w-0 flex-1 text-center text-lg font-semibold whitespace-nowrap overflow-hidden text-ellipsis"
             style={{ color: 'var(--color-text-primary)' }}
           >
             {viewingPuzzleDate ? (
-              <>
+              <span className="inline-flex min-w-0 items-center justify-center">
                 <button
                   type="button"
                   onClick={() => returnToToday()}
-                  className="bg-transparent border-none cursor-pointer"
+                  className="mr-1 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent border-none cursor-pointer"
                   style={{
                     color: 'var(--color-accent)',
-                    fontSize: '1.1em',
-                    padding: '0 0.25rem',
+                    padding: 0,
                   }}
                   aria-label="Takaisin tähän päivään"
                 >
-                  ←
+                  <ArrowLeftIcon />
                 </button>
-                <span>
+                <span className="min-w-0 overflow-hidden text-ellipsis">
                   {new Date(viewingPuzzleDate + 'T12:00:00').toLocaleDateString(
                     'fi-FI',
                     { day: 'numeric', month: 'numeric' },
@@ -295,7 +294,7 @@ function App() {
                     — #{puzzle.puzzle_number + 1}
                   </span>
                 )}
-              </>
+              </span>
             ) : (
               <>
                 Sanakenno
@@ -314,18 +313,17 @@ function App() {
               </>
             )}
           </h1>
-          <div className="flex items-center">
+          <div className="flex w-[80px] shrink-0 items-center justify-end">
             <button
               type="button"
               onClick={() => setShowRules(true)}
-              className="py-2 pr-1 rounded-lg bg-transparent border-none cursor-pointer"
+              className="h-10 w-10 rounded-lg bg-transparent border-none cursor-pointer flex items-center justify-center"
               style={{ color: 'var(--color-text-primary)' }}
               aria-label="Säännöt"
             >
               <CircleHelpIcon />
             </button>
-            <ThemeSelector />
-            <ThemeToggle />
+            <AppearanceMenu />
           </div>
         </div>
       </header>

@@ -6,6 +6,7 @@
  */
 
 import { useRef, useEffect, useState } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { rankThresholds, progressToNextRank } from '@sanakenno/shared';
 import { CopyIcon } from './icons';
 import styles from './animations.module.css';
@@ -33,6 +34,7 @@ export interface RankProgressProps {
 /**
  * Render score, rank pill, progress bar, and optional rank list.
  */
+
 export function RankProgress({
   score,
   maxScore,
@@ -97,14 +99,20 @@ export function RankProgress({
           key={rank}
           type="button"
           onClick={onToggleRanks}
-          className={`px-3 py-0.5 text-sm rounded-full cursor-pointer border-none ${styles.rankPulse}`}
+          className={`flex items-center gap-1 px-3 py-0.5 text-sm rounded-full cursor-pointer border-none ${styles.rankPulse}`}
           style={{
             backgroundColor: 'var(--color-accent)',
             color: 'var(--color-on-accent)',
             flexShrink: 0,
           }}
+          aria-expanded={showRanks}
         >
-          {rank}
+          <span>{rank}</span>
+          {showRanks ? (
+            <ChevronUp size={14} strokeWidth={2.5} aria-hidden="true" />
+          ) : (
+            <ChevronDown size={14} strokeWidth={2.5} aria-hidden="true" />
+          )}
         </button>
 
         <span

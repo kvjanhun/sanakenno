@@ -16,6 +16,13 @@ Feature: Accessibility
     Then no letter should be added
     And default browser focus behaviour should not be prevented
 
+  Scenario: Modal focus stays inside the active dialog
+    Given a modal dialog is open from a header button
+    When the player tabs through the dialog controls
+    Then focus should stay inside the dialog
+    When the player closes the dialog
+    Then focus should return to the opener
+
   Scenario: Only Finnish-relevant keys produce input
     Given the puzzle is loaded
     When the player presses a letter key (a-z, ä, ö, or hyphen)

@@ -1,5 +1,15 @@
 # @sanakenno/web
 
+## 1.14.0
+
+### Minor Changes
+
+- Improve web UI affordances for header controls, rank progress, hints, archive reveals, appearance settings, and modal focus.
+
+### Patch Changes
+
+- @sanakenno/shared@1.14.0
+
 ## 1.13.0
 
 ### Minor Changes

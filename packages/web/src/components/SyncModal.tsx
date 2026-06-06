@@ -90,7 +90,7 @@ export function SyncModal({
 
   return (
     <ModalShell
-      title="Pelisessio tallennettu!"
+      title="Tallennus ja synkronointi"
       titleId="sync-title"
       onClose={onClose}
       headerClassName="mb-4"
@@ -162,89 +162,90 @@ export function SyncModal({
               tunniste" luodaksesi uuden.
             </p>
           )}
-          <button
-            type="button"
-            onClick={() => void copyText(connectUrl)}
-            className="w-full py-2 px-4 rounded-lg border cursor-pointer flex items-center justify-center gap-2"
-            style={{
-              backgroundColor: 'transparent',
-              borderColor: 'var(--color-text-tertiary)',
-              color: 'var(--color-text-primary)',
-            }}
-            disabled={isLoading || !connectUrl}
-          >
-            <Copy size={16} />
-            Kopioi linkki
-          </button>
-          <button
-            type="button"
-            onClick={() => void copyText(playerKey ?? '')}
-            className="w-full py-2 px-4 rounded-lg border cursor-pointer flex items-center justify-center gap-2"
-            style={{
-              backgroundColor: 'transparent',
-              borderColor: 'var(--color-text-tertiary)',
-              color: 'var(--color-text-primary)',
-            }}
-            disabled={isLoading || !playerKey}
-          >
-            <Copy size={16} />
-            Kopioi koodi
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode('qr')}
-            className="w-full py-2 px-4 rounded-lg border cursor-pointer flex items-center justify-center gap-2"
-            style={{
-              backgroundColor: 'transparent',
-              borderColor: 'var(--color-text-tertiary)',
-              color: 'var(--color-text-primary)',
-            }}
-            disabled={isLoading || !connectUrl}
-          >
-            <QrCode size={16} />
-            Näytä QR-koodi
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode('email')}
-            className="w-full py-2 px-4 rounded-lg border cursor-pointer flex items-center justify-center gap-2"
-            style={{
-              backgroundColor: 'transparent',
-              borderColor: 'var(--color-text-tertiary)',
-              color: 'var(--color-text-primary)',
-            }}
-            disabled={isLoading || !playerKey}
-          >
-            <Mail size={16} />
-            Lähetä sähköpostiin
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode('confirmRotate')}
-            className="w-full py-2 px-4 rounded-lg border cursor-pointer flex items-center justify-center gap-2"
-            style={{
-              backgroundColor: 'transparent',
-              borderColor: 'var(--color-text-tertiary)',
-              color: 'var(--color-text-primary)',
-            }}
-            disabled={isLoading}
-          >
-            <RefreshCw size={16} />
-            Vaihda tunniste
-          </button>
-          <button
-            type="button"
-            onClick={() => void handleLogout()}
-            className="w-full py-2 px-4 rounded-lg border cursor-pointer flex items-center justify-center gap-2"
-            style={{
-              backgroundColor: 'transparent',
-              borderColor: 'var(--color-text-tertiary)',
-              color: 'var(--color-text-primary)',
-            }}
-          >
-            <LogOut size={16} />
-            Kirjaudu ulos
-          </button>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => void copyText(connectUrl)}
+              className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border-none font-medium cursor-pointer text-xs"
+              style={{
+                backgroundColor: 'var(--color-bg-secondary)',
+                color: 'var(--color-text-primary)',
+                opacity: isLoading || !connectUrl ? 0.6 : 1,
+              }}
+              disabled={isLoading || !connectUrl}
+            >
+              <Copy size={14} style={{ color: 'var(--color-accent)' }} />
+              <span>Kopioi linkki</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => void copyText(playerKey ?? '')}
+              className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border-none font-medium cursor-pointer text-xs"
+              style={{
+                backgroundColor: 'var(--color-bg-secondary)',
+                color: 'var(--color-text-primary)',
+                opacity: isLoading || !playerKey ? 0.6 : 1,
+              }}
+              disabled={isLoading || !playerKey}
+            >
+              <Copy size={14} style={{ color: 'var(--color-accent)' }} />
+              <span>Kopioi koodi</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('qr')}
+              className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border-none font-medium cursor-pointer text-xs"
+              style={{
+                backgroundColor: 'var(--color-bg-secondary)',
+                color: 'var(--color-text-primary)',
+                opacity: isLoading || !connectUrl ? 0.6 : 1,
+              }}
+              disabled={isLoading || !connectUrl}
+            >
+              <QrCode size={14} style={{ color: 'var(--color-accent)' }} />
+              <span>Näytä QR-koodi</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('email')}
+              className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border-none font-medium cursor-pointer text-xs"
+              style={{
+                backgroundColor: 'var(--color-bg-secondary)',
+                color: 'var(--color-text-primary)',
+                opacity: isLoading || !playerKey ? 0.6 : 1,
+              }}
+              disabled={isLoading || !playerKey}
+            >
+              <Mail size={14} style={{ color: 'var(--color-accent)' }} />
+              <span>Sähköposti</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('confirmRotate')}
+              className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border-none font-medium cursor-pointer text-xs"
+              style={{
+                backgroundColor: 'var(--color-bg-secondary)',
+                color: 'var(--color-text-primary)',
+                opacity: isLoading ? 0.6 : 1,
+              }}
+              disabled={isLoading}
+            >
+              <RefreshCw size={14} style={{ color: 'var(--color-accent)' }} />
+              <span>Vaihda tunniste</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleLogout()}
+              className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border-none font-medium cursor-pointer text-xs"
+              style={{
+                backgroundColor: 'var(--color-bg-secondary)',
+                color: 'var(--color-text-primary)',
+              }}
+            >
+              <LogOut size={14} style={{ color: 'var(--color-accent)' }} />
+              <span>Kirjaudu ulos</span>
+            </button>
+          </div>
         </div>
       )}
 
