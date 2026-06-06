@@ -365,43 +365,40 @@ export function RulesModal({
           </ul>
         </div>
 
-        <p
-          className="text-xs text-center"
+        <div
+          className="flex items-center justify-center gap-2.5 text-xs mt-4"
           style={{ color: 'var(--color-text-tertiary)' }}
         >
           <a
             href="https://erez.ac"
             target="_blank"
             rel="noopener"
-            style={{
-              color: 'var(--color-text-tertiary)',
-              textDecoration: 'underline',
-            }}
+            className="hover:underline"
+            style={{ color: 'inherit' }}
           >
             erez.ac
           </a>
-          {'  ·  '}Lähdekoodi{' '}
+          <span aria-hidden="true" style={{ opacity: 0.5 }}>
+            ·
+          </span>
           <a
             href="https://github.com/kvjanhun/sanakenno"
             target="_blank"
             rel="noopener"
-            style={{
-              color: 'var(--color-text-tertiary)',
-              textDecoration: 'underline',
-            }}
+            className="hover:underline"
+            style={{ color: 'inherit' }}
           >
             GitHub
           </a>
-        </p>
-        <p
-          className="text-xs text-center mt-1"
-          style={{ color: 'var(--color-text-tertiary)' }}
-        >
-          v{__APP_VERSION__}
-        </p>
-
-        <p className="text-xs text-center mt-1">
+          <span aria-hidden="true" style={{ opacity: 0.5 }}>
+            ·
+          </span>
+          <span>v{__APP_VERSION__}</span>
+          <span aria-hidden="true" style={{ opacity: 0.5 }}>
+            ·
+          </span>
           <button
+            type="button"
             onClick={() => {
               const next = !licensesOpen;
               setLicensesOpen(next);
@@ -411,48 +408,59 @@ export function RulesModal({
                 }, 50);
               }
             }}
-            style={{
-              color: 'var(--color-text-tertiary)',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              textDecoration: 'underline',
-              fontSize: 'inherit',
-              padding: 0,
-            }}
+            className="bg-transparent border-none cursor-pointer p-0 text-xs hover:underline"
+            style={{ color: 'inherit' }}
           >
             Lisenssit {licensesOpen ? '▲' : '▼'}
           </button>
-        </p>
+        </div>
 
         {licensesOpen && (
-          <div ref={licensesRef} className="mt-2 space-y-1">
+          <div ref={licensesRef} className="mt-4 space-y-2.5">
             <p
-              className="text-xs"
-              style={{ color: 'var(--color-text-tertiary)' }}
+              className="text-xs text-center m-0"
+              style={{ color: 'var(--color-text-secondary)' }}
             >
               Sanakenno käyttää seuraavia avoimen lähdekoodin kirjastoja:
             </p>
-            {LICENSES.map((entry) => (
-              <div
-                key={entry.name}
-                className="text-xs rounded-lg px-3 py-2"
-                style={{
-                  background: 'var(--color-bg-secondary)',
-                  color: 'var(--color-text-secondary)',
-                }}
-              >
-                <span className="font-medium">{entry.name}</span>
-                {' — '}
-                <span style={{ color: 'var(--color-accent)' }}>
-                  {entry.license}
-                </span>
-                {' — '}
-                <span style={{ color: 'var(--color-text-tertiary)' }}>
-                  {entry.copyright}
-                </span>
-              </div>
-            ))}
+            <div className="grid grid-cols-2 gap-2">
+              {LICENSES.map((entry) => (
+                <div
+                  key={entry.name}
+                  className="rounded-lg p-2 flex flex-col justify-between border"
+                  style={{
+                    backgroundColor: 'var(--color-bg-secondary)',
+                    borderColor: 'var(--color-border)',
+                    color: 'var(--color-text-secondary)',
+                  }}
+                >
+                  <div className="flex justify-between items-center gap-1.5 mb-0.5">
+                    <span
+                      className="font-semibold text-[11px]"
+                      style={{ color: 'var(--color-text-primary)' }}
+                    >
+                      {entry.name}
+                    </span>
+                    <span
+                      className="px-1 py-0.2 rounded font-mono text-[9px]"
+                      style={{
+                        backgroundColor:
+                          'color-mix(in srgb, var(--color-accent) 12%, var(--color-bg-primary))',
+                        color: 'var(--color-accent)',
+                      }}
+                    >
+                      {entry.license}
+                    </span>
+                  </div>
+                  <div
+                    className="truncate text-[9.5px]"
+                    style={{ color: 'var(--color-text-tertiary)' }}
+                  >
+                    {entry.copyright}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
