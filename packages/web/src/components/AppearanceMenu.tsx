@@ -145,18 +145,7 @@ export function AppearanceMenu(): React.JSX.Element {
             })}
           </div>
 
-          <div
-            className="my-3"
-            style={{ borderTop: '1px solid var(--color-border)' }}
-          />
-
-          <div
-            className="mb-2 text-xs font-semibold"
-            style={{ color: 'var(--color-text-secondary)' }}
-          >
-            Teema
-          </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-2 mt-3">
             {THEME_CHOICES.map((choice) => {
               const selected = choice.id === preference;
               const Icon = choice.icon;
