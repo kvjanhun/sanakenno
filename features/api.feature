@@ -21,10 +21,14 @@ Feature: Puzzle API
     When a GET request is made to /api/puzzle/5
     Then the response should be puzzle number 5
 
-  Scenario: Out-of-range puzzle number wraps around
-    Given there are 41 puzzles
+  Scenario: Out-of-range puzzle number is rejected
     When a GET request is made to /api/puzzle/42
-    Then the response should be puzzle number 1
+    Then the server should respond with 404
+
+  Scenario: Soft-deleted puzzle number is rejected
+    Given puzzle number 5 is soft-deleted
+    When a GET request is made to /api/puzzle/5
+    Then the server should respond with 404
 
   # --- POST /api/achievement ---
 

@@ -98,6 +98,11 @@ export function Stats() {
     [daily],
   );
 
+  const playerDayTotal = useMemo(
+    () => daily.reduce((sum, day) => sum + day.total, 0),
+    [daily],
+  );
+
   const bestDay = useMemo(
     () =>
       daily.reduce<AchievementDay | null>((best, day) => {
@@ -119,7 +124,8 @@ export function Stats() {
 
   const maxRankTotal = Math.max(1, ...RANKS.map((rank) => totals[rank] || 0));
   const maxDayTotal = Math.max(1, ...daily.map((day) => day.total));
-  const unitLabel = mode === 'users' ? 'pelaajaa' : 'saavutusta';
+  const totalUnitLabel = mode === 'users' ? 'uniikkia pelaajaa' : 'saavutusta';
+  const dailyUnitLabel = mode === 'users' ? 'pelaajaa' : 'saavutusta';
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-fade-in">
@@ -208,7 +214,7 @@ export function Stats() {
           >
             {grandTotal}
           </strong>{' '}
-          {unitLabel} kaudella
+          {totalUnitLabel} valitulla jaksolla
         </div>
       </div>
 
@@ -216,28 +222,34 @@ export function Stats() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
           {
-            label: mode === 'users' ? 'Aktiiviset pelaajat' : 'Saavutukset',
+            label: mode === 'users' ? 'Uniikkeja pelaajia' : 'Saavutukset',
             value: grandTotal,
             meta:
               mode === 'users'
-                ? 'Istuntokohtaiset laite-ID:t'
-                : 'Peliavustajan tasomerkit',
+                ? `Kukin pelaaja kerran ${days} päivän jaksolla`
+                : 'Kaikki tasotapahtumat jaksolla',
             icon: Users,
           },
           {
-            label: 'Pelatut päivät',
-            value: activeDays,
-            meta: `${days} päivän seurantaikkunasta`,
+            label: mode === 'users' ? 'Pelaajapäiviä' : 'Päiviä tapahtumilla',
+            value: mode === 'users' ? playerDayTotal : activeDays,
+            meta:
+              mode === 'users'
+                ? 'Päiväkohtaiset uniikit pelaajat yhteensä'
+                : `${days} päivän seurantaikkunasta`,
             icon: Activity,
           },
           {
-            label: 'Huippupäivän ennätys',
+            label:
+              mode === 'users'
+                ? 'Huippupäivän pelaajia'
+                : 'Huippupäivän tapahtumat',
             value: bestDay?.total ?? 0,
             meta: bestDay ? formatAdminDate(bestDay.date) : '-',
             icon: Trophy,
           },
           {
-            label: 'Suosituin saavutettu taso',
+            label: mode === 'users' ? 'Yleisin korkein taso' : 'Suosituin taso',
             value: topRank.count,
             meta: topRank.count > 0 ? topRank.rank : '-',
             icon: Hash,
@@ -317,7 +329,7 @@ export function Stats() {
             style={{ color: 'var(--color-text-tertiary)' }}
           >
             {mode === 'users'
-              ? 'Yksittäisten pelaajien korkein pelatun päivän aikana ansioitunut taso'
+              ? 'Jakson uniikit pelaajat ja päiväkohtaiset pelaajamäärät'
               : 'Bruttomääräiset pelisilmukan aikaiset tasonvaihdot'}
           </p>
         </div>
@@ -356,7 +368,9 @@ export function Stats() {
                   className="text-[11px]"
                   style={{ color: 'var(--color-text-tertiary)' }}
                 >
-                  Tasoja saavutettu annettuna seurantajaksona
+                  {mode === 'users'
+                    ? `Kukin pelaaja lasketaan kerran ${days} päivän jaksolla`
+                    : 'Kaikki tasotapahtumat annettuna seurantajaksona'}
                 </p>
               </div>
 
@@ -409,7 +423,9 @@ export function Stats() {
                   className="text-[11px]"
                   style={{ color: 'var(--color-text-tertiary)' }}
                 >
-                  Päiväkohtaiset suoritukset ja tasoluokkien suhde
+                  {mode === 'users'
+                    ? 'Päiväkohtaiset uniikit pelaajat ja heidän päivän korkein tasonsa'
+                    : 'Päiväkohtaiset tasotapahtumat ja tasoluokkien suhde'}
                 </p>
               </div>
 
@@ -449,7 +465,7 @@ export function Stats() {
                             return (
                               <div
                                 key={rank}
-                                title={`${rank}: ${count}`}
+                                title={`${rank}: ${count} ${dailyUnitLabel}`}
                                 style={{
                                   width: `${segmentPercent}%`,
                                   backgroundColor: RANK_FILLS[index],
@@ -463,9 +479,13 @@ export function Stats() {
 
                       <span
                         className="text-right font-mono font-bold"
-                        title={RANKS.map(
-                          (rank) => `${rank}: ${day.counts[rank] || 0}`,
-                        ).join(', ')}
+                        title={[
+                          `${day.total} ${dailyUnitLabel}`,
+                          ...RANKS.map(
+                            (rank) =>
+                              `${rank}: ${day.counts[rank] || 0} ${dailyUnitLabel}`,
+                          ),
+                        ].join(', ')}
                         style={{ color: 'var(--color-accent)' }}
                       >
                         {day.total}

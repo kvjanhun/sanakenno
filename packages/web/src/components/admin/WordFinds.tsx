@@ -1,8 +1,9 @@
 /**
  * Word-find analytics panel.
  *
- * Shows successful find counts for the selected puzzle. The list is sorted
- * hardest-first so low-count and never-found words are easiest to inspect.
+ * Shows successful find counts for the selected puzzle. The list defaults to
+ * found-first so fresh local test data is visible immediately, with a
+ * hardest-first mode for puzzle tuning.
  *
  * @module src/components/admin/WordFinds
  */
@@ -13,6 +14,7 @@ import { useAdminStore } from '../../store/useAdminStore';
 import type { WordFindEntry } from '../../store/useAdminStore';
 
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+type WordSortMode = 'found' | 'hardest';
 
 interface WordFindsResponse {
   puzzle_number: number;
@@ -38,6 +40,7 @@ export function WordFinds() {
   const [data, setData] = useState<WordFindsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sortMode, setSortMode] = useState<WordSortMode>('found');
 
   useEffect(() => {
     setPuzzleNumber(currentSlot);
@@ -81,6 +84,23 @@ export function WordFinds() {
     if (!data) return 1;
     return Math.max(1, ...data.words.map((word) => word.find_count));
   }, [data]);
+
+  const recordedWordPercent = data?.total_words
+    ? Math.round((data.recorded_words / data.total_words) * 100)
+    : 0;
+
+  const sortedWords = useMemo(() => {
+    if (!data) return [];
+
+    return [...data.words].sort((a, b) => {
+      if (a.find_count !== b.find_count) {
+        return sortMode === 'found'
+          ? b.find_count - a.find_count
+          : a.find_count - b.find_count;
+      }
+      return a.word.localeCompare(b.word, 'fi');
+    });
+  }, [data, sortMode]);
 
   const displayNumber = puzzleNumber + 1;
   const canGoPrevious = puzzleNumber > 0;
@@ -226,7 +246,7 @@ export function WordFinds() {
                 className="text-[10px] font-bold uppercase tracking-wider block"
                 style={{ color: 'var(--color-text-tertiary)' }}
               >
-                Löydetyt sanat / Kaikki
+                Eri sanoja löydetty
               </span>
               <div
                 className="text-lg font-extrabold font-mono"
@@ -238,8 +258,7 @@ export function WordFinds() {
                 className="text-[10px] font-medium"
                 style={{ color: 'var(--color-text-tertiary)' }}
               >
-                {Math.round((data.recorded_words / data.total_words) * 100)}%
-                sanastosta löydetty ainakin kerran
+                {recordedWordPercent}% ratkaisusanoista löydetty ainakin kerran
               </div>
             </div>
 
@@ -251,7 +270,7 @@ export function WordFinds() {
                 className="text-[10px] font-bold uppercase tracking-wider block"
                 style={{ color: 'var(--color-text-tertiary)' }}
               >
-                Löytöjä yhteensä
+                Löytöraportteja
               </span>
               <div
                 className="text-lg font-extrabold font-mono"
@@ -263,7 +282,7 @@ export function WordFinds() {
                 className="text-[10px] font-medium"
                 style={{ color: 'var(--color-text-tertiary)' }}
               >
-                Onnistuneita havaintoja seurantajaksolla
+                Onnistuneet löydöt valitussa pelissä
               </div>
             </div>
 
@@ -275,7 +294,7 @@ export function WordFinds() {
                 className="text-[10px] font-bold uppercase tracking-wider block"
                 style={{ color: 'var(--color-text-tertiary)' }}
               >
-                Uniikit pelisanat
+                Ratkaisusanoja
               </span>
               <div
                 className="text-lg font-extrabold font-mono"
@@ -287,12 +306,44 @@ export function WordFinds() {
                 className="text-[10px] font-medium"
                 style={{ color: 'var(--color-text-tertiary)' }}
               >
-                Pulmaluupin vastaussanakirjan koko
+                Valitun pelin hyväksytyt sanat
               </div>
             </div>
           </div>
 
           {/* Words table list */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div
+              className="inline-flex rounded-xl p-1 border bg-[var(--color-bg-primary)] w-fit"
+              style={{ borderColor: 'var(--color-border)' }}
+            >
+              {[
+                { key: 'found', label: 'Löydetyimmät ensin' },
+                { key: 'hardest', label: 'Vaikeimmat ensin' },
+              ].map((item) => {
+                const active = sortMode === item.key;
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => setSortMode(item.key as WordSortMode)}
+                    className="h-8 rounded-lg px-3 text-xs font-bold transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                    style={{
+                      backgroundColor: active
+                        ? 'var(--color-accent)'
+                        : 'transparent',
+                      color: active
+                        ? 'var(--color-on-accent)'
+                        : 'var(--color-text-secondary)',
+                    }}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <div
             className="max-h-[30rem] overflow-y-auto rounded-xl border"
             style={{
@@ -308,7 +359,10 @@ export function WordFinds() {
                 Tässä pelissä ei ole tilastoraportteja.
               </div>
             ) : (
-              <table className="w-full border-collapse">
+              <table
+                className="w-full border-collapse"
+                aria-label="Löydettyjen sanojen määrät"
+              >
                 <thead>
                   <tr
                     className="border-b text-left"
@@ -327,18 +381,18 @@ export function WordFinds() {
                       className="px-5 py-3 text-xs font-bold uppercase tracking-wider"
                       style={{ color: 'var(--color-text-tertiary)' }}
                     >
-                      Arvauskertojen jakauma
+                      Suhteellinen löytömäärä
                     </th>
                     <th
                       className="px-5 py-3 text-xs font-bold uppercase tracking-wider text-right"
                       style={{ color: 'var(--color-text-tertiary)' }}
                     >
-                      Määrä
+                      Löytöjä
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--color-border)]">
-                  {data.words.map((item) => {
+                  {sortedWords.map((item) => {
                     const findPercentage =
                       item.find_count > 0
                         ? Math.round((item.find_count / maxFindCount) * 100)

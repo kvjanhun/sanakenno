@@ -440,7 +440,7 @@ export function getPuzzleForDate(date: Date): number {
 
 /**
  * Get a puzzle by its slot number. Reads from cache or computes and caches.
- * Returns null if the slot doesn't exist in the DB.
+ * Returns null if the slot doesn't exist or is not active.
  */
 export function getPuzzleBySlot(slot: number): FullPuzzleData | null {
   ensureCacheFresh();
@@ -452,7 +452,9 @@ export function getPuzzleBySlot(slot: number): FullPuzzleData | null {
 
   const db = getDb();
   const puzzle = db
-    .prepare('SELECT slot, letters, center FROM puzzles WHERE slot = ?')
+    .prepare(
+      'SELECT slot, letters, center FROM puzzles WHERE slot = ? AND is_active = 1',
+    )
     .get(slot) as PuzzleRow | undefined;
   if (!puzzle) return null;
 

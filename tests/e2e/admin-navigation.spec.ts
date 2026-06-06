@@ -158,8 +158,8 @@ test('word analytics have their own admin page', async ({ page }) => {
         recorded_words: 1,
         total_finds: 5,
         words: [
-          { word: 'kala', find_count: 5 },
           { word: 'kana', find_count: 0 },
+          { word: 'kala', find_count: 5 },
         ],
       }),
     });
@@ -168,15 +168,24 @@ test('word analytics have their own admin page', async ({ page }) => {
   await page.goto('/#/admin');
   await page.getByRole('button', { name: /Tilastot/ }).click();
   await expect(page.getByText('Rankkijakauma')).toBeVisible();
-  await expect(page.getByText('Vieraat sanat')).toHaveCount(0);
+  await expect(page.getByText('Virhearvaukset')).toHaveCount(0);
   await expect(page.getByText('Löydetyt sanat')).toHaveCount(0);
 
   await page.getByRole('button', { name: /Sanadata/ }).click();
   await expect(page.getByText('Yhteensä: 3 virhearvausta')).toBeVisible();
 
   await page.getByRole('button', { name: 'Löydetyt sanat' }).click();
-  await expect(page.getByText('Löytöjä yhteensä')).toBeVisible();
+  await expect(page.getByText('Löytöraportteja')).toBeVisible();
   await expect(
-    page.getByText('Löytöjä yhteensä').locator('..').getByText('5'),
+    page.getByText('Löytöraportteja').locator('..').getByText('5'),
   ).toBeVisible();
+  const wordFindRows = page
+    .getByRole('table', { name: 'Löydettyjen sanojen määrät' })
+    .locator('tbody tr');
+  await expect(wordFindRows.first()).toContainText('kala');
+  await expect(wordFindRows.first()).toContainText('5');
+
+  await page.getByRole('button', { name: 'Vaikeimmat ensin' }).click();
+  await expect(wordFindRows.first()).toContainText('kana');
+  await expect(wordFindRows.first()).toContainText('0');
 });

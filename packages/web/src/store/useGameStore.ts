@@ -155,8 +155,8 @@ function storageKey(puzzleNumber: number): string {
 
 /**
  * Get or create a stable device ID.
- * Combined with puzzle_number, this gives a consistent session ID
- * for the same player on the same puzzle across refreshes.
+ * Used as the anonymous fallback for a stable player identity across
+ * refreshes and puzzle days.
  */
 function getDeviceId(): string {
   const key = 'sanakenno_device_id';

@@ -196,6 +196,17 @@ Given(
   },
 );
 
+Given(
+  'puzzle index {int} is soft-deleted',
+  function (this: SanakennoWorld, puzzleNumber: number) {
+    const db = getDb();
+    db.prepare('UPDATE puzzles SET is_active = 0 WHERE slot = ?').run(
+      puzzleNumber,
+    );
+    invalidateAll();
+  },
+);
+
 Then(
   'the response should contain more than {int} entries',
   function (this: SanakennoWorld, minCount: number) {
@@ -210,6 +221,28 @@ Then(
   'the response should contain one full puzzle cycle',
   function (this: SanakennoWorld) {
     assert.equal(this.archiveEntries.length, totalPuzzles());
+  },
+);
+
+Then(
+  'the archive response should not include puzzle index {int}',
+  function (this: SanakennoWorld, puzzleNumber: number) {
+    assert.ok(
+      !this.archiveEntries.some(
+        (entry) => entry.puzzle_number === puzzleNumber,
+      ),
+      `Expected archive not to include puzzle index ${puzzleNumber}`,
+    );
+  },
+);
+
+Then(
+  'the archive response should include puzzle index {int}',
+  function (this: SanakennoWorld, puzzleNumber: number) {
+    assert.ok(
+      this.archiveEntries.some((entry) => entry.puzzle_number === puzzleNumber),
+      `Expected archive to include puzzle index ${puzzleNumber}`,
+    );
   },
 );
 

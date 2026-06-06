@@ -40,6 +40,13 @@ Feature: Puzzle archive
     And the response should contain one full puzzle cycle
     And the last entry should be for puzzle index 1
 
+  Scenario: Archive with all=true skips soft-deleted puzzle indexes
+    Given today is puzzle index 3 for archive rotation
+    And puzzle index 2 is soft-deleted
+    When a GET request is made to /api/archive?all=true
+    Then the archive response should not include puzzle index 2
+    And the archive response should include puzzle index 0
+
   # --- Word list endpoint ---
 
   Scenario: Word list is available for a past puzzle
@@ -51,9 +58,9 @@ Feature: Puzzle archive
     When a GET request is made to /api/puzzle/today/words
     Then the response status should be 403
 
-  Scenario: Word list is blocked for wrapped aliases of today's puzzle
+  Scenario: Word list rejects wrapped aliases of today's puzzle
     When a GET request is made to /api/puzzle/today-alias/words
-    Then the response status should be 403
+    Then the response status should be 404
 
   Scenario: Word list returns 400 for invalid puzzle number
     When a GET request is made to /api/puzzle/abc/words

@@ -358,6 +358,13 @@ Feature: Admin tool
     And the overall totals should count "Sanavalmis" as 1
     And the overall totals should count "Hyvä alku" as 0
 
+  Scenario: Player achievement stats count one player once per day and once per period
+    Given player "player-weekly" reached rank "Onnistuja" on every day in the last 7 days
+    When the admin requests player achievement stats for the last 7 days
+    Then player stats day offsets 0 through 6 should each total 1
+    And the overall player stats total should be 1
+    And the overall totals should count "Onnistuja" as 1
+
   Scenario: Achievement stats grouped by Helsinki timezone
     Given an achievement was recorded 2 days ago at 23:30 UTC
     Then it should appear under yesterday in Helsinki timezone stats
@@ -388,6 +395,13 @@ Feature: Admin tool
     And failed guess day offset 0 should include word "outu" with count 1
     And failed guess day offset 1 should have total_count 2
 
+  Scenario: Failed-guess stats keep the same word separate by day
+    Given failed guesses include word "anna" with count 3 for day offset 0
+    And failed guesses include word "anna" with count 3 for day offset 1
+    When the admin requests failed guess stats for the last 7 days
+    Then failed guess day offset 0 should include word "anna" with count 3
+    And failed guess day offset 1 should include word "anna" with count 3
+
   # --- Word-find stats ---
 
   Scenario: View word-find counts for a puzzle
@@ -399,6 +413,11 @@ Feature: Admin tool
     And word-find word "kala" should have count 5
     And word-find word "kana" should have count 2
     And word-find word "kana" should be harder than word "kala"
+
+  Scenario: Word-find stats reject soft-deleted puzzles
+    Given puzzle 4 is soft-deleted
+    When the admin requests word-find stats for puzzle 4
+    Then the server should respond with 404
 
   # --- Cache invalidation ---
 

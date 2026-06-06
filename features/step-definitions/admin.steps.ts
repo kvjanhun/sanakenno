@@ -2139,6 +2139,16 @@ Given(
   },
 );
 
+Given(
+  'player {string} reached rank {string} on every day in the last {int} days',
+  function (this: AdminWorld, sessionId: string, rank: string, days: number) {
+    for (let offset = 0; offset < days; offset++) {
+      const achievedAt = `${helsinkiDateByOffset(offset)} 10:00:00`;
+      insertAchievement(rank, achievedAt, sessionId);
+    }
+  },
+);
+
 function insertAchievement(
   rank: string,
   achievedAt: string,
@@ -2217,6 +2227,40 @@ Then(
   "today's player stats should count {string} as {int}",
   function (this: AdminWorld, rank: string, expectedCount: number) {
     assert.equal(todayPlayerStatsEntry(this).counts[rank] || 0, expectedCount);
+  },
+);
+
+Then(
+  'player stats day offsets {int} through {int} should each total {int}',
+  function (
+    this: AdminWorld,
+    startOffset: number,
+    endOffset: number,
+    expectedTotal: number,
+  ) {
+    const daily = this.responseJson.daily as Array<{
+      date: string;
+      total: number;
+    }>;
+
+    for (let offset = startOffset; offset <= endOffset; offset++) {
+      const date = helsinkiDateByOffset(offset);
+      const entry = daily.find((item) => item.date === date);
+      assert.ok(entry, `Date ${date} should appear in player stats`);
+      assert.equal(entry!.total, expectedTotal);
+    }
+  },
+);
+
+Then(
+  'the overall player stats total should be {int}',
+  function (this: AdminWorld, expectedTotal: number) {
+    const totals = this.responseJson.totals as Record<string, number>;
+    const actualTotal = Object.values(totals).reduce(
+      (sum, count) => sum + count,
+      0,
+    );
+    assert.equal(actualTotal, expectedTotal);
   },
 );
 
@@ -2412,6 +2456,17 @@ Given(
          count = count + excluded.count,
          last_at = datetime('now')`,
     ).run(normalized, puzzleNumber, count);
+  },
+);
+
+Given(
+  'puzzle {int} is soft-deleted',
+  function (this: AdminWorld, puzzleNumber: number) {
+    const db = getDb();
+    db.prepare('UPDATE puzzles SET is_active = 0 WHERE slot = ?').run(
+      puzzleNumber,
+    );
+    invalidateAll();
   },
 );
 

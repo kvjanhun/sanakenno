@@ -41,13 +41,13 @@ Current versions: see the package.json files for each deployable target.
 
 1. **Request**: Frontend calls `GET /api/puzzle` on mount (or at midnight).
 2. **Route**: `server/routes/puzzle.ts` handles the request.
-3. **Engine**: `server/puzzle-engine.ts` calculates which puzzle to serve based on Helsinki time.
+3. **Engine**: `server/puzzle-engine.ts` calculates which active puzzle slot to serve based on Helsinki time. Date-based rotation can roll over to the first active slot.
 4. **Database**: Puzzles are fetched from SQLite via `server/db/connection.ts`.
 5. **Response**: JSON including letters, center letter, and pre-computed `hint_data`.
 
 ### Archive & Word List (mobile, paused)
 
-1. Mobile archive screen fetches `GET /api/archive?all=true` — returns all past puzzle slots.
+1. Mobile archive screen fetches `GET /api/archive?all=true` — returns calendar entries for the current active-puzzle cycle.
 2. Today's card is pinned above a scrollable `FlatList` of past entries.
 3. Tapping a past card shows a bottom sheet: **Pelaa** (loads puzzle, navigates back) or **Näytä vastaukset** (navigates to `puzzle-words` screen).
 4. `puzzle-words` screen: sets `revealed_N = 'true'` in MMKV, fetches `GET /api/puzzle/:number/words`, displays found vs missed words. Once revealed, stats updates are frozen for that puzzle.
@@ -78,10 +78,11 @@ Current versions: see the package.json files for each deployable target.
 - `store/useAuthStore.ts`: Player auth, sync pull/push, transfer token flow.
 - `hooks/useMidnightRollover.ts`: Manages the transition between daily puzzles (browser reload).
 - `components/Honeycomb/`: The visual heart of the web game.
-- `components/ArchiveModal.tsx`: 7-day puzzle archive browser.
+- `components/ArchiveModal.tsx`: Current-cycle puzzle archive browser and reveal flow.
 - `components/StatsModal.tsx`: Player statistics and history display.
-- `components/admin/Stats.tsx`: Admin achievement stats plus failed-guess and word-find analytics.
-- `components/admin/WordFinds.tsx`: Per-puzzle successful word-find counts, sorted hardest-first.
+- `components/admin/Stats.tsx`: Admin usage stats with unique-player and raw-event modes.
+- `components/admin/WordData.tsx`: Separate Sanadata page for failed guesses and word-find analytics.
+- `components/admin/WordFinds.tsx`: Per-puzzle successful word-find counts, found-first by default with a hardest-first tuning mode.
 
 ### Mobile App (`packages/mobile/`)
 
@@ -105,8 +106,8 @@ Current versions: see the package.json files for each deployable target.
 
 - `index.ts`: API entry point — all routes and middleware mounted here; full endpoint list in header comment.
 - `puzzle-engine.ts`: **Core Logic** for puzzle rotation and word-list generation.
-- `routes/puzzle.ts`: `GET /api/puzzle`, `GET /api/puzzle/:number`, `GET /api/puzzle/:number/words` (words blocked for active puzzle slot).
-- `routes/archive.ts`: `GET /api/archive` — last 7 days; `?all=true` returns all past slots.
+- `routes/puzzle.ts`: `GET /api/puzzle`, `GET /api/puzzle/:number`, `GET /api/puzzle/:number/words`. Direct `:number` values are exact active slot IDs; out-of-range and soft-deleted slots return 404. Words are blocked for the current active puzzle slot.
+- `routes/archive.ts`: `GET /api/archive` — last 7 days; `?all=true` walks the current active-puzzle calendar cycle.
 - `routes/player-sync.ts`: `GET /api/player/sync`, `POST /api/player/sync/stats`, `POST /api/player/sync/state`.
 - `routes/admin.ts`: Admin dashboard endpoints (requires session auth).
 - `routes/failed-guess.ts`: `POST /api/failed-guess`.

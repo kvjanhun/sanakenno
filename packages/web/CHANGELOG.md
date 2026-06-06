@@ -1,5 +1,15 @@
 # @sanakenno/web
 
+## 1.13.0
+
+### Minor Changes
+
+- Use exact active puzzle slots for direct puzzle APIs and clarify admin usage and Sanadata word-find stats.
+
+### Patch Changes
+
+- @sanakenno/shared@1.13.0
+
 ## 1.12.5
 
 ### Patch Changes

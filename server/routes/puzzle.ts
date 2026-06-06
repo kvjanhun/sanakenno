@@ -36,8 +36,7 @@ const puzzle = new Hono();
 function buildPuzzleResponse(slot: number): PuzzleResponse | null {
   const totalPuzzles = getTotalPuzzles();
   if (totalPuzzles === 0) return null;
-  const wrappedSlot = ((slot % totalPuzzles) + totalPuzzles) % totalPuzzles;
-  const data = getPuzzleBySlot(wrappedSlot);
+  const data = getPuzzleBySlot(slot);
   if (!data) return null;
 
   return {
@@ -46,7 +45,7 @@ function buildPuzzleResponse(slot: number): PuzzleResponse | null {
     word_hashes: data.word_hashes,
     hint_data: data.hint_data,
     max_score: data.max_score,
-    puzzle_number: wrappedSlot,
+    puzzle_number: data.slot,
     total_puzzles: totalPuzzles,
   };
 }
@@ -69,7 +68,7 @@ puzzle.get('/', (c) => {
 
 /**
  * GET /api/puzzle/:number
- * Returns a specific puzzle by slot number (wraps around).
+ * Returns a specific active puzzle by slot number.
  */
 puzzle.get('/:number', (c) => {
   const number = parseInt(c.req.param('number'), 10);
@@ -102,16 +101,15 @@ puzzle.get('/:number/words', (c) => {
 
   const totalPuzzles = getTotalPuzzles();
   if (totalPuzzles === 0) return c.json({ error: 'Puzzle not found' }, 404);
-  const wrappedSlot = ((number % totalPuzzles) + totalPuzzles) % totalPuzzles;
 
-  if (wrappedSlot === activeSlot) {
+  if (number === activeSlot) {
     return c.json({ error: "Word list not available for today's puzzle" }, 403);
   }
 
-  const data = getPuzzleBySlot(wrappedSlot);
+  const data = getPuzzleBySlot(number);
   if (!data) return c.json({ error: 'Puzzle not found' }, 404);
 
-  return c.json({ words: data.words, puzzle_number: wrappedSlot });
+  return c.json({ words: data.words, puzzle_number: data.slot });
 });
 
 export default puzzle;

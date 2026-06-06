@@ -19,7 +19,7 @@ const TABS: {
   label: string;
   icon: typeof BarChart3;
 }[] = [
-  { key: 'failed', label: 'Vieraat sanat', icon: BarChart3 },
+  { key: 'failed', label: 'Virhearvaukset', icon: BarChart3 },
   { key: 'words', label: 'Löydetyt sanat', icon: Search },
 ];
 

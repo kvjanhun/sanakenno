@@ -207,12 +207,18 @@ describe('GET /api/puzzle/:number', () => {
     expect(json.puzzle_number).toBe(1);
   });
 
-  it('wraps around for out-of-range puzzle number', async () => {
+  it('returns 404 for out-of-range puzzle number', async () => {
     const res = await request('/api/puzzle/42');
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(404);
+  });
 
-    const json = (await res.json()) as PuzzleResponse;
-    expect(json.puzzle_number).toBe(42 % json.total_puzzles);
+  it('returns 404 for inactive puzzle number', async () => {
+    const db = getDb();
+    db.prepare('UPDATE puzzles SET is_active = 0 WHERE slot = ?').run(1);
+    invalidateAll();
+
+    const res = await request('/api/puzzle/1');
+    expect(res.status).toBe(404);
   });
 
   it('returns 400 for invalid puzzle number', async () => {
@@ -234,7 +240,7 @@ describe('GET /api/puzzle/:number/words', () => {
     invalidateAll();
   });
 
-  it("blocks wrapped aliases of today's puzzle", async () => {
+  it("rejects wrapped aliases of today's puzzle", async () => {
     const now = new Date();
     const helsinki = new Date(
       now.toLocaleString('en-US', { timeZone: 'Europe/Helsinki' }),
@@ -244,7 +250,17 @@ describe('GET /api/puzzle/:number/words', () => {
 
     const res = await request(`/api/puzzle/${alias}/words`);
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(404);
+  });
+
+  it('returns 404 for inactive puzzle word list', async () => {
+    const db = getDb();
+    db.prepare('UPDATE puzzles SET is_active = 0 WHERE slot = ?').run(1);
+    invalidateAll();
+
+    const res = await request('/api/puzzle/1/words');
+
+    expect(res.status).toBe(404);
   });
 });
 

@@ -161,21 +161,7 @@ When(
 Then(
   /^the response should be puzzle number (\d+)$/,
   function (this: SanakennoWorld, expectedNumber: string) {
-    const requested = parseInt(expectedNumber, 10);
-    const totalPuzzles = this.responseJson.total_puzzles;
-
-    if (
-      this.expectedTotalPuzzles &&
-      this.expectedTotalPuzzles !== totalPuzzles
-    ) {
-      assert.ok(
-        this.responseJson.puzzle_number < totalPuzzles,
-        `Puzzle number ${this.responseJson.puzzle_number} should be < ${totalPuzzles}`,
-      );
-    } else {
-      const expected = requested % totalPuzzles;
-      assert.equal(this.responseJson.puzzle_number, expected);
-    }
+    assert.equal(this.responseJson.puzzle_number, parseInt(expectedNumber, 10));
   },
 );
 
@@ -183,6 +169,17 @@ Given(
   /^there are (\d+) puzzles$/,
   function (this: SanakennoWorld, count: string) {
     this.expectedTotalPuzzles = parseInt(count, 10);
+  },
+);
+
+Given(
+  'puzzle number {int} is soft-deleted',
+  function (this: SanakennoWorld, puzzleNumber: number) {
+    const db = getDb();
+    db.prepare('UPDATE puzzles SET is_active = 0 WHERE slot = ?').run(
+      puzzleNumber,
+    );
+    invalidateAll();
   },
 );
 
