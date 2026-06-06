@@ -11,20 +11,66 @@ import { msUntilMidnight } from '../hooks/useMidnightRollover';
 import { ModalShell } from './ModalShell';
 
 const LICENSES = [
-  { name: 'React', license: 'MIT', copyright: 'Meta Platforms, Inc.' },
-  { name: 'Vite', license: 'MIT', copyright: 'Evan You' },
-  { name: 'Tailwind CSS', license: 'MIT', copyright: 'Tailwind Labs, Inc.' },
-  { name: 'Zustand', license: 'MIT', copyright: 'Paul Henschel' },
-  { name: 'Hono', license: 'MIT', copyright: 'Yusuke Wada' },
-  { name: 'better-sqlite3', license: 'MIT', copyright: 'Joshua Wise' },
+  {
+    name: 'React',
+    license: 'MIT',
+    copyright: 'Meta Platforms, Inc.',
+    url: 'https://react.dev',
+  },
+  {
+    name: 'Vite',
+    license: 'MIT',
+    copyright: 'Evan You',
+    url: 'https://vite.dev',
+  },
+  {
+    name: 'Tailwind CSS',
+    license: 'MIT',
+    copyright: 'Tailwind Labs, Inc.',
+    url: 'https://tailwindcss.com',
+  },
+  {
+    name: 'Zustand',
+    license: 'MIT',
+    copyright: 'Paul Henschel',
+    url: 'https://github.com/pmndrs/zustand',
+  },
+  {
+    name: 'Hono',
+    license: 'MIT',
+    copyright: 'Yusuke Wada',
+    url: 'https://hono.dev',
+  },
+  {
+    name: 'better-sqlite3',
+    license: 'MIT',
+    copyright: 'Joshua Wise',
+    url: 'https://github.com/WiseLibs/better-sqlite3',
+  },
   {
     name: 'vite-plugin-pwa',
     license: 'MIT',
     copyright: 'Anthony Fu',
+    url: 'https://github.com/vite-pwa/vite-plugin-pwa',
   },
-  { name: 'Lucide Icons', license: 'MIT', copyright: 'Lucide Contributors' },
-  { name: 'qrcode', license: 'MIT', copyright: 'Ryan Day' },
-  { name: 'validator', license: 'MIT', copyright: "Chris O'Hara" },
+  {
+    name: 'Lucide Icons',
+    license: 'MIT',
+    copyright: 'Lucide Contributors',
+    url: 'https://lucide.dev',
+  },
+  {
+    name: 'qrcode',
+    license: 'MIT',
+    copyright: 'Ryan Day',
+    url: 'https://github.com/soldair/node-qrcode',
+  },
+  {
+    name: 'validator',
+    license: 'MIT',
+    copyright: "Chris O'Hara",
+    url: 'https://github.com/validatorjs/validator.js',
+  },
 ];
 
 /** Props for {@link RulesModal}. */
@@ -121,14 +167,14 @@ export function RulesModal({
           </div>
           <ul className="space-y-1.5 pl-0 m-0 list-none">
             <li className="flex items-start gap-2 text-xs">
-              <Check
-                size={14}
-                style={{
-                  color: 'var(--color-accent)',
-                  marginTop: '2px',
-                  flexShrink: 0,
-                }}
-              />
+              <span className="h-4 flex items-center shrink-0">
+                <Check
+                  size={14}
+                  style={{
+                    color: 'var(--color-accent)',
+                  }}
+                />
+              </span>
               <span>
                 Sanan täytyy sisältää{' '}
                 <span
@@ -140,38 +186,38 @@ export function RulesModal({
               </span>
             </li>
             <li className="flex items-start gap-2 text-xs">
-              <Check
-                size={14}
-                style={{
-                  color: 'var(--color-accent)',
-                  marginTop: '2px',
-                  flexShrink: 0,
-                }}
-              />
+              <span className="h-4 flex items-center shrink-0">
+                <Check
+                  size={14}
+                  style={{
+                    color: 'var(--color-accent)',
+                  }}
+                />
+              </span>
               <span>Sanan pituus on vähintään 4 kirjainta</span>
             </li>
             <li className="flex items-start gap-2 text-xs">
-              <Check
-                size={14}
-                style={{
-                  color: 'var(--color-accent)',
-                  marginTop: '2px',
-                  flexShrink: 0,
-                }}
-              />
+              <span className="h-4 flex items-center shrink-0">
+                <Check
+                  size={14}
+                  style={{
+                    color: 'var(--color-accent)',
+                  }}
+                />
+              </span>
               <span>
                 Vain annettuja kirjaimia (samaa kirjainta voi käyttää useasti)
               </span>
             </li>
             <li className="flex items-start gap-2 text-xs">
-              <Check
-                size={14}
-                style={{
-                  color: 'var(--color-accent)',
-                  marginTop: '2px',
-                  flexShrink: 0,
-                }}
-              />
+              <span className="h-4 flex items-center shrink-0">
+                <Check
+                  size={14}
+                  style={{
+                    color: 'var(--color-accent)',
+                  }}
+                />
+              </span>
               <span>
                 Sanan täytyy löytyä Kotuksen sanalistasta (
                 <a
@@ -204,36 +250,36 @@ export function RulesModal({
           </div>
           <ul className="space-y-1.5 pl-0 m-0 list-none">
             <li className="flex items-start gap-2 text-xs">
-              <Sparkles
-                size={14}
-                style={{
-                  color: 'var(--color-accent)',
-                  marginTop: '2px',
-                  flexShrink: 0,
-                }}
-              />
+              <span className="h-4 flex items-center shrink-0">
+                <Sparkles
+                  size={14}
+                  style={{
+                    color: 'var(--color-accent)',
+                  }}
+                />
+              </span>
               <span>4-kirjaiminen sana: 1 piste</span>
             </li>
             <li className="flex items-start gap-2 text-xs">
-              <Sparkles
-                size={14}
-                style={{
-                  color: 'var(--color-accent)',
-                  marginTop: '2px',
-                  flexShrink: 0,
-                }}
-              />
+              <span className="h-4 flex items-center shrink-0">
+                <Sparkles
+                  size={14}
+                  style={{
+                    color: 'var(--color-accent)',
+                  }}
+                />
+              </span>
               <span>Pidempi sana: 1 piste jokaisesta kirjaimesta</span>
             </li>
             <li className="flex items-start gap-2 text-xs">
-              <Sparkles
-                size={14}
-                style={{
-                  color: 'var(--color-accent)',
-                  marginTop: '2px',
-                  flexShrink: 0,
-                }}
-              />
+              <span className="h-4 flex items-center shrink-0">
+                <Sparkles
+                  size={14}
+                  style={{
+                    color: 'var(--color-accent)',
+                  }}
+                />
+              </span>
               <span>
                 Pangrammi (sisältää kaikki 7 kirjainta): +7 lisäpistettä
               </span>
@@ -254,36 +300,36 @@ export function RulesModal({
           </div>
           <ul className="space-y-1.5 pl-0 m-0 list-none">
             <li className="flex items-start gap-2 text-xs">
-              <HelpCircle
-                size={14}
-                style={{
-                  color: 'var(--color-accent)',
-                  marginTop: '2px',
-                  flexShrink: 0,
-                }}
-              />
+              <span className="h-4 flex items-center shrink-0">
+                <HelpCircle
+                  size={14}
+                  style={{
+                    color: 'var(--color-accent)',
+                  }}
+                />
+              </span>
               <span>Yleiskuva: sanojen ja pangrammien kokonaismäärä</span>
             </li>
             <li className="flex items-start gap-2 text-xs">
-              <HelpCircle
-                size={14}
-                style={{
-                  color: 'var(--color-accent)',
-                  marginTop: '2px',
-                  flexShrink: 0,
-                }}
-              />
+              <span className="h-4 flex items-center shrink-0">
+                <HelpCircle
+                  size={14}
+                  style={{
+                    color: 'var(--color-accent)',
+                  }}
+                />
+              </span>
               <span>Pituudet: jäljellä olevien sanojen pituusjakauma</span>
             </li>
             <li className="flex items-start gap-2 text-xs">
-              <HelpCircle
-                size={14}
-                style={{
-                  color: 'var(--color-accent)',
-                  marginTop: '2px',
-                  flexShrink: 0,
-                }}
-              />
+              <span className="h-4 flex items-center shrink-0">
+                <HelpCircle
+                  size={14}
+                  style={{
+                    color: 'var(--color-accent)',
+                  }}
+                />
+              </span>
               <span>Alkuparit: sanojen ensimmäiset 2 kirjainta</span>
             </li>
           </ul>
@@ -333,14 +379,14 @@ export function RulesModal({
           </div>
           <ul className="space-y-1.5 pl-0 m-0 list-none">
             <li className="flex items-start gap-2 text-xs">
-              <Smartphone
-                size={14}
-                style={{
-                  color: 'var(--color-accent)',
-                  marginTop: '2px',
-                  flexShrink: 0,
-                }}
-              />
+              <span className="h-4 flex items-center shrink-0">
+                <Smartphone
+                  size={14}
+                  style={{
+                    color: 'var(--color-accent)',
+                  }}
+                />
+              </span>
               <span>
                 Voit asentaa Sanakennon sovelluksena kotinäytöllesi selaimesi
                 valikon kautta (&quot;Lisää kotinäytölle&quot; tai &quot;Asenna
@@ -348,14 +394,14 @@ export function RulesModal({
               </span>
             </li>
             <li className="flex items-start gap-2 text-xs">
-              <Smartphone
-                size={14}
-                style={{
-                  color: 'var(--color-accent)',
-                  marginTop: '2px',
-                  flexShrink: 0,
-                }}
-              />
+              <span className="h-4 flex items-center shrink-0">
+                <Smartphone
+                  size={14}
+                  style={{
+                    color: 'var(--color-accent)',
+                  }}
+                />
+              </span>
               <span>
                 Jo ladattua päivän peliä ja tilastojasi voi jatkaa myös ilman
                 verkkoyhteyttä. Uuden päivän peli tai synkronointi vaatii
@@ -416,48 +462,39 @@ export function RulesModal({
         </div>
 
         {licensesOpen && (
-          <div ref={licensesRef} className="mt-4 space-y-2.5">
+          <div ref={licensesRef} className="mt-5 space-y-3">
             <p
-              className="text-xs text-center m-0"
+              className="text-xs text-center mb-4 pb-1"
               style={{ color: 'var(--color-text-secondary)' }}
             >
               Sanakenno käyttää seuraavia avoimen lähdekoodin kirjastoja:
             </p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
               {LICENSES.map((entry) => (
                 <div
                   key={entry.name}
-                  className="rounded-lg p-2 flex flex-col justify-between border"
+                  className="flex items-center justify-between gap-4 py-2 border-b last:border-b-0"
                   style={{
-                    backgroundColor: 'var(--color-bg-secondary)',
-                    borderColor: 'var(--color-border)',
-                    color: 'var(--color-text-secondary)',
+                    borderColor:
+                      'color-mix(in srgb, var(--color-border) 30%, transparent)',
                   }}
                 >
-                  <div className="flex justify-between items-center gap-1.5 mb-0.5">
-                    <span
-                      className="font-semibold text-[11px]"
-                      style={{ color: 'var(--color-text-primary)' }}
+                  <div className="min-w-0 flex-1 flex items-baseline gap-2">
+                    <a
+                      href={entry.url}
+                      target="_blank"
+                      rel="noopener"
+                      className="font-semibold text-xs hover:underline truncate text-[var(--color-text-primary)] hover:text-[var(--color-accent)] transition-colors"
                     >
                       {entry.name}
-                    </span>
-                    <span
-                      className="px-1 py-0.2 rounded font-mono text-[9px]"
-                      style={{
-                        backgroundColor:
-                          'color-mix(in srgb, var(--color-accent) 12%, var(--color-bg-primary))',
-                        color: 'var(--color-accent)',
-                      }}
-                    >
-                      {entry.license}
+                    </a>
+                    <span className="text-[10px] truncate text-[var(--color-text-tertiary)]">
+                      {entry.copyright}
                     </span>
                   </div>
-                  <div
-                    className="truncate text-[9.5px]"
-                    style={{ color: 'var(--color-text-tertiary)' }}
-                  >
-                    {entry.copyright}
-                  </div>
+                  <span className="font-mono text-[9px] font-bold tracking-wide shrink-0 opacity-80 text-[var(--color-accent)]">
+                    {entry.license}
+                  </span>
                 </div>
               ))}
             </div>
