@@ -152,11 +152,16 @@ export function SyncModal({
       {mode === 'options' && isLinked && (
         <div className="space-y-3">
           {playerKey ? (
-            <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
-              Avaa Sanakenno toisella laitteella ja käytä
-              alla olevaa linkkiä tai koodia yhdistääksesi sen.
-              Tämän jälkeen edistymisesi, tilastosi ja asetuksesi synkronoidaan
-              automaattisesti kaikkien laitteidesi välillä. 
+            <p
+              style={{
+                color: 'var(--color-text-secondary)',
+                fontSize: '0.875rem',
+              }}
+            >
+              Avaa Sanakenno toisella laitteella ja käytä alla olevaa linkkiä
+              tai koodia yhdistääksesi sen. Tämän jälkeen edistymisesi,
+              tilastosi ja asetuksesi synkronoidaan automaattisesti kaikkien
+              laitteidesi välillä.
             </p>
           ) : (
             <p style={{ color: 'var(--color-text-secondary)' }}>
