@@ -35,8 +35,8 @@ test.describe('Theme toggle', () => {
 
     expect(await effectiveScheme(page)).toBe('light');
 
-    await page.getByRole('button', { name: 'Ulkoasu' }).click();
-    await page.getByRole('menuitemradio', { name: 'Tumma' }).click();
+    await page.getByRole('button', { name: 'Asetukset' }).click();
+    await page.getByRole('radio', { name: 'Tumma' }).click();
 
     expect(await effectiveScheme(page)).toBe('dark');
   });
@@ -45,8 +45,8 @@ test.describe('Theme toggle', () => {
     await page.emulateMedia({ colorScheme: 'light' });
     await loadGame(page);
 
-    await page.getByRole('button', { name: 'Ulkoasu' }).click();
-    await page.getByRole('menuitemradio', { name: 'Tumma' }).click();
+    await page.getByRole('button', { name: 'Asetukset' }).click();
+    await page.getByRole('radio', { name: 'Tumma' }).click();
 
     // Check localStorage
     const stored = await page.evaluate(() =>
@@ -59,8 +59,8 @@ test.describe('Theme toggle', () => {
     await page.emulateMedia({ colorScheme: 'light' });
     await loadGame(page);
 
-    await page.getByRole('button', { name: 'Ulkoasu' }).click();
-    await page.getByRole('menuitemradio', { name: 'Tumma' }).click();
+    await page.getByRole('button', { name: 'Asetukset' }).click();
+    await page.getByRole('radio', { name: 'Tumma' }).click();
     expect(await effectiveScheme(page)).toBe('dark');
 
     await loadGame(page);
@@ -73,22 +73,25 @@ test.describe('Theme toggle', () => {
   }) => {
     await loadGame(page);
 
-    const appearance = page.getByRole('button', { name: 'Ulkoasu' });
-    await expect(appearance).toBeVisible();
-    await appearance.click();
+    const settings = page.getByRole('button', { name: 'Asetukset' });
+    await expect(settings).toBeVisible();
+    await settings.click();
 
-    const menu = page.getByRole('menu', { name: 'Ulkoasu' });
-    await expect(menu).toBeVisible();
-    await expect(
-      menu.getByRole('menuitemradio', { name: 'Hehku' }),
-    ).toHaveAttribute('aria-checked', 'true');
-    await expect(
-      menu.getByRole('menuitemradio', { name: 'Laite' }),
-    ).toHaveAttribute('aria-checked', 'true');
+    const dialog = page.getByRole('dialog', { name: 'Asetukset' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('radio', { name: 'Hehku' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    await expect(dialog.getByRole('radio', { name: 'Laite' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
 
-    await menu.getByRole('menuitemradio', { name: 'Meri' }).click();
+    await dialog.getByRole('radio', { name: 'Meri' }).click();
+    await dialog.getByRole('button', { name: 'Sulje' }).click();
+    await expect(dialog).not.toBeVisible();
 
-    await expect(menu).not.toBeVisible();
     expect(
       await page.evaluate(() =>
         document.documentElement.getAttribute('data-palette'),
@@ -103,12 +106,12 @@ test.describe('Theme toggle', () => {
     await page.emulateMedia({ colorScheme: 'light' });
     await loadGame(page);
 
-    await page.getByRole('button', { name: 'Ulkoasu' }).click();
-    await page.getByRole('menuitemradio', { name: 'Tumma' }).click();
+    await page.getByRole('button', { name: 'Asetukset' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Asetukset' });
+    await dialog.getByRole('radio', { name: 'Tumma' }).click();
     expect(await effectiveScheme(page)).toBe('dark');
 
-    await page.getByRole('button', { name: 'Ulkoasu' }).click();
-    await page.getByRole('menuitemradio', { name: 'Laite' }).click();
+    await dialog.getByRole('radio', { name: 'Laite' }).click();
 
     expect(await effectiveScheme(page)).toBe('light');
     expect(
@@ -116,21 +119,22 @@ test.describe('Theme toggle', () => {
     ).toBe('"system"');
   });
 
-  test('appearance menu closes on Escape and outside click', async ({
+  test('settings modal closes on Escape and outside click', async ({
     page,
   }) => {
     await loadGame(page);
 
-    const appearance = page.getByRole('button', { name: 'Ulkoasu' });
-    await appearance.click();
-    await expect(page.getByRole('menu', { name: 'Ulkoasu' })).toBeVisible();
+    const settings = page.getByRole('button', { name: 'Asetukset' });
+    await settings.click();
+    const dialog = page.getByRole('dialog', { name: 'Asetukset' });
+    await expect(dialog).toBeVisible();
 
     await page.keyboard.press('Escape');
-    await expect(page.getByRole('menu', { name: 'Ulkoasu' })).not.toBeVisible();
+    await expect(dialog).not.toBeVisible();
 
-    await appearance.click();
-    await expect(page.getByRole('menu', { name: 'Ulkoasu' })).toBeVisible();
-    await page.mouse.click(10, 200);
-    await expect(page.getByRole('menu', { name: 'Ulkoasu' })).not.toBeVisible();
+    await settings.click();
+    await expect(dialog).toBeVisible();
+    await page.mouse.click(10, 10);
+    await expect(dialog).not.toBeVisible();
   });
 });

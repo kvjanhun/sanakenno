@@ -10,6 +10,7 @@
  */
 
 import { useEffect, useCallback, useRef, useState } from 'react';
+import { Settings } from 'lucide-react';
 import { useGameStore } from './store/useGameStore';
 import { useAuthStore } from './store/useAuthStore';
 import { useKeyboard } from './hooks/useKeyboard';
@@ -22,7 +23,7 @@ import { FoundWords } from './components/FoundWords';
 import { RankProgress } from './components/RankProgress';
 import { RulesModal } from './components/RulesModal';
 import { ErrorState } from './components/ErrorState';
-import { AppearanceMenu } from './components/AppearanceMenu';
+import { SettingsModal } from './components/SettingsModal';
 import { Celebration } from './components/Celebration';
 import { MessageBar } from './components/MessageBar';
 import { GameControls } from './components/GameControls';
@@ -34,7 +35,6 @@ import { SyncModal } from './components/SyncModal';
 import {
   CalendarIcon,
   StatsIcon,
-  UserIcon,
   CircleHelpIcon,
   ArrowLeftIcon,
 } from './components/icons';
@@ -70,8 +70,6 @@ const useShowArchive = () => useGameStore((s) => s.showArchive);
 const useShowStats = () => useGameStore((s) => s.showStats);
 const useViewingPuzzleDate = () => useGameStore((s) => s.viewingPuzzleDate);
 
-const useAuthIsLinked = () => useAuthStore((s) => s.isLinked);
-
 /* Stable action references — these don't change between renders */
 const actions = () => {
   const s = useGameStore.getState();
@@ -103,8 +101,8 @@ const actions = () => {
 function App() {
   const puzzle = usePuzzle();
   const loading = useLoading();
-  const authIsLinked = useAuthIsLinked();
   const [showAuth, setShowAuth] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [connectBannerToken, setConnectBannerToken] = useState<string | null>(
     null,
   );
@@ -234,19 +232,7 @@ function App() {
         }}
       >
         <div className="max-w-sm mx-auto h-12 flex items-center">
-          <div className="flex w-[120px] shrink-0 items-center">
-            <button
-              type="button"
-              onClick={() => setShowAuth(true)}
-              className="h-10 w-10 rounded-lg bg-transparent border-none cursor-pointer flex items-center justify-center"
-              style={{ color: 'var(--color-text-primary)' }}
-              aria-label={
-                authIsLinked ? 'Synkronointi aktiivinen' : 'Lisää laite'
-              }
-              title={authIsLinked ? 'Synkronointi aktiivinen' : 'Lisää laite'}
-            >
-              <UserIcon loggedIn={authIsLinked} />
-            </button>
+          <div className="flex w-[80px] shrink-0 items-center">
             <button
               type="button"
               onClick={() => setShowArchive(true)}
@@ -330,7 +316,15 @@ function App() {
             >
               <CircleHelpIcon />
             </button>
-            <AppearanceMenu />
+            <button
+              type="button"
+              onClick={() => setShowSettings(true)}
+              className="h-10 w-10 rounded-lg bg-transparent border-none cursor-pointer flex items-center justify-center"
+              style={{ color: 'var(--color-text-primary)' }}
+              aria-label="Asetukset"
+            >
+              <Settings size={20} strokeWidth={2.5} />
+            </button>
           </div>
         </div>
       </header>
@@ -398,6 +392,14 @@ function App() {
       {/* Rules modal */}
       <RulesModal show={showRules} onClose={() => setShowRules(false)} />
       <SyncModal show={showAuth} onClose={() => setShowAuth(false)} />
+      <SettingsModal
+        show={showSettings}
+        onClose={() => setShowSettings(false)}
+        onOpenSync={() => {
+          setShowSettings(false);
+          setShowAuth(true);
+        }}
+      />
       <ArchiveModal
         show={showArchive}
         onClose={() => setShowArchive(false)}

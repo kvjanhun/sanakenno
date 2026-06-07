@@ -41,13 +41,7 @@ test.describe('Modal polish', () => {
   test('header icon buttons use large touch targets', async ({ page }) => {
     await loadGame(page);
 
-    for (const label of [
-      'Lisää laite',
-      'Arkisto',
-      'Tilastot',
-      'Säännöt',
-      'Ulkoasu',
-    ]) {
+    for (const label of ['Arkisto', 'Tilastot', 'Säännöt', 'Asetukset']) {
       const button = page.getByRole('button', { name: label });
       await expect(button).toBeVisible();
       const box = await button.boundingBox();
@@ -62,7 +56,7 @@ test.describe('Modal polish', () => {
     await mockArchiveApi(page);
     await loadGame(page);
 
-    for (const label of ['Säännöt', 'Tilastot', 'Arkisto', 'Lisää laite']) {
+    for (const label of ['Säännöt', 'Tilastot', 'Arkisto', 'Asetukset']) {
       await page.getByRole('button', { name: label }).click();
       await expect(page.getByRole('dialog').first()).toBeVisible();
       await expectStandardCloseButton(page);
@@ -96,7 +90,8 @@ test.describe('Modal polish', () => {
   test('sync modal linked view has no horizontal divider', async ({ page }) => {
     await loadGame(page);
 
-    await page.getByRole('button', { name: 'Lisää laite' }).click();
+    await page.getByRole('button', { name: 'Asetukset' }).click();
+    await page.getByRole('button', { name: 'Synkronoi laite' }).click();
     await expect(
       page.getByRole('dialog', { name: 'Tallennus ja synkronointi' }),
     ).toBeVisible();

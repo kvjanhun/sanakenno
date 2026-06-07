@@ -222,7 +222,7 @@ test.describe('Rules modal', () => {
     });
     await loadGame(page);
 
-    await page.getByLabel('Säännöt').click();
+    await page.getByLabel('Asetukset').click();
 
     const countdown = page.locator('text=Seuraava kenno:').locator('span');
     await expect(countdown).toHaveText('00:01:00');
@@ -241,7 +241,7 @@ test.describe('Rules modal', () => {
     });
     await loadGame(page);
 
-    await page.getByLabel('Säännöt').click();
+    await page.getByLabel('Asetukset').click();
 
     const countdown = page.locator('text=Seuraava kenno:').locator('span');
     await expect(countdown).toHaveText('00:29:55');
