@@ -95,164 +95,209 @@ export function SyncModal({
       onClose={onClose}
       headerClassName="mb-4"
     >
-      {mode === 'options' && !isLinked && (
-        <div className="space-y-3">
-          <p style={{ color: 'var(--color-text-secondary)' }}>
-            Tallenna edistymisesi, tilastosi ja asetuksesi, synkronoi
-            halutessasi muille laitteille.
-          </p>
-          <button
-            type="button"
-            onClick={() => useAuthStore.getState().revealShareOptions()}
-            className="w-full py-2 px-4 rounded-lg cursor-pointer border-none font-medium"
-            style={{
-              backgroundColor: 'var(--color-accent)',
-              color: 'var(--color-on-accent)',
-              opacity: isLoading ? 0.6 : 1,
-            }}
-            disabled={isLoading}
-          >
-            Tallenna
-          </button>
-          <p style={{ color: 'var(--color-text-secondary)' }}>
-            Synkronoi pelitunnisteella:
-          </p>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={codeInput}
-              onChange={(e) => {
-                setCodeInput(e.target.value);
-                if (error) useAuthStore.setState({ error: null });
-              }}
-              className="flex-1 px-3 py-2 rounded-lg border text-sm"
-              style={{
-                backgroundColor: 'var(--color-bg-secondary)',
-                borderColor: 'var(--color-text-tertiary)',
-                color: 'var(--color-text-primary)',
-              }}
-            />
-            <button
-              type="button"
-              onClick={() => void handleUseCode()}
-              className="py-2 px-3 rounded-lg font-medium cursor-pointer border-none"
-              style={{
-                backgroundColor: 'var(--color-accent)',
-                color: 'var(--color-on-accent)',
-                opacity: isLoading || !codeInput.trim() ? 0.6 : 1,
-              }}
-              disabled={isLoading || !codeInput.trim()}
-            >
-              Yhdistä
-            </button>
-          </div>
-        </div>
-      )}
-
-      {mode === 'options' && isLinked && (
-        <div className="space-y-3">
-          {playerKey ? (
-            <p
-              style={{
-                color: 'var(--color-text-secondary)',
-                fontSize: '0.875rem',
-              }}
-            >
-              Avaa Sanakenno toisella laitteella ja käytä alla olevaa linkkiä
-              tai koodia yhdistääksesi sen. Tämän jälkeen edistymisesi,
-              tilastosi ja asetuksesi synkronoidaan automaattisesti kaikkien
-              laitteidesi välillä.
-            </p>
+      {mode === 'options' && (
+        <div className="space-y-4">
+          {isLinked ? (
+            <div className="space-y-2">
+              <h4
+                className="text-xs font-bold uppercase tracking-wider"
+                style={{ color: 'var(--color-text-secondary)' }}
+              >
+                Yhdistä toinen laite tähän tiliin
+              </h4>
+              {playerKey ? (
+                <p
+                  style={{
+                    color: 'var(--color-text-secondary)',
+                    fontSize: '0.8rem',
+                    lineHeight: '1.4',
+                  }}
+                >
+                  Avaa Sanakenno toisella laitteella ja käytä alla olevaa
+                  linkkiä tai koodia yhdistääksesi sen. Tämän jälkeen laitteesi
+                  synkronoidaan automaattisesti.
+                </p>
+              ) : (
+                <p
+                  style={{
+                    color: 'var(--color-text-secondary)',
+                    fontSize: '0.8rem',
+                    lineHeight: '1.4',
+                  }}
+                >
+                  Tältä laitteelta ei vielä löydy pysyvää tunnistetta. Luo uusi
+                  painamalla alta &quot;Vaihda tunniste&quot;.
+                </p>
+              )}
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => void copyText(connectUrl)}
+                  className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border-none font-medium cursor-pointer text-xs"
+                  style={{
+                    backgroundColor: 'var(--color-bg-secondary)',
+                    color: 'var(--color-text-primary)',
+                    opacity: isLoading || !connectUrl ? 0.6 : 1,
+                  }}
+                  disabled={isLoading || !connectUrl}
+                >
+                  <Copy size={14} style={{ color: 'var(--color-accent)' }} />
+                  <span>Kopioi linkki</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void copyText(playerKey ?? '')}
+                  className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border-none font-medium cursor-pointer text-xs"
+                  style={{
+                    backgroundColor: 'var(--color-bg-secondary)',
+                    color: 'var(--color-text-primary)',
+                    opacity: isLoading || !playerKey ? 0.6 : 1,
+                  }}
+                  disabled={isLoading || !playerKey}
+                >
+                  <Copy size={14} style={{ color: 'var(--color-accent)' }} />
+                  <span>Kopioi koodi</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode('qr')}
+                  className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border-none font-medium cursor-pointer text-xs"
+                  style={{
+                    backgroundColor: 'var(--color-bg-secondary)',
+                    color: 'var(--color-text-primary)',
+                    opacity: isLoading || !connectUrl ? 0.6 : 1,
+                  }}
+                  disabled={isLoading || !connectUrl}
+                >
+                  <QrCode size={14} style={{ color: 'var(--color-accent)' }} />
+                  <span>Näytä QR-koodi</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode('email')}
+                  className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border-none font-medium cursor-pointer text-xs"
+                  style={{
+                    backgroundColor: 'var(--color-bg-secondary)',
+                    color: 'var(--color-text-primary)',
+                    opacity: isLoading || !playerKey ? 0.6 : 1,
+                  }}
+                  disabled={isLoading || !playerKey}
+                >
+                  <Mail size={14} style={{ color: 'var(--color-accent)' }} />
+                  <span>Sähköposti</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode('confirmRotate')}
+                  className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border-none font-medium cursor-pointer text-xs"
+                  style={{
+                    backgroundColor: 'var(--color-bg-secondary)',
+                    color: 'var(--color-text-primary)',
+                    opacity: isLoading ? 0.6 : 1,
+                  }}
+                  disabled={isLoading}
+                >
+                  <RefreshCw
+                    size={14}
+                    style={{ color: 'var(--color-accent)' }}
+                  />
+                  <span>Vaihda tunniste</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleLogout()}
+                  className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border-none font-medium cursor-pointer text-xs"
+                  style={{
+                    backgroundColor: 'var(--color-bg-secondary)',
+                    color: 'var(--color-text-primary)',
+                  }}
+                >
+                  <LogOut size={14} style={{ color: 'var(--color-accent)' }} />
+                  <span>Kirjaudu ulos</span>
+                </button>
+              </div>
+            </div>
           ) : (
-            <p style={{ color: 'var(--color-text-secondary)' }}>
-              Tältä laitteelta ei vielä löydy pysyvää tunnistetta. Paina "Vaihda
-              tunniste" luodaksesi uuden.
-            </p>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <h4
+                  className="text-xs font-bold uppercase tracking-wider"
+                  style={{ color: 'var(--color-text-secondary)' }}
+                >
+                  Yhdistä tämä laite olemassa olevaan tiliin
+                </h4>
+                <p
+                  style={{
+                    color: 'var(--color-text-secondary)',
+                    fontSize: '0.8rem',
+                    lineHeight: '1.4',
+                  }}
+                >
+                  Syötä toiselta laitteelta saatu koodi yhdistääksesi tämän
+                  laitteen siihen.
+                </p>
+                <div className="flex gap-2 pt-1">
+                  <input
+                    type="text"
+                    value={codeInput}
+                    onChange={(e) => {
+                      setCodeInput(e.target.value);
+                      if (error) useAuthStore.setState({ error: null });
+                    }}
+                    placeholder="Syötä koodi tähän"
+                    className="flex-1 px-3 py-2 rounded-lg border text-sm"
+                    style={{
+                      backgroundColor: 'var(--color-bg-secondary)',
+                      borderColor: 'var(--color-text-tertiary)',
+                      color: 'var(--color-text-primary)',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void handleUseCode()}
+                    className="py-2 px-4 rounded-lg font-medium cursor-pointer border-none"
+                    style={{
+                      backgroundColor: 'var(--color-accent)',
+                      color: 'var(--color-on-accent)',
+                      opacity: isLoading || !codeInput.trim() ? 0.6 : 1,
+                    }}
+                    disabled={isLoading || !codeInput.trim()}
+                  >
+                    Yhdistä
+                  </button>
+                </div>
+              </div>
+
+              <div
+                className="pt-4 border-t space-y-2"
+                style={{ borderColor: 'var(--color-border)' }}
+              >
+                <p
+                  style={{
+                    color: 'var(--color-text-secondary)',
+                    fontSize: '0.8rem',
+                    lineHeight: '1.4',
+                  }}
+                >
+                  Tai ota synkronointi käyttöön tällä laitteella tallentaaksesi
+                  pelitilanteen ja yhdistääksesi muita laitteita tähän tiliin.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => useAuthStore.getState().revealShareOptions()}
+                  className="w-full py-2 px-4 rounded-lg cursor-pointer border-none font-medium text-xs"
+                  style={{
+                    backgroundColor: 'var(--color-accent)',
+                    color: 'var(--color-on-accent)',
+                    opacity: isLoading ? 0.6 : 1,
+                  }}
+                  disabled={isLoading}
+                >
+                  Ota synkronointi käyttöön tälle laitteelle
+                </button>
+              </div>
+            </div>
           )}
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => void copyText(connectUrl)}
-              className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border-none font-medium cursor-pointer text-xs"
-              style={{
-                backgroundColor: 'var(--color-bg-secondary)',
-                color: 'var(--color-text-primary)',
-                opacity: isLoading || !connectUrl ? 0.6 : 1,
-              }}
-              disabled={isLoading || !connectUrl}
-            >
-              <Copy size={14} style={{ color: 'var(--color-accent)' }} />
-              <span>Kopioi linkki</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => void copyText(playerKey ?? '')}
-              className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border-none font-medium cursor-pointer text-xs"
-              style={{
-                backgroundColor: 'var(--color-bg-secondary)',
-                color: 'var(--color-text-primary)',
-                opacity: isLoading || !playerKey ? 0.6 : 1,
-              }}
-              disabled={isLoading || !playerKey}
-            >
-              <Copy size={14} style={{ color: 'var(--color-accent)' }} />
-              <span>Kopioi koodi</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode('qr')}
-              className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border-none font-medium cursor-pointer text-xs"
-              style={{
-                backgroundColor: 'var(--color-bg-secondary)',
-                color: 'var(--color-text-primary)',
-                opacity: isLoading || !connectUrl ? 0.6 : 1,
-              }}
-              disabled={isLoading || !connectUrl}
-            >
-              <QrCode size={14} style={{ color: 'var(--color-accent)' }} />
-              <span>Näytä QR-koodi</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode('email')}
-              className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border-none font-medium cursor-pointer text-xs"
-              style={{
-                backgroundColor: 'var(--color-bg-secondary)',
-                color: 'var(--color-text-primary)',
-                opacity: isLoading || !playerKey ? 0.6 : 1,
-              }}
-              disabled={isLoading || !playerKey}
-            >
-              <Mail size={14} style={{ color: 'var(--color-accent)' }} />
-              <span>Sähköposti</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode('confirmRotate')}
-              className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border-none font-medium cursor-pointer text-xs"
-              style={{
-                backgroundColor: 'var(--color-bg-secondary)',
-                color: 'var(--color-text-primary)',
-                opacity: isLoading ? 0.6 : 1,
-              }}
-              disabled={isLoading}
-            >
-              <RefreshCw size={14} style={{ color: 'var(--color-accent)' }} />
-              <span>Vaihda tunniste</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => void handleLogout()}
-              className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border-none font-medium cursor-pointer text-xs"
-              style={{
-                backgroundColor: 'var(--color-bg-secondary)',
-                color: 'var(--color-text-primary)',
-              }}
-            >
-              <LogOut size={14} style={{ color: 'var(--color-accent)' }} />
-              <span>Kirjaudu ulos</span>
-            </button>
-          </div>
         </div>
       )}
 

@@ -91,11 +91,10 @@ test.describe('Modal polish', () => {
     await loadGame(page);
 
     await page.getByRole('button', { name: 'Asetukset' }).click();
-    await page.getByRole('button', { name: 'Synkronoi laite' }).click();
+    await page.getByRole('button', { name: 'Synkronoi tämä laite' }).click();
     await expect(
       page.getByRole('dialog', { name: 'Tallennus ja synkronointi' }),
     ).toBeVisible();
-    await page.getByRole('button', { name: 'Tallenna' }).click();
     await expect(
       page.getByRole('button', { name: 'Kopioi linkki' }),
     ).toBeVisible();

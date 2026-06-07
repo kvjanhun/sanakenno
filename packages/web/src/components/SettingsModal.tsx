@@ -317,19 +317,52 @@ export function SettingsModal({
                 : 'Tallenna edistymisesi, tilastosi ja asetuksesi, ja synkronoi ne muille laitteillesi.'}
             </p>
 
-            <button
-              type="button"
-              onClick={onOpenSync}
-              className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-lg border font-semibold text-xs cursor-pointer transition-transform active:scale-[0.98]"
-              style={{
-                backgroundColor: 'var(--color-bg-primary)',
-                borderColor: 'var(--color-border)',
-                color: 'var(--color-text-primary)',
-              }}
-            >
-              <Link size={13} />
-              {authIsLinked ? 'Hallitse synkronointia' : 'Synkronoi laite'}
-            </button>
+            {authIsLinked ? (
+              <button
+                type="button"
+                onClick={onOpenSync}
+                className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-lg border font-semibold text-xs cursor-pointer transition-transform active:scale-[0.98]"
+                style={{
+                  backgroundColor: 'var(--color-bg-primary)',
+                  borderColor: 'var(--color-border)',
+                  color: 'var(--color-text-primary)',
+                }}
+              >
+                <Link size={13} />
+                <span>Hallitse synkronointia</span>
+              </button>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    useAuthStore.getState().revealShareOptions();
+                    onOpenSync();
+                  }}
+                  className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-lg font-semibold text-xs cursor-pointer border-none transition-transform active:scale-[0.98]"
+                  style={{
+                    backgroundColor: 'var(--color-accent)',
+                    color: 'var(--color-on-accent)',
+                  }}
+                >
+                  <Link size={13} />
+                  <span>Synkronoi tämä laite</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={onOpenSync}
+                  className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-lg border font-semibold text-xs cursor-pointer transition-transform active:scale-[0.98]"
+                  style={{
+                    backgroundColor: 'var(--color-bg-primary)',
+                    borderColor: 'var(--color-border)',
+                    color: 'var(--color-text-primary)',
+                  }}
+                >
+                  <Link size={13} />
+                  <span>Yhdistä olemassa olevaan tiliin</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

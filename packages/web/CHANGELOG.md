@@ -1,5 +1,12 @@
 # @sanakenno/web
 
+## 1.14.5
+
+### Patch Changes
+
+- improve account synchronization flow in settings and sync modal
+  - @sanakenno/shared@1.14.5
+
 ## 1.14.4
 
 ### Patch Changes
