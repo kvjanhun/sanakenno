@@ -116,6 +116,21 @@ export const webShare: ShareService = {
     }
     return fallbackCopyToClipboard(text);
   },
+
+  async share(text: string): Promise<'share' | 'clipboard' | 'none'> {
+    if (navigator.share) {
+      try {
+        await navigator.share({ text });
+        return 'share';
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          return 'none';
+        }
+      }
+    }
+    const copied = await this.copyToClipboard(text);
+    return copied ? 'clipboard' : 'none';
+  },
 };
 
 export const webConfig: ConfigService = {

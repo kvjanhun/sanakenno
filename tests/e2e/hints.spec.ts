@@ -119,7 +119,7 @@ test.describe('Hint share integration', () => {
     await unlockHint(page, 'Yleiskuva');
 
     // Click share — first instance of "Jaa" (in RankProgress, not Celebration)
-    await page.getByText('Jaa').first().click();
+    await page.getByRole('button', { name: 'Jaa' }).first().click();
 
     const clipText = await page.evaluate(() => navigator.clipboard.readText());
     expect(clipText).toContain('\u{1F4CA}'); // 📊
@@ -133,7 +133,7 @@ test.describe('Hint share integration', () => {
     await loadGame(page);
     await unlockHint(page, 'Alkuparit');
 
-    await page.getByText('Jaa').first().click();
+    await page.getByRole('button', { name: 'Jaa' }).first().click();
 
     const clipText = await page.evaluate(() => navigator.clipboard.readText());
     expect(clipText).toContain('\u{1F520}'); // 🔠
@@ -146,7 +146,7 @@ test.describe('Hint share integration', () => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await loadGame(page);
 
-    await page.getByText('Jaa').first().click();
+    await page.getByRole('button', { name: 'Jaa' }).first().click();
 
     const clipText = await page.evaluate(() => navigator.clipboard.readText());
     expect(clipText).not.toContain('Avut:');

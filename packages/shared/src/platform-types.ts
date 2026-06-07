@@ -28,6 +28,7 @@ export interface CryptoService {
 /** Native sharing and clipboard access. */
 export interface ShareService {
   copyToClipboard(text: string): Promise<boolean>;
+  share(text: string): Promise<'share' | 'clipboard' | 'none'>;
 }
 
 /** Environment configuration. */

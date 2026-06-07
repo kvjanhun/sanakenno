@@ -18,7 +18,7 @@ import {
   useRef,
   type PointerEvent,
 } from 'react';
-import { Check, Delete, Shuffle, type LucideIcon } from 'lucide-react';
+import { Check, Delete, Shuffle, Share, type LucideIcon } from 'lucide-react';
 import { usePaletteStore } from '../store/usePaletteStore';
 import {
   resolveScheme,
@@ -117,16 +117,22 @@ export interface GameControlsProps {
   onDelete: () => void;
   /** Shuffle the outer letters. */
   onShuffle: () => void;
+  /** Share the results/status. */
+  onShare: () => void;
+  /** Whether the share fallback copied tooltip should show. */
+  shareCopied: boolean;
   /** Submit the current word. */
   onSubmit: () => void;
 }
 
 /**
- * Render the three game action buttons.
+ * Render the four game action buttons: delete, shuffle, share, submit.
  */
 export function GameControls({
   onDelete,
   onShuffle,
+  onShare,
+  shareCopied,
   onSubmit,
 }: GameControlsProps): React.JSX.Element {
   const themeId = usePaletteStore((s) => s.themeId);
@@ -173,6 +179,41 @@ export function GameControls({
           onShuffle();
         }}
       />
+      <div style={{ position: 'relative' }}>
+        <ControlButton
+          label="Jaa"
+          variant="neutral"
+          Icon={Share}
+          className="w-12 h-11"
+          accentGloss={accentGloss}
+          onPointerDown={(e) => {
+            prepare(e);
+            onShare();
+          }}
+        />
+        {shareCopied && (
+          <div
+            className="text-xs animate-in fade-in duration-150"
+            style={{
+              position: 'absolute',
+              top: '100%',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              marginTop: '0.5rem',
+              zIndex: 20,
+              background: 'var(--color-bg-primary)',
+              border: '1px solid var(--color-border)',
+              borderRadius: '6px',
+              padding: '0.2rem 0.6rem',
+              color: 'var(--color-text-secondary)',
+              boxShadow: '0 2px 8px rgb(0 0 0 / 0.15)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Kopioitu!
+          </div>
+        )}
+      </div>
       <ControlButton
         label="OK"
         variant="accent"

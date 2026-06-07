@@ -8,7 +8,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { rankThresholds, progressToNextRank } from '@sanakenno/shared';
-import { CopyIcon } from './icons';
 import styles from './animations.module.css';
 
 /** Props for {@link RankProgress}. */
@@ -23,10 +22,6 @@ export interface RankProgressProps {
   showRanks: boolean;
   /** Toggle the rank thresholds panel. */
   onToggleRanks: () => void;
-  /** Whether the share confirmation popup is showing. */
-  shareCopied: boolean;
-  /** Share button click handler. */
-  onShare: () => void;
   /** Score to display as "Pisteet ilman apuja". Mirrors current score until first hint is unlocked. */
   scoreBeforeHints: number;
 }
@@ -41,8 +36,6 @@ export function RankProgress({
   rank,
   showRanks,
   onToggleRanks,
-  shareCopied,
-  onShare,
   scoreBeforeHints,
 }: RankProgressProps): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -124,48 +117,6 @@ export function RankProgress({
         >
           {displayScore} pistettä
         </span>
-
-        {/* Share button — popup anchored to this wrapper */}
-        <div style={{ position: 'relative', flexShrink: 0 }}>
-          <button
-            type="button"
-            onClick={onShare}
-            className="flex items-center gap-1 text-sm cursor-pointer rounded-lg px-2.5 py-1.5 transition-transform duration-100 active:translate-y-px"
-            style={{
-              color: 'var(--color-text-secondary)',
-              background:
-                'linear-gradient(180deg, var(--color-hex-hi) 0%, var(--color-hex-lo) 100%)',
-              border: '1px solid var(--color-hex-stroke)',
-              boxShadow:
-                '0 1px 4px -3px var(--color-button-shadow), 0 6px 14px -14px var(--color-button-shadow)',
-            }}
-          >
-            Jaa
-            <CopyIcon />
-          </button>
-
-          {/* Kopioitu! popup — floats below share button, does not affect layout */}
-          {shareCopied && (
-            <div
-              className="text-xs"
-              style={{
-                position: 'absolute',
-                top: '100%',
-                right: 0,
-                marginTop: '0.25rem',
-                zIndex: 20,
-                background: 'var(--color-bg-primary)',
-                border: '1px solid var(--color-border)',
-                borderRadius: '6px',
-                padding: '0.2rem 0.6rem',
-                whiteSpace: 'nowrap',
-                color: 'var(--color-text-secondary)',
-              }}
-            >
-              Kopioitu!
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Progress bar */}

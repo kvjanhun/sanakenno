@@ -466,8 +466,6 @@ function App() {
                   rank={rank}
                   showRanks={showRanks}
                   onToggleRanks={() => setShowRanks(!showRanks)}
-                  shareCopied={shareCopied}
-                  onShare={handleShare}
                   scoreBeforeHints={displayScoreBeforeHints}
                 />
               </div>
@@ -521,6 +519,8 @@ function App() {
                   <GameControls
                     onDelete={deleteLetter}
                     onShuffle={shuffleLetters}
+                    onShare={handleShare}
+                    shareCopied={shareCopied}
                     onSubmit={() => submitWord()}
                   />
                 </div>

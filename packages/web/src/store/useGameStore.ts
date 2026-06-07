@@ -680,8 +680,8 @@ export const useGameStore = create<GameState>()((set, get) => ({
     lines.push('sanakenno.fi');
 
     const text = lines.join('\n');
-    const copied = await share.copyToClipboard(text);
-    if (copied) {
+    const result = await share.share(text);
+    if (result === 'clipboard') {
       set({ shareCopied: true });
       setTimeout(() => set({ shareCopied: false }), 2000);
     }
