@@ -167,7 +167,7 @@ export function ModalShell({
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded leading-none bg-transparent border-none cursor-pointer flex items-center justify-center"
+            className="p-1 rounded leading-none bg-transparent border-none cursor-pointer flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
             style={{
               color: 'var(--color-accent)',
               height: '32px',
