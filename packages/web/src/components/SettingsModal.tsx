@@ -157,7 +157,7 @@ export function SettingsModal({
       <div className="flex-1 min-h-0 overflow-y-auto space-y-4 pr-1">
         {/* Next game countdown timer */}
         <div
-          className="text-xs -mt-1 text-right"
+          className="text-xs text-right"
           style={{ color: 'var(--color-text-tertiary)' }}
         >
           Seuraava kenno:{' '}

@@ -1,5 +1,12 @@
 # @sanakenno/web
 
+## 1.14.7
+
+### Patch Changes
+
+- fix countdown timer clipping inside settings modal
+  - @sanakenno/shared@1.14.7
+
 ## 1.14.6
 
 ### Patch Changes
