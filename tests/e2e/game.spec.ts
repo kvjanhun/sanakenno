@@ -98,8 +98,12 @@ test.describe('Button controls', () => {
       expect(box.height).toBeLessThanOrEqual(46);
     }
 
-    expect(Math.abs(boxes[0].width - boxes[1].width)).toBeLessThanOrEqual(2);
-    expect(Math.abs(boxes[1].width - boxes[2].width)).toBeLessThanOrEqual(2);
+    // Erase (0) and OK (2) buttons should have equal width
+    expect(Math.abs(boxes[0].width - boxes[2].width)).toBeLessThanOrEqual(2);
+    // Shuffle (1) button should be narrower than erase/OK
+    expect(boxes[1].width).toBeLessThan(boxes[0].width);
+    // Shuffle (1) button should be almost a square (width close to height)
+    expect(Math.abs(boxes[1].width - boxes[1].height)).toBeLessThanOrEqual(8);
   });
 
   test('Poista removes the last letter', async ({ page }) => {

@@ -57,12 +57,14 @@ function ControlButton({
   onPointerDown,
   accentGloss,
   Icon,
+  className = '',
 }: {
   label: string;
   variant: ControlVariant;
   onPointerDown: (e: PointerEvent<HTMLButtonElement>) => void;
   accentGloss: string;
   Icon: LucideIcon;
+  className?: string;
 }): React.JSX.Element {
   const isAccent = variant === 'accent';
 
@@ -71,7 +73,7 @@ function ControlButton({
       type="button"
       onPointerDown={onPointerDown}
       aria-label={label}
-      className="relative min-w-0 flex-1 overflow-hidden rounded-xl px-4 py-2.5 text-sm font-medium cursor-pointer transition-transform duration-100 active:translate-y-px active:scale-[0.985] focus-visible:outline-2 focus-visible:outline-offset-2"
+      className={`relative min-w-0 overflow-hidden rounded-xl text-sm font-medium cursor-pointer transition-transform duration-100 active:translate-y-px active:scale-[0.985] focus-visible:outline-2 focus-visible:outline-offset-2 flex items-center justify-center ${className}`}
       style={{
         backgroundColor: 'transparent',
         color: isAccent
@@ -153,6 +155,7 @@ export function GameControls({
         label="Poista"
         variant="neutral"
         Icon={Delete}
+        className="w-20 h-11"
         accentGloss={accentGloss}
         onPointerDown={(e) => {
           prepare(e);
@@ -163,6 +166,7 @@ export function GameControls({
         label="Sekoita"
         variant="neutral"
         Icon={Shuffle}
+        className="w-12 h-11"
         accentGloss={accentGloss}
         onPointerDown={(e) => {
           prepare(e);
@@ -173,6 +177,7 @@ export function GameControls({
         label="OK"
         variant="accent"
         Icon={Check}
+        className="w-20 h-11"
         accentGloss={accentGloss}
         onPointerDown={(e) => {
           prepare(e);

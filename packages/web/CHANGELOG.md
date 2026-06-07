@@ -1,5 +1,12 @@
 # @sanakenno/web
 
+## 1.14.2
+
+### Patch Changes
+
+- resize game controls to make shuffle square-like and adjust erase/enter width
+  - @sanakenno/shared@1.14.2
+
 ## 1.14.1
 
 ### Patch Changes
