@@ -1,5 +1,12 @@
 # @sanakenno/web
 
+## 1.14.4
+
+### Patch Changes
+
+- polish modal UI: unify top area layout, fix focus ring, clean sync/stats copy
+  - @sanakenno/shared@1.14.4
+
 ## 1.14.3
 
 ### Patch Changes
