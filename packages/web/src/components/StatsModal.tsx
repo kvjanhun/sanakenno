@@ -60,15 +60,6 @@ export function StatsModal({
 
   return (
     <ModalShell title="Tilastot" titleId="stats-title" onClose={onClose}>
-      {isLoggedIn && (
-        <p
-          className="text-xs mb-3"
-          style={{ color: 'var(--color-text-tertiary)' }}
-        >
-          ✓ Synkronoitu
-        </p>
-      )}
-
       {records.length === 0 ? (
         <div
           className="text-sm py-4 text-center"
