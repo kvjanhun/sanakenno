@@ -30,9 +30,11 @@ export function RulesModal({
       title="Pelin säännöt"
       titleId="rules-modal-title"
       onClose={onClose}
+      className="flex flex-col"
+      style={{ maxHeight: '85vh', overflowY: 'hidden' }}
     >
       <div
-        className="text-sm space-y-4 mt-2"
+        className="flex-1 min-h-0 overflow-y-auto text-sm space-y-4 mt-2 pr-1"
         style={{ color: 'var(--color-text-secondary)' }}
       >
         <p>

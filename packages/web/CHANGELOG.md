@@ -1,5 +1,12 @@
 # @sanakenno/web
 
+## 1.14.6
+
+### Patch Changes
+
+- fix scrollability in settings and rules modals on small viewports
+  - @sanakenno/shared@1.14.6
+
 ## 1.14.5
 
 ### Patch Changes

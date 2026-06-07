@@ -151,8 +151,10 @@ export function SettingsModal({
       titleId="settings-modal-title"
       onClose={onClose}
       headerClassName="mb-3"
+      className="flex flex-col"
+      style={{ maxHeight: '85vh', overflowY: 'hidden' }}
     >
-      <div className="space-y-4">
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-4 pr-1">
         {/* Next game countdown timer */}
         <div
           className="text-xs -mt-1 text-right"
