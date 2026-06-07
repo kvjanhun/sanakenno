@@ -1,5 +1,13 @@
 # @sanakenno/web
 
+## 1.14.3
+
+### Patch Changes
+
+- Prevent PWA safe-area padding and root rubber-banding from creating unwanted
+  page movement.
+  - @sanakenno/shared@1.14.3
+
 ## 1.14.2
 
 ### Patch Changes

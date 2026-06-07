@@ -8,7 +8,7 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { loadGame } from './helpers';
+import { loadGame, submitWord } from './helpers';
 
 test.describe('Keyboard accessibility', () => {
   test('modifier keys do not add letters', async ({ page }) => {
@@ -68,12 +68,84 @@ test.describe('Touch behaviour', () => {
     expect(touchAction).toBe('manipulation');
   });
 
-  test('safe area padding is applied', async ({ page }) => {
+  test('safe area padding is applied by app layout', async ({ page }) => {
     await loadGame(page);
 
     // The main container should have paddingBottom using env(safe-area-inset-bottom)
     const container = page.locator('div.max-w-sm[style*="safe-area"]');
     const style = await container.getAttribute('style');
     expect(style).toContain('safe-area-inset-bottom');
+
+    const htmlHasSafeAreaPadding = await page.evaluate(() => {
+      for (const sheet of Array.from(document.styleSheets)) {
+        let rules: CSSRule[];
+        try {
+          rules = Array.from(sheet.cssRules);
+        } catch {
+          continue;
+        }
+
+        for (const rule of rules) {
+          if (
+            rule instanceof CSSStyleRule &&
+            rule.selectorText === 'html' &&
+            rule.style.padding.includes('safe-area-inset')
+          ) {
+            return true;
+          }
+        }
+      }
+
+      return false;
+    });
+    expect(htmlHasSafeAreaPadding).toBe(false);
+  });
+
+  test('normal phone viewport does not scroll collapsed gameplay', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await loadGame(page);
+    await submitWord(page, 'kala');
+
+    await expect(page.getByText('Löydetyt sanat')).toBeVisible();
+
+    const metrics = await page.evaluate(() => {
+      const scrollingElement =
+        document.scrollingElement ?? document.documentElement;
+      return {
+        clientHeight: scrollingElement.clientHeight,
+        scrollHeight: scrollingElement.scrollHeight,
+      };
+    });
+
+    expect(metrics.scrollHeight).toBeLessThanOrEqual(metrics.clientHeight + 1);
+
+    const gameSurface = await page
+      .locator('[data-game-scroll]')
+      .evaluate((el) => ({
+        clientHeight: el.clientHeight,
+        scrollHeight: el.scrollHeight,
+      }));
+    expect(gameSurface.scrollHeight).toBeLessThanOrEqual(
+      gameSurface.clientHeight + 1,
+    );
+  });
+
+  test('small phone viewport scrolls the game surface', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 560 });
+    await loadGame(page);
+    await submitWord(page, 'kala');
+
+    await expect(page.getByText('Löydetyt sanat')).toBeVisible();
+
+    const scrollTop = await page
+      .locator('[data-game-scroll]')
+      .evaluate((el) => {
+        el.scrollTop = el.scrollHeight;
+        return el.scrollTop;
+      });
+
+    expect(scrollTop).toBeGreaterThan(0);
   });
 });
