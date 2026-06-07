@@ -448,17 +448,10 @@ export function HintPanels({
 
   return (
     <div style={{ marginBottom: '1rem' }}>
-      <div
-        className="relative overflow-hidden"
-        style={{
-          background: 'var(--color-bg-secondary)',
-          border: `1px solid ${SOFT_PANEL_BORDER}`,
-          borderRadius: '14px',
-        }}
-      >
+      <div>
         <div
           className="relative flex items-center gap-2"
-          style={{ padding: '7px 8px' }}
+          style={{ padding: '6px 0' }}
         >
           <span
             style={{
@@ -475,10 +468,9 @@ export function HintPanels({
             className="flex"
             style={{
               flex: 1,
-              background: 'var(--color-bg-primary)',
+              background: 'var(--color-bg-secondary)',
               borderRadius: '10px',
               padding: '2px',
-              boxShadow: 'inset 0 1px 2px var(--color-button-shadow)',
             }}
           >
             {VISIBLE_PANELS.map((panel) => {
@@ -500,7 +492,7 @@ export function HintPanels({
                     borderRadius: '7px',
                     border: 'none',
                     background: isActive
-                      ? 'color-mix(in srgb, var(--color-accent) 10%, var(--color-bg-primary))'
+                      ? 'var(--color-bg-primary)'
                       : 'transparent',
                     boxShadow: isActive
                       ? '0 1px 2px -1px var(--color-button-shadow)'
