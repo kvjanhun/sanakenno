@@ -1,5 +1,12 @@
 # @sanakenno/web
 
+## 1.15.1
+
+### Patch Changes
+
+- Allow connecting and syncing the PWA from the auth connect banner.
+  - @sanakenno/shared@1.15.1
+
 ## 1.15.0
 
 ### Minor Changes
