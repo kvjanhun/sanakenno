@@ -1,5 +1,12 @@
 # @sanakenno/web
 
+## 1.15.2
+
+### Patch Changes
+
+- Fix horizontal scrolling in PWA by allowing horizontal swipe gestures to bypass the vertical rubberband scroll guard.
+  - @sanakenno/shared@1.15.2
+
 ## 1.15.1
 
 ### Patch Changes

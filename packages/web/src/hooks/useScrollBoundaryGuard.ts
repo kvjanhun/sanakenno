@@ -47,6 +47,7 @@ export function useScrollBoundaryGuard(
     if (!rootElement) return;
     const scrollRoot: HTMLElement = rootElement;
 
+    let lastTouchX: number | null = null;
     let lastTouchY: number | null = null;
 
     function getTouch(event: TouchEvent): Touch | null {
@@ -55,6 +56,7 @@ export function useScrollBoundaryGuard(
 
     function handleTouchStart(event: TouchEvent): void {
       const touch = getTouch(event);
+      lastTouchX = touch ? touch.clientX : null;
       lastTouchY = touch ? touch.clientY : null;
     }
 
@@ -62,13 +64,22 @@ export function useScrollBoundaryGuard(
       const touch = getTouch(event);
       if (!touch) return;
 
-      if (lastTouchY === null) {
+      if (lastTouchX === null || lastTouchY === null) {
+        lastTouchX = touch.clientX;
         lastTouchY = touch.clientY;
         return;
       }
 
+      const deltaX = touch.clientX - lastTouchX;
       const deltaY = touch.clientY - lastTouchY;
+      lastTouchX = touch.clientX;
       lastTouchY = touch.clientY;
+
+      // If the touch gesture is predominantly horizontal, do not prevent default,
+      // allowing native horizontal scrolling (e.g. on found words chips list).
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        return;
+      }
 
       const scrollTarget = findScrollTarget(event.target, scrollRoot);
       const maxScrollTop =
@@ -86,6 +97,7 @@ export function useScrollBoundaryGuard(
     }
 
     function handleTouchEnd(): void {
+      lastTouchX = null;
       lastTouchY = null;
     }
 
