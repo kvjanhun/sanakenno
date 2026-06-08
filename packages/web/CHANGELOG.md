@@ -1,5 +1,12 @@
 # @sanakenno/web
 
+## 1.15.4
+
+### Patch Changes
+
+- Align found-word count text with collapsed word pills.
+  - @sanakenno/shared@1.15.4
+
 ## 1.15.3
 
 ### Patch Changes

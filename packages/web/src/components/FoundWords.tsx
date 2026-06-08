@@ -65,17 +65,10 @@ export function FoundWords({
       {/* Header */}
       <div className="flex items-center justify-between mb-2">
         <div
-          className="flex items-center gap-1.5 text-sm font-medium"
+          className={`flex items-center gap-1.5 text-sm font-medium ${showAll ? '' : 'pl-2'}`}
           style={{ color: 'var(--color-text-secondary)' }}
         >
-          <span
-            className="px-1.5 py-0.5 text-xs rounded-full font-semibold"
-            style={{
-              backgroundColor: 'var(--color-bg-secondary)',
-              color: 'var(--color-text-secondary)',
-              border: '1px solid var(--color-border)',
-            }}
-          >
+          <span style={{ color: 'var(--color-accent)' }}>
             {foundWords.length}
           </span>
           <span>{countText}</span>
