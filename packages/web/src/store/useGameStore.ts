@@ -30,6 +30,12 @@ import {
   loadFromStorage,
   removeFromStorage,
 } from '../utils/storage';
+import {
+  filterVisibleHintIds,
+  isVisibleHintId,
+  VISIBLE_HINT_IDS,
+  type VisibleHintId,
+} from '../utils/hints';
 import { useAuthStore } from './useAuthStore';
 
 /** Shape of the puzzle payload from GET /api/puzzle. */
@@ -48,9 +54,6 @@ export type MessageType = 'ok' | 'error' | 'special';
 
 /** Celebration overlay type. */
 export type CelebrationType = 'allistyttava' | 'taysikenno' | null;
-
-/** Hint icon identifiers for the share line (must match panel IDs). */
-type HintId = 'summary' | 'letters' | 'distribution' | 'pairs';
 
 /** Persisted state shape in localStorage. */
 interface PersistedState {
@@ -192,15 +195,14 @@ function fisherYatesShuffle<T>(arr: readonly T[]): T[] {
 }
 
 /** Map hint IDs to their share emoji. */
-const HINT_ICONS: Record<HintId, string> = {
+const HINT_ICONS: Record<VisibleHintId, string> = {
   summary: '\u{1F4CA}',
-  letters: '\u{1F524}',
   distribution: '\u{1F4CF}',
   pairs: '\u{1F520}',
 };
 
 /** Ordered hint IDs for consistent share line output. */
-const HINT_ORDER: HintId[] = ['summary', 'letters', 'distribution', 'pairs'];
+const HINT_ORDER = VISIBLE_HINT_IDS;
 
 let messageTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -490,6 +492,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
       }
       const existing =
         loadFromStorage<PlayerStats>(STATS_STORAGE_KEY) ?? emptyStats();
+      const visibleHintsUnlocked = filterVisibleHintIds(state.hintsUnlocked);
       const updated = updateStatsRecord(existing, {
         puzzle_number: puzzle.puzzle_number,
         date: get().viewingPuzzleDate ?? dateStr,
@@ -497,7 +500,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
         best_score: newScore,
         max_score: puzzle.max_score,
         words_found: newFoundWords.size,
-        hints_used: state.hintsUnlocked.size,
+        hints_used: visibleHintsUnlocked.length,
         elapsed_ms: elapsed,
         longest_word: longestWord,
         pangrams_found: pangramsFound,
@@ -512,7 +515,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
           date: get().viewingPuzzleDate ?? dateStr,
           found_words: [...newFoundWords],
           score: newScore,
-          hints_unlocked: [...state.hintsUnlocked],
+          hints_unlocked: visibleHintsUnlocked,
           started_at: state.startedAt,
           total_paused_ms: state.totalPausedMs,
           score_before_hints: state.scoreBeforeHints,
@@ -553,7 +556,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
     const data: PersistedState = {
       foundWords: [...foundWords],
       score,
-      hintsUnlocked: [...hintsUnlocked],
+      hintsUnlocked: filterVisibleHintIds(hintsUnlocked),
       startedAt,
       totalPausedMs,
       scoreBeforeHints,
@@ -576,7 +579,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
         saveToStorage(key, {
           foundWords: legacy.foundWords,
           score: legacy.score,
-          hintsUnlocked: legacy.hintsUnlocked,
+          hintsUnlocked: filterVisibleHintIds(legacy.hintsUnlocked),
           startedAt: legacy.startedAt,
           totalPausedMs: legacy.totalPausedMs,
           scoreBeforeHints: null,
@@ -606,7 +609,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
     set({
       foundWords: new Set(validWords),
       score,
-      hintsUnlocked: new Set(saved.hintsUnlocked ?? []),
+      hintsUnlocked: new Set(filterVisibleHintIds(saved.hintsUnlocked ?? [])),
       scoreBeforeHints: saved.scoreBeforeHints ?? null,
       startedAt: saved.startedAt || Date.now(),
       totalPausedMs: saved.totalPausedMs ?? 0,
@@ -637,6 +640,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
   setShowAllFoundWords: (v: boolean) => set({ showAllFoundWords: v }),
 
   unlockHint: (id: string) => {
+    if (!isVisibleHintId(id)) return;
     set((s) => {
       const isFirst = s.hintsUnlocked.size === 0;
       const next = new Set(s.hintsUnlocked);

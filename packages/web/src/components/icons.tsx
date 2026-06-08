@@ -57,24 +57,6 @@ export function SummaryIcon(): React.JSX.Element {
   );
 }
 
-/** Styled "A" text for the letters hint panel — no icon equivalent. */
-export function LettersIcon(): React.JSX.Element {
-  return (
-    <span
-      aria-hidden="true"
-      className="inline-block ml-1"
-      style={{
-        fontWeight: 450,
-        fontSize: '1.1em',
-        lineHeight: 1,
-        verticalAlign: 'baseline',
-      }}
-    >
-      A
-    </span>
-  );
-}
-
 /** Bar chart icon for the distribution hint panel. */
 export function DistributionIcon(): React.JSX.Element {
   return (

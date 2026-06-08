@@ -20,6 +20,7 @@ import type {
 } from '@sanakenno/shared';
 import { auth as authService, storage, config } from '../platform';
 import { loadFromStorage, saveToStorage } from '../utils/storage';
+import { filterVisibleHintIds } from '../utils/hints';
 import { usePaletteStore } from './usePaletteStore';
 import { useThemePreferenceStore } from './useThemePreferenceStore';
 
@@ -87,7 +88,7 @@ function gatherLocalData(): {
         puzzle_number: record.puzzle_number,
         found_words: saved.foundWords ?? [],
         score: saved.score ?? 0,
-        hints_unlocked: saved.hintsUnlocked ?? [],
+        hints_unlocked: filterVisibleHintIds(saved.hintsUnlocked ?? []),
         started_at: saved.startedAt ?? 0,
         total_paused_ms: saved.totalPausedMs ?? 0,
         score_before_hints: saved.scoreBeforeHints ?? null,
@@ -508,7 +509,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         storage.save(localKey, {
           foundWords: serverState.found_words,
           score: serverState.score,
-          hintsUnlocked: serverState.hints_unlocked,
+          hintsUnlocked: filterVisibleHintIds(serverState.hints_unlocked),
           startedAt: serverState.started_at,
           totalPausedMs: serverState.total_paused_ms,
           scoreBeforeHints: serverState.score_before_hints,
@@ -530,7 +531,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           puzzle_number: serverState.puzzle_number,
           found_words: saved.foundWords ?? [],
           score: saved.score ?? 0,
-          hints_unlocked: saved.hintsUnlocked ?? [],
+          hints_unlocked: filterVisibleHintIds(saved.hintsUnlocked ?? []),
           started_at: saved.startedAt ?? 0,
           total_paused_ms: saved.totalPausedMs ?? 0,
           score_before_hints: saved.scoreBeforeHints ?? null,
@@ -542,7 +543,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         storage.save(localKey, {
           foundWords: merged.found_words,
           score: merged.score,
-          hintsUnlocked: merged.hints_unlocked,
+          hintsUnlocked: filterVisibleHintIds(merged.hints_unlocked),
           startedAt: merged.started_at,
           totalPausedMs: merged.total_paused_ms,
           scoreBeforeHints: merged.score_before_hints,
@@ -584,10 +585,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!isLoggedIn) return;
     const stored = authService.getToken();
     if (!stored) return;
+    const filteredState: SyncPuzzleState = {
+      ...state,
+      hints_unlocked: filterVisibleHintIds(state.hints_unlocked),
+    };
     fetch(apiUrl('/api/player/sync/state'), {
       method: 'POST',
       headers: authHeader(stored.token),
-      body: JSON.stringify(state),
+      body: JSON.stringify(filteredState),
     }).catch(() => {});
   },
 
@@ -596,10 +601,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!isLoggedIn) return;
     const stored = authService.getToken();
     if (!stored) return;
+    const filteredPayload: SyncProgressPayload = {
+      ...payload,
+      hints_unlocked: filterVisibleHintIds(payload.hints_unlocked),
+    };
     fetch(apiUrl('/api/player/sync/progress'), {
       method: 'POST',
       headers: authHeader(stored.token),
-      body: JSON.stringify(payload),
+      body: JSON.stringify(filteredPayload),
     }).catch(() => {});
   },
 
