@@ -256,10 +256,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           headers: { Authorization: `Bearer ${stored.token}` },
         });
         if (!syncRes.ok) return;
-        const payload = (await syncRes.json()) as {
+        const rawPayload = (await syncRes.json()) as {
           stats: PlayerStats;
           puzzle_states: SyncPuzzleState[];
           preferences?: PlayerPreferences | null;
+        };
+        const payload = {
+          ...rawPayload,
+          puzzle_states: rawPayload.puzzle_states.map((state) => ({
+            ...state,
+            hints_unlocked: filterVisibleHintIds(state.hints_unlocked),
+          })),
         };
         applyServerPreferences(payload.preferences, () => {
           void get().syncPreferences();
@@ -408,7 +415,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       });
       get().pullAndMerge({
         stats: body.stats,
-        puzzle_states: body.puzzle_states,
+        puzzle_states: body.puzzle_states.map((state) => ({
+          ...state,
+          hints_unlocked: filterVisibleHintIds(state.hints_unlocked),
+        })),
       });
       window.location.reload();
     } catch (err) {
