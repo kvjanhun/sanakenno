@@ -94,7 +94,7 @@ test.describe('Midnight rollover', () => {
 
     // Submit a word so state is persisted
     await submitWord(page, 'kala');
-    await expect(page.getByText('Löydetyt sanat')).toBeVisible({
+    await expect(page.getByText(/löydetty/i)).toBeVisible({
       timeout: 5000,
     });
 

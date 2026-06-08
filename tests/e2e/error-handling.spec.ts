@@ -120,6 +120,6 @@ test.describe('Network errors', () => {
     }
 
     // Game should still work — found words visible, no crash
-    await expect(page.getByText('Löydetyt sanat')).toBeVisible();
+    await expect(page.getByText(/löydetty/i)).toBeVisible();
   });
 });

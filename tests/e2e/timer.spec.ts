@@ -22,7 +22,7 @@ test.describe('Timer persistence', () => {
 
     // Submit a word to trigger saveState (which persists startedAt)
     await submitWord(page, 'kala');
-    await expect(page.getByText('Löydetyt sanat')).toBeVisible({
+    await expect(page.getByText(/löydetty/i)).toBeVisible({
       timeout: 5000,
     });
 
@@ -40,7 +40,7 @@ test.describe('Timer persistence', () => {
 
     // Submit to persist state
     await submitWord(page, 'kala');
-    await expect(page.getByText('Löydetyt sanat')).toBeVisible({
+    await expect(page.getByText(/löydetty/i)).toBeVisible({
       timeout: 5000,
     });
 
@@ -90,7 +90,7 @@ test.describe('Timer pause/resume events', () => {
     // Game should still be fully functional after the events
     await page.keyboard.type('kala');
     await page.keyboard.press('Enter');
-    await expect(page.getByText('Löydetyt sanat')).toBeVisible({
+    await expect(page.getByText(/löydetty/i)).toBeVisible({
       timeout: 5000,
     });
   });
@@ -105,7 +105,7 @@ test.describe('Timer pause/resume events', () => {
     // Should still be usable
     await page.keyboard.type('kala');
     await page.keyboard.press('Enter');
-    await expect(page.getByText('Löydetyt sanat')).toBeVisible({
+    await expect(page.getByText(/löydetty/i)).toBeVisible({
       timeout: 5000,
     });
   });
@@ -122,7 +122,7 @@ test.describe('Timer pause/resume events', () => {
 
     await page.keyboard.type('kala');
     await page.keyboard.press('Enter');
-    await expect(page.getByText('Löydetyt sanat')).toBeVisible({
+    await expect(page.getByText(/löydetty/i)).toBeVisible({
       timeout: 5000,
     });
   });

@@ -21,7 +21,7 @@ test.describe('State persistence', () => {
   }) => {
     await loadGame(page);
     await submitWord(page, 'kala');
-    await expect(page.getByText('Löydetyt sanat')).toBeVisible({
+    await expect(page.getByText(/löydetty/i)).toBeVisible({
       timeout: 5000,
     });
 
@@ -37,7 +37,7 @@ test.describe('State persistence', () => {
   test('found words and score are restored after reload', async ({ page }) => {
     await loadGame(page);
     await submitWord(page, 'kala');
-    await expect(page.getByText('Löydetyt sanat')).toBeVisible({
+    await expect(page.getByText(/löydetty/i)).toBeVisible({
       timeout: 5000,
     });
 
@@ -45,7 +45,7 @@ test.describe('State persistence', () => {
     await loadGame(page);
 
     // Found words should still be visible
-    await expect(page.getByText('Löydetyt sanat')).toBeVisible({
+    await expect(page.getByText(/löydetty/i)).toBeVisible({
       timeout: 5000,
     });
     await expect(page.getByText('kala')).toBeVisible();
@@ -55,7 +55,7 @@ test.describe('State persistence', () => {
     // Load puzzle 0 and submit a word
     await loadGame(page);
     await submitWord(page, 'kala');
-    await expect(page.getByText('Löydetyt sanat')).toBeVisible({
+    await expect(page.getByText(/löydetty/i)).toBeVisible({
       timeout: 5000,
     });
 
@@ -75,7 +75,7 @@ test.describe('State persistence', () => {
     await page.locator('svg polygon').first().waitFor({ timeout: 10000 });
 
     // Puzzle 1 should have no found words
-    await expect(page.getByText('Löydetyt sanat')).not.toBeVisible();
+    await expect(page.getByText(/löydetty/i)).not.toBeVisible();
   });
 
   test('corrupt localStorage state is discarded gracefully', async ({

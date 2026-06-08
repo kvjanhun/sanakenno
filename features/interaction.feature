@@ -134,9 +134,9 @@ Feature: Game interaction
 
   # --- Found words display ---
 
-  Scenario: Last 8 found words are visible
+  Scenario: All found words are visible in collapsed view
     Given the player has found 10 words
-    Then the 8 most recently found should be visible
+    Then all 10 found words should be visible in the collapsed list
     And an expand button should be available
 
   Scenario: Expand button is available after first found word

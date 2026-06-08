@@ -261,7 +261,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
 
   recentFoundWords: () => {
     const { foundWords } = get();
-    return [...foundWords].reverse().slice(0, 8);
+    return [...foundWords].reverse();
   },
 
   sortedFoundWords: () => {

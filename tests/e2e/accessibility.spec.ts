@@ -108,7 +108,7 @@ test.describe('Touch behaviour', () => {
     await loadGame(page);
     await submitWord(page, 'kala');
 
-    await expect(page.getByText('Löydetyt sanat')).toBeVisible();
+    await expect(page.getByText(/löydetty/i)).toBeVisible();
 
     const metrics = await page.evaluate(() => {
       const scrollingElement =
@@ -137,7 +137,7 @@ test.describe('Touch behaviour', () => {
     await loadGame(page);
     await submitWord(page, 'kala');
 
-    await expect(page.getByText('Löydetyt sanat')).toBeVisible();
+    await expect(page.getByText(/löydetty/i)).toBeVisible();
 
     const scrollTop = await page
       .locator('[data-game-scroll]')

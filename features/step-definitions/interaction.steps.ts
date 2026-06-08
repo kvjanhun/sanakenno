@@ -212,7 +212,7 @@ Given(
 );
 
 Then(
-  'the {int} most recently found should be visible',
+  'all {int} found words should be visible in the collapsed list',
   function (this: SanakennoWorld, _count: number) {
     return 'pending';
   },

@@ -132,7 +132,7 @@ export function RankProgress({
           style={{
             width: `${progress}%`,
             backgroundColor: 'var(--color-accent)',
-            transition: 'width 0.5s ease',
+            transition: 'width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
           }}
         />
       </div>

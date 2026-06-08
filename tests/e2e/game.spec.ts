@@ -155,7 +155,7 @@ test.describe('Word validation', () => {
     await submitWord(page, 'kala');
 
     // Should show found words section
-    await expect(page.getByText('Löydetyt sanat')).toBeVisible({
+    await expect(page.getByText(/löydetty/i)).toBeVisible({
       timeout: 5000,
     });
   });
@@ -163,7 +163,7 @@ test.describe('Word validation', () => {
   test('duplicate word shows "Löysit jo tämän!"', async ({ page }) => {
     await loadGame(page);
     await submitWord(page, 'kala');
-    await expect(page.getByText('Löydetyt sanat')).toBeVisible({
+    await expect(page.getByText(/löydetty/i)).toBeVisible({
       timeout: 5000,
     });
 
@@ -334,7 +334,7 @@ test.describe('Achievement fire-and-forget', () => {
     await submitWord(page, 'kala');
 
     // Game should still be functional — no error shown
-    await expect(page.getByText('Löydetyt sanat')).toBeVisible({
+    await expect(page.getByText(/löydetty/i)).toBeVisible({
       timeout: 5000,
     });
     await expect(page.getByText('Lataus epäonnistui.')).not.toBeVisible();

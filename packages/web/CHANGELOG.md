@@ -1,5 +1,15 @@
 # @sanakenno/web
 
+## 1.15.0
+
+### Minor Changes
+
+- redesign the found words list to show all found words in a scrollable list ordered by recency
+
+### Patch Changes
+
+- @sanakenno/shared@1.15.0
+
 ## 1.14.7
 
 ### Patch Changes
