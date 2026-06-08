@@ -1,102 +1,124 @@
 /**
  * BDD step definitions for pwa.feature.
  *
- * PWA scenarios are primarily E2E (require a browser with SW support).
- * Manifest structure is validated against the Vite build output.
- * SW strategy tests are marked pending for Playwright E2E.
+ * Config scenarios inspect the shared Vite PWA options directly. Production
+ * service-worker runtime behavior is covered by tests/pwa with a built preview.
  */
 
-import { When, Then } from '@cucumber/cucumber';
-import { readFileSync, existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { Given, When, Then } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
+import { pwaOptions } from '../../packages/web/pwa.config.js';
 import type { SanakennoWorld } from './types';
 
-/** Path to the built manifest (only available after `npm run build`). */
-const DIST_DIR = resolve(process.cwd(), 'packages/web/dist');
+interface RuntimeCachingRule {
+  urlPattern: RegExp;
+  handler: string;
+  options?: {
+    cacheName?: string;
+  };
+}
 
-When('the browser loads the page', function (this: SanakennoWorld) {
-  // Check that the manifest exists in the build output.
-  // This step is skipped if the project hasn't been built yet.
-  const manifestPath = resolve(DIST_DIR, 'manifest.webmanifest');
-  if (!existsSync(manifestPath)) {
-    return 'pending';
-  }
-  const raw = readFileSync(manifestPath, 'utf-8');
-  this.responseJson = JSON.parse(raw);
+interface PwaWorld extends SanakennoWorld {
+  pwaConfig?: typeof pwaOptions;
+}
+
+function runtimeRuleFor(
+  config: typeof pwaOptions,
+  sampleUrl: string,
+): RuntimeCachingRule | undefined {
+  return config.workbox.runtimeCaching.find((rule) =>
+    rule.urlPattern.test(sampleUrl),
+  );
+}
+
+When('the PWA configuration is inspected', function (this: PwaWorld) {
+  this.pwaConfig = pwaOptions;
 });
 
-Then('a valid web manifest should be served', function (this: SanakennoWorld) {
-  if (!this.responseJson) return 'pending';
-  assert.ok(this.responseJson.name, 'Manifest must have a name');
-  assert.ok(this.responseJson.icons, 'Manifest must have icons');
+Then('it should declare a valid web manifest', function (this: PwaWorld) {
+  const manifest = this.pwaConfig?.manifest;
+  assert.ok(manifest, 'Manifest config should exist');
+  assert.equal(manifest.name, 'Sanakenno');
+  assert.equal(manifest.short_name, 'Sanakenno');
+  assert.equal(manifest.start_url, '/');
+  assert.equal(manifest.scope, '/');
+  assert.equal(manifest.lang, 'fi');
 });
 
-Then(
-  'it should declare standalone display mode',
-  function (this: SanakennoWorld) {
-    if (!this.responseJson) return 'pending';
-    assert.equal(this.responseJson.display, 'standalone');
-  },
-);
+Then('it should declare standalone display mode', function (this: PwaWorld) {
+  assert.equal(this.pwaConfig?.manifest.display, 'standalone');
+});
 
 Then(
   'it should include icons at 192x192 and 512x512',
-  function (this: SanakennoWorld) {
-    if (!this.responseJson) return 'pending';
-    const icons = this.responseJson.icons as Array<{ sizes: string }>;
-    const sizes = icons.map((i) => i.sizes);
-    assert.ok(sizes.includes('192x192'), 'Missing 192x192 icon');
-    assert.ok(sizes.includes('512x512'), 'Missing 512x512 icon');
+  function (this: PwaWorld) {
+    const sizes = this.pwaConfig?.manifest.icons.map((icon) => icon.sizes);
+    assert.ok(sizes?.includes('192x192'), 'Missing 192x192 icon');
+    assert.ok(sizes?.includes('512x512'), 'Missing 512x512 icon');
   },
 );
 
-// --- Service worker strategies (E2E-only) ---
-
-When('the player navigates to the app', function (this: SanakennoWorld) {
-  return 'pending';
+Then('API requests should use NetworkOnly caching', function (this: PwaWorld) {
+  const rule = runtimeRuleFor(this.pwaConfig!, '/api/puzzle');
+  assert.equal(rule?.handler, 'NetworkOnly');
 });
 
 Then(
-  'the service worker should try the network first',
+  'JavaScript and CSS assets should use StaleWhileRevalidate caching',
+  function (this: PwaWorld) {
+    const jsRule = runtimeRuleFor(this.pwaConfig!, '/assets/app.js');
+    const cssRule = runtimeRuleFor(this.pwaConfig!, '/assets/app.css');
+    assert.equal(jsRule?.handler, 'StaleWhileRevalidate');
+    assert.equal(cssRule?.handler, 'StaleWhileRevalidate');
+    assert.equal(jsRule?.options?.cacheName, 'static-assets');
+    assert.equal(cssRule?.options?.cacheName, 'static-assets');
+  },
+);
+
+Then('image assets should use CacheFirst caching', function (this: PwaWorld) {
+  const rule = runtimeRuleFor(this.pwaConfig!, '/icons/sanakenno-192x192.png');
+  assert.equal(rule?.handler, 'CacheFirst');
+  assert.equal(rule?.options?.cacheName, 'images');
+});
+
+When(
+  'the production build is loaded in a browser',
   function (this: SanakennoWorld) {
     return 'pending';
   },
 );
 
-Then('fall back to cache if offline', function (this: SanakennoWorld) {
-  return 'pending';
-});
-
-When('the browser requests a JS or CSS file', function (this: SanakennoWorld) {
+Then('the web manifest should load', function (this: SanakennoWorld) {
   return 'pending';
 });
 
 Then(
-  'the service worker should serve from cache immediately',
+  'the service worker should register after reload',
   function (this: SanakennoWorld) {
     return 'pending';
   },
 );
 
-Then('update the cache in the background', function (this: SanakennoWorld) {
-  return 'pending';
-});
-
-When('the app fetches \\/api\\/puzzle', function (this: SanakennoWorld) {
-  return 'pending';
-});
-
 Then(
-  'the service worker should not intercept or cache the request',
+  'static assets should enter CacheStorage',
   function (this: SanakennoWorld) {
     return 'pending';
   },
 );
 
-// --- iOS standalone quirks (E2E-only) ---
+Then(
+  'API responses should not enter CacheStorage',
+  function (this: SanakennoWorld) {
+    return 'pending';
+  },
+);
 
-import { Given } from '@cucumber/cucumber';
+Then(
+  'the app shell should survive an offline reload',
+  function (this: SanakennoWorld) {
+    return 'pending';
+  },
+);
 
 Given(
   'the app is running in iOS standalone mode',
@@ -108,8 +130,6 @@ Given(
 When('the player double-taps quickly', function (this: SanakennoWorld) {
   return 'pending';
 });
-
-// "the page should not zoom" is defined in accessibility.steps.ts.
 
 Then(
   'letter input should still work normally',

@@ -82,7 +82,9 @@ let _wordlistLoaded = false;
 export function loadWordlist(): void {
   if (!existsSync(WORDLIST_PATH)) {
     console.warn('WARNING: Wordlist not found at', WORDLIST_PATH);
-    console.warn('  Run: node scripts/migrate-from-kontissa.js');
+    console.warn(
+      '  Run: pnpm exec tsx scripts/archive/migrate-from-kontissa.ts',
+    );
     _allWords = new Set();
     return;
   }

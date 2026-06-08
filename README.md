@@ -26,8 +26,10 @@ pnpm run dev         # Start dev server (Vite + Hono)
 pnpm run build       # Production build
 pnpm run typecheck   # TypeScript check
 pnpm run test:unit   # Vitest unit tests
+pnpm run test:coverage # Vitest coverage thresholds
 pnpm run test:bdd    # Cucumber.js BDD specs
 pnpm run test:e2e    # Playwright E2E tests (dev server required)
+pnpm run test:pwa:built # Production-preview PWA tests after build
 pnpm run lint        # ESLint + Prettier check
 ```
 
@@ -56,7 +58,7 @@ All behaviour is defined in Gherkin specs under `features/`. The BDD suite runs 
 | [word-validation](features/word-validation.feature) | Rejection rules, SHA-256 hash checking, input normalisation, failed-guess reporting |
 | [ranks](features/ranks.feature) | 7 rank thresholds, progress bar, celebrations |
 | [puzzle](features/puzzle.feature) | Daily rotation, puzzle structure, midnight rollover |
-| [hints](features/hints.feature) | 4 unlockable hint panels, persistence, collapse state |
+| [hints](features/hints.feature) | 3 visible unlockable hint panels, persistence, collapse state |
 | [interaction](features/interaction.feature) | Keyboard/tap input, honeycomb, found words, share |
 | [timer](features/timer.feature) | Elapsed time tracking, pause on tab hidden/blur |
 | [persistence](features/persistence.feature) | localStorage per-puzzle, validation on reload |

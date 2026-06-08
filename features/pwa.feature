@@ -2,37 +2,30 @@ Feature: Progressive Web App
   Sanakenno works as an installable PWA with offline support and
   standalone display mode.
 
-  # --- Installation ---
+  # --- Configuration ---
 
-  @build
-  Scenario: App is installable via web manifest
-    When the browser loads the page
-    Then a valid web manifest should be served
+  Scenario: App declares an installable web manifest
+    When the PWA configuration is inspected
+    Then it should declare a valid web manifest
     And it should declare standalone display mode
     And it should include icons at 192x192 and 512x512
 
-  # --- Service worker ---
-  # TODO: These scenarios require complex service worker mocking that Playwright
-  # does not support out of the box. Validate manually or with a dedicated PWA
-  # testing tool (e.g. Lighthouse CI, jest-service-worker). The Workbox
-  # configuration in vite.config.js is the source of truth.
+  Scenario: Workbox runtime strategies match the app contract
+    When the PWA configuration is inspected
+    Then API requests should use NetworkOnly caching
+    And JavaScript and CSS assets should use StaleWhileRevalidate caching
+    And image assets should use CacheFirst caching
 
-  @e2e
-  Scenario: Navigation uses network-first strategy
-    When the player navigates to the app
-    Then the service worker should try the network first
-    And fall back to cache if offline
+  # --- Production runtime ---
 
-  @e2e
-  Scenario: Static assets use stale-while-revalidate
-    When the browser requests a JS or CSS file
-    Then the service worker should serve from cache immediately
-    And update the cache in the background
-
-  @e2e
-  Scenario: API requests pass through without caching
-    When the app fetches /api/puzzle
-    Then the service worker should not intercept or cache the request
+  @build @pwa
+  Scenario: Built app keeps the shell available offline without caching API responses
+    When the production build is loaded in a browser
+    Then the web manifest should load
+    And the service worker should register after reload
+    And static assets should enter CacheStorage
+    And API responses should not enter CacheStorage
+    And the app shell should survive an offline reload
 
   # --- iOS standalone quirks ---
   # TODO: Requires a real iOS device or Xcode Simulator — cannot be automated

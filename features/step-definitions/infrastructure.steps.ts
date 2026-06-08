@@ -14,6 +14,7 @@ import type { SanakennoWorld } from './types';
 
 interface InfrastructureWorld extends SanakennoWorld {
   healthAlertOutput?: string;
+  capturedConsoleLogs?: string[];
 }
 
 // --- Security & Environment (container-only) ---
@@ -117,28 +118,60 @@ Then(
   },
 );
 
-When('the server processes a request', async function (this: SanakennoWorld) {
-  // Trigger a request — the logging middleware writes to stdout
-  await app.request('/api/health');
-});
+When(
+  'the server processes a request',
+  async function (this: InfrastructureWorld) {
+    const previousLogLevel = process.env.LOG_LEVEL;
+    const testConsole = globalThis.console;
+    const originalLog = testConsole.log;
+    const captured: string[] = [];
+
+    process.env.LOG_LEVEL = 'info';
+    testConsole.log = (value?: unknown, ...args: unknown[]) => {
+      captured.push([value, ...args].map((item) => String(item)).join(' '));
+    };
+
+    try {
+      await app.request('/api/health');
+    } finally {
+      testConsole.log = originalLog;
+      if (previousLogLevel === undefined) {
+        delete process.env.LOG_LEVEL;
+      } else {
+        process.env.LOG_LEVEL = previousLogLevel;
+      }
+    }
+
+    this.capturedConsoleLogs = captured;
+  },
+);
 
 Then(
   'it should emit a structured log to stdout \\(console\\)',
-  function (this: SanakennoWorld) {
-    // Verified by the logging middleware in server/index.ts
-    // which outputs JSON to stdout. Full validation would require
-    // capturing stdout in a test harness.
-    assert.ok(true);
+  function (this: InfrastructureWorld) {
+    assert.ok(
+      this.capturedConsoleLogs && this.capturedConsoleLogs.length > 0,
+      'Expected at least one console log entry',
+    );
+    assert.doesNotThrow(() => JSON.parse(this.capturedConsoleLogs![0]));
   },
 );
 
 Then(
   'the log should include level, method, path, and response time',
-  function (this: SanakennoWorld) {
-    // The structured log format is:
-    // {"level":"info","method":"GET","path":"/api/health","status":200,"response_time_ms":N}
-    // Verified by inspection; full capture needs E2E test harness.
-    assert.ok(true);
+  function (this: InfrastructureWorld) {
+    const entry = JSON.parse(this.capturedConsoleLogs![0]) as {
+      level?: string;
+      method?: string;
+      path?: string;
+      status?: number;
+      response_time_ms?: number;
+    };
+    assert.equal(entry.level, 'info');
+    assert.equal(entry.method, 'GET');
+    assert.equal(entry.path, '/api/health');
+    assert.equal(entry.status, 200);
+    assert.equal(typeof entry.response_time_ms, 'number');
   },
 );
 
