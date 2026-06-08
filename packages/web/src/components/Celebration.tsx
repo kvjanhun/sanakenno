@@ -6,7 +6,6 @@
  */
 
 import { useEffect } from 'react';
-import styles from './animations.module.css';
 
 /** Props for {@link Celebration}. */
 export interface CelebrationProps {
@@ -47,14 +46,14 @@ export function Celebration({
           description: 'Täydellinen tulos! Löysit kaikki sanat.',
           target: maxScore,
           closeLabel: 'OK',
-          cardClass: styles.celebrationCardIntense,
+          cardClass: 'celebration-card-intense',
         }
       : {
           title: 'Ällistyttävä!',
           description: 'Huikea suoritus! Olet saavuttanut huipputason.',
           target: maxScore,
           closeLabel: 'Jatka pelaamista',
-          cardClass: styles.celebrationCard,
+          cardClass: 'celebration-card',
         };
 
   const autoCloseMs = type === 'taysikenno' ? 8000 : 5000;

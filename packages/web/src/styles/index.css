@@ -192,3 +192,113 @@ html {
 .game-scroll-surface {
   -webkit-overflow-scrolling: touch;
 }
+
+@keyframes word-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-8px);
+  }
+  40% {
+    transform: translateX(8px);
+  }
+  60% {
+    transform: translateX(-5px);
+  }
+  80% {
+    transform: translateX(5px);
+  }
+}
+
+.word-shake {
+  animation: word-shake 0.4s ease-in-out;
+}
+
+@keyframes celebration-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgba(255, 100, 62, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 100, 62, 0.6);
+  }
+}
+
+.celebration-card {
+  border: 2px solid var(--color-accent);
+  animation: celebration-glow 2s ease-in-out infinite;
+}
+
+@keyframes celebration-glow-intense {
+  0%,
+  100% {
+    box-shadow:
+      0 0 12px rgba(255, 100, 62, 0.4),
+      0 0 24px rgba(255, 180, 60, 0.2);
+  }
+  50% {
+    box-shadow:
+      0 0 28px rgba(255, 100, 62, 0.7),
+      0 0 48px rgba(255, 180, 60, 0.4);
+  }
+}
+
+.celebration-card-intense {
+  position: relative;
+  border: 3px solid var(--color-accent);
+  animation: celebration-glow-intense 2s ease-in-out infinite;
+}
+
+@keyframes idle-character-flash {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+.idle-character {
+  animation: idle-character-flash 1.5s steps(1, start) infinite;
+}
+
+.celebration-card-intense::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  padding: 3px;
+  background: linear-gradient(
+    135deg,
+    var(--color-accent),
+    #ffb43c,
+    var(--color-accent)
+  );
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+@keyframes rank-pulse {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.18);
+  }
+  70% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.rank-pulse {
+  animation: rank-pulse 0.4s ease-out;
+}

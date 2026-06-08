@@ -7,7 +7,6 @@
  */
 
 import { colorizeWord } from '@sanakenno/shared';
-import styles from './animations.module.css';
 
 /** Props for {@link WordInput}. */
 export interface WordInputProps {
@@ -62,7 +61,7 @@ export function WordInput({
 
   return (
     <div
-      className={`text-center text-[30px] font-semibold leading-none ${shake ? ` ${styles.wordShake}` : ''}`}
+      className={`text-center text-[30px] font-semibold leading-none ${shake ? ' word-shake' : ''}`}
       style={{
         fontFamily: 'var(--font-game)',
         fontKerning: 'normal',
@@ -86,7 +85,7 @@ export function WordInput({
         ))
       ) : (
         <span
-          className={styles.idleCharacter}
+          className="idle-character"
           style={{ color: 'var(--color-text-tertiary)' }}
         >
           |

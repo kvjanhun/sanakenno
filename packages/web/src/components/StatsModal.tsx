@@ -20,7 +20,6 @@ import {
 } from '@sanakenno/shared';
 import type { PlayerStats } from '@sanakenno/shared';
 import { loadFromStorage } from '../utils/storage';
-import { useAuthStore } from '../store/useAuthStore';
 import { ModalShell } from './ModalShell';
 
 /** Props for {@link StatsModal}. */
@@ -37,7 +36,6 @@ export function StatsModal({
   onClose,
 }: StatsModalProps): React.JSX.Element | null {
   const [stats, setStats] = useState<PlayerStats>(emptyStats());
-  const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
 
   useEffect(() => {
     if (show) {

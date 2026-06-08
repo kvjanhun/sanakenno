@@ -8,7 +8,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { rankThresholds, progressToNextRank } from '@sanakenno/shared';
-import styles from './animations.module.css';
 
 /** Props for {@link RankProgress}. */
 export interface RankProgressProps {
@@ -92,7 +91,7 @@ export function RankProgress({
           key={rank}
           type="button"
           onClick={onToggleRanks}
-          className={`flex items-center gap-1 px-3 py-0.5 text-sm rounded-full cursor-pointer border-none ${styles.rankPulse}`}
+          className="flex items-center gap-1 px-3 py-0.5 text-sm rounded-full cursor-pointer border-none rank-pulse"
           style={{
             backgroundColor: 'var(--color-accent)',
             color: 'var(--color-on-accent)',
