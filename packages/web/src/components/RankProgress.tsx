@@ -94,14 +94,24 @@ export function RankProgress({
     <div ref={containerRef} className="w-full" style={{ position: 'relative' }}>
       {/* Rank + score + share */}
       <div className="flex items-center justify-between mb-2">
+        <span
+          className="text-[26px] font-bold leading-none"
+          style={{
+            color: 'var(--color-text-primary)',
+            fontFamily: 'var(--font-game)',
+          }}
+        >
+          {displayScore} pistettä
+        </span>
         <button
           key={rank}
           type="button"
           onClick={onToggleRanks}
-          className="flex items-center gap-1 px-3 py-0.5 text-sm rounded-full cursor-pointer border-none rank-pulse"
+          className="flex items-center gap-1 pl-4.5 pr-3 py-1 text-sm rounded-full cursor-pointer border-none rank-pulse"
           style={{
             backgroundColor: 'var(--color-accent)',
             color: 'var(--color-on-accent)',
+            fontWeight: 600,
             flexShrink: 0,
           }}
           aria-expanded={showRanks}
@@ -113,16 +123,6 @@ export function RankProgress({
             <ChevronDown size={14} strokeWidth={2.5} aria-hidden="true" />
           )}
         </button>
-
-        <span
-          className="text-[26px] font-bold leading-none"
-          style={{
-            color: 'var(--color-text-primary)',
-            fontFamily: 'var(--font-game)',
-          }}
-        >
-          {displayScore} pistettä
-        </span>
       </div>
 
       {/* Progress bar */}

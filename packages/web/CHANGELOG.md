@@ -1,5 +1,12 @@
 # @sanakenno/web
 
+## 1.15.3
+
+### Patch Changes
+
+- adjust layout and styles of RankProgress score and toggle button
+  - @sanakenno/shared@1.15.3
+
 ## 1.15.2
 
 ### Patch Changes
