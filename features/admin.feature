@@ -141,6 +141,7 @@ Feature: Admin tool
     And the puzzle cache should be cleared
 
   Scenario: List blocked words
+    Given multiple blocked words exist with distinct timestamps
     When the admin requests the blocked words list
     Then the response should include all blocked words
     And words should be ordered most recently blocked first

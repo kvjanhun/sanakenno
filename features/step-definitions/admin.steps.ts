@@ -27,6 +27,7 @@ import {
   setWordlist,
   getPuzzleBySlot,
   getPuzzleForDate,
+  hashWord,
   totalPuzzles,
 } from '../../server/puzzle-engine';
 import {
@@ -41,6 +42,14 @@ interface AdminWorld extends SanakennoWorld {
   sessionCookie: string;
   csrfToken: string;
   cachedSlot5Before: unknown;
+  cachedSlotBefore?: {
+    slot: number;
+    center: string;
+    words: string[];
+    word_hashes: string[];
+  };
+  cacheGenerationBefore?: number;
+  previewPuzzleCountBefore?: number;
   firstSuggestionKey?: string;
   firstSuggestionWordCount?: number;
   firstSuggestionPangramCount?: number;
@@ -53,6 +62,7 @@ const TEST_PASSWORD = 'securepassword123';
 const TEST_LETTERS = ['a', 'e', 'k', 'l', 'n', 's', 'ö'];
 const TEST_LETTERS_STR = 'a,e,k,l,n,s,ö';
 const ALT_LETTERS = ['a', 'd', 'e', 'h', 'l', 'r', 's'];
+const PUZZLE_CACHE_GENERATION_KEY = 'puzzle_cache_generation';
 
 /** Build auth headers with session cookie and CSRF token. */
 function adminHeaders(
@@ -152,6 +162,21 @@ function setGeneratedSuggestionScreening(
   grades: Record<string, PangramQualityGrade>,
 ): void {
   setGeneratedSuggestionScreeningForTesting(grades);
+}
+
+function readPuzzleCacheGeneration(): number {
+  const row = getDb()
+    .prepare('SELECT value FROM config WHERE key = ?')
+    .get(PUZZLE_CACHE_GENERATION_KEY) as { value: string } | undefined;
+  const value = row ? Number.parseInt(row.value, 10) : 0;
+  return Number.isFinite(value) ? value : 0;
+}
+
+function activePuzzleCount(): number {
+  const row = getDb()
+    .prepare('SELECT COUNT(*) AS count FROM puzzles WHERE is_active = 1')
+    .get() as { count: number };
+  return row.count;
 }
 
 Before(async function (this: AdminWorld, scenario: ITestCaseHookParameter) {
@@ -439,6 +464,15 @@ Given(
       'INSERT OR REPLACE INTO puzzles (slot, letters, center) VALUES (?, ?, ?)',
     ).run(slot, letters, 'a');
     invalidateAll();
+    this.cacheGenerationBefore = readPuzzleCacheGeneration();
+    const cached = getPuzzleBySlot(slot);
+    assert.ok(cached, `Slot ${slot} should be cacheable before update`);
+    this.cachedSlotBefore = {
+      slot,
+      center: cached!.center,
+      words: [...cached!.words],
+      word_hashes: [...cached!.word_hashes],
+    };
   },
 );
 
@@ -468,8 +502,23 @@ Then(
 );
 
 Then('the puzzle cache should be invalidated', function (this: AdminWorld) {
-  // Cache invalidation is internal — we verify the API returns updated data
-  assert.ok(true);
+  assert.ok(
+    this.cacheGenerationBefore !== undefined,
+    'Cache generation should be captured before mutation',
+  );
+  assert.ok(
+    readPuzzleCacheGeneration() > this.cacheGenerationBefore!,
+    'Puzzle cache generation should increment after mutation',
+  );
+  assert.ok(this.cachedSlotBefore, 'Cached puzzle should exist before update');
+  const fresh = getPuzzleBySlot(this.cachedSlotBefore!.slot);
+  assert.ok(fresh, 'Updated puzzle should be readable without manual clearing');
+  assert.notEqual(
+    fresh!.all_letters,
+    TEST_LETTERS_STR,
+    'Updated puzzle data should not come from the old cached value',
+  );
+  assert.equal(fresh!.all_letters, 'a,d,e,h,l,r,s');
 });
 
 Given('puzzle slot {int} exists', function (this: AdminWorld, slot: number) {
@@ -715,6 +764,15 @@ Given(
       slot,
     );
     invalidateAll();
+    this.cacheGenerationBefore = readPuzzleCacheGeneration();
+    const cached = getPuzzleBySlot(slot);
+    assert.ok(cached, `Slot ${slot} should be cacheable before center change`);
+    this.cachedSlotBefore = {
+      slot,
+      center: cached!.center,
+      words: [...cached!.words],
+      word_hashes: [...cached!.word_hashes],
+    };
   },
 );
 
@@ -743,9 +801,23 @@ Then(
 
 Then(
   'the puzzle cache for slot {int} should be invalidated',
-  function (this: AdminWorld, _slot: number) {
-    // Verified by the API returning updated data
-    assert.ok(true);
+  function (this: AdminWorld, slot: number) {
+    assert.ok(
+      this.cacheGenerationBefore !== undefined,
+      'Cache generation should be captured before center change',
+    );
+    assert.ok(
+      readPuzzleCacheGeneration() > this.cacheGenerationBefore!,
+      'Puzzle cache generation should increment after center change',
+    );
+    const fresh = getPuzzleBySlot(slot);
+    assert.ok(fresh, `Slot ${slot} should be readable after center change`);
+    assert.equal(fresh!.center, 'k');
+    assert.notEqual(
+      fresh!.center,
+      this.cachedSlotBefore?.center,
+      'Fresh puzzle should reflect the changed center',
+    );
   },
 );
 
@@ -818,6 +890,7 @@ Then(
 When(
   'the admin previews letters {string}',
   async function (this: AdminWorld, lettersStr: string) {
+    this.previewPuzzleCountBefore = activePuzzleCount();
     const letters = lettersStr.split(',').map((l) => l.trim());
     this.response = await app.request('/api/admin/preview', {
       method: 'POST',
@@ -837,8 +910,12 @@ Then(
 );
 
 Then('no database changes should occur', function (this: AdminWorld) {
-  // Preview doesn't write to DB — verified by checking puzzles table is unchanged
   assert.ok(this.response.status >= 200 && this.response.status < 300);
+  assert.equal(
+    activePuzzleCount(),
+    this.previewPuzzleCountBefore,
+    'Preview should not create, update, or delete puzzles',
+  );
 });
 
 When(
@@ -891,6 +968,7 @@ When(
 When(
   'the admin blocks the word {string}',
   async function (this: AdminWorld, word: string) {
+    this.cacheGenerationBefore = readPuzzleCacheGeneration();
     this.response = await app.request('/api/admin/block', {
       method: 'POST',
       headers: adminHeaders(this.sessionCookie, this.csrfToken),
@@ -913,22 +991,49 @@ Then(
 Then(
   'the puzzle cache should be cleared for all puzzles',
   function (this: AdminWorld) {
-    // Blocking calls invalidateAll() — verified architecturally
-    assert.ok(true);
+    assert.ok(
+      this.cacheGenerationBefore !== undefined,
+      'Cache generation should be captured before blocking',
+    );
+    assert.ok(
+      readPuzzleCacheGeneration() > this.cacheGenerationBefore!,
+      'Puzzle cache generation should increment after blocking',
+    );
   },
 );
 
 Given(
   'the word {string} is valid for puzzle slot {int}',
-  function (this: AdminWorld, _word: string, _slot: number) {
-    // The word is in the wordlist seeded in Before
-    assert.ok(true);
+  function (this: AdminWorld, word: string, slot: number) {
+    const db = getDb();
+    db.prepare(
+      'INSERT OR REPLACE INTO puzzles (slot, letters, center, is_active) VALUES (?, ?, ?, 1)',
+    ).run(slot, 'e,i,k,l,n,s,t', 't');
+    invalidateAll();
+    this.cacheGenerationBefore = readPuzzleCacheGeneration();
+    const puzzleData = getPuzzleBySlot(slot);
+    assert.ok(puzzleData, `Slot ${slot} should be readable`);
+    assert.ok(
+      puzzleData!.words.includes(word),
+      `${word} should be valid for slot ${slot}`,
+    );
+    assert.ok(
+      puzzleData!.word_hashes.includes(hashWord(word)),
+      `${word} hash should be present before blocking`,
+    );
+    this.cachedSlotBefore = {
+      slot,
+      center: puzzleData!.center,
+      words: [...puzzleData!.words],
+      word_hashes: [...puzzleData!.word_hashes],
+    };
   },
 );
 
 When(
   'the admin blocks {string}',
   async function (this: AdminWorld, word: string) {
+    this.cacheGenerationBefore ??= readPuzzleCacheGeneration();
     this.response = await app.request('/api/admin/block', {
       method: 'POST',
       headers: adminHeaders(this.sessionCookie, this.csrfToken),
@@ -941,14 +1046,24 @@ When(
 Then(
   "{string} should no longer appear in slot {int}'s word list or hashes",
   async function (this: AdminWorld, word: string, slot: number) {
-    invalidateAll();
+    assert.ok(
+      this.cacheGenerationBefore !== undefined,
+      'Cache generation should be captured before blocking',
+    );
+    assert.ok(
+      readPuzzleCacheGeneration() > this.cacheGenerationBefore!,
+      'Puzzle cache generation should increment after blocking',
+    );
     const puzzleData = getPuzzleBySlot(slot);
-    if (puzzleData) {
-      assert.ok(
-        !puzzleData.words.includes(word),
-        `${word} should not be in word list`,
-      );
-    }
+    assert.ok(puzzleData, `Slot ${slot} should be readable after blocking`);
+    assert.ok(
+      !puzzleData!.words.includes(word),
+      `${word} should not be in word list`,
+    );
+    assert.ok(
+      !puzzleData!.word_hashes.includes(hashWord(word)),
+      `${word} hash should not be in puzzle hashes`,
+    );
   },
 );
 
@@ -972,6 +1087,7 @@ When(
       .get(word.toLowerCase()) as { id: number } | undefined;
     assert.ok(row, `Word ${word} should be blocked`);
 
+    this.cacheGenerationBefore = readPuzzleCacheGeneration();
     this.response = await app.request(`/api/admin/block/${row!.id}`, {
       method: 'DELETE',
       headers: adminHeaders(this.sessionCookie, this.csrfToken),
@@ -988,8 +1104,33 @@ Then(
 );
 
 Then('the puzzle cache should be cleared', function (this: AdminWorld) {
-  assert.ok(true);
+  assert.ok(
+    this.cacheGenerationBefore !== undefined,
+    'Cache generation should be captured before unblock',
+  );
+  assert.ok(
+    readPuzzleCacheGeneration() > this.cacheGenerationBefore!,
+    'Puzzle cache generation should increment after unblock',
+  );
 });
+
+Given(
+  'multiple blocked words exist with distinct timestamps',
+  function (this: AdminWorld) {
+    const db = getDb();
+    db.prepare('DELETE FROM blocked_words').run();
+    db.prepare(
+      'INSERT INTO blocked_words (word, blocked_at) VALUES (?, ?), (?, ?), (?, ?)',
+    ).run(
+      'vanhin',
+      '2026-06-01 08:00:00',
+      'keskimmainen',
+      '2026-06-02 08:00:00',
+      'uusin',
+      '2026-06-03 08:00:00',
+    );
+  },
+);
 
 When(
   'the admin requests the blocked words list',
@@ -1005,15 +1146,26 @@ When(
 Then(
   'the response should include all blocked words',
   function (this: AdminWorld) {
-    assert.ok(Array.isArray(this.responseJson.blocked_words));
+    const words = this.responseJson.blocked_words as unknown[];
+    assert.ok(Array.isArray(words));
+    assert.equal(words.length, 3);
   },
 );
 
 Then(
   'words should be ordered most recently blocked first',
   function (this: AdminWorld) {
-    // The query uses ORDER BY blocked_at DESC
-    assert.ok(true);
+    const words = this.responseJson.blocked_words as Array<{
+      word: string;
+      blocked_at: string;
+    }>;
+    assert.deepEqual(
+      words.map((row) => row.word),
+      ['uusin', 'keskimmainen', 'vanhin'],
+    );
+    for (let i = 1; i < words.length; i++) {
+      assert.ok(words[i - 1].blocked_at > words[i].blocked_at);
+    }
   },
 );
 
@@ -2031,8 +2183,10 @@ Then(
 );
 
 Given('the schedule includes slot 0', function (this: AdminWorld) {
-  // Slot 0 exists from Before hook seeding
-  assert.ok(true);
+  const row = getDb()
+    .prepare('SELECT slot FROM puzzles WHERE slot = 0 AND is_active = 1')
+    .get();
+  assert.ok(row, 'Slot 0 should exist and be active in the seeded rotation');
 });
 
 Then('its display_number should be 1', async function (this: AdminWorld) {
@@ -2544,9 +2698,16 @@ Then(
 Given(
   'puzzle slot {int} is cached in memory',
   function (this: AdminWorld, slot: number) {
-    // Force the engine to cache the puzzle
-    getPuzzleBySlot(slot);
-    this.cachedSlot5Before = getPuzzleBySlot(slot);
+    const cached = getPuzzleBySlot(slot);
+    assert.ok(cached, `Slot ${slot} should be cacheable before mutation`);
+    this.cachedSlot5Before = cached;
+    this.cachedSlotBefore = {
+      slot,
+      center: cached!.center,
+      words: [...cached!.words],
+      word_hashes: [...cached!.word_hashes],
+    };
+    this.cacheGenerationBefore = readPuzzleCacheGeneration();
   },
 );
 
@@ -2573,17 +2734,38 @@ Then(
   'the next request for slot {int} should recompute from the database',
   function (this: AdminWorld, slot: number) {
     const fresh = getPuzzleBySlot(slot);
-    // After invalidation + center change, the data should differ
     assert.ok(fresh, 'Puzzle should still be loadable');
+    assert.ok(
+      this.cacheGenerationBefore !== undefined,
+      'Cache generation should be captured before mutation',
+    );
+    assert.ok(
+      readPuzzleCacheGeneration() > this.cacheGenerationBefore!,
+      'Puzzle cache generation should increment after center change',
+    );
+    assert.notEqual(
+      fresh!.center,
+      this.cachedSlotBefore?.center,
+      'Center should come from the updated database row',
+    );
   },
 );
 
 Given(
   'puzzles {int}, {int}, and {int} are cached',
   function (this: AdminWorld, a: number, b: number, c: number) {
-    getPuzzleBySlot(a);
-    getPuzzleBySlot(b);
-    getPuzzleBySlot(c);
+    const cached = [a, b, c].map((slot) => {
+      const puzzle = getPuzzleBySlot(slot);
+      assert.ok(puzzle, `Slot ${slot} should be cacheable`);
+      return puzzle!;
+    });
+    this.cachedSlotBefore = {
+      slot: cached[0].slot,
+      center: cached[0].center,
+      words: [...cached[0].words],
+      word_hashes: [...cached[0].word_hashes],
+    };
+    this.cacheGenerationBefore = readPuzzleCacheGeneration();
   },
 );
 
@@ -2599,8 +2781,23 @@ When('the admin blocks a word', async function (this: AdminWorld) {
 Then(
   'the next request for any puzzle should recompute from the database',
   function (this: AdminWorld) {
-    // After invalidateAll(), cached data is cleared
     const fresh = getPuzzleBySlot(0);
     assert.ok(fresh, 'Puzzle should still be loadable after cache clear');
+    assert.ok(
+      this.cacheGenerationBefore !== undefined,
+      'Cache generation should be captured before blocking',
+    );
+    assert.ok(
+      readPuzzleCacheGeneration() > this.cacheGenerationBefore!,
+      'Puzzle cache generation should increment after blocking',
+    );
+    assert.ok(
+      !fresh!.words.includes('kala'),
+      'Blocked word should be absent from the next puzzle read',
+    );
+    assert.ok(
+      !fresh!.word_hashes.includes(hashWord('kala')),
+      'Blocked word hash should be absent from the next puzzle read',
+    );
   },
 );
