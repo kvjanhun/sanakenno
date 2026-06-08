@@ -11,6 +11,12 @@ import { deriveHintData, toColumns } from '@sanakenno/shared';
 import type { HintData } from '@sanakenno/shared';
 import type { SanakennoWorld } from './types';
 
+const VISIBLE_HINT_IDS = new Set(['summary', 'distribution', 'pairs']);
+
+function visibleHints(ids: Iterable<string>): Set<string> {
+  return new Set([...ids].filter((id) => VISIBLE_HINT_IDS.has(id)));
+}
+
 /** Build a realistic hint_data fixture for 50 words, 3 pangrams. */
 function buildFixture(): {
   hintData: HintData;
@@ -78,6 +84,7 @@ Given(
 When(
   'the player unlocks the {string} hint',
   function (this: SanakennoWorld, hintId: string) {
+    if (!VISIBLE_HINT_IDS.has(hintId)) return;
     if (this.hintsUnlocked.size === 0) {
       this.scoreBeforeHints = this.currentScore;
     }
@@ -256,6 +263,7 @@ Then('no hints should be unlocked', function (this: SanakennoWorld) {
 When(
   'the player unlocks {string}',
   function (this: SanakennoWorld, hintId: string) {
+    if (!VISIBLE_HINT_IDS.has(hintId)) return;
     if (this.hintsUnlocked.size === 0) {
       this.scoreBeforeHints = this.currentScore;
     }
@@ -280,6 +288,21 @@ Then(
   },
 );
 
+Then(
+  '{string} and {string} should still be locked',
+  function (this: SanakennoWorld, a: string, b: string) {
+    assert.ok(!this.hintsUnlocked.has(a));
+    assert.ok(!this.hintsUnlocked.has(b));
+  },
+);
+
+Given(
+  'legacy saved hints include {string} and {string}',
+  function (this: SanakennoWorld, a: string, b: string) {
+    this.hintsUnlocked = visibleHints([a, b]);
+  },
+);
+
 /* ------------------------------------------------------------------ */
 /*  Persistence                                                        */
 /* ------------------------------------------------------------------ */
@@ -287,11 +310,14 @@ Then(
 When(
   'the player unlocks {string} and {string}',
   function (this: SanakennoWorld, a: string, b: string) {
+    const nextIds = [a, b].filter((id) => VISIBLE_HINT_IDS.has(id));
+    if (nextIds.length === 0) return;
     if (this.hintsUnlocked.size === 0) {
       this.scoreBeforeHints = this.currentScore;
     }
-    this.hintsUnlocked.add(a);
-    this.hintsUnlocked.add(b);
+    for (const id of nextIds) {
+      this.hintsUnlocked.add(id);
+    }
   },
 );
 

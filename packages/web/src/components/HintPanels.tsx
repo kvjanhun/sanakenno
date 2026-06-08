@@ -5,9 +5,6 @@
  * Clicking a tab opens its content in an attached panel; clicking the active
  * tab closes it. Locked hints show a teaser plus an unlock button.
  *
- * The "letters" panel (Alkukirjaimet) is kept in the content registry
- * but intentionally not shown in the tab row.
- *
  * @module src/components/HintPanels
  */
 
@@ -36,7 +33,7 @@ interface PanelConfig {
   teaser: string;
 }
 
-/** Tabs shown in the UI — letters is kept in code but not displayed. */
+/** Tabs shown in the UI. */
 const VISIBLE_PANELS: readonly PanelConfig[] = [
   {
     id: 'summary',
@@ -185,37 +182,6 @@ function SummaryContent({
   );
 }
 
-/** Remaining-count chips for the hidden letter-based hint. */
-function LettersContent({
-  data,
-}: {
-  data: DerivedHintData;
-}): React.JSX.Element {
-  return (
-    <div className="flex flex-wrap gap-x-3 gap-y-1 w-full">
-      {data.letterMap.map((item) => (
-        <span
-          key={item.letter}
-          style={{
-            background: 'var(--color-bg-primary)',
-            border: '1px solid var(--color-border)',
-            borderRadius: '999px',
-            color:
-              item.remaining === 0
-                ? 'var(--color-text-tertiary)'
-                : 'var(--color-text-primary)',
-            fontSize: '13px',
-            lineHeight: '17px',
-            padding: '4px 8px',
-          }}
-        >
-          {item.letter.toUpperCase()} {item.remaining}
-        </span>
-      ))}
-    </div>
-  );
-}
-
 /** Column chart showing how many words remain at each length. */
 function DistributionContent({
   data,
@@ -351,11 +317,10 @@ function PairsContent({ data }: { data: DerivedHintData }): React.JSX.Element {
 }
 
 const PANEL_CONTENT: Record<
-  string,
+  VisiblePanelId,
   (props: { data: DerivedHintData }) => React.JSX.Element
 > = {
   summary: SummaryContent,
-  letters: LettersContent,
   distribution: DistributionContent,
   pairs: PairsContent,
 };

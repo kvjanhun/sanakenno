@@ -107,6 +107,31 @@ test.describe('Hint unlock persistence', () => {
     );
     await expect(page.locator('[data-hint-state]')).toHaveCount(3);
   });
+
+  test('legacy hidden hint IDs are ignored on load', async ({ page }) => {
+    await page.addInitScript(() => {
+      window.localStorage.setItem(
+        'sanakenno_state_0',
+        JSON.stringify({
+          foundWords: [],
+          score: 0,
+          hintsUnlocked: ['letters', 'unknown'],
+          startedAt: Date.now(),
+          totalPausedMs: 0,
+          scoreBeforeHints: null,
+        }),
+      );
+    });
+
+    await loadGame(page);
+
+    await expect(page.locator('[data-hint-state="unlocked"]')).toHaveCount(0);
+    await expect(page.locator('[data-hint-state="locked"]')).toHaveCount(3);
+    await page.getByRole('button', { name: 'Yleiskuva' }).click();
+    await expect(
+      page.getByRole('button', { name: 'Aktivoi apu' }),
+    ).toBeVisible();
+  });
 });
 
 test.describe('Hint share integration', () => {

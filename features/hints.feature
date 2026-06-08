@@ -1,8 +1,7 @@
 Feature: Hint panels
   Three visible hint tabs (Yleiskuva, Pituudet, Alkuparit) help players find
-  remaining words without revealing them. A fourth panel (Alkukirjaimet) exists
-  in code but is not shown in the tab row. Unlock state persists across sessions;
-  active tab state is session-only.
+  remaining words without revealing them. Unlock state persists across sessions;
+  active tab state is session-only. Legacy hidden or unknown hint IDs are ignored.
 
   Background:
     Given a puzzle with 50 total words and 3 pangrams
@@ -14,12 +13,6 @@ Feature: Hint panels
     Then it should show the total word count
     And it should show how many words remain unfound
     And it should show the pangram count and how many are found
-
-  Scenario: Letters hint shows remaining words by starting letter
-    When the player unlocks the "letters" hint
-    Then it should show each starting letter with remaining count
-    And letters should be sorted alphabetically
-    And found words should reduce the remaining count
 
   Scenario: Distribution hint shows remaining words by length
     When the player unlocks the "distribution" hint
@@ -42,15 +35,19 @@ Feature: Hint panels
   Scenario: Each hint is unlocked independently
     When the player unlocks "summary"
     Then only the "summary" hint should be visible
-    And "letters", "distribution", and "pairs" should still be locked
+    And "distribution" and "pairs" should still be locked
+
+  Scenario: Legacy hidden hint IDs are ignored
+    Given legacy saved hints include "letters" and "unknown"
+    Then no hints should be unlocked
 
   # --- Persistence ---
 
   @e2e
   Scenario: Unlock state persists in localStorage
-    When the player unlocks "summary" and "letters"
+    When the player unlocks "summary" and "pairs"
     And the player reloads the page
-    Then "summary" and "letters" should still be unlocked
+    Then "summary" and "pairs" should still be unlocked
 
   @e2e
   Scenario: Active tab state does not persist across sessions
@@ -82,7 +79,7 @@ Feature: Hint panels
     Given the player has scored 15 points before any hints
     When the player unlocks the "summary" hint
     And the player scores 5 more points
-    And the player unlocks the "letters" hint
+    And the player unlocks the "pairs" hint
     Then the pre-hint score should still be 15
 
   Scenario: Pre-hint score is 0 when the first hint is unlocked before scoring

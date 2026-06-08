@@ -1,6 +1,6 @@
 /**
  * React hook that subscribes to the Zustand game store and returns
- * memoised derived hint data for the four hint panels.
+ * memoised derived hint data for the visible hint panels.
  *
  * Pure derivation logic lives in `src/utils/hint-data.ts` so it can
  * be tested without React or Vite dependencies.
@@ -25,7 +25,7 @@ export { deriveHintData } from '@sanakenno/shared';
 
 /**
  * React hook that subscribes to the Zustand store and returns
- * memoised derived hint data for the four hint panels.
+ * memoised derived hint data for the visible hint panels.
  *
  * @returns Derived hint data, or null when no puzzle is loaded
  */
