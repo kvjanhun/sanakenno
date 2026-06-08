@@ -41,6 +41,13 @@ export function RankProgress({
   const progress = progressToNextRank(score, maxScore);
   const thresholds = rankThresholds(rank, maxScore);
 
+  const prevProgressRef = useRef(progress);
+  const animateThisTime = progress >= prevProgressRef.current;
+
+  useEffect(() => {
+    prevProgressRef.current = progress;
+  }, [progress]);
+
   // Animate score counter from previous value to new value.
   const [displayScore, setDisplayScore] = useState(score);
   const fromRef = useRef(score);
@@ -132,7 +139,9 @@ export function RankProgress({
           style={{
             width: `${progress}%`,
             backgroundColor: 'var(--color-accent)',
-            transition: 'width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
+            transition: animateThisTime
+              ? 'width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)'
+              : 'none',
           }}
         />
       </div>
