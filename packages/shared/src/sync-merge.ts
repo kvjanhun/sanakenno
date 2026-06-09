@@ -9,7 +9,7 @@
  * @module @sanakenno/shared/sync-merge
  */
 
-import { rankIndex } from './stats';
+import { bestNoHintScoreForRecord, rankIndex } from './stats';
 import type { StatsRecord } from './stats';
 import type { SyncPuzzleState } from './auth-types';
 
@@ -28,7 +28,8 @@ function earlierStartedAt(a: number, b: number): number {
  *
  * Rules:
  * - best_rank: whichever has the higher rankIndex wins
- * - numeric fields (best_score, words_found, hints_used, elapsed_ms): MAX of both
+ * - numeric fields (best_score, words_found, hints_used, elapsed_ms,
+ *   best_no_hint_score): MAX of both
  * - date: keep the existing (earlier) record's date
  * - max_score: keep existing (it's a puzzle constant, shouldn't differ)
  */
@@ -56,6 +57,10 @@ export function mergeStatsRecord(
     pangrams_found: Math.max(
       existing.pangrams_found ?? 0,
       incoming.pangrams_found ?? 0,
+    ),
+    best_no_hint_score: Math.max(
+      bestNoHintScoreForRecord(existing),
+      bestNoHintScoreForRecord(incoming),
     ),
   };
 }
@@ -115,7 +120,8 @@ export function isStatsRecordBetterThanServer(
   if ((local.longest_word ?? '').length > (server.longest_word ?? '').length) {
     return true;
   }
-  return (local.pangrams_found ?? 0) > (server.pangrams_found ?? 0);
+  if ((local.pangrams_found ?? 0) > (server.pangrams_found ?? 0)) return true;
+  return bestNoHintScoreForRecord(local) > bestNoHintScoreForRecord(server);
 }
 
 /**

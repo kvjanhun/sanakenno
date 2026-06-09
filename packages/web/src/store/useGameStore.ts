@@ -53,7 +53,11 @@ export interface Puzzle {
 export type MessageType = 'ok' | 'error' | 'special';
 
 /** Celebration overlay type. */
-export type CelebrationType = 'allistyttava' | 'taysikenno' | null;
+export type CelebrationType =
+  | 'allistyttava'
+  | 'nohint-allistyttava'
+  | 'taysikenno'
+  | null;
 
 /** Persisted state shape in localStorage. */
 interface PersistedState {
@@ -413,6 +417,11 @@ export const useGameStore = create<GameState>()((set, get) => ({
     const newScore = state.score + pts;
     const previousRank = rankForScore(state.score, puzzle.max_score);
     const newRank = rankForScore(newScore, puzzle.max_score);
+    const visibleHintsUnlocked = filterVisibleHintIds(state.hintsUnlocked);
+    const bestNoHintScore =
+      visibleHintsUnlocked.length === 0
+        ? newScore
+        : (state.scoreBeforeHints ?? 0);
 
     set({
       foundWords: newFoundWords,
@@ -439,7 +448,12 @@ export const useGameStore = create<GameState>()((set, get) => ({
       if (newRank === 'Täysi kenno') {
         set({ celebration: 'taysikenno' });
       } else if (newRank === 'Ällistyttävä') {
-        set({ celebration: 'allistyttava' });
+        set({
+          celebration:
+            visibleHintsUnlocked.length === 0
+              ? 'nohint-allistyttava'
+              : 'allistyttava',
+        });
       }
       // Rank advance shown via pill pulse animation — no toast needed
 
@@ -492,7 +506,6 @@ export const useGameStore = create<GameState>()((set, get) => ({
       }
       const existing =
         loadFromStorage<PlayerStats>(STATS_STORAGE_KEY) ?? emptyStats();
-      const visibleHintsUnlocked = filterVisibleHintIds(state.hintsUnlocked);
       const updated = updateStatsRecord(existing, {
         puzzle_number: puzzle.puzzle_number,
         date: get().viewingPuzzleDate ?? dateStr,
@@ -504,6 +517,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
         elapsed_ms: elapsed,
         longest_word: longestWord,
         pangrams_found: pangramsFound,
+        best_no_hint_score: bestNoHintScore,
       });
       saveToStorage(STATS_STORAGE_KEY, updated);
 
@@ -520,6 +534,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
           total_paused_ms: state.totalPausedMs,
           score_before_hints: state.scoreBeforeHints,
           max_score: puzzle.max_score,
+          best_no_hint_score: bestNoHintScore,
         });
       }
     }

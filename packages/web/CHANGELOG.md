@@ -1,5 +1,15 @@
 # @sanakenno/web
 
+## 1.16.0
+
+### Minor Changes
+
+- Add no-hint achievement tiers, celebration, stats, and sync tracking.
+
+### Patch Changes
+
+- @sanakenno/shared@1.16.0
+
 ## 1.15.4
 
 ### Patch Changes

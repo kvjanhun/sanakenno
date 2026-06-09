@@ -9,16 +9,24 @@
 // Scoring
 export {
   RANKS,
+  NO_HINT_ACHIEVEMENTS,
   scoreWord,
   isPangram,
   recalcScore,
   rankForScore,
   rankThresholds,
+  noHintAchievementStates,
   progressToNextRank,
   colorizeWord,
   toColumns,
 } from './scoring';
-export type { Rank, ColorizedChar, RankThreshold } from './scoring';
+export type {
+  Rank,
+  NoHintAchievement,
+  NoHintAchievementState,
+  ColorizedChar,
+  RankThreshold,
+} from './scoring';
 
 // Hint data
 export { deriveHintData } from './hint-data';
@@ -36,14 +44,21 @@ export {
   STATS_STORAGE_KEY,
   rankIndex,
   updateStatsRecord,
+  bestNoHintScoreForRecord,
   computeStreak,
   computeLifetimeStats,
+  computeLifetimeNoHintStats,
   getHelsinkiDateString,
   computeRankDistribution,
   computeAverageCompletion,
   emptyStats,
 } from './stats';
-export type { StatsRecord, PlayerStats, LifetimeStats } from './stats';
+export type {
+  StatsRecord,
+  PlayerStats,
+  LifetimeStats,
+  LifetimeNoHintStats,
+} from './stats';
 
 // Kotus
 export { buildKotusUrl } from './kotus';

@@ -27,7 +27,7 @@ import {
   cleanupExpiredPlayerSessions,
 } from './session';
 import { requirePlayer, type PlayerVariables } from './middleware';
-import { rankIndex } from '@sanakenno/shared';
+import { bestNoHintScoreForRecord, rankIndex } from '@sanakenno/shared';
 import type {
   StatsRecord,
   PlayerStats,
@@ -161,17 +161,19 @@ function bulkUpsertLocalData(
       elapsed_ms: number;
       longest_word: string | null;
       pangrams_found: number;
+      best_no_hint_score: number;
     }
     const selectStat = db.prepare(
       `SELECT best_rank, best_score, max_score, words_found, hints_used, elapsed_ms,
-              longest_word, pangrams_found
+              longest_word, pangrams_found, best_no_hint_score
        FROM player_stats WHERE player_id = ? AND puzzle_number = ?`,
     );
     const insertStat = db.prepare(
       `INSERT INTO player_stats
          (player_id, puzzle_number, date, best_rank, best_score,
-          max_score, words_found, hints_used, elapsed_ms, longest_word, pangrams_found)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          max_score, words_found, hints_used, elapsed_ms, longest_word,
+          pangrams_found, best_no_hint_score)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     );
     const updateStat = db.prepare(
       `UPDATE player_stats SET
@@ -183,6 +185,7 @@ function bulkUpsertLocalData(
          elapsed_ms = MAX(elapsed_ms, ?),
          longest_word = ?,
          pangrams_found = MAX(pangrams_found, ?),
+         best_no_hint_score = MAX(best_no_hint_score, ?),
          updated_at = datetime('now')
        WHERE player_id = ? AND puzzle_number = ?`,
     );
@@ -204,6 +207,7 @@ function bulkUpsertLocalData(
             r.elapsed_ms,
             r.longest_word ?? null,
             r.pangrams_found ?? 0,
+            bestNoHintScoreForRecord(r),
           );
         } else {
           const mergedRank =
@@ -225,6 +229,7 @@ function bulkUpsertLocalData(
             r.elapsed_ms,
             mergedLongestWord,
             r.pangrams_found ?? 0,
+            bestNoHintScoreForRecord(r),
             playerId,
             r.puzzle_number,
           );
@@ -324,7 +329,8 @@ function fetchPlayerData(playerId: number): {
   const statsRows = db
     .prepare(
       `SELECT puzzle_number, date, best_rank, best_score, max_score,
-              words_found, hints_used, elapsed_ms, longest_word, pangrams_found
+              words_found, hints_used, elapsed_ms, longest_word, pangrams_found,
+              best_no_hint_score
        FROM player_stats WHERE player_id = ?`,
     )
     .all(playerId) as Array<{
@@ -338,6 +344,7 @@ function fetchPlayerData(playerId: number): {
     elapsed_ms: number;
     longest_word: string | null;
     pangrams_found: number;
+    best_no_hint_score: number;
   }>;
   const stateRows = db
     .prepare(
@@ -368,6 +375,7 @@ function fetchPlayerData(playerId: number): {
         elapsed_ms: r.elapsed_ms,
         longest_word: r.longest_word ?? undefined,
         pangrams_found: r.pangrams_found,
+        best_no_hint_score: r.best_no_hint_score,
       })),
       version: 1,
     },

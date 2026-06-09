@@ -45,6 +45,12 @@ function applySchema(db: BetterSqlite3.Database): void {
   // SQLite has no ADD COLUMN IF NOT EXISTS, so introspect via PRAGMA.
   ensureColumn(db, 'players', 'preferences', 'TEXT');
   ensureColumn(db, 'puzzles', 'is_active', 'INTEGER NOT NULL DEFAULT 1');
+  ensureColumn(
+    db,
+    'player_stats',
+    'best_no_hint_score',
+    'INTEGER NOT NULL DEFAULT 0',
+  );
 
   // The pairing model no longer uses per-transfer tokens — the stable
   // player_key is the pairing code. Drop the old table from live DBs; rows

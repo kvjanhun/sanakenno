@@ -633,6 +633,7 @@ function App() {
                   showRanks={showRanks}
                   onToggleRanks={() => setShowRanks(!showRanks)}
                   scoreBeforeHints={displayScoreBeforeHints}
+                  hasUnlockedHints={hintsUnlocked.size > 0}
                 />
               </div>
 

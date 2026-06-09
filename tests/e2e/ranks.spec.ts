@@ -21,7 +21,12 @@ import { mockPuzzleApi } from './helpers';
  */
 async function loadGameWithState(
   page: import('@playwright/test').Page,
-  state: { score: number; foundWords: string[]; hintsUnlocked?: string[] },
+  state: {
+    score: number;
+    foundWords: string[];
+    hintsUnlocked?: string[];
+    scoreBeforeHints?: number | null;
+  },
 ) {
   // Route mock persists across page.reload() — attach once
   await mockPuzzleApi(page);
@@ -40,6 +45,7 @@ async function loadGameWithState(
         hintsUnlocked: s.hintsUnlocked ?? [],
         startedAt: Date.now() - 60_000,
         totalPausedMs: 0,
+        scoreBeforeHints: s.scoreBeforeHints ?? null,
       }),
     );
   }, state);
@@ -63,8 +69,40 @@ test.describe('Rank celebrations', () => {
     await expect(rankButton).toHaveAttribute('aria-expanded', 'true');
   });
 
-  test('Ällistyttävä rank shows celebration overlay', async ({ page }) => {
+  test('Ällistyttävä after a hint shows normal celebration overlay', async ({
+    page,
+  }) => {
     // Pre-seed: 23 pts (Sanavalmis). Submit laskenta (pangram, +15) → 38 pts → Ällistyttävä
+    await loadGameWithState(page, {
+      score: 23,
+      foundWords: [
+        'kala',
+        'kana',
+        'taka',
+        'alas',
+        'saat',
+        'alka',
+        'akat',
+        'kaste',
+        'kanat',
+        'lakana',
+      ],
+      hintsUnlocked: ['summary'],
+      scoreBeforeHints: 23,
+    });
+
+    await page.keyboard.type('laskenta');
+    await page.keyboard.press('Enter');
+
+    // Celebration overlay with role="dialog" and the rank title
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible({ timeout: 5000 });
+    await expect(dialog.getByText('Ällistyttävä!')).toBeVisible();
+  });
+
+  test('Ällistyttävä without hints shows no-hint celebration overlay', async ({
+    page,
+  }) => {
     await loadGameWithState(page, {
       score: 23,
       foundWords: [
@@ -84,10 +122,11 @@ test.describe('Rank celebrations', () => {
     await page.keyboard.type('laskenta');
     await page.keyboard.press('Enter');
 
-    // Celebration overlay with role="dialog" and the rank title
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible({ timeout: 5000 });
-    await expect(dialog.getByText('Ällistyttävä!')).toBeVisible();
+    await expect(
+      dialog.getByRole('heading', { name: 'Ällistyttävä ilman apuja!' }),
+    ).toBeVisible();
   });
 
   test('Täysi kenno rank shows golden celebration overlay', async ({
@@ -132,5 +171,112 @@ test.describe('Rank celebrations', () => {
     await expect(page.getByRole('button', { name: 'Onnistuja' })).toBeVisible({
       timeout: 5000,
     });
+  });
+
+  test('rank list shows compact no-hint achievement progress', async ({
+    page,
+  }) => {
+    await loadGameWithState(page, {
+      score: 23,
+      foundWords: [
+        'kala',
+        'kana',
+        'taka',
+        'alas',
+        'saat',
+        'alka',
+        'akat',
+        'kaste',
+        'kanat',
+        'lakana',
+      ],
+    });
+
+    await page.getByRole('button', { name: 'Sanavalmis' }).click();
+
+    await expect(page.locator('[data-no-hint-indicator]')).toHaveCount(3);
+    await expect(page.locator('[data-no-hint-points]')).toHaveText('23 p.');
+    await expect(page.locator('[data-no-hint-indicator="1"]')).toHaveAttribute(
+      'data-no-hint-state',
+      'unlocked',
+    );
+    await expect(page.locator('[data-no-hint-indicator="2"]')).toHaveAttribute(
+      'data-no-hint-state',
+      'unlocked',
+    );
+    await expect(page.locator('[data-no-hint-indicator="3"]')).toHaveAttribute(
+      'data-no-hint-state',
+      'locked',
+    );
+    await expect(page.locator('[data-no-hint-indicator="1"]')).toHaveAttribute(
+      'data-no-hint-icon',
+      'circle-star',
+    );
+    await expect(page.locator('[data-no-hint-indicator="2"]')).toHaveAttribute(
+      'data-no-hint-icon',
+      'circle-star',
+    );
+    await expect(page.locator('[data-no-hint-indicator="3"]')).toHaveAttribute(
+      'data-no-hint-icon',
+      'circle',
+    );
+    await expect(page.locator('[data-no-hint-current]')).toHaveText(
+      '23 p. ilman apuja, taidokasta!',
+    );
+    await expect(
+      page.getByText('Omin avuin', { exact: true }),
+    ).not.toBeVisible();
+    await expect(
+      page.getByText('Apuitta taitava', { exact: true }),
+    ).not.toBeVisible();
+    await expect(
+      page.getByText('Ällistyttävä ilman apuja', { exact: true }),
+    ).not.toBeVisible();
+  });
+
+  test('rank list marks locked no-hint achievements inactive after hints', async ({
+    page,
+  }) => {
+    await loadGameWithState(page, {
+      score: 23,
+      foundWords: [
+        'kala',
+        'kana',
+        'taka',
+        'alas',
+        'saat',
+        'alka',
+        'akat',
+        'kaste',
+        'kanat',
+        'lakana',
+      ],
+      hintsUnlocked: ['summary'],
+      scoreBeforeHints: 23,
+    });
+
+    await page.getByRole('button', { name: 'Sanavalmis' }).click();
+
+    await expect(page.locator('[data-no-hint-indicator="1"]')).toHaveAttribute(
+      'data-no-hint-icon',
+      'circle-star',
+    );
+    await expect(page.locator('[data-no-hint-indicator="2"]')).toHaveAttribute(
+      'data-no-hint-icon',
+      'circle-star',
+    );
+    const inactiveAchievement = page.locator('[data-no-hint-indicator="3"]');
+    await expect(inactiveAchievement).toHaveAttribute(
+      'data-no-hint-state',
+      'locked',
+    );
+    await expect(inactiveAchievement).toHaveAttribute(
+      'data-no-hint-icon',
+      'circle-off',
+    );
+    await expect(inactiveAchievement).toHaveAttribute(
+      'style',
+      /color: color-mix\(in srgb, var\(--color-text-tertiary\) 40%, var\(--color-bg-secondary\)\)/,
+    );
   });
 });

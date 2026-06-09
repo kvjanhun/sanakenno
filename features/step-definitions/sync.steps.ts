@@ -236,6 +236,33 @@ Given(
 );
 
 Given(
+  'the server has a stats record for puzzle index {int} with best_no_hint_score {int}',
+  function (this: SyncWorld, puzzleNumber: number, score: number) {
+    assert.ok(this.lastPlayerId, 'No player in context');
+    const db = getDb();
+    db.prepare(
+      `
+      INSERT OR REPLACE INTO player_stats
+        (player_id, puzzle_number, date, best_rank, best_score,
+         max_score, words_found, hints_used, elapsed_ms, best_no_hint_score)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+    ).run(
+      this.lastPlayerId,
+      puzzleNumber,
+      '2026-04-10',
+      'Onnistuja',
+      score,
+      100,
+      5,
+      0,
+      60000,
+      score,
+    );
+  },
+);
+
+Given(
   'the server has a stats record for puzzle index {int} with best_score {int}',
   function (this: SyncWorld, puzzleNumber: number, score: number) {
     assert.ok(this.lastPlayerId, 'No player in context');
@@ -438,6 +465,24 @@ When(
 );
 
 When(
+  /^a POST is made to \/api\/player\/sync\/stats with best_no_hint_score (\d+) for puzzle index (\d+)$/,
+  async function (this: SyncWorld, score: number, puzzleNumber: number) {
+    assert.ok(this.playerBearerToken, 'No Bearer token in context');
+    this.response = await app.request('/api/player/sync/stats', {
+      method: 'POST',
+      headers: bearerHeader(this.playerBearerToken),
+      body: JSON.stringify(
+        makeStatsRecord(puzzleNumber, {
+          best_score: score,
+          best_no_hint_score: score,
+        }),
+      ),
+    });
+    this.responseJson = await this.response.clone().json();
+  },
+);
+
+When(
   /^a POST is made to \/api\/player\/sync\/stats with best_score (\d+) for puzzle index (\d+)$/,
   async function (this: SyncWorld, score: number, puzzleNumber: number) {
     assert.ok(this.playerBearerToken, 'No Bearer token in context');
@@ -593,6 +638,29 @@ When(
         total_paused_ms: 0,
         score_before_hints: null,
         max_score: 43,
+      }),
+    });
+    this.responseJson = await this.response.clone().json();
+  },
+);
+
+When(
+  /^a POST is made to \/api\/player\/sync\/progress with no-hint score (\d+) for puzzle index (\d+)$/,
+  async function (this: SyncWorld, score: number, puzzleNumber: number) {
+    assert.ok(this.playerBearerToken, 'No Bearer token in context');
+    this.response = await app.request('/api/player/sync/progress', {
+      method: 'POST',
+      headers: bearerHeader(this.playerBearerToken),
+      body: JSON.stringify({
+        puzzle_number: puzzleNumber,
+        date: '2026-04-10',
+        found_words: ['kala', 'sanka'],
+        score,
+        hints_unlocked: [],
+        started_at: Date.now() - 60_000,
+        total_paused_ms: 0,
+        score_before_hints: null,
+        max_score: 100,
       }),
     });
     this.responseJson = await this.response.clone().json();
@@ -904,6 +972,24 @@ Then(
 );
 
 Then(
+  'the server stats for puzzle index {int} should have best_no_hint_score {int}',
+  function (this: SyncWorld, puzzleNumber: number, score: number) {
+    assert.ok(this.lastPlayerId, 'No player in context');
+    const db = getDb();
+    interface Row {
+      best_no_hint_score: number;
+    }
+    const row = db
+      .prepare(
+        'SELECT best_no_hint_score FROM player_stats WHERE player_id = ? AND puzzle_number = ?',
+      )
+      .get(this.lastPlayerId, puzzleNumber) as Row | undefined;
+    assert.ok(row, `No stats record found for puzzle ${puzzleNumber}`);
+    assert.equal(row.best_no_hint_score, score);
+  },
+);
+
+Then(
   'the server stats for puzzle index {int} should still have pangrams_found {int}',
   function (this: SyncWorld, puzzleNumber: number, count: number) {
     assert.ok(this.lastPlayerId, 'No player in context');
@@ -918,6 +1004,24 @@ Then(
       .get(this.lastPlayerId, puzzleNumber) as Row | undefined;
     assert.ok(row, `No stats record found for puzzle ${puzzleNumber}`);
     assert.equal(row.pangrams_found, count);
+  },
+);
+
+Then(
+  'the server stats for puzzle index {int} should still have best_no_hint_score {int}',
+  function (this: SyncWorld, puzzleNumber: number, score: number) {
+    assert.ok(this.lastPlayerId, 'No player in context');
+    const db = getDb();
+    interface Row {
+      best_no_hint_score: number;
+    }
+    const row = db
+      .prepare(
+        'SELECT best_no_hint_score FROM player_stats WHERE player_id = ? AND puzzle_number = ?',
+      )
+      .get(this.lastPlayerId, puzzleNumber) as Row | undefined;
+    assert.ok(row, `No stats record found for puzzle ${puzzleNumber}`);
+    assert.equal(row.best_no_hint_score, score);
   },
 );
 

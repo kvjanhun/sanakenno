@@ -11,6 +11,7 @@ import {
   recalcScore,
   rankForScore,
   rankThresholds,
+  noHintAchievementStates,
   progressToNextRank,
   colorizeWord,
   toColumns,
@@ -153,6 +154,32 @@ describe('rankThresholds', () => {
         thresholds[i - 1].points,
       );
     }
+  });
+});
+
+describe('noHintAchievementStates', () => {
+  it('uses 25%, 50%, and 70% thresholds', () => {
+    const states = noHintAchievementStates(0, 100);
+
+    expect(states.map((state) => state.name)).toEqual([
+      'Omin avuin',
+      'Apuitta taitava',
+      'Ällistyttävä ilman apuja',
+    ]);
+    expect(states.map((state) => state.points)).toEqual([25, 50, 70]);
+  });
+
+  it('marks achievements unlocked at their point thresholds', () => {
+    const states = noHintAchievementStates(50, 100);
+
+    expect(states.map((state) => state.unlocked)).toEqual([true, true, false]);
+  });
+
+  it('rounds non-integer thresholds up', () => {
+    const states = noHintAchievementStates(31, 43);
+
+    expect(states.map((state) => state.points)).toEqual([11, 22, 31]);
+    expect(states[2].unlocked).toBe(true);
   });
 });
 

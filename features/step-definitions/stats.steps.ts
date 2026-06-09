@@ -14,6 +14,7 @@ import {
   getHelsinkiDateString,
   computeRankDistribution,
   computeAverageCompletion,
+  computeLifetimeNoHintStats,
   mergeStatsRecord,
 } from '@sanakenno/shared';
 import type { StatsRecord } from '@sanakenno/shared';
@@ -256,6 +257,64 @@ Then(
 );
 
 /* ------------------------------------------------------------------ */
+/*  best_no_hint_score                                                 */
+/* ------------------------------------------------------------------ */
+
+Given(
+  'a stats record for puzzle index {int} with best_no_hint_score {int}',
+  function (this: SanakennoWorld, puzzleNum: number, score: number) {
+    this.playerStats = updateStatsRecord(
+      this.playerStats,
+      makeRecord({
+        puzzle_number: puzzleNum,
+        date: '2026-04-01',
+        best_rank: 'Onnistuja',
+        best_score: score,
+        best_no_hint_score: score,
+      }),
+    );
+  },
+);
+
+When(
+  'the stats record is updated with no-hint score {int} on puzzle index {int}',
+  function (this: SanakennoWorld, score: number, puzzleNum: number) {
+    this.playerStats = updateStatsRecord(
+      this.playerStats,
+      makeRecord({
+        puzzle_number: puzzleNum,
+        date: '2026-04-01',
+        best_rank: 'Onnistuja',
+        best_score: score,
+        best_no_hint_score: score,
+      }),
+    );
+  },
+);
+
+Then(
+  'the stats record for puzzle index {int} should have best_no_hint_score {int}',
+  function (this: SanakennoWorld, puzzleNum: number, expected: number) {
+    const rec = this.playerStats.records.find(
+      (r) => r.puzzle_number === puzzleNum,
+    );
+    assert.ok(rec, `No record for puzzle ${puzzleNum}`);
+    assert.equal(rec.best_no_hint_score ?? 0, expected);
+  },
+);
+
+Then(
+  'the stats record for puzzle index {int} should still have best_no_hint_score {int}',
+  function (this: SanakennoWorld, puzzleNum: number, expected: number) {
+    const rec = this.playerStats.records.find(
+      (r) => r.puzzle_number === puzzleNum,
+    );
+    assert.ok(rec, `No record for puzzle ${puzzleNum}`);
+    assert.equal(rec.best_no_hint_score ?? 0, expected);
+  },
+);
+
+/* ------------------------------------------------------------------ */
 /*  Streaks                                                            */
 /* ------------------------------------------------------------------ */
 
@@ -450,6 +509,37 @@ Then(
     assert.equal(totals.totalWords, totalWords);
     assert.equal(totals.totalPangrams, totalPangrams);
     assert.equal(totals.longestWord, longestWord);
+  },
+);
+
+Given(
+  'a stats record with no-hint score {int} and max_score {int}',
+  function (this: SanakennoWorld, score: number, maxScore: number) {
+    const idx = this.playerStats.records.length;
+    this.playerStats = updateStatsRecord(
+      this.playerStats,
+      makeRecord({
+        puzzle_number: 300 + idx,
+        date: `2026-05-${String(idx + 1).padStart(2, '0')}`,
+        best_rank: 'Ällistyttävä',
+        best_score: score,
+        max_score: maxScore,
+        best_no_hint_score: score,
+      }),
+    );
+  },
+);
+
+Then(
+  'lifetime no-hint stats should show highest percentage {int}% and top-tier count {int}',
+  function (
+    this: SanakennoWorld,
+    highestPercentage: number,
+    topTierCount: number,
+  ) {
+    const totals = computeLifetimeNoHintStats(this.playerStats.records);
+    assert.equal(Math.round(totals.highestPercentage), highestPercentage);
+    assert.equal(totals.topTierCount, topTierCount);
   },
 );
 

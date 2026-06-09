@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  bestNoHintScoreForRecord,
+  computeLifetimeNoHintStats,
   computeLifetimeStats,
   computeStreak,
   getHelsinkiDateString,
@@ -71,5 +73,52 @@ describe('computeLifetimeStats', () => {
       totalPangrams: 3,
       longestWord: 'lakana',
     });
+  });
+});
+
+describe('bestNoHintScoreForRecord', () => {
+  it('uses explicit best_no_hint_score when present', () => {
+    expect(
+      bestNoHintScoreForRecord(
+        makeRecord({
+          best_score: 80,
+          hints_used: 2,
+          best_no_hint_score: 50,
+        }),
+      ),
+    ).toBe(50);
+  });
+
+  it('backfills old no-hint records from best_score', () => {
+    expect(
+      bestNoHintScoreForRecord(makeRecord({ best_score: 70, hints_used: 0 })),
+    ).toBe(70);
+  });
+
+  it('does not infer old hinted records without a captured score', () => {
+    expect(
+      bestNoHintScoreForRecord(makeRecord({ best_score: 70, hints_used: 1 })),
+    ).toBe(0);
+  });
+});
+
+describe('computeLifetimeNoHintStats', () => {
+  it('reports highest no-hint percentage and 70% count', () => {
+    const totals = computeLifetimeNoHintStats([
+      makeRecord({ best_no_hint_score: 70, max_score: 100 }),
+      makeRecord({
+        puzzle_number: 2,
+        best_no_hint_score: 35,
+        max_score: 50,
+      }),
+      makeRecord({
+        puzzle_number: 3,
+        best_no_hint_score: 69,
+        max_score: 100,
+      }),
+    ]);
+
+    expect(totals.highestPercentage).toBe(70);
+    expect(totals.topTierCount).toBe(2);
   });
 });

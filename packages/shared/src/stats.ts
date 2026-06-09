@@ -7,7 +7,7 @@
  * @module src/utils/stats
  */
 
-import { RANKS } from './scoring';
+import { NO_HINT_ACHIEVEMENTS, RANKS } from './scoring';
 
 /** Per-puzzle play record. */
 export interface StatsRecord {
@@ -23,6 +23,8 @@ export interface StatsRecord {
   longest_word?: string;
   /** Number of pangrams found in this puzzle. */
   pangrams_found?: number;
+  /** Highest score reached before unlocking any visible hints. */
+  best_no_hint_score?: number;
 }
 
 /** Top-level stats shape stored via platform storage. */
@@ -37,6 +39,11 @@ export interface LifetimeStats {
   totalWords: number;
   totalPangrams: number;
   longestWord: string;
+}
+
+export interface LifetimeNoHintStats {
+  highestPercentage: number;
+  topTierCount: number;
 }
 
 /** Return a stable YYYY-MM-DD calendar date in Helsinki time. */
@@ -71,6 +78,17 @@ function longerWord(a: string | undefined, b: string | undefined): string {
   return wa.length >= wb.length ? wa : wb;
 }
 
+/** Return the best known no-hint score, backfilling old no-hint records. */
+export function bestNoHintScoreForRecord(record: StatsRecord): number {
+  if (
+    typeof record.best_no_hint_score === 'number' &&
+    record.best_no_hint_score > 0
+  ) {
+    return Math.max(0, record.best_no_hint_score);
+  }
+  return record.hints_used === 0 ? Math.max(0, record.best_score) : 0;
+}
+
 /**
  * Upsert a stats record. Only upgrades best_rank and best_score.
  * Returns a new PlayerStats (immutable).
@@ -86,7 +104,13 @@ export function updateStatsRecord(
   if (!existing) {
     return {
       ...stats,
-      records: [...stats.records, record],
+      records: [
+        ...stats.records,
+        {
+          ...record,
+          best_no_hint_score: bestNoHintScoreForRecord(record),
+        },
+      ],
     };
   }
 
@@ -108,6 +132,10 @@ export function updateStatsRecord(
             pangrams_found: Math.max(
               r.pangrams_found ?? 0,
               record.pangrams_found ?? 0,
+            ),
+            best_no_hint_score: Math.max(
+              bestNoHintScoreForRecord(r),
+              bestNoHintScoreForRecord(record),
             ),
           }
         : r,
@@ -190,6 +218,30 @@ export function computeLifetimeStats(records: StatsRecord[]): LifetimeStats {
       };
     },
     { totalWords: 0, totalPangrams: 0, longestWord: '' },
+  );
+}
+
+/** Compute lifetime no-hint achievement totals shown in stats views. */
+export function computeLifetimeNoHintStats(
+  records: StatsRecord[],
+): LifetimeNoHintStats {
+  const topTierPct = NO_HINT_ACHIEVEMENTS[NO_HINT_ACHIEVEMENTS.length - 1].pct;
+
+  return records.reduce<LifetimeNoHintStats>(
+    (totals, record) => {
+      const percentage =
+        record.max_score > 0
+          ? (bestNoHintScoreForRecord(record) / record.max_score) * 100
+          : 0;
+      return {
+        highestPercentage: Math.max(totals.highestPercentage, percentage),
+        topTierCount:
+          percentage >= topTierPct
+            ? totals.topTierCount + 1
+            : totals.topTierCount,
+      };
+    },
+    { highestPercentage: 0, topTierCount: 0 },
   );
 }
 

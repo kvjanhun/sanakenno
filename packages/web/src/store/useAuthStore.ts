@@ -21,6 +21,7 @@ import type {
 import { auth as authService, storage, config } from '../platform';
 import { loadFromStorage, saveToStorage } from '../utils/storage';
 import { filterVisibleHintIds } from '../utils/hints';
+import { backfillNoHintStats } from '../utils/statsBackfill';
 import { usePaletteStore } from './usePaletteStore';
 import { useThemePreferenceStore } from './useThemePreferenceStore';
 
@@ -68,7 +69,9 @@ function gatherLocalData(): {
   stats: PlayerStats;
   puzzle_states: SyncPuzzleState[];
 } {
-  const stats = loadFromStorage<PlayerStats>(STATS_STORAGE_KEY) ?? emptyStats();
+  const stats = backfillNoHintStats(
+    loadFromStorage<PlayerStats>(STATS_STORAGE_KEY) ?? emptyStats(),
+  );
   const puzzle_states: SyncPuzzleState[] = [];
 
   for (const record of stats.records) {
@@ -565,9 +568,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           (r) => r.puzzle_number === serverState.puzzle_number,
         );
         if (existingRecord) {
+          const mergedNoHintScore =
+            merged.hints_unlocked.length === 0
+              ? merged.score
+              : (merged.score_before_hints ?? 0);
           const updatedWithMergedWords = updateStatsRecord(currentStats, {
             ...existingRecord,
             words_found: merged.found_words.length,
+            best_no_hint_score: mergedNoHintScore,
           });
           saveToStorage(STATS_STORAGE_KEY, updatedWithMergedWords);
         }

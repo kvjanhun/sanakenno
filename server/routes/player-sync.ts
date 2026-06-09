@@ -19,6 +19,7 @@ import { requirePlayer, type PlayerVariables } from '../player-auth/middleware';
 import { getPuzzleBySlot } from '../puzzle-engine';
 import {
   isPangram,
+  bestNoHintScoreForRecord,
   mergePuzzleState,
   mergeStatsRecord,
   rankForScore,
@@ -90,6 +91,7 @@ interface ExistingStatRow {
   elapsed_ms: number;
   longest_word: string | null;
   pangrams_found: number;
+  best_no_hint_score: number;
 }
 
 interface ExistingStateRow {
@@ -194,7 +196,7 @@ function readStatsRecord(
   const existing = db
     .prepare(
       `SELECT date, best_rank, best_score, max_score, words_found, hints_used, elapsed_ms,
-              longest_word, pangrams_found
+              longest_word, pangrams_found, best_no_hint_score
        FROM player_stats WHERE player_id = ? AND puzzle_number = ?`,
     )
     .get(playerId, puzzleNumber) as ExistingStatRow | undefined;
@@ -212,6 +214,7 @@ function readStatsRecord(
     elapsed_ms: existing.elapsed_ms,
     longest_word: existing.longest_word ?? undefined,
     pangrams_found: existing.pangrams_found,
+    best_no_hint_score: existing.best_no_hint_score,
   };
 }
 
@@ -225,8 +228,9 @@ function writeStatsRecord(
     db.prepare(
       `INSERT INTO player_stats
          (player_id, puzzle_number, date, best_rank, best_score,
-          max_score, words_found, hints_used, elapsed_ms, longest_word, pangrams_found)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          max_score, words_found, hints_used, elapsed_ms, longest_word,
+          pangrams_found, best_no_hint_score)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       playerId,
       record.puzzle_number,
@@ -239,6 +243,7 @@ function writeStatsRecord(
       record.elapsed_ms,
       record.longest_word ?? null,
       record.pangrams_found ?? 0,
+      bestNoHintScoreForRecord(record),
     );
     return;
   }
@@ -254,6 +259,7 @@ function writeStatsRecord(
        elapsed_ms = ?,
        longest_word = ?,
        pangrams_found = ?,
+       best_no_hint_score = ?,
        updated_at = datetime('now')
      WHERE player_id = ? AND puzzle_number = ?`,
   ).run(
@@ -266,6 +272,7 @@ function writeStatsRecord(
     record.elapsed_ms,
     record.longest_word ?? null,
     record.pangrams_found ?? 0,
+    bestNoHintScoreForRecord(record),
     playerId,
     record.puzzle_number,
   );
@@ -285,6 +292,11 @@ function mergeAndStoreStatsRecord(
     : incoming;
   writeStatsRecord(db, playerId, merged, Boolean(existing));
   return merged;
+}
+
+function deriveBestNoHintScore(mergedState: SyncPuzzleState): number {
+  if (mergedState.hints_unlocked.length === 0) return mergedState.score;
+  return mergedState.score_before_hints ?? 0;
 }
 
 function deriveStatsFromProgress(
@@ -325,6 +337,10 @@ function deriveStatsFromProgress(
     elapsed_ms: elapsedMs,
     longest_word: longestWord,
     pangrams_found: pangramsFound,
+    best_no_hint_score: Math.max(
+      payload.best_no_hint_score ?? 0,
+      deriveBestNoHintScore(mergedState),
+    ),
   };
 }
 
@@ -340,6 +356,7 @@ function sanitizeProgressPayload(
   const totalPausedMs = body['total_paused_ms'];
   const scoreBeforeHints = body['score_before_hints'];
   const maxScore = body['max_score'];
+  const bestNoHintScore = body['best_no_hint_score'];
 
   if (
     typeof puzzleNumber !== 'number' ||
@@ -350,7 +367,8 @@ function sanitizeProgressPayload(
     typeof startedAt !== 'number' ||
     typeof totalPausedMs !== 'number' ||
     !(scoreBeforeHints === null || typeof scoreBeforeHints === 'number') ||
-    typeof maxScore !== 'number'
+    typeof maxScore !== 'number' ||
+    !(bestNoHintScore === undefined || typeof bestNoHintScore === 'number')
   ) {
     return null;
   }
@@ -365,6 +383,9 @@ function sanitizeProgressPayload(
     total_paused_ms: totalPausedMs,
     score_before_hints: scoreBeforeHints,
     max_score: maxScore,
+    ...(typeof bestNoHintScore === 'number'
+      ? { best_no_hint_score: bestNoHintScore }
+      : {}),
   };
 }
 
@@ -392,6 +413,7 @@ sync.get('/', (c) => {
     elapsed_ms: number;
     longest_word: string | null;
     pangrams_found: number;
+    best_no_hint_score: number;
   }
 
   interface StateRow {
@@ -407,7 +429,8 @@ sync.get('/', (c) => {
   const statsRows = db
     .prepare(
       `SELECT puzzle_number, date, best_rank, best_score, max_score,
-              words_found, hints_used, elapsed_ms, longest_word, pangrams_found
+              words_found, hints_used, elapsed_ms, longest_word, pangrams_found,
+              best_no_hint_score
        FROM player_stats WHERE player_id = ?`,
     )
     .all(playerId) as StatRow[];
@@ -435,6 +458,7 @@ sync.get('/', (c) => {
         elapsed_ms: r.elapsed_ms,
         longest_word: r.longest_word ?? undefined,
         pangrams_found: r.pangrams_found,
+        best_no_hint_score: r.best_no_hint_score,
       })),
       version: 1,
     },
@@ -476,6 +500,10 @@ sync.post('/stats', async (c) => {
     typeof body['longest_word'] === 'string' ? body['longest_word'] : null;
   const pangrams_found =
     typeof body['pangrams_found'] === 'number' ? body['pangrams_found'] : 0;
+  const best_no_hint_score =
+    typeof body['best_no_hint_score'] === 'number'
+      ? body['best_no_hint_score']
+      : undefined;
 
   if (
     typeof puzzle_number !== 'number' ||
@@ -498,6 +526,7 @@ sync.post('/stats', async (c) => {
     elapsed_ms: elapsed_ms ?? 0,
     longest_word: longest_word ?? undefined,
     pangrams_found,
+    ...(typeof best_no_hint_score === 'number' ? { best_no_hint_score } : {}),
   });
 
   return c.json({ status: 'synced' });

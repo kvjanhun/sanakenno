@@ -49,10 +49,48 @@ Feature: Rank progression
     When the player's rank is "Ällistyttävä"
     Then the rank list should show "Täysi kenno"
 
+  # --- No-hint achievement tiers ---
+
+  Scenario Outline: No-hint achievements unlock by percentage of max score
+    When the player's no-hint score is <score>
+    Then the no-hint achievement "<achievement>" should be "<state>"
+
+    Examples:
+      | score | achievement              | state    |
+      |    24 | Omin avuin               | locked   |
+      |    25 | Omin avuin               | unlocked |
+      |    49 | Apuitta taitava          | locked   |
+      |    50 | Apuitta taitava          | unlocked |
+      |    69 | Ällistyttävä ilman apuja | locked   |
+      |    70 | Ällistyttävä ilman apuja | unlocked |
+
+  @e2e
+  Scenario: Rank list shows no-hint achievement progress compactly
+    Given the player has started a puzzle
+    When the player opens the rank list
+    Then the rank list should show a one-line no-hint achievement summary and three achievement icons
+
+  @e2e
+  Scenario: Rank list marks unattained no-hint achievements inactive after hints
+    Given the player has unlocked a hint
+    When the player opens the rank list
+    Then the rank list should show unattained no-hint achievements as inactive circle-off icons
+
   # --- Celebrations ---
 
   @e2e
   Scenario: Reaching Ällistyttävä triggers a glow celebration
+    When the player reaches "Ällistyttävä" rank
+    Then a celebration banner should appear for 5 seconds
+
+  @e2e
+  Scenario: Reaching Ällistyttävä without hints replaces the normal celebration
+    When the player reaches "Ällistyttävä" rank without unlocking hints
+    Then the no-hint Ällistyttävä celebration should appear for 5 seconds
+
+  @e2e
+  Scenario: Reaching Ällistyttävä after unlocking a hint keeps the normal celebration
+    Given the player has unlocked a hint
     When the player reaches "Ällistyttävä" rank
     Then a celebration banner should appear for 5 seconds
 

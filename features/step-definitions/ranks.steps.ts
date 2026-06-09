@@ -8,6 +8,7 @@
 import { Given, When, Then } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
 import {
+  noHintAchievementStates,
   rankForScore,
   rankThresholds,
   progressToNextRank,
@@ -28,6 +29,13 @@ When(
   function (this: SanakennoWorld, score: number) {
     this.currentScore = score;
     this.currentRank = rankForScore(score, this.maxScore);
+  },
+);
+
+When(
+  "the player's no-hint score is {int}",
+  function (this: SanakennoWorld, score: number) {
+    this.scoreBeforeHints = score;
   },
 );
 
@@ -122,6 +130,25 @@ Then(
       names.includes(visibleRank),
       `Expected "${visibleRank}" to be visible but it was not in the list`,
     );
+  },
+);
+
+Then(
+  'the no-hint achievement {string} should be {string}',
+  function (
+    this: SanakennoWorld,
+    achievementName: string,
+    expectedState: string,
+  ) {
+    const achievement = noHintAchievementStates(
+      this.scoreBeforeHints ?? 0,
+      this.maxScore,
+    ).find((item) => item.name === achievementName);
+    assert.ok(
+      achievement,
+      `Expected no-hint achievement "${achievementName}" to exist`,
+    );
+    assert.equal(achievement.unlocked ? 'unlocked' : 'locked', expectedState);
   },
 );
 

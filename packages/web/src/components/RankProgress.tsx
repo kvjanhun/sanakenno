@@ -6,8 +6,18 @@
  */
 
 import { useRef, useEffect, useState } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
-import { rankThresholds, progressToNextRank } from '@sanakenno/shared';
+import {
+  ChevronDown,
+  ChevronUp,
+  Circle,
+  CircleOff,
+  CircleStar,
+} from 'lucide-react';
+import {
+  noHintAchievementStates,
+  rankThresholds,
+  progressToNextRank,
+} from '@sanakenno/shared';
 
 /** Props for {@link RankProgress}. */
 export interface RankProgressProps {
@@ -23,6 +33,8 @@ export interface RankProgressProps {
   onToggleRanks: () => void;
   /** Score to display as "Pisteet ilman apuja". Mirrors current score until first hint is unlocked. */
   scoreBeforeHints: number;
+  /** Whether any hint has been unlocked in the current game. */
+  hasUnlockedHints: boolean;
 }
 
 /**
@@ -36,10 +48,29 @@ export function RankProgress({
   showRanks,
   onToggleRanks,
   scoreBeforeHints,
+  hasUnlockedHints,
 }: RankProgressProps): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null);
   const progress = progressToNextRank(score, maxScore);
   const thresholds = rankThresholds(rank, maxScore);
+  const noHintAchievements = noHintAchievementStates(
+    scoreBeforeHints,
+    maxScore,
+  );
+  const currentNoHintAchievement = [...noHintAchievements]
+    .reverse()
+    .find((item) => item.unlocked);
+  const currentNoHintText =
+    currentNoHintAchievement?.name === 'Ällistyttävä ilman apuja'
+      ? 'uskomatonta!'
+      : currentNoHintAchievement?.name === 'Apuitta taitava'
+        ? 'taidokasta!'
+        : currentNoHintAchievement?.name === 'Omin avuin'
+          ? 'hyvä!'
+          : '';
+  const noHintSuffix = ` ilman apuja${
+    currentNoHintText ? `, ${currentNoHintText}` : ''
+  }`;
 
   const prevProgressRef = useRef(progress);
   const animateThisTime = progress >= prevProgressRef.current;
@@ -185,17 +216,83 @@ export function RankProgress({
           <div
             style={{
               borderTop: '1px solid var(--color-border)',
-              padding: '0.4rem 0.75rem',
+              padding: '0.6rem 0.75rem',
               background: 'var(--color-bg-secondary)',
-              color: 'var(--color-text-secondary)',
-              fontSize: '0.8rem',
-              textAlign: 'center',
             }}
           >
-            Ilman apuja: {scoreBeforeHints} pistettä
+            <div className="flex items-center justify-between gap-2">
+              <span
+                className="min-w-0 truncate whitespace-nowrap text-sm"
+                data-no-hint-current
+                style={{ color: 'var(--color-text-primary)' }}
+              >
+                <strong className="font-bold" data-no-hint-points>
+                  {scoreBeforeHints} p.
+                </strong>
+                {noHintSuffix}
+              </span>
+              <div
+                className="flex shrink-0 items-center gap-1"
+                aria-label={`Ilman apuja: ${
+                  noHintAchievements.filter((item) => item.unlocked).length
+                } / ${noHintAchievements.length} saavutusta`}
+              >
+                {noHintAchievements.map((achievement, index) => (
+                  <NoHintAchievementIcon
+                    key={achievement.name}
+                    index={index}
+                    name={achievement.name}
+                    unlocked={achievement.unlocked}
+                    inactive={hasUnlockedHints && !achievement.unlocked}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}
     </div>
+  );
+}
+
+function NoHintAchievementIcon({
+  index,
+  name,
+  unlocked,
+  inactive,
+}: {
+  index: number;
+  name: string;
+  unlocked: boolean;
+  inactive: boolean;
+}): React.JSX.Element {
+  const iconName = unlocked
+    ? 'circle-star'
+    : inactive
+      ? 'circle-off'
+      : 'circle';
+  const color = unlocked
+    ? 'var(--color-accent)'
+    : inactive
+      ? 'color-mix(in srgb, var(--color-text-tertiary) 40%, var(--color-bg-secondary))'
+      : 'var(--color-text-tertiary)';
+
+  return (
+    <span
+      className="flex h-7 w-7 items-center justify-center"
+      data-no-hint-indicator={index + 1}
+      data-no-hint-state={unlocked ? 'unlocked' : 'locked'}
+      data-no-hint-icon={iconName}
+      title={name}
+      style={{ color }}
+    >
+      {unlocked ? (
+        <CircleStar size={22} strokeWidth={2.3} aria-hidden="true" />
+      ) : inactive ? (
+        <CircleOff size={22} strokeWidth={2.3} aria-hidden="true" />
+      ) : (
+        <Circle size={21} strokeWidth={2.3} aria-hidden="true" />
+      )}
+    </span>
   );
 }

@@ -92,6 +92,64 @@ test.describe('Stats', () => {
     await expect(page.getByText('3')).toBeVisible();
   });
 
+  test('stats modal shows lifetime no-hint stats from localStorage', async ({
+    page,
+  }) => {
+    await loadGame(page);
+    await page.evaluate(() => {
+      localStorage.setItem(
+        'sanakenno_player_stats',
+        JSON.stringify({
+          version: 1,
+          records: [
+            {
+              puzzle_number: 1,
+              date: '2026-04-01',
+              best_rank: 'Ällistyttävä',
+              best_score: 31,
+              max_score: 43,
+              words_found: 9,
+              hints_used: 0,
+              elapsed_ms: 60000,
+              best_no_hint_score: 31,
+            },
+            {
+              puzzle_number: 2,
+              date: '2026-04-02',
+              best_rank: 'Sanavalmis',
+              best_score: 24,
+              max_score: 43,
+              words_found: 7,
+              hints_used: 1,
+              elapsed_ms: 90000,
+              best_no_hint_score: 20,
+            },
+          ],
+        }),
+      );
+    });
+
+    await page.locator('button[aria-label="Tilastot"]').click();
+
+    const noHintHeading = page.getByText('Ilman apuja', { exact: true });
+    const averageHeading = page.getByText('Keskimääräinen tulos', {
+      exact: true,
+    });
+
+    await expect(noHintHeading).toBeVisible();
+    await expect(averageHeading).toBeVisible();
+    await expect(page.getByText('Paras tulos')).toBeVisible();
+    await expect(page.getByText('Ällistyttäviä')).toBeVisible();
+    await expect(page.getByText('72 %')).toBeVisible();
+
+    const noHintBox = await noHintHeading.boundingBox();
+    const averageBox = await averageHeading.boundingBox();
+    if (!noHintBox || !averageBox) {
+      throw new Error('Expected no-hint and average stats headings to render');
+    }
+    expect(noHintBox.y).toBeLessThan(averageBox.y);
+  });
+
   test('stats modal closes on Escape', async ({ page }) => {
     await loadGame(page);
     await page.locator('button[aria-label="Tilastot"]').click();

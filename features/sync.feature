@@ -72,6 +72,16 @@ Feature: Cross-device progress sync
     Then the response status should be 200
     And the server stats for puzzle index 42 should have pangrams_found 2
 
+  Scenario: Pushing a stats record with best_no_hint_score stores it
+    When a POST is made to /api/player/sync/stats with best_no_hint_score 70 for puzzle index 42
+    Then the response status should be 200
+    And the server stats for puzzle index 42 should have best_no_hint_score 70
+
+  Scenario: Pushing with lower best_no_hint_score does not downgrade
+    Given the server has a stats record for puzzle index 10 with best_no_hint_score 70
+    When a POST is made to /api/player/sync/stats with best_no_hint_score 50 for puzzle index 10
+    Then the server stats for puzzle index 10 should still have best_no_hint_score 70
+
   Scenario: Pushing with higher pangrams_found upgrades the server record
     Given the server has a stats record for puzzle index 10 with pangrams_found 1
     When a POST is made to /api/player/sync/stats with pangrams_found 3 for puzzle index 10
@@ -124,6 +134,11 @@ Feature: Cross-device progress sync
     Then the response status should be 200
     And the server stats for puzzle index 42 should have longest_word "laskenta"
     And the server stats for puzzle index 42 should have pangrams_found 1
+
+  Scenario: Pushing progress derives the no-hint score from puzzle state
+    When a POST is made to /api/player/sync/progress with no-hint score 70 for puzzle index 42
+    Then the response status should be 200
+    And the server stats for puzzle index 42 should have best_no_hint_score 70
 
   Scenario: Push progress requires authentication
     When a POST is made to /api/player/sync/progress without a token

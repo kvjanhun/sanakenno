@@ -10,7 +10,7 @@ import { useEffect } from 'react';
 /** Props for {@link Celebration}. */
 export interface CelebrationProps {
   /** Which celebration to show. */
-  type: 'allistyttava' | 'taysikenno';
+  type: 'allistyttava' | 'nohint-allistyttava' | 'taysikenno';
   /** Player's current score. */
   score: number;
   /** Maximum possible score for today's puzzle. */
@@ -48,13 +48,21 @@ export function Celebration({
           closeLabel: 'OK',
           cardClass: 'celebration-card-intense',
         }
-      : {
-          title: 'Ällistyttävä!',
-          description: 'Huikea suoritus! Olet saavuttanut huipputason.',
-          target: maxScore,
-          closeLabel: 'Jatka pelaamista',
-          cardClass: 'celebration-card',
-        };
+      : type === 'nohint-allistyttava'
+        ? {
+            title: 'Ällistyttävä ilman apuja!',
+            description: 'Saavutit 70 % kennon pisteistä avaamatta apuja.',
+            target: maxScore,
+            closeLabel: 'Jatka pelaamista',
+            cardClass: 'celebration-card',
+          }
+        : {
+            title: 'Ällistyttävä!',
+            description: 'Huikea suoritus! Olet saavuttanut huipputason.',
+            target: maxScore,
+            closeLabel: 'Jatka pelaamista',
+            cardClass: 'celebration-card',
+          };
 
   const autoCloseMs = type === 'taysikenno' ? 8000 : 5000;
 

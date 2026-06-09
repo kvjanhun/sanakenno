@@ -13,6 +13,7 @@ import {
   RANKS,
   computeStreak,
   computeLifetimeStats,
+  computeLifetimeNoHintStats,
   computeRankDistribution,
   computeAverageCompletion,
   emptyStats,
@@ -20,6 +21,7 @@ import {
 } from '@sanakenno/shared';
 import type { PlayerStats } from '@sanakenno/shared';
 import { loadFromStorage } from '../utils/storage';
+import { backfillNoHintStats } from '../utils/statsBackfill';
 import { ModalShell } from './ModalShell';
 
 /** Props for {@link StatsModal}. */
@@ -40,7 +42,7 @@ export function StatsModal({
   useEffect(() => {
     if (show) {
       const loaded = loadFromStorage<PlayerStats>(STATS_STORAGE_KEY);
-      setStats(loaded ?? emptyStats());
+      setStats(backfillNoHintStats(loaded ?? emptyStats()));
     }
   }, [show]);
 
@@ -51,6 +53,7 @@ export function StatsModal({
   const rankDist = computeRankDistribution(records);
   const avgCompletion = computeAverageCompletion(records);
   const lifetime = computeLifetimeStats(records);
+  const noHintLifetime = computeLifetimeNoHintStats(records);
   const maxCount = Math.max(1, ...Object.values(rankDist));
 
   // Ranks from lowest to highest for display
@@ -177,6 +180,52 @@ export function StatsModal({
                   style={{ color: 'var(--color-text-tertiary)' }}
                 >
                   Pisin sana
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div
+              className="text-sm mb-2"
+              style={{ color: 'var(--color-text-secondary)' }}
+            >
+              Ilman apuja
+            </div>
+            <div
+              className="grid grid-cols-2 gap-2 text-center"
+              style={{
+                backgroundColor: 'var(--color-bg-secondary)',
+                borderRadius: '0.75rem',
+                padding: '0.75rem',
+              }}
+            >
+              <div>
+                <div
+                  className="text-xl font-semibold"
+                  style={{ color: 'var(--color-text-primary)' }}
+                >
+                  {noHintLifetime.highestPercentage.toFixed(0)} %
+                </div>
+                <div
+                  className="text-xs"
+                  style={{ color: 'var(--color-text-tertiary)' }}
+                >
+                  Paras tulos
+                </div>
+              </div>
+              <div>
+                <div
+                  className="text-xl font-semibold"
+                  style={{ color: 'var(--color-text-primary)' }}
+                >
+                  {noHintLifetime.topTierCount}
+                </div>
+                <div
+                  className="text-xs"
+                  style={{ color: 'var(--color-text-tertiary)' }}
+                >
+                  Ällistyttäviä
                 </div>
               </div>
             </div>

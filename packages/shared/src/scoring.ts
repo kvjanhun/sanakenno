@@ -23,6 +23,16 @@ export interface RankThreshold {
   isCurrent: boolean;
 }
 
+export interface NoHintAchievement {
+  pct: number;
+  name: string;
+}
+
+export interface NoHintAchievementState extends NoHintAchievement {
+  points: number;
+  unlocked: boolean;
+}
+
 export const RANKS: readonly Rank[] = [
   { pct: 100, name: 'Täysi kenno' },
   { pct: 70, name: 'Ällistyttävä' },
@@ -31,6 +41,12 @@ export const RANKS: readonly Rank[] = [
   { pct: 10, name: 'Nyt mennään!' },
   { pct: 2, name: 'Hyvä alku' },
   { pct: 0, name: 'Etsi sanoja!' },
+];
+
+export const NO_HINT_ACHIEVEMENTS: readonly NoHintAchievement[] = [
+  { pct: 25, name: 'Omin avuin' },
+  { pct: 50, name: 'Apuitta taitava' },
+  { pct: 70, name: 'Ällistyttävä ilman apuja' },
 ];
 
 /** Score a single word. 4-letter words = 1 pt; longer = length. Pangram bonus +7. */
@@ -82,6 +98,22 @@ export function rankThresholds(
     points: Math.ceil((r.pct / 100) * maxScore),
     isCurrent: currentRank === r.name,
   }));
+}
+
+/** Compute locked/unlocked state for each no-hint achievement tier. */
+export function noHintAchievementStates(
+  noHintScore: number,
+  maxScore: number,
+): NoHintAchievementState[] {
+  return NO_HINT_ACHIEVEMENTS.map((achievement) => {
+    const points =
+      maxScore > 0 ? Math.ceil((achievement.pct / 100) * maxScore) : 0;
+    return {
+      ...achievement,
+      points,
+      unlocked: maxScore > 0 && noHintScore >= points,
+    };
+  });
 }
 
 /** Compute progress percentage toward the next rank (0–100). */

@@ -181,6 +181,22 @@ describe('mergeStatsRecord', () => {
     );
     expect(result.pangrams_found).toBe(2);
   });
+
+  it('takes higher best_no_hint_score', () => {
+    const result = mergeStatsRecord(
+      makeRecord({ best_no_hint_score: 40 }),
+      makeRecord({ best_no_hint_score: 70 }),
+    );
+    expect(result.best_no_hint_score).toBe(70);
+  });
+
+  it('backfills missing best_no_hint_score from no-hint records', () => {
+    const result = mergeStatsRecord(
+      makeRecord({ best_score: 60, hints_used: 0 }),
+      makeRecord({ best_no_hint_score: 40 }),
+    );
+    expect(result.best_no_hint_score).toBe(60);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -325,6 +341,15 @@ describe('isStatsRecordBetterThanServer', () => {
         makeRecord({ words_found: 6 }),
       ),
     ).toBe(false);
+  });
+
+  it('returns true when local has a higher best_no_hint_score', () => {
+    expect(
+      isStatsRecordBetterThanServer(
+        makeRecord({ best_no_hint_score: 70 }),
+        makeRecord({ best_no_hint_score: 50 }),
+      ),
+    ).toBe(true);
   });
 });
 

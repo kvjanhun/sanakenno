@@ -45,6 +45,16 @@ Feature: Player stats and history
     When the stats record is updated with pangrams_found 1 on puzzle index 7
     Then the stats record for puzzle index 7 should still have pangrams_found 2
 
+  Scenario: best_no_hint_score is recorded per puzzle
+    Given the player has no stats yet
+    When the stats record is updated with no-hint score 25 on puzzle index 7
+    Then the stats record for puzzle index 7 should have best_no_hint_score 25
+
+  Scenario: best_no_hint_score takes the maximum
+    Given a stats record for puzzle index 7 with best_no_hint_score 50
+    When the stats record is updated with no-hint score 40 on puzzle index 7
+    Then the stats record for puzzle index 7 should still have best_no_hint_score 50
+
   # --- Streak computation ---
 
   Scenario: Consecutive days form a streak
@@ -82,6 +92,12 @@ Feature: Player stats and history
     Given a stats record with 4 words, 1 pangram, and longest_word "kala"
     And a stats record with 7 words, 2 pangrams, and longest_word "laskenta"
     Then lifetime totals should show 11 words, 3 pangrams, and longest_word "laskenta"
+
+  Scenario: Lifetime no-hint stats show highest percentage and top-tier count
+    Given a stats record with no-hint score 70 and max_score 100
+    And a stats record with no-hint score 35 and max_score 50
+    And a stats record with no-hint score 69 and max_score 100
+    Then lifetime no-hint stats should show highest percentage 70% and top-tier count 2
 
   # --- Stats modal ---
 
