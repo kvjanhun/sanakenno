@@ -88,10 +88,10 @@ export function StatsModal({
             </div>
 
             {/* all number stats — one unified list */}
-            <div className="space-y-1.5" data-stats-all-numbers>
+            <div className="space-y-1.5" data-stats-all-summary>
               <div className="flex items-center justify-between text-xs py-0.5">
                 <span style={{ color: 'var(--color-text-secondary)' }}>
-                  Pelatut pelit
+                  Pelattu
                 </span>
                 <span
                   className="font-semibold font-mono"
@@ -102,7 +102,7 @@ export function StatsModal({
               </div>
               <div className="flex items-center justify-between text-xs py-0.5">
                 <span style={{ color: 'var(--color-text-secondary)' }}>
-                  Nykyinen putki
+                  Putki
                 </span>
                 <span
                   className="font-semibold font-mono"
@@ -122,9 +122,12 @@ export function StatsModal({
                   {bestStreak}
                 </span>
               </div>
+            </div>
+
+            <div className="space-y-1.5" data-stats-all-totals>
               <div className="flex items-center justify-between text-xs py-0.5">
                 <span style={{ color: 'var(--color-text-secondary)' }}>
-                  Löydetyt sanat
+                  Sanoja
                 </span>
                 <span
                   className="font-semibold font-mono"
@@ -135,7 +138,7 @@ export function StatsModal({
               </div>
               <div className="flex items-center justify-between text-xs py-0.5">
                 <span style={{ color: 'var(--color-text-secondary)' }}>
-                  Pangrammit
+                  Pangrammeja
                 </span>
                 <span
                   className="font-semibold font-mono"

@@ -253,7 +253,7 @@ function App() {
         }}
       >
         <div className="max-w-sm mx-auto h-12 flex items-center">
-          <div className="flex w-[80px] shrink-0 items-center">
+          <div className="flex w-[80px] shrink-0 items-center -ml-2.5">
             <button
               type="button"
               onClick={() => setShowArchive(true)}
@@ -327,7 +327,7 @@ function App() {
               </>
             )}
           </h1>
-          <div className="flex w-[80px] shrink-0 items-center justify-end">
+          <div className="flex w-[80px] shrink-0 items-center justify-end -mr-2.5">
             <button
               type="button"
               onClick={() => setShowRules(true)}

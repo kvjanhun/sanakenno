@@ -1,5 +1,12 @@
 # @sanakenno/web
 
+## 1.16.1
+
+### Patch Changes
+
+- align title bar icons with game content edges
+  - @sanakenno/shared@1.16.1
+
 ## 1.16.0
 
 ### Minor Changes
