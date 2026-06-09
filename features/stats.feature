@@ -136,6 +136,12 @@ Feature: Player stats and history
     When the player opens the stats modal
     Then the stats modal should show total words, total pangrams, and longest word
 
+  @e2e
+  Scenario: Stats modal groups all-game stats before no-hint stats
+    Given the player has lifetime stats in localStorage
+    When the player opens the stats modal
+    Then all-game stats should be grouped under "Kaikki pelit" before "Ilman apuja"
+
   # --- Server-backed stats ---
 
   Scenario: Server stats are merged into local after login on a new device

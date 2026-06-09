@@ -131,23 +131,44 @@ test.describe('Stats', () => {
 
     await page.locator('button[aria-label="Tilastot"]').click();
 
-    const noHintHeading = page.getByText('Ilman apuja', { exact: true });
-    const averageHeading = page.getByText('Keskimääräinen tulos', {
-      exact: true,
-    });
+    const allGamesHeading = page.locator('[data-stats-heading="all-games"]');
+    const allSummary = page.locator('[data-stats-all-summary]');
+    const allTotals = page.locator('[data-stats-all-totals]');
+    const allAverage = page.locator('[data-stats-all-average]');
+    const allRanks = page.locator('[data-stats-all-ranks]');
+    const noHintHeading = page.locator('[data-stats-heading="no-hint"]');
 
+    await expect(allGamesHeading).toHaveText('Kaikki pelit');
+    await expect(allSummary).toBeVisible();
+    await expect(allTotals).toBeVisible();
+    await expect(allAverage).toContainText('Keskimääräinen tulos');
+    await expect(allRanks).toContainText('Paras taso per kenno');
     await expect(noHintHeading).toBeVisible();
-    await expect(averageHeading).toBeVisible();
     await expect(page.getByText('Paras tulos')).toBeVisible();
     await expect(page.getByText('Ällistyttäviä')).toBeVisible();
     await expect(page.getByText('72 %')).toBeVisible();
 
+    const allGamesBox = await allGamesHeading.boundingBox();
+    const allSummaryBox = await allSummary.boundingBox();
+    const allTotalsBox = await allTotals.boundingBox();
+    const allAverageBox = await allAverage.boundingBox();
+    const allRanksBox = await allRanks.boundingBox();
     const noHintBox = await noHintHeading.boundingBox();
-    const averageBox = await averageHeading.boundingBox();
-    if (!noHintBox || !averageBox) {
-      throw new Error('Expected no-hint and average stats headings to render');
+    if (
+      !allGamesBox ||
+      !allSummaryBox ||
+      !allTotalsBox ||
+      !allAverageBox ||
+      !allRanksBox ||
+      !noHintBox
+    ) {
+      throw new Error('Expected stats groups to render with measurable bounds');
     }
-    expect(noHintBox.y).toBeLessThan(averageBox.y);
+    expect(allGamesBox.y).toBeLessThan(allSummaryBox.y);
+    expect(allSummaryBox.y).toBeLessThan(allTotalsBox.y);
+    expect(allTotalsBox.y).toBeLessThan(allAverageBox.y);
+    expect(allAverageBox.y).toBeLessThan(allRanksBox.y);
+    expect(allRanksBox.y).toBeLessThan(noHintBox.y);
   });
 
   test('stats modal closes on Escape', async ({ page }) => {
