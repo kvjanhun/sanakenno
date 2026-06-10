@@ -60,6 +60,10 @@ export type {
   LifetimeNoHintStats,
 } from './stats';
 
+// Share text
+export { buildShareText } from './share-text';
+export type { ShareTextInput } from './share-text';
+
 // Kotus
 export { buildKotusUrl } from './kotus';
 

@@ -14,6 +14,7 @@ import { storage, crypto, share, config } from '../platform/index';
 const API_BASE = config.apiBase;
 
 import {
+  buildShareText,
   scoreWord,
   recalcScore,
   rankForScore,
@@ -30,12 +31,7 @@ import {
   loadFromStorage,
   removeFromStorage,
 } from '../utils/storage';
-import {
-  filterVisibleHintIds,
-  isVisibleHintId,
-  VISIBLE_HINT_IDS,
-  type VisibleHintId,
-} from '../utils/hints';
+import { filterVisibleHintIds, isVisibleHintId } from '../utils/hints';
 import { useAuthStore } from './useAuthStore';
 
 /** Shape of the puzzle payload from GET /api/puzzle. */
@@ -197,16 +193,6 @@ function fisherYatesShuffle<T>(arr: readonly T[]): T[] {
   }
   return a;
 }
-
-/** Map hint IDs to their share emoji. */
-const HINT_ICONS: Record<VisibleHintId, string> = {
-  summary: '\u{1F4CA}',
-  distribution: '\u{1F4CF}',
-  pairs: '\u{1F520}',
-};
-
-/** Ordered hint IDs for consistent share line output. */
-const HINT_ORDER = VISIBLE_HINT_IDS;
 
 let messageTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -672,33 +658,13 @@ export const useGameStore = create<GameState>()((set, get) => ({
     const { puzzle, score, hintsUnlocked, scoreBeforeHints } = get();
     if (!puzzle) return;
 
-    const rank = get().rank();
-    const hasTrophy =
-      rank === '\u00C4llistytt\u00E4v\u00E4' || rank === 'T\u00E4ysi kenno';
-    const rankPrefix = hasTrophy ? '\u{1F3C6} ' : '';
-
-    // Progress bar: 10 blocks proportional to score/max_score
-    const filled = Math.round((score / puzzle.max_score) * 10);
-    const bar = '\u{1F7E7}'.repeat(filled) + '\u2B1B'.repeat(10 - filled);
-
-    const lines: string[] = [
-      `Sanakenno \u2014 Kenno #${puzzle.puzzle_number + 1}`,
-      `${rankPrefix}${rank} \u00B7 ${score}/${puzzle.max_score}`,
-      bar,
-    ];
-
-    // Hints line: only include if any hints unlocked
-    const unlockedIcons = HINT_ORDER.filter((id) => hintsUnlocked.has(id)).map(
-      (id) => HINT_ICONS[id],
-    );
-    if (unlockedIcons.length > 0) {
-      const beforeHints = scoreBeforeHints ?? 0;
-      lines.push(`Avut: ${unlockedIcons.join('')} (${beforeHints} p. ilman)`);
-    }
-
-    lines.push('sanakenno.fi');
-
-    const text = lines.join('\n');
+    const text = buildShareText({
+      puzzleNumber: puzzle.puzzle_number,
+      score,
+      maxScore: puzzle.max_score,
+      hintsUnlocked,
+      scoreBeforeHints,
+    });
     const result = await share.share(text);
     if (result === 'clipboard') {
       set({ shareCopied: true });

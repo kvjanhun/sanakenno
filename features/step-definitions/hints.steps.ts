@@ -7,7 +7,7 @@
 
 import { Given, When, Then, Before } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
-import { deriveHintData, toColumns } from '@sanakenno/shared';
+import { buildShareText, deriveHintData, toColumns } from '@sanakenno/shared';
 import type { HintData } from '@sanakenno/shared';
 import type { SanakennoWorld } from './types';
 
@@ -60,6 +60,7 @@ Before(function (this: SanakennoWorld) {
   this.derivedHints = null;
   this.scoreBeforeHints = null;
   this.currentScore = 0;
+  this.generatedShareText = '';
 });
 
 Given(
@@ -350,6 +351,53 @@ Then('no tab should be active', function (this: SanakennoWorld) {
 /* ------------------------------------------------------------------ */
 /*  Share integration                                                  */
 /* ------------------------------------------------------------------ */
+
+Given(
+  'the share result has score {int} of max {int} on puzzle {int}',
+  function (
+    this: SanakennoWorld,
+    score: number,
+    maxScore: number,
+    puzzleNumber: number,
+  ) {
+    this.currentScore = score;
+    this.maxScore = maxScore;
+    this.puzzleNumber = puzzleNumber;
+  },
+);
+
+Given(
+  'the share score before hints is {int}',
+  function (this: SanakennoWorld, score: number) {
+    this.scoreBeforeHints = score;
+    this.hintsUnlocked = new Set(['summary']);
+  },
+);
+
+Given(
+  'the share result has unlocked hints but no recorded score before hints',
+  function (this: SanakennoWorld) {
+    this.hintsUnlocked = new Set(['summary']);
+    this.scoreBeforeHints = null;
+  },
+);
+
+When('the share text is generated', function (this: SanakennoWorld) {
+  this.generatedShareText = buildShareText({
+    puzzleNumber: this.puzzleNumber,
+    score: this.currentScore,
+    maxScore: this.maxScore,
+    hintsUnlocked: this.hintsUnlocked,
+    scoreBeforeHints: this.scoreBeforeHints,
+  });
+});
+
+Then(
+  'the generated share text should match this format:',
+  function (this: SanakennoWorld, docString: string) {
+    assert.equal(this.generatedShareText, docString);
+  },
+);
 
 When('the player shares their result', function (this: SanakennoWorld) {
   // Share text generation is tested via the store's copyStatus action;

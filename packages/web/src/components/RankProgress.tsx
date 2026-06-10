@@ -6,6 +6,7 @@
  */
 
 import { useRef, useEffect, useState } from 'react';
+import { animated, useReducedMotion, useSpring } from '@react-spring/web';
 import {
   ChevronDown,
   ChevronUp,
@@ -18,6 +19,11 @@ import {
   rankThresholds,
   progressToNextRank,
 } from '@sanakenno/shared';
+import {
+  clampProgress,
+  progressSpringConfigForScoreDelta,
+  progressWidth,
+} from '../utils/progressSpring';
 
 /** Props for {@link RankProgress}. */
 export interface RankProgressProps {
@@ -71,13 +77,7 @@ export function RankProgress({
   const noHintSuffix = ` ilman apuja${
     currentNoHintText ? `, ${currentNoHintText}` : ''
   }`;
-
-  const prevProgressRef = useRef(progress);
-  const animateThisTime = progress >= prevProgressRef.current;
-
-  useEffect(() => {
-    prevProgressRef.current = progress;
-  }, [progress]);
+  const progressSpringWidth = useRankProgressWidth(progress, score);
 
   // Animate score counter from previous value to new value.
   const [displayScore, setDisplayScore] = useState(score);
@@ -165,14 +165,12 @@ export function RankProgress({
         aria-valuemin={0}
         aria-valuemax={maxScore}
       >
-        <div
+        <animated.div
           className="h-full rounded-full"
           style={{
-            width: `${progress}%`,
+            width: progressSpringWidth,
             backgroundColor: 'var(--color-accent)',
-            transition: animateThisTime
-              ? 'width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)'
-              : 'none',
+            willChange: 'width',
           }}
         />
       </div>
@@ -253,6 +251,31 @@ export function RankProgress({
       )}
     </div>
   );
+}
+
+/** Animate progress with React Spring, scaling bounce by scoring move size. */
+function useRankProgressWidth(progress: number, score: number) {
+  const prefersReducedMotion = useReducedMotion();
+  const previousScoreRef = useRef(score);
+  const [progressSpring, progressApi] = useSpring(() => ({
+    fill: clampProgress(progress),
+  }));
+
+  useEffect(() => {
+    const target = clampProgress(progress);
+    const scoreDelta = score - previousScoreRef.current;
+    const config = progressSpringConfigForScoreDelta(scoreDelta);
+    previousScoreRef.current = score;
+
+    if (prefersReducedMotion || scoreDelta <= 0) {
+      void progressApi.start({ fill: target, immediate: true });
+      return;
+    }
+
+    void progressApi.start({ fill: target, config });
+  }, [prefersReducedMotion, progress, progressApi, score]);
+
+  return progressSpring.fill.to(progressWidth);
 }
 
 function NoHintAchievementIcon({

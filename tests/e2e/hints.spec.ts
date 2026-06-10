@@ -135,7 +135,7 @@ test.describe('Hint unlock persistence', () => {
 });
 
 test.describe('Hint share integration', () => {
-  test('unlocked summary hint appears as 📊 in share text', async ({
+  test('hint use is shared as no-hint progress, not hint icons', async ({
     page,
     context,
   }) => {
@@ -147,21 +147,46 @@ test.describe('Hint share integration', () => {
     await page.getByRole('button', { name: 'Jaa' }).first().click();
 
     const clipText = await page.evaluate(() => navigator.clipboard.readText());
-    expect(clipText).toContain('\u{1F4CA}'); // 📊
+    expect(clipText).toContain('⚫️⚫️⚫️  0% ilman apuja');
+    expect(clipText).not.toContain('Avut:');
+    expect(clipText).not.toContain('\u{1F4CA}'); // 📊
   });
 
-  test('unlocked pairs hint appears as 🔠 in share text', async ({
+  test('no-hint share can show all stars with a celebration mark', async ({
     page,
     context,
   }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.addInitScript(() => {
+      window.localStorage.setItem(
+        'sanakenno_state_0',
+        JSON.stringify({
+          foundWords: [
+            'kala',
+            'kana',
+            'taka',
+            'alas',
+            'saat',
+            'alka',
+            'akat',
+            'kaste',
+            'kanat',
+            'lakana',
+          ],
+          score: 31,
+          hintsUnlocked: [],
+          startedAt: Date.now(),
+          totalPausedMs: 0,
+          scoreBeforeHints: null,
+        }),
+      );
+    });
     await loadGame(page);
-    await unlockHint(page, 'Alkuparit');
 
     await page.getByRole('button', { name: 'Jaa' }).first().click();
 
     const clipText = await page.evaluate(() => navigator.clipboard.readText());
-    expect(clipText).toContain('\u{1F520}'); // 🔠
+    expect(clipText).toContain('⭐️⭐️⭐️  72% ilman apuja!');
   });
 
   test('no hints unlocked means no hint icon line in share text', async ({

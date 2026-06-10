@@ -45,6 +45,12 @@ const LICENSES = [
     url: 'https://react.dev',
   },
   {
+    name: 'React Spring',
+    license: 'MIT',
+    copyright: 'Paul Henschel and contributors',
+    url: 'https://www.react-spring.dev',
+  },
+  {
     name: 'Vite',
     license: 'MIT',
     copyright: 'Evan You',

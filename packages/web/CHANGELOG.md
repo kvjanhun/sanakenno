@@ -1,5 +1,12 @@
 # @sanakenno/web
 
+## 1.16.2
+
+### Patch Changes
+
+- Polish share result text and rank progress spring animation.
+  - @sanakenno/shared@1.16.2
+
 ## 1.16.1
 
 ### Patch Changes

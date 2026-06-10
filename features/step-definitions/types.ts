@@ -50,6 +50,8 @@ export interface SanakennoWorld {
   achievementResponses: Response[];
   /* Pre-hint score */
   scoreBeforeHints: number | null;
+  /* Generated share result text */
+  generatedShareText: string;
   /* Word definitions */
   kotusUrl: string;
   /* Player stats */

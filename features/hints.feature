@@ -97,18 +97,44 @@ Feature: Hint panels
 
   # --- Share integration ---
 
-  @e2e
-  Scenario: Unlocked hints appear as icons in the share text
-    When the player unlocks "summary" and "pairs"
-    And the player shares their result
-    Then the share text should include hint icons for the unlocked hints
+  Scenario: Share text reports no-hint achievement progress after hints are used
+    Given the share result has score 136 of max 188 on puzzle 107
+    And the share score before hints is 102
+    When the share text is generated
+    Then the generated share text should match this format:
+      """
+      Sanakenno — Kenno #108
+      🏆 Ällistyttävä · 136/188 p.
+      🟧🟧🟧🟧🟧🟧🟧⬛⬛⬛
+      ⭐️⭐️⚫️  54% ilman apuja
+      sanakenno.fi
+      """
 
-  @e2e
-  Scenario: Share text includes pre-hint score in parentheses when hints are used
-    Given the player has scored 20 points before any hints
-    When the player unlocks the "summary" hint
-    And the player shares their result
-    Then the share score line should include "(20)"
+  Scenario: Share text reports zero no-hint progress for old hinted saves
+    Given the share result has score 136 of max 188 on puzzle 107
+    And the share result has unlocked hints but no recorded score before hints
+    When the share text is generated
+    Then the generated share text should match this format:
+      """
+      Sanakenno — Kenno #108
+      🏆 Ällistyttävä · 136/188 p.
+      🟧🟧🟧🟧🟧🟧🟧⬛⬛⬛
+      ⚫️⚫️⚫️  0% ilman apuja
+      sanakenno.fi
+      """
+
+  Scenario: Share text celebrates all no-hint achievement stars
+    Given the share result has score 188 of max 188 on puzzle 107
+    And the share score before hints is 136
+    When the share text is generated
+    Then the generated share text should match this format:
+      """
+      Sanakenno — Kenno #108
+      🏆 Täysi kenno · 188/188 p.
+      🟧🟧🟧🟧🟧🟧🟧🟧🟧🟧
+      ⭐️⭐️⭐️  72% ilman apuja!
+      sanakenno.fi
+      """
 
   @e2e
   Scenario: Rank panel always shows score achieved without hints
