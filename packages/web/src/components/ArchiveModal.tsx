@@ -12,11 +12,13 @@
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { animated, useReducedMotion, useTransition } from '@react-spring/web';
 import { rankForScore } from '@sanakenno/shared';
 import { loadFromStorage } from '../utils/storage';
 import { storage } from '../platform';
 import { EyeIcon } from './icons';
 import { ModalShell, useDialogFocusTrap } from './ModalShell';
+import { PRESENCE_SPRING } from '../utils/motion';
 
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -82,7 +84,8 @@ function formatFinnishDate(dateStr: string): string {
 const PAST_PAGE_SIZE = 8;
 
 interface ArchiveActionSheetProps {
-  entry: ArchiveEntry;
+  show: boolean;
+  entry: ArchiveEntry | null;
   isRevealed: boolean;
   confirmReveal: boolean;
   onPlay: () => void;
@@ -93,6 +96,7 @@ interface ArchiveActionSheetProps {
 }
 
 function ArchiveActionSheet({
+  show,
   entry,
   isRevealed,
   confirmReveal,
@@ -103,6 +107,8 @@ function ArchiveActionSheet({
   onClose,
 }: ArchiveActionSheetProps): React.JSX.Element {
   const dialogRef = useRef<HTMLDivElement | null>(null);
+  const [displayEntry, setDisplayEntry] = useState<ArchiveEntry | null>(entry);
+  const prefersReducedMotion = useReducedMotion();
   const handleEscape = useCallback(() => {
     if (confirmReveal) onCancelConfirm();
     else onClose();
@@ -112,126 +118,157 @@ function ArchiveActionSheet({
     else onClose();
   }, [confirmReveal, onCancelConfirm, onClose]);
 
-  useDialogFocusTrap(dialogRef, onClose, handleEscape);
+  useEffect(() => {
+    if (show && entry) setDisplayEntry(entry);
+  }, [entry, show]);
+
+  const activeEntry = show && entry ? entry : displayEntry;
+  const transitions = useTransition(show && activeEntry !== null, {
+    from: { overlayOpacity: 0, panelOpacity: 0, scale: 0.985, y: 10 },
+    enter: { overlayOpacity: 1, panelOpacity: 1, scale: 1, y: 0 },
+    leave: { overlayOpacity: 0, panelOpacity: 0, scale: 0.985, y: 10 },
+    config: PRESENCE_SPRING,
+    immediate: prefersReducedMotion === true,
+  });
+
+  useDialogFocusTrap(dialogRef, onClose, handleEscape, show);
+
+  if (!activeEntry) return <>{null}</>;
 
   return (
-    <div
-      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
-      onClick={handleOverlayClose}
-    >
-      <div
-        ref={dialogRef}
-        className="w-full max-w-sm rounded-xl p-5 flex flex-col gap-3"
-        style={{
-          backgroundColor: 'var(--color-bg-primary)',
-          color: 'var(--color-text-primary)',
-        }}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="puzzle-action-title"
-        tabIndex={-1}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h3
-          id="puzzle-action-title"
-          className="text-sm text-center"
-          style={{ color: 'var(--color-text-secondary)' }}
-        >
-          {confirmReveal
-            ? 'Paljasta vastaukset?'
-            : `Kenno #${entry.puzzle_number + 1} · ${formatFinnishDate(entry.date)}`}
-        </h3>
-
-        {confirmReveal ? (
-          <>
-            <div
-              className="rounded-lg px-3 py-2 text-xs text-center"
+    <>
+      {transitions((spring, item) =>
+        item ? (
+          <animated.div
+            aria-hidden={!show}
+            className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4"
+            style={{
+              backgroundColor: spring.overlayOpacity.to(
+                (opacity) => `rgba(0, 0, 0, ${opacity * 0.5})`,
+              ),
+              pointerEvents: show ? 'auto' : 'none',
+            }}
+            onClick={show ? handleOverlayClose : undefined}
+          >
+            <animated.div
+              ref={dialogRef}
+              className="w-full max-w-sm rounded-xl p-5 flex flex-col gap-3"
               style={{
-                backgroundColor: 'var(--color-bg-secondary)',
-                color: 'var(--color-text-secondary)',
-                border: '1px solid var(--color-border)',
-              }}
-            >
-              Vastauksien paljastamisen jälkeen tästä kennosta ei enää kerry
-              tilastoja.
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={onCancelConfirm}
-                className="w-1/2 py-3 rounded-lg font-medium text-base cursor-pointer border"
-                style={{
-                  backgroundColor: 'transparent',
-                  borderColor: 'var(--color-border)',
-                  color: 'var(--color-text-primary)',
-                }}
-              >
-                Takaisin
-              </button>
-              <button
-                type="button"
-                onClick={onConfirmReveal}
-                className="w-1/2 py-3 rounded-lg font-medium text-base cursor-pointer border-none"
-                style={{
-                  backgroundColor: 'var(--color-accent)',
-                  color: 'var(--color-on-accent)',
-                }}
-              >
-                Paljasta vastaukset
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            {isRevealed && (
-              <div
-                className="rounded-lg px-3 py-2 text-xs text-center"
-                style={{
-                  backgroundColor: 'var(--color-bg-secondary)',
-                  color: 'var(--color-text-secondary)',
-                  border: '1px solid var(--color-border)',
-                }}
-              >
-                Vastaukset on jo paljastettu. Tästä kennosta ei enää kerry
-                tilastoja.
-              </div>
-            )}
-
-            <button
-              type="button"
-              onClick={onPlay}
-              className="w-full py-3 rounded-lg font-medium text-base cursor-pointer border-none"
-              style={{
-                backgroundColor: 'var(--color-accent)',
-                color: 'var(--color-on-accent)',
-              }}
-            >
-              Pelaa
-            </button>
-            <button
-              type="button"
-              onClick={onReveal}
-              className="w-full py-3 rounded-lg font-medium text-base cursor-pointer border-none"
-              style={{
-                backgroundColor: 'var(--color-bg-secondary)',
+                backgroundColor: 'var(--color-bg-primary)',
                 color: 'var(--color-text-primary)',
+                opacity: spring.panelOpacity,
+                scale: spring.scale,
+                transformOrigin: '50% 80%',
+                y: spring.y,
               }}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="puzzle-action-title"
+              tabIndex={-1}
+              onClick={(e) => e.stopPropagation()}
             >
-              Näytä vastaukset
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="w-full py-2 text-sm bg-transparent border-none cursor-pointer"
-              style={{ color: 'var(--color-text-secondary)' }}
-            >
-              Peruuta
-            </button>
-          </>
-        )}
-      </div>
-    </div>
+              <h3
+                id="puzzle-action-title"
+                className="text-sm text-center"
+                style={{ color: 'var(--color-text-secondary)' }}
+              >
+                {confirmReveal
+                  ? 'Paljasta vastaukset?'
+                  : `Kenno #${activeEntry.puzzle_number + 1} · ${formatFinnishDate(activeEntry.date)}`}
+              </h3>
+
+              {confirmReveal ? (
+                <>
+                  <div
+                    className="rounded-lg px-3 py-2 text-xs text-center"
+                    style={{
+                      backgroundColor: 'var(--color-bg-secondary)',
+                      color: 'var(--color-text-secondary)',
+                      border: '1px solid var(--color-border)',
+                    }}
+                  >
+                    Vastauksien paljastamisen jälkeen tästä kennosta ei enää
+                    kerry tilastoja.
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={onCancelConfirm}
+                      className="w-1/2 py-3 rounded-lg font-medium text-base cursor-pointer border"
+                      style={{
+                        backgroundColor: 'transparent',
+                        borderColor: 'var(--color-border)',
+                        color: 'var(--color-text-primary)',
+                      }}
+                    >
+                      Takaisin
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onConfirmReveal}
+                      className="w-1/2 py-3 rounded-lg font-medium text-base cursor-pointer border-none"
+                      style={{
+                        backgroundColor: 'var(--color-accent)',
+                        color: 'var(--color-on-accent)',
+                      }}
+                    >
+                      Paljasta vastaukset
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {isRevealed && (
+                    <div
+                      className="rounded-lg px-3 py-2 text-xs text-center"
+                      style={{
+                        backgroundColor: 'var(--color-bg-secondary)',
+                        color: 'var(--color-text-secondary)',
+                        border: '1px solid var(--color-border)',
+                      }}
+                    >
+                      Vastaukset on jo paljastettu. Tästä kennosta ei enää kerry
+                      tilastoja.
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={onPlay}
+                    className="w-full py-3 rounded-lg font-medium text-base cursor-pointer border-none"
+                    style={{
+                      backgroundColor: 'var(--color-accent)',
+                      color: 'var(--color-on-accent)',
+                    }}
+                  >
+                    Pelaa
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onReveal}
+                    className="w-full py-3 rounded-lg font-medium text-base cursor-pointer border-none"
+                    style={{
+                      backgroundColor: 'var(--color-bg-secondary)',
+                      color: 'var(--color-text-primary)',
+                    }}
+                  >
+                    Näytä vastaukset
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="w-full py-2 text-sm bg-transparent border-none cursor-pointer"
+                    style={{ color: 'var(--color-text-secondary)' }}
+                  >
+                    Peruuta
+                  </button>
+                </>
+              )}
+            </animated.div>
+          </animated.div>
+        ) : null,
+      )}
+    </>
   );
 }
 
@@ -244,7 +281,7 @@ export function ArchiveModal({
   onSelectPuzzle,
   onRevealAnswers,
   currentPuzzleNumber,
-}: ArchiveModalProps): React.JSX.Element | null {
+}: ArchiveModalProps): React.JSX.Element {
   const [entries, setEntries] = useState<ArchiveEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
@@ -352,11 +389,10 @@ export function ArchiveModal({
     onRevealAnswers(number);
   }, [selectedEntry, onRevealAnswers]);
 
-  if (!show) return null;
-
   return (
     <>
       <ModalShell
+        show={show}
         title="Arkisto"
         titleId="archive-title"
         onClose={onClose}
@@ -540,18 +576,21 @@ export function ArchiveModal({
       </ModalShell>
 
       {/* Action sheet for past puzzles — sits above the list modal */}
-      {selectedEntry && (
-        <ArchiveActionSheet
-          entry={selectedEntry}
-          isRevealed={revealedPuzzles.has(selectedEntry.puzzle_number)}
-          confirmReveal={confirmReveal}
-          onPlay={handlePlay}
-          onReveal={handleReveal}
-          onConfirmReveal={handleConfirmReveal}
-          onCancelConfirm={() => setConfirmReveal(false)}
-          onClose={closeActionSheet}
-        />
-      )}
+      <ArchiveActionSheet
+        show={show && selectedEntry !== null}
+        entry={selectedEntry}
+        isRevealed={
+          selectedEntry
+            ? revealedPuzzles.has(selectedEntry.puzzle_number)
+            : false
+        }
+        confirmReveal={confirmReveal}
+        onPlay={handlePlay}
+        onReveal={handleReveal}
+        onConfirmReveal={handleConfirmReveal}
+        onCancelConfirm={() => setConfirmReveal(false)}
+        onClose={closeActionSheet}
+      />
     </>
   );
 }

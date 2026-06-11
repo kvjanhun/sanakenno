@@ -15,7 +15,7 @@ type ViewMode = 'options' | 'email' | 'sent' | 'qr' | 'confirmRotate';
 export function SyncModal({
   show,
   onClose,
-}: SyncModalProps): React.JSX.Element | null {
+}: SyncModalProps): React.JSX.Element {
   const playerKey = useAuthStore((s) => s.playerKey);
   const isLinked = useAuthStore((s) => s.isLinked);
   const isLoading = useAuthStore((s) => s.isLoading);
@@ -86,10 +86,9 @@ export function SyncModal({
     if (!useAuthStore.getState().error) setMode('options');
   }, []);
 
-  if (!show) return null;
-
   return (
     <ModalShell
+      show={show}
       title="Tallennus ja synkronointi"
       titleId="sync-title"
       onClose={onClose}

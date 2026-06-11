@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { animated, useReducedMotion, useSpring } from '@react-spring/web';
 import {
+  ChevronDown,
   Check,
   Monitor,
   Moon,
@@ -19,6 +21,8 @@ import { useAuthStore } from '../store/useAuthStore';
 import { PALETTE_LABELS, paletteAccent } from '../utils/palette';
 import { ModalShell } from './ModalShell';
 import { msUntilMidnight } from '../hooks/useMidnightRollover';
+import { SpringCollapse } from './SpringCollapse';
+import { DROPDOWN_SPRING } from '../utils/motion';
 
 /** Props for {@link SettingsModal}. */
 export interface SettingsModalProps {
@@ -121,7 +125,7 @@ export function SettingsModal({
   show,
   onClose,
   onOpenSync,
-}: SettingsModalProps): React.JSX.Element | null {
+}: SettingsModalProps): React.JSX.Element {
   const themeId = usePaletteStore((s) => s.themeId);
   const setThemeId = usePaletteStore((s) => s.setThemeId);
   const preference = useThemePreferenceStore((s) => s.preference);
@@ -133,6 +137,12 @@ export function SettingsModal({
   const [msRemaining, setMsRemaining] = useState<number>(0);
   const [licensesOpen, setLicensesOpen] = useState(false);
   const licensesRef = useRef<HTMLDivElement>(null);
+  const prefersReducedMotion = useReducedMotion();
+  const licenseChevronSpring = useSpring({
+    rotate: licensesOpen ? 180 : 0,
+    config: DROPDOWN_SPRING,
+    immediate: prefersReducedMotion === true,
+  });
 
   useEffect(() => {
     if (!show) return;
@@ -149,10 +159,9 @@ export function SettingsModal({
     return () => clearInterval(interval);
   }, [show]);
 
-  if (!show) return null;
-
   return (
     <ModalShell
+      show={show}
       title="Asetukset"
       titleId="settings-modal-title"
       onClose={onClose}
@@ -463,14 +472,25 @@ export function SettingsModal({
                 }, 50);
               }
             }}
-            className="bg-transparent border-none cursor-pointer p-0 text-[11px] hover:underline"
+            className="inline-flex items-center gap-0.5 bg-transparent border-none cursor-pointer p-0 text-[11px] hover:underline"
             style={{ color: 'inherit' }}
           >
-            Lisenssit {licensesOpen ? '▲' : '▼'}
+            <span>Lisenssit</span>
+            <animated.span
+              aria-hidden="true"
+              className="inline-flex h-3 w-3 items-center justify-center"
+              style={{
+                rotate: licenseChevronSpring.rotate.to(
+                  (value) => `${value}deg`,
+                ),
+              }}
+            >
+              <ChevronDown size={12} strokeWidth={2.5} />
+            </animated.span>
           </button>
         </div>
 
-        {licensesOpen && (
+        <SpringCollapse open={licensesOpen}>
           <div ref={licensesRef} className="space-y-2 pt-1">
             <p
               className="text-[9.5px] text-center mb-1.5"
@@ -508,7 +528,7 @@ export function SettingsModal({
               ))}
             </div>
           </div>
-        )}
+        </SpringCollapse>
       </div>
     </ModalShell>
   );

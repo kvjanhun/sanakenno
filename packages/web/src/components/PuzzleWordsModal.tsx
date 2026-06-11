@@ -34,28 +34,40 @@ export function PuzzleWordsModal({
   onClose,
   puzzleNumber,
 }: PuzzleWordsModalProps): React.JSX.Element | null {
+  const [displayPuzzleNumber, setDisplayPuzzleNumber] = useState<number | null>(
+    puzzleNumber,
+  );
   const [words, setWords] = useState<string[]>([]);
   const [foundWords, setFoundWords] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!show || puzzleNumber === null) return;
+    if (show && puzzleNumber !== null) {
+      setDisplayPuzzleNumber(puzzleNumber);
+    }
+  }, [puzzleNumber, show]);
+
+  const activePuzzleNumber =
+    show && puzzleNumber !== null ? puzzleNumber : displayPuzzleNumber;
+
+  useEffect(() => {
+    if (!show || activePuzzleNumber === null) return;
 
     const saved = storage.load<SavedGameState>(
-      `sanakenno_state_${puzzleNumber}`,
+      `sanakenno_state_${activePuzzleNumber}`,
     );
     setFoundWords(new Set(saved?.foundWords ?? []));
 
     // Mark this puzzle as revealed — submitWord will skip stats updates
     // for any future play on it.
-    storage.setRaw(`revealed_${puzzleNumber}`, 'true');
+    storage.setRaw(`revealed_${activePuzzleNumber}`, 'true');
 
     setLoading(true);
     setError('');
     setWords([]);
 
-    fetch(`${config.apiBase}/api/puzzle/${puzzleNumber}/words`)
+    fetch(`${config.apiBase}/api/puzzle/${activePuzzleNumber}/words`)
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json() as Promise<{ words: string[] }>;
@@ -68,15 +80,16 @@ export function PuzzleWordsModal({
         setError(err.message);
         setLoading(false);
       });
-  }, [show, puzzleNumber]);
+  }, [activePuzzleNumber, show]);
 
-  if (!show || puzzleNumber === null) return null;
+  if (activePuzzleNumber === null) return null;
 
   const foundCount = words.filter((w) => foundWords.has(w)).length;
 
   return (
     <ModalShell
-      title={`Kenno #${puzzleNumber + 1}`}
+      show={show}
+      title={`Kenno #${activePuzzleNumber + 1}`}
       titleId="puzzle-words-title"
       onClose={onClose}
       className="flex flex-col"

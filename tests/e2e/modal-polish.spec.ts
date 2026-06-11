@@ -37,6 +37,12 @@ async function expectStandardCloseButton(page: Page) {
   );
 }
 
+async function computedTransform(
+  locator: ReturnType<Page['locator']>,
+): Promise<string> {
+  return locator.evaluate((el) => getComputedStyle(el).transform);
+}
+
 test.describe('Modal polish', () => {
   test('header icon buttons use large touch targets', async ({ page }) => {
     await loadGame(page);
@@ -48,6 +54,27 @@ test.describe('Modal polish', () => {
       expect(box?.width).toBeGreaterThanOrEqual(40);
       expect(box?.height).toBeGreaterThanOrEqual(40);
     }
+  });
+
+  test('titlebar icons animate without resizing their touch targets', async ({
+    page,
+  }) => {
+    await loadGame(page);
+
+    const button = page.getByRole('button', { name: 'Arkisto' });
+    const icon = button.locator('span').first();
+    const beforeBox = await button.boundingBox();
+    if (!beforeBox) throw new Error('Archive button should be measurable');
+    const beforeTransform = await computedTransform(icon);
+
+    await button.hover();
+
+    await expect.poll(() => computedTransform(icon)).not.toBe(beforeTransform);
+
+    const afterBox = await button.boundingBox();
+    if (!afterBox) throw new Error('Archive button should stay measurable');
+    expect(afterBox.width).toBeCloseTo(beforeBox.width, 0);
+    expect(afterBox.height).toBeCloseTo(beforeBox.height, 0);
   });
 
   test('standard overlays share the same accent close button', async ({
@@ -63,6 +90,22 @@ test.describe('Modal polish', () => {
       await page.getByRole('dialog').first().getByLabel('Sulje').click();
       await expect(page.getByRole('dialog')).toHaveCount(0);
     }
+  });
+
+  test('settings licences expand and collapse from the existing footer', async ({
+    page,
+  }) => {
+    await loadGame(page);
+
+    await page.getByRole('button', { name: 'Asetukset' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Asetukset' });
+    const licenses = dialog.getByRole('button', { name: /Lisenssit/ });
+
+    await licenses.click();
+    await expect(dialog.getByText('React Spring')).toBeVisible();
+
+    await licenses.click();
+    await expect(dialog.getByText('React Spring')).not.toBeVisible();
   });
 
   test('modal focus is trapped and restored to the opener', async ({

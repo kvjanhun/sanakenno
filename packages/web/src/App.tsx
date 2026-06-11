@@ -10,7 +10,7 @@
  */
 
 import { useEffect, useCallback, useRef, useState, useMemo } from 'react';
-import { Settings, Copy } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { useGameStore } from './store/useGameStore';
 import { useAuthStore } from './store/useAuthStore';
 import { useKeyboard } from './hooks/useKeyboard';
@@ -33,6 +33,8 @@ import { ArchiveModal } from './components/ArchiveModal';
 import { PuzzleWordsModal } from './components/PuzzleWordsModal';
 import { StatsModal } from './components/StatsModal';
 import { SyncModal } from './components/SyncModal';
+import { TitlebarIconButton } from './components/TitlebarIconButton';
+import { ConnectBanner } from './components/ConnectBanner';
 import {
   CalendarIcon,
   StatsIcon,
@@ -254,24 +256,20 @@ function App() {
       >
         <div className="max-w-sm mx-auto h-12 flex items-center">
           <div className="flex w-[80px] shrink-0 items-center -ml-2.5">
-            <button
-              type="button"
+            <TitlebarIconButton
               onClick={() => setShowArchive(true)}
-              className="h-10 w-10 rounded-lg bg-transparent border-none cursor-pointer flex items-center justify-center"
-              style={{ color: 'var(--color-text-primary)' }}
-              aria-label="Arkisto"
+              label="Arkisto"
+              opened={showArchive}
             >
               <CalendarIcon />
-            </button>
-            <button
-              type="button"
+            </TitlebarIconButton>
+            <TitlebarIconButton
               onClick={() => setShowStats(true)}
-              className="h-10 w-10 rounded-lg bg-transparent border-none cursor-pointer flex items-center justify-center"
-              style={{ color: 'var(--color-text-primary)' }}
-              aria-label="Tilastot"
+              label="Tilastot"
+              opened={showStats}
             >
               <StatsIcon />
-            </button>
+            </TitlebarIconButton>
           </div>
           <h1
             className="min-w-0 flex-1 text-center text-lg font-semibold whitespace-nowrap overflow-hidden text-ellipsis"
@@ -279,18 +277,18 @@ function App() {
           >
             {viewingPuzzleDate ? (
               <span className="inline-flex min-w-0 items-center justify-center">
-                <button
-                  type="button"
+                <TitlebarIconButton
                   onClick={() => returnToToday()}
-                  className="mr-1 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent border-none cursor-pointer"
+                  className="mr-1"
+                  label="Takaisin tähän päivään"
+                  opened={viewingPuzzleDate !== null}
+                  size={32}
                   style={{
                     color: 'var(--color-accent)',
-                    padding: 0,
                   }}
-                  aria-label="Takaisin tähän päivään"
                 >
                   <ArrowLeftIcon />
-                </button>
+                </TitlebarIconButton>
                 <span className="min-w-0 overflow-hidden text-ellipsis">
                   {new Date(viewingPuzzleDate + 'T12:00:00').toLocaleDateString(
                     'fi-FI',
@@ -328,230 +326,32 @@ function App() {
             )}
           </h1>
           <div className="flex w-[80px] shrink-0 items-center justify-end -mr-2.5">
-            <button
-              type="button"
+            <TitlebarIconButton
               onClick={() => setShowRules(true)}
-              className="h-10 w-10 rounded-lg bg-transparent border-none cursor-pointer flex items-center justify-center"
-              style={{ color: 'var(--color-text-primary)' }}
-              aria-label="Säännöt"
+              label="Säännöt"
+              opened={showRules}
             >
               <CircleHelpIcon />
-            </button>
-            <button
-              type="button"
+            </TitlebarIconButton>
+            <TitlebarIconButton
               onClick={() => setShowSettings(true)}
-              className="h-10 w-10 rounded-lg bg-transparent border-none cursor-pointer flex items-center justify-center"
-              style={{ color: 'var(--color-text-primary)' }}
-              aria-label="Asetukset"
+              label="Asetukset"
+              opened={showSettings}
             >
               <Settings size={20} strokeWidth={2.5} />
-            </button>
+            </TitlebarIconButton>
           </div>
         </div>
       </header>
 
-      {/* Connect-token banner — shown when a ?connect= URL is opened */}
-      {connectBannerToken && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
-        >
-          <div
-            className="rounded-xl p-6 max-w-sm w-full mx-4 space-y-4 shadow-xl"
-            style={{
-              backgroundColor: 'var(--color-bg-primary)',
-              color: 'var(--color-text-primary)',
-            }}
-          >
-            {showPwaInstructions ? (
-              <div className="space-y-4">
-                <h2 className="text-lg font-semibold">Yhdistä sovelluksessa</h2>
-                <div
-                  className="p-3 rounded-lg text-sm text-center font-medium"
-                  style={{
-                    backgroundColor: 'var(--color-bg-secondary)',
-                    color: 'var(--color-accent)',
-                  }}
-                >
-                  Koodi kopioitu leikepöydälle! 📋
-                </div>
-                <div
-                  style={{
-                    color: 'var(--color-text-secondary)',
-                    fontSize: '0.85rem',
-                    lineHeight: '1.5',
-                  }}
-                  className="space-y-3"
-                >
-                  <p>
-                    Avaa laitteellesi asennettu <strong>Sanakenno</strong>{' '}
-                    aloitusnäytöltäsi ja toimi seuraavasti:
-                  </p>
-                  <ol className="list-decimal list-inside space-y-1 pl-1">
-                    <li>
-                      Avaa <strong>Asetukset</strong> (rataskuvake ⚙️).
-                    </li>
-                    <li>
-                      Valitse <strong>Tallennus ja synkronointi</strong>.
-                    </li>
-                    <li>
-                      Liitä koodi kohtaan{' '}
-                      <strong>
-                        &quot;Yhdistä tämä laite olemassa olevaan tiliin&quot;
-                      </strong>
-                      .
-                    </li>
-                    <li>
-                      Paina <strong>Yhdistä</strong>-painiketta.
-                    </li>
-                  </ol>
-                </div>
-                <div className="flex flex-col gap-2 pt-2">
-                  <button
-                    type="button"
-                    className="w-full py-2 px-3 rounded-lg border-none font-medium cursor-pointer text-xs flex items-center justify-center gap-1.5"
-                    style={{
-                      backgroundColor: 'var(--color-bg-secondary)',
-                      color: 'var(--color-text-primary)',
-                    }}
-                    onClick={() =>
-                      void share.copyToClipboard(connectBannerToken)
-                    }
-                  >
-                    <Copy size={14} style={{ color: 'var(--color-accent)' }} />
-                    <span>Kopioi koodi uudelleen</span>
-                  </button>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      className="w-1/2 py-2 px-4 rounded-lg border cursor-pointer text-sm"
-                      style={{
-                        backgroundColor: 'transparent',
-                        borderColor: 'var(--color-text-tertiary)',
-                        color: 'var(--color-text-primary)',
-                      }}
-                      onClick={() => setShowPwaInstructions(false)}
-                    >
-                      Takaisin
-                    </button>
-                    <button
-                      type="button"
-                      className="w-1/2 py-2 px-4 rounded-lg font-medium cursor-pointer border-none text-sm"
-                      style={{
-                        backgroundColor: 'var(--color-accent)',
-                        color: 'var(--color-on-accent)',
-                      }}
-                      onClick={handleCloseConnectBanner}
-                    >
-                      Valmis
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : isStandalone ? (
-              <div className="space-y-4">
-                <h2 className="text-lg font-semibold">Yhdistä laite</h2>
-                <p
-                  style={{
-                    color: 'var(--color-text-secondary)',
-                    fontSize: '0.9rem',
-                    lineHeight: '1.4',
-                  }}
-                >
-                  Haluatko yhdistää tämän laitteen ja sovelluksen tiliisi?
-                </p>
-                <button
-                  type="button"
-                  className="w-full py-2 px-4 rounded-lg font-medium cursor-pointer border-none"
-                  style={{
-                    backgroundColor: 'var(--color-accent)',
-                    color: 'var(--color-on-accent)',
-                  }}
-                  onClick={() => {
-                    const t = connectBannerToken;
-                    handleCloseConnectBanner();
-                    void useAuthStore.getState().useTransfer(t);
-                  }}
-                >
-                  Yhdistä tähän sovellukseen
-                </button>
-                <button
-                  type="button"
-                  className="w-full bg-transparent border-none cursor-pointer text-sm"
-                  style={{ color: 'var(--color-text-tertiary)' }}
-                  onClick={handleCloseConnectBanner}
-                >
-                  Peruuta
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <h2 className="text-lg font-semibold">Yhdistä laite</h2>
-                <p
-                  style={{
-                    color: 'var(--color-text-secondary)',
-                    fontSize: '0.9rem',
-                    lineHeight: '1.4',
-                  }}
-                >
-                  Miten haluat yhdistää tämän laitteen?
-                </p>
-                <button
-                  type="button"
-                  className="w-full py-2 px-4 rounded-lg font-medium cursor-pointer border-none"
-                  style={{
-                    backgroundColor: 'var(--color-accent)',
-                    color: 'var(--color-on-accent)',
-                  }}
-                  onClick={() => {
-                    const t = connectBannerToken;
-                    handleCloseConnectBanner();
-                    void useAuthStore.getState().useTransfer(t);
-                  }}
-                >
-                  Yhdistä tähän selaimeen
-                </button>
-                <button
-                  type="button"
-                  className="w-full py-2 px-4 rounded-lg border cursor-pointer font-medium text-sm text-center"
-                  style={{
-                    backgroundColor: 'var(--color-bg-secondary)',
-                    borderColor: 'var(--color-text-tertiary)',
-                    color: 'var(--color-text-primary)',
-                  }}
-                  onClick={() => void handleCopyPwaCode(connectBannerToken)}
-                >
-                  Yhdistä asennetussa sovelluksessa (PWA)
-                </button>
-                <div
-                  className="pt-3 border-t flex flex-col items-center space-y-2"
-                  style={{ borderColor: 'var(--color-border)' }}
-                >
-                  <a
-                    href={`sanakenno://auth?connect=${encodeURIComponent(connectBannerToken)}`}
-                    style={{
-                      color: 'var(--color-text-tertiary)',
-                      fontSize: '0.8rem',
-                    }}
-                    className="underline hover:text-primary"
-                    onClick={handleCloseConnectBanner}
-                  >
-                    Avaa vanhassa iOS-sovelluksessa
-                  </a>
-                  <button
-                    type="button"
-                    className="w-full bg-transparent border-none cursor-pointer text-sm pt-1"
-                    style={{ color: 'var(--color-text-tertiary)' }}
-                    onClick={handleCloseConnectBanner}
-                  >
-                    Peruuta
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <ConnectBanner
+        token={connectBannerToken}
+        isStandalone={isStandalone}
+        showPwaInstructions={showPwaInstructions}
+        onCopyPwaCode={handleCopyPwaCode}
+        onBackFromPwaInstructions={() => setShowPwaInstructions(false)}
+        onClose={handleCloseConnectBanner}
+      />
 
       {/* Rules modal */}
       <RulesModal show={showRules} onClose={() => setShowRules(false)} />
@@ -708,8 +508,9 @@ function App() {
       </main>
 
       {/* Celebration overlay */}
-      {celebration && puzzle && (
+      {puzzle && (
         <Celebration
+          show={celebration !== null}
           type={celebration}
           score={score}
           maxScore={puzzle.max_score}

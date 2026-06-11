@@ -36,7 +36,7 @@ export interface StatsModalProps {
 export function StatsModal({
   show,
   onClose,
-}: StatsModalProps): React.JSX.Element | null {
+}: StatsModalProps): React.JSX.Element {
   const [stats, setStats] = useState<PlayerStats>(emptyStats());
 
   useEffect(() => {
@@ -45,8 +45,6 @@ export function StatsModal({
       setStats(backfillNoHintStats(loaded ?? emptyStats()));
     }
   }, [show]);
-
-  if (!show) return null;
 
   const { records } = stats;
   const { current: currentStreak, best: bestStreak } = computeStreak(records);
@@ -60,7 +58,12 @@ export function StatsModal({
   const ranksLowestFirst = [...RANKS].reverse();
 
   return (
-    <ModalShell title="Tilastot" titleId="stats-title" onClose={onClose}>
+    <ModalShell
+      show={show}
+      title="Tilastot"
+      titleId="stats-title"
+      onClose={onClose}
+    >
       {records.length === 0 ? (
         <div
           className="text-sm py-4 text-center"

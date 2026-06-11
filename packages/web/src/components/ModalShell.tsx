@@ -11,7 +11,10 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
+import { animated, useReducedMotion, useTransition } from '@react-spring/web';
 import { X } from 'lucide-react';
+import { PRESENCE_SPRING } from '../utils/motion';
+import { TitlebarIconButton } from './TitlebarIconButton';
 
 const FOCUSABLE_SELECTOR = [
   'a[href]',
@@ -97,6 +100,8 @@ export function useDialogFocusTrap(
 
 /** Props for {@link ModalShell}. */
 export interface ModalShellProps {
+  /** Whether the dialog is visible. */
+  show?: boolean;
   /** Dialog title text. */
   title: string;
   /** ID used by aria-labelledby. */
@@ -121,6 +126,7 @@ export interface ModalShellProps {
  * Render a consistent centered modal with shared close affordance.
  */
 export function ModalShell({
+  show = true,
   title,
   titleId,
   onClose,
@@ -132,55 +138,77 @@ export function ModalShell({
   trapFocus = true,
 }: ModalShellProps): React.JSX.Element {
   const dialogRef = useRef<HTMLDivElement | null>(null);
+  const prefersReducedMotion = useReducedMotion();
 
-  useDialogFocusTrap(dialogRef, onClose, onEscape, trapFocus);
+  useDialogFocusTrap(dialogRef, onClose, onEscape, trapFocus && show);
+
+  const transitions = useTransition(show, {
+    from: { overlayOpacity: 0, panelOpacity: 0, scale: 0.985, y: 6 },
+    enter: { overlayOpacity: 1, panelOpacity: 1, scale: 1, y: 0 },
+    leave: { overlayOpacity: 0, panelOpacity: 0, scale: 0.985, y: 6 },
+    config: PRESENCE_SPRING,
+    immediate: prefersReducedMotion === true,
+  });
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
-      onClick={onClose}
-    >
-      <div
-        ref={dialogRef}
-        className={`w-full max-w-sm rounded-xl p-4 overflow-y-auto max-h-[90vh] ${className}`}
-        style={{
-          backgroundColor: 'var(--color-bg-primary)',
-          border: '1px solid var(--color-border)',
-          color: 'var(--color-text-primary)',
-          ...style,
-        }}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        tabIndex={-1}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className={`flex items-center justify-between ${headerClassName}`}>
-          <h2
-            id={titleId}
-            className="text-lg font-semibold"
-            style={{ color: 'var(--color-text-primary)' }}
-          >
-            {title}
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1 rounded leading-none bg-transparent border-none cursor-pointer flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+    <>
+      {transitions((spring, item) =>
+        item ? (
+          <animated.div
+            aria-hidden={!show}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
             style={{
-              color: 'var(--color-accent)',
-              height: '32px',
-              padding: 0,
-              width: '32px',
+              backgroundColor: spring.overlayOpacity.to(
+                (opacity) => `rgba(0, 0, 0, ${opacity * 0.6})`,
+              ),
+              pointerEvents: show ? 'auto' : 'none',
             }}
-            aria-label="Sulje"
+            onClick={show ? onClose : undefined}
           >
-            <X size={20} strokeWidth={2.5} aria-hidden="true" />
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
+            <animated.div
+              ref={dialogRef}
+              className={`w-full max-w-sm rounded-xl p-4 overflow-y-auto max-h-[90vh] ${className}`}
+              style={{
+                backgroundColor: 'var(--color-bg-primary)',
+                border: '1px solid var(--color-border)',
+                color: 'var(--color-text-primary)',
+                opacity: spring.panelOpacity,
+                scale: spring.scale,
+                transformOrigin: '50% 48%',
+                y: spring.y,
+                ...style,
+              }}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={titleId}
+              tabIndex={-1}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div
+                className={`flex items-center justify-between ${headerClassName}`}
+              >
+                <h2
+                  id={titleId}
+                  className="text-lg font-semibold"
+                  style={{ color: 'var(--color-text-primary)' }}
+                >
+                  {title}
+                </h2>
+                <TitlebarIconButton
+                  label="Sulje"
+                  onClick={onClose}
+                  opened={show}
+                  size={32}
+                  style={{ color: 'var(--color-accent)' }}
+                >
+                  <X size={20} strokeWidth={2.5} />
+                </TitlebarIconButton>
+              </div>
+              {children}
+            </animated.div>
+          </animated.div>
+        ) : null,
+      )}
+    </>
   );
 }

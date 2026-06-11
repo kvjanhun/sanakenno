@@ -9,10 +9,12 @@
  */
 
 import { useCallback, useState } from 'react';
+import { animated, useReducedMotion, useTransition } from '@react-spring/web';
 import { Check, Lock } from 'lucide-react';
 import { toColumns } from '@sanakenno/shared';
 import { useHintData } from '../hooks/useHintData';
 import type { DerivedHintData } from '../hooks/useHintData';
+import { DROPDOWN_SPRING } from '../utils/motion';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -398,18 +400,22 @@ export function HintPanels({
 }: HintPanelsProps): React.JSX.Element | null {
   const hintData = useHintData();
   const [activeTab, setActiveTab] = useState<VisiblePanelId | null>(null);
+  const prefersReducedMotion = useReducedMotion();
 
   const handleTabClick = useCallback((id: VisiblePanelId) => {
     setActiveTab((prev) => (prev === id ? null : id));
   }, []);
 
-  if (!hintData) return null;
+  const panelTransitions = useTransition(activeTab, {
+    from: { opacity: 0, y: -5 },
+    enter: { opacity: 1, y: 0 },
+    leave: { opacity: 0, y: -5 },
+    config: DROPDOWN_SPRING,
+    immediate: prefersReducedMotion === true,
+    keys: (item) => item ?? 'closed',
+  });
 
-  const ContentComponent = activeTab ? PANEL_CONTENT[activeTab] : null;
-  const activeIsUnlocked = activeTab ? hintsUnlocked.has(activeTab) : false;
-  const activePanel = activeTab
-    ? (VISIBLE_PANELS.find((panel) => panel.id === activeTab) ?? null)
-    : null;
+  if (!hintData) return null;
 
   return (
     <div style={{ marginBottom: '1rem' }}>
@@ -497,54 +503,68 @@ export function HintPanels({
           </div>
         </div>
 
-        {activeTab && (
-          <div
-            className="relative overflow-hidden text-sm"
-            style={{
-              boxSizing: 'border-box',
-              borderTop: `1px solid ${SOFT_PANEL_BORDER}`,
-              background: 'var(--color-bg-primary)',
-              fontFamily: 'var(--font-sans)',
-              height: RESERVED_PANEL_SPACE,
-            }}
-          >
-            <div
-              className="relative z-10"
-              style={{
-                height: '100%',
-                overflowY: 'auto',
-                padding: '10px 10px',
-              }}
-            >
-              <div
+        <div
+          aria-hidden={!activeTab}
+          className="relative overflow-hidden text-sm"
+          style={{
+            boxSizing: 'border-box',
+            fontFamily: 'var(--font-sans)',
+            height: RESERVED_PANEL_SPACE,
+          }}
+        >
+          {panelTransitions((spring, item) => {
+            if (!item) return null;
+            const ContentComponent = PANEL_CONTENT[item];
+            const activeIsUnlocked = hintsUnlocked.has(item);
+            const activePanel =
+              VISIBLE_PANELS.find((panel) => panel.id === item) ?? null;
+
+            return (
+              <animated.div
+                className="absolute inset-0 overflow-hidden"
                 style={{
-                  minHeight: `${PANEL_INNER_HEIGHT_PX}px`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  width: '100%',
+                  background: 'var(--color-bg-primary)',
+                  borderTop: `1px solid ${SOFT_PANEL_BORDER}`,
+                  opacity: spring.opacity,
+                  pointerEvents: activeTab === item ? 'auto' : 'none',
+                  y: spring.y,
                 }}
               >
-                {activeIsUnlocked && ContentComponent ? (
-                  <div style={{ width: '100%' }}>
-                    <ContentComponent data={hintData} />
+                <div
+                  className="relative z-10"
+                  style={{
+                    height: '100%',
+                    overflowY: 'auto',
+                    padding: '10px 10px',
+                  }}
+                >
+                  <div
+                    style={{
+                      minHeight: `${PANEL_INNER_HEIGHT_PX}px`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      width: '100%',
+                    }}
+                  >
+                    {activeIsUnlocked && ContentComponent ? (
+                      <div style={{ width: '100%' }}>
+                        <ContentComponent data={hintData} />
+                      </div>
+                    ) : (
+                      activePanel && (
+                        <LockedHintState
+                          panel={activePanel}
+                          onUnlock={() => onUnlock(activePanel.id)}
+                        />
+                      )
+                    )}
                   </div>
-                ) : (
-                  activePanel && (
-                    <LockedHintState
-                      panel={activePanel}
-                      onUnlock={() => onUnlock(activePanel.id)}
-                    />
-                  )
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+                </div>
+              </animated.div>
+            );
+          })}
+        </div>
       </div>
-
-      {!activeTab && (
-        <div aria-hidden="true" style={{ height: RESERVED_PANEL_SPACE }} />
-      )}
     </div>
   );
 }

@@ -22,11 +22,10 @@ export interface RulesModalProps {
 export function RulesModal({
   show,
   onClose,
-}: RulesModalProps): React.JSX.Element | null {
-  if (!show) return null;
-
+}: RulesModalProps): React.JSX.Element {
   return (
     <ModalShell
+      show={show}
       title="Pelin säännöt"
       titleId="rules-modal-title"
       onClose={onClose}

@@ -6,14 +6,13 @@
  */
 
 import { useRef, useEffect, useState } from 'react';
-import { animated, useReducedMotion, useSpring } from '@react-spring/web';
 import {
-  ChevronDown,
-  ChevronUp,
-  Circle,
-  CircleOff,
-  CircleStar,
-} from 'lucide-react';
+  animated,
+  useReducedMotion,
+  useSpring,
+  useTransition,
+} from '@react-spring/web';
+import { ChevronDown, Circle, CircleOff, CircleStar } from 'lucide-react';
 import {
   noHintAchievementStates,
   rankThresholds,
@@ -24,6 +23,7 @@ import {
   progressSpringConfigForScoreDelta,
   progressWidth,
 } from '../utils/progressSpring';
+import { DROPDOWN_SPRING } from '../utils/motion';
 
 /** Props for {@link RankProgress}. */
 export interface RankProgressProps {
@@ -78,6 +78,19 @@ export function RankProgress({
     currentNoHintText ? `, ${currentNoHintText}` : ''
   }`;
   const progressSpringWidth = useRankProgressWidth(progress, score);
+  const prefersReducedMotion = useReducedMotion();
+  const rankPanelTransitions = useTransition(showRanks, {
+    from: { opacity: 0, scaleY: 0.98, y: -4 },
+    enter: { opacity: 1, scaleY: 1, y: 0 },
+    leave: { opacity: 0, scaleY: 0.98, y: -4 },
+    config: DROPDOWN_SPRING,
+    immediate: prefersReducedMotion === true,
+  });
+  const rankChevronSpring = useSpring({
+    rotate: showRanks ? 180 : 0,
+    config: DROPDOWN_SPRING,
+    immediate: prefersReducedMotion === true,
+  });
 
   // Animate score counter from previous value to new value.
   const [displayScore, setDisplayScore] = useState(score);
@@ -148,11 +161,15 @@ export function RankProgress({
           aria-expanded={showRanks}
         >
           <span>{rank}</span>
-          {showRanks ? (
-            <ChevronUp size={14} strokeWidth={2.5} aria-hidden="true" />
-          ) : (
-            <ChevronDown size={14} strokeWidth={2.5} aria-hidden="true" />
-          )}
+          <animated.span
+            aria-hidden="true"
+            className="inline-flex h-3.5 w-3.5 items-center justify-center"
+            style={{
+              rotate: rankChevronSpring.rotate.to((value) => `${value}deg`),
+            }}
+          >
+            <ChevronDown size={14} strokeWidth={2.5} />
+          </animated.span>
         </button>
       </div>
 
@@ -176,78 +193,86 @@ export function RankProgress({
       </div>
 
       {/* Expandable rank thresholds — floats over content below, does not affect layout */}
-      {showRanks && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            right: 0,
-            zIndex: 20,
-            background: 'var(--color-bg-primary)',
-            border: '1px solid var(--color-border)',
-            borderRadius: '0 0 8px 8px',
-            marginTop: '0.25rem',
-            overflow: 'hidden',
-          }}
-        >
-          <ul
-            className="list-none p-0 m-0 text-sm space-y-1"
-            style={{ padding: '0.5rem 0.75rem' }}
-          >
-            {thresholds.map((t) => (
-              <li
-                key={t.name}
-                className="flex justify-between"
-                style={{
-                  color: t.isCurrent
-                    ? 'var(--color-accent)'
-                    : 'var(--color-text-secondary)',
-                  fontWeight: t.isCurrent ? 700 : 400,
-                }}
-              >
-                <span>{t.name}</span>
-                <span>{t.points}</span>
-              </li>
-            ))}
-          </ul>
-          <div
+      {rankPanelTransitions((spring, item) =>
+        item ? (
+          <animated.div
+            aria-hidden={!showRanks}
             style={{
-              borderTop: '1px solid var(--color-border)',
-              padding: '0.6rem 0.75rem',
-              background: 'var(--color-bg-secondary)',
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              right: 0,
+              zIndex: 20,
+              background: 'var(--color-bg-primary)',
+              border: '1px solid var(--color-border)',
+              borderRadius: '0 0 8px 8px',
+              marginTop: '0.25rem',
+              opacity: spring.opacity,
+              overflow: 'hidden',
+              pointerEvents: showRanks ? 'auto' : 'none',
+              scaleY: spring.scaleY,
+              transformOrigin: 'top center',
+              y: spring.y,
             }}
           >
-            <div className="flex items-center justify-between gap-2">
-              <span
-                className="min-w-0 truncate whitespace-nowrap text-sm"
-                data-no-hint-current
-                style={{ color: 'var(--color-text-primary)' }}
-              >
-                <strong className="font-bold" data-no-hint-points>
-                  {scoreBeforeHints} p.
-                </strong>
-                {noHintSuffix}
-              </span>
-              <div
-                className="flex shrink-0 items-center gap-1"
-                aria-label={`Ilman apuja: ${
-                  noHintAchievements.filter((item) => item.unlocked).length
-                } / ${noHintAchievements.length} saavutusta`}
-              >
-                {noHintAchievements.map((achievement, index) => (
-                  <NoHintAchievementIcon
-                    key={achievement.name}
-                    index={index}
-                    name={achievement.name}
-                    unlocked={achievement.unlocked}
-                    inactive={hasUnlockedHints && !achievement.unlocked}
-                  />
-                ))}
+            <ul
+              className="list-none p-0 m-0 text-sm space-y-1"
+              style={{ padding: '0.5rem 0.75rem' }}
+            >
+              {thresholds.map((t) => (
+                <li
+                  key={t.name}
+                  className="flex justify-between"
+                  style={{
+                    color: t.isCurrent
+                      ? 'var(--color-accent)'
+                      : 'var(--color-text-secondary)',
+                    fontWeight: t.isCurrent ? 700 : 400,
+                  }}
+                >
+                  <span>{t.name}</span>
+                  <span>{t.points}</span>
+                </li>
+              ))}
+            </ul>
+            <div
+              style={{
+                borderTop: '1px solid var(--color-border)',
+                padding: '0.6rem 0.75rem',
+                background: 'var(--color-bg-secondary)',
+              }}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span
+                  className="min-w-0 truncate whitespace-nowrap text-sm"
+                  data-no-hint-current
+                  style={{ color: 'var(--color-text-primary)' }}
+                >
+                  <strong className="font-bold" data-no-hint-points>
+                    {scoreBeforeHints} p.
+                  </strong>
+                  {noHintSuffix}
+                </span>
+                <div
+                  className="flex shrink-0 items-center gap-1"
+                  aria-label={`Ilman apuja: ${
+                    noHintAchievements.filter((item) => item.unlocked).length
+                  } / ${noHintAchievements.length} saavutusta`}
+                >
+                  {noHintAchievements.map((achievement, index) => (
+                    <NoHintAchievementIcon
+                      key={achievement.name}
+                      index={index}
+                      name={achievement.name}
+                      unlocked={achievement.unlocked}
+                      inactive={hasUnlockedHints && !achievement.unlocked}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        </div>
+          </animated.div>
+        ) : null,
       )}
     </div>
   );

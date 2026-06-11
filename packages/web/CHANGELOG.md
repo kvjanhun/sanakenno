@@ -1,5 +1,12 @@
 # @sanakenno/web
 
+## 1.16.4
+
+### Patch Changes
+
+- Polish web overlay and dropdown motion with React Spring.
+  - @sanakenno/shared@1.16.4
+
 ## 1.16.3
 
 ### Patch Changes

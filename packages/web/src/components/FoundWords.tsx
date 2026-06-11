@@ -7,7 +7,11 @@
  */
 
 import { useMemo, useRef, useEffect } from 'react';
+import { animated, useReducedMotion, useSpring } from '@react-spring/web';
+import { ChevronDown } from 'lucide-react';
 import { toColumns, buildKotusUrl, isPangram } from '@sanakenno/shared';
+import { SpringCollapse } from './SpringCollapse';
+import { DROPDOWN_SPRING } from '../utils/motion';
 
 /** Props for {@link FoundWords}. */
 export interface FoundWordsProps {
@@ -37,6 +41,7 @@ export function FoundWords({
   lastResubmittedWord,
 }: FoundWordsProps): React.JSX.Element | null {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const prefersReducedMotion = useReducedMotion();
 
   const sorted = useMemo(
     () => [...foundWords].sort((a, b) => a.localeCompare(b, 'fi')),
@@ -47,11 +52,35 @@ export function FoundWords({
 
   const count = recentWords.length;
   const latestWord = recentWords[0];
+  const chevronSpring = useSpring({
+    rotate: showAll ? 180 : 0,
+    config: DROPDOWN_SPRING,
+    immediate: prefersReducedMotion === true,
+  });
+  const [contentSpring, contentApi] = useSpring(() => ({
+    opacity: 1,
+    y: 0,
+    config: DROPDOWN_SPRING,
+  }));
+
   useEffect(() => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollLeft = 0;
     }
   }, [count, latestWord]);
+
+  useEffect(() => {
+    if (prefersReducedMotion) {
+      void contentApi.start({ opacity: 1, y: 0, immediate: true });
+      return;
+    }
+
+    void contentApi.start({
+      from: { opacity: 0.9, y: showAll ? -4 : 4 },
+      to: { opacity: 1, y: 0 },
+      config: DROPDOWN_SPRING,
+    });
+  }, [contentApi, prefersReducedMotion, showAll]);
 
   if (foundWords.length === 0) return null;
 
@@ -81,103 +110,110 @@ export function FoundWords({
             style={{ color: 'var(--color-accent)' }}
           >
             <span>{showAll ? 'Vähemmän' : 'Kaikki'}</span>
-            <svg
-              className={`w-3.5 h-3.5 transition-transform duration-200 ${showAll ? 'rotate-180' : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+            <animated.span
+              aria-hidden="true"
+              className="inline-flex h-3.5 w-3.5 items-center justify-center"
+              style={{
+                rotate: chevronSpring.rotate.to((value) => `${value}deg`),
+              }}
             >
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
+              <ChevronDown size={14} strokeWidth={2.5} />
+            </animated.span>
           </button>
         )}
       </div>
 
-      {showAll ? (
-        /* Expanded: alphabetical columns */
-        <div className="flex gap-6 flex-wrap">
-          {columns.map((col, ci) => (
-            <ul key={ci} className="list-none p-0 m-0">
-              {col.map((word) => (
-                <li
-                  key={word}
-                  className="font-[var(--font-mono)] text-sm transition-colors duration-300"
-                  style={{
-                    color:
-                      word === lastResubmittedWord
-                        ? 'var(--color-accent)'
-                        : 'var(--color-text-primary)',
-                    fontWeight: isPangram(word, allLetters) ? 700 : 400,
-                  }}
-                >
+      <SpringCollapse open>
+        <animated.div
+          style={{
+            opacity: contentSpring.opacity,
+            y: contentSpring.y,
+          }}
+        >
+          {showAll ? (
+            /* Expanded: alphabetical columns */
+            <div className="flex gap-6 flex-wrap">
+              {columns.map((col, ci) => (
+                <ul key={ci} className="list-none p-0 m-0">
+                  {col.map((word) => (
+                    <li
+                      key={word}
+                      className="font-[var(--font-mono)] text-sm transition-colors duration-300"
+                      style={{
+                        color:
+                          word === lastResubmittedWord
+                            ? 'var(--color-accent)'
+                            : 'var(--color-text-primary)',
+                        fontWeight: isPangram(word, allLetters) ? 700 : 400,
+                      }}
+                    >
+                      <a
+                        href={buildKotusUrl(word)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={`Avaa sanan "${word}" määritelmä Kotuksessa`}
+                        aria-label={`Avaa sanan "${word}" määritelmä Kotuksessa`}
+                        style={{
+                          color: 'inherit',
+                          textDecoration: 'none',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.textDecoration = 'underline';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.textDecoration = 'none';
+                        }}
+                      >
+                        {word}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              ))}
+            </div>
+          ) : (
+            /* Collapsed: single row of chips, horizontally scrollable */
+            <div
+              ref={scrollContainerRef}
+              className="w-full overflow-x-auto scrollbar-none"
+            >
+              <div
+                className="flex gap-1.5"
+                style={{ flexWrap: 'nowrap', width: 'max-content' }}
+              >
+                {collapsed.map((word) => (
                   <a
+                    key={word}
+                    className="font-[var(--font-mono)] text-sm px-2 py-0.5 rounded-full transition-colors duration-300 animate-pill-slide-in"
                     href={buildKotusUrl(word)}
                     target="_blank"
                     rel="noopener noreferrer"
                     title={`Avaa sanan "${word}" määritelmä Kotuksessa`}
                     aria-label={`Avaa sanan "${word}" määritelmä Kotuksessa`}
+                    onClick={(e) => e.stopPropagation()}
                     style={{
-                      color: 'inherit',
+                      flexShrink: 0,
+                      backgroundColor:
+                        word === lastResubmittedWord
+                          ? 'var(--color-accent)'
+                          : 'var(--color-bg-secondary)',
+                      color:
+                        word === lastResubmittedWord
+                          ? 'var(--color-on-accent)'
+                          : 'var(--color-text-primary)',
+                      border: '1px solid var(--color-border)',
+                      fontWeight: isPangram(word, allLetters) ? 700 : 400,
                       textDecoration: 'none',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.textDecoration = 'underline';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.textDecoration = 'none';
                     }}
                   >
                     {word}
                   </a>
-                </li>
-              ))}
-            </ul>
-          ))}
-        </div>
-      ) : (
-        /* Collapsed: single row of chips, horizontally scrollable */
-        <div
-          ref={scrollContainerRef}
-          className="w-full overflow-x-auto scrollbar-none"
-        >
-          <div
-            className="flex gap-1.5"
-            style={{ flexWrap: 'nowrap', width: 'max-content' }}
-          >
-            {collapsed.map((word) => (
-              <a
-                key={word}
-                className="font-[var(--font-mono)] text-sm px-2 py-0.5 rounded-full transition-colors duration-300 animate-pill-slide-in"
-                href={buildKotusUrl(word)}
-                target="_blank"
-                rel="noopener noreferrer"
-                title={`Avaa sanan "${word}" määritelmä Kotuksessa`}
-                aria-label={`Avaa sanan "${word}" määritelmä Kotuksessa`}
-                onClick={(e) => e.stopPropagation()}
-                style={{
-                  flexShrink: 0,
-                  backgroundColor:
-                    word === lastResubmittedWord
-                      ? 'var(--color-accent)'
-                      : 'var(--color-bg-secondary)',
-                  color:
-                    word === lastResubmittedWord
-                      ? 'var(--color-on-accent)'
-                      : 'var(--color-text-primary)',
-                  border: '1px solid var(--color-border)',
-                  fontWeight: isPangram(word, allLetters) ? 700 : 400,
-                  textDecoration: 'none',
-                }}
-              >
-                {word}
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
+                ))}
+              </div>
+            </div>
+          )}
+        </animated.div>
+      </SpringCollapse>
     </section>
   );
 }
