@@ -37,10 +37,10 @@ test.describe('Stats', () => {
     await page.locator('button[aria-label="Tilastot"]').click();
     await expect(page.getByText('Tilastot')).toBeVisible();
 
-    // Should show "Pelattu" section with at least 1 puzzle
-    await expect(page.getByText('Pelattu')).toBeVisible();
+    // Should show the played-games count
+    await expect(page.getByText('Pelattuja pelejä')).toBeVisible();
     // Should show streak section
-    await expect(page.getByText('Paras putki')).toBeVisible();
+    await expect(page.getByText('Pisin putki')).toBeVisible();
   });
 
   test('stats modal shows lifetime totals from localStorage', async ({
@@ -85,8 +85,8 @@ test.describe('Stats', () => {
     await page.locator('button[aria-label="Tilastot"]').click();
 
     await expect(page.getByText('Kaikki pelit')).toBeVisible();
-    await expect(page.getByText('Sanoja', { exact: true })).toBeVisible();
-    await expect(page.getByText('Pangrammeja')).toBeVisible();
+    await expect(page.getByText('Sanoja löydetty')).toBeVisible();
+    await expect(page.getByText('Pangrammeja löydetty')).toBeVisible();
     await expect(page.getByText('laskenta')).toBeVisible();
     await expect(page.getByText('11')).toBeVisible();
     await expect(page.getByText('3')).toBeVisible();
@@ -142,7 +142,7 @@ test.describe('Stats', () => {
     await expect(allSummary).toBeVisible();
     await expect(allTotals).toBeVisible();
     await expect(allAverage).toContainText('Keskimääräinen tulos');
-    await expect(allRanks).toContainText('Paras taso per kenno');
+    await expect(allRanks).toContainText('Saavutetut tasot');
     await expect(noHintHeading).toBeVisible();
     await expect(page.getByText('Paras tulos')).toBeVisible();
     await expect(page.getByText('Ällistyttäviä')).toBeVisible();

@@ -91,7 +91,7 @@ export function StatsModal({
             <div className="space-y-1.5" data-stats-all-summary>
               <div className="flex items-center justify-between text-xs py-0.5">
                 <span style={{ color: 'var(--color-text-secondary)' }}>
-                  Pelattu
+                  Pelattuja pelejä
                 </span>
                 <span
                   className="font-semibold font-mono"
@@ -113,7 +113,7 @@ export function StatsModal({
               </div>
               <div className="flex items-center justify-between text-xs py-0.5">
                 <span style={{ color: 'var(--color-text-secondary)' }}>
-                  Paras putki
+                  Pisin putki
                 </span>
                 <span
                   className="font-semibold font-mono"
@@ -124,10 +124,10 @@ export function StatsModal({
               </div>
             </div>
 
-            <div className="space-y-1.5" data-stats-all-totals>
+            <div className="mt-1.5 space-y-1.5" data-stats-all-totals>
               <div className="flex items-center justify-between text-xs py-0.5">
                 <span style={{ color: 'var(--color-text-secondary)' }}>
-                  Sanoja
+                  Sanoja löydetty
                 </span>
                 <span
                   className="font-semibold font-mono"
@@ -138,7 +138,7 @@ export function StatsModal({
               </div>
               <div className="flex items-center justify-between text-xs py-0.5">
                 <span style={{ color: 'var(--color-text-secondary)' }}>
-                  Pangrammeja
+                  Pangrammeja löydetty
                 </span>
                 <span
                   className="font-semibold font-mono"
@@ -208,7 +208,7 @@ export function StatsModal({
                 className="text-xs font-semibold tracking-wide uppercase mb-2.5"
                 style={{ color: 'var(--color-text-secondary)' }}
               >
-                Paras taso per kenno
+                Saavutetut tasot
               </div>
               <div className="space-y-2">
                 {ranksLowestFirst.map((rank) => {
