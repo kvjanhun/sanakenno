@@ -1,5 +1,12 @@
 # @sanakenno/web
 
+## 1.16.3
+
+### Patch Changes
+
+- Polish stats modal labels and rank progress bounce.
+  - @sanakenno/shared@1.16.3
+
 ## 1.16.2
 
 ### Patch Changes

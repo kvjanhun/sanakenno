@@ -2,21 +2,31 @@ import type { SpringConfig } from '@react-spring/web';
 
 const MIN_PROGRESS = 0;
 const MAX_PROGRESS = 100;
-const LARGE_SCORE_DELTA = 10;
+const SUBTLE_BOUNCE_SCORE_DELTA = 7;
+const LARGE_BOUNCE_SCORE_DELTA = 10;
 
-const SMALL_SCORE_SPRING = {
+const SMALL_SCORE_TIMING = {
+  duration: 250,
+  easing: easeInOutQuad,
+} satisfies SpringConfig;
+
+const SUBTLE_SCORE_SPRING = {
   tension: 200,
-  friction: 22,
-  mass: 1,
+  friction: 36,
+  mass: 4,
   precision: 0.01,
 } satisfies SpringConfig;
 
 const LARGE_SCORE_SPRING = {
   tension: 200,
   friction: 18,
-  mass: 1,
+  mass: 4,
   precision: 0.01,
 } satisfies SpringConfig;
+
+function easeInOutQuad(t: number): number {
+  return t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
+}
 
 /** Clamp a progress-bar percentage so spring overshoot cannot leave the track. */
 export function clampProgress(value: number): number {
@@ -32,11 +42,11 @@ export function progressWidth(value: number): string {
   return formatProgressPercentage(clampProgress(value));
 }
 
-/** Pick spring behavior matching mobile: big spring from 10p, smaller otherwise. */
+/** Pick the timing/spring behavior used by mobile rank progress. */
 export function progressSpringConfigForScoreDelta(
   scoreDelta: number,
 ): SpringConfig {
-  return scoreDelta >= LARGE_SCORE_DELTA
-    ? LARGE_SCORE_SPRING
-    : SMALL_SCORE_SPRING;
+  if (scoreDelta >= LARGE_BOUNCE_SCORE_DELTA) return LARGE_SCORE_SPRING;
+  if (scoreDelta >= SUBTLE_BOUNCE_SCORE_DELTA) return SUBTLE_SCORE_SPRING;
+  return SMALL_SCORE_TIMING;
 }
