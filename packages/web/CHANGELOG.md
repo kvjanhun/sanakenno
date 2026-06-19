@@ -1,5 +1,12 @@
 # @sanakenno/web
 
+## 1.16.5
+
+### Patch Changes
+
+- Retry player progress sync writes after transient SQLite lock contention.
+  - @sanakenno/shared@1.16.5
+
 ## 1.16.4
 
 ### Patch Changes

@@ -140,6 +140,13 @@ Feature: Cross-device progress sync
     Then the response status should be 200
     And the server stats for puzzle index 42 should have best_no_hint_score 70
 
+  Scenario: Pushing progress retries after a transient database lock
+    Given the next progress sync write hits a transient database lock
+    When a POST is made to /api/player/sync/progress with progress for puzzle index 42
+    Then the response status should be 200
+    And the server should have a puzzle state for puzzle index 42
+    And the server should have a stats record for puzzle index 42
+
   Scenario: Push progress requires authentication
     When a POST is made to /api/player/sync/progress without a token
     Then the response status should be 401

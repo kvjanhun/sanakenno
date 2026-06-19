@@ -22,6 +22,11 @@ export interface DbOptions {
   dbPath?: string;
 }
 
+interface ImmediateTransactionOptions {
+  maxRetries?: number;
+  retryDelayMs?: number;
+}
+
 let _db: BetterSqlite3.Database | null = null;
 
 function resolveDataDir(): string {
@@ -69,6 +74,69 @@ function ensureColumn(
   }>;
   if (rows.some((r) => r.name === column)) return;
   db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${decl}`);
+}
+
+function isSqliteBusyError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const code = (error as Error & { code?: unknown }).code;
+  return code === 'SQLITE_BUSY' || error.message.includes('database is locked');
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function runImmediateTransactionOnce<T>(
+  db: BetterSqlite3.Database,
+  work: () => T,
+): T {
+  let started = false;
+  try {
+    db.exec('BEGIN IMMEDIATE');
+    started = true;
+    const result = work();
+    db.exec('COMMIT');
+    started = false;
+    return result;
+  } catch (error) {
+    if (started) {
+      try {
+        db.exec('ROLLBACK');
+      } catch {
+        /* preserve the original transaction error */
+      }
+    }
+    throw error;
+  }
+}
+
+/**
+ * Run a short read-modify-write transaction with SQLite writer reservation.
+ *
+ * `BEGIN IMMEDIATE` asks SQLite for the single writer slot before reads begin,
+ * avoiding deferred read-to-write upgrade races between app instances. A short
+ * retry smooths over transient SQLITE_BUSY collisions.
+ */
+export async function runImmediateTransactionWithRetry<T>(
+  db: BetterSqlite3.Database,
+  work: () => T,
+  options: ImmediateTransactionOptions = {},
+): Promise<T> {
+  const maxRetries = options.maxRetries ?? 3;
+  const retryDelayMs = options.retryDelayMs ?? 25;
+
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return runImmediateTransactionOnce(db, work);
+    } catch (error) {
+      if (!isSqliteBusyError(error) || attempt >= maxRetries) {
+        throw error;
+      }
+
+      const jitterMs = Math.floor(Math.random() * retryDelayMs);
+      await delay(retryDelayMs * (attempt + 1) + jitterMs);
+    }
+  }
 }
 
 /**

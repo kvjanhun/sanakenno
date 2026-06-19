@@ -14,7 +14,7 @@
  */
 
 import { Hono } from 'hono';
-import { getDb } from '../db/connection';
+import { getDb, runImmediateTransactionWithRetry } from '../db/connection';
 import { requirePlayer, type PlayerVariables } from '../player-auth/middleware';
 import { getPuzzleBySlot } from '../puzzle-engine';
 import {
@@ -593,11 +593,11 @@ sync.post('/progress', async (c) => {
   }
 
   const db = getDb();
-  db.transaction(() => {
+  await runImmediateTransactionWithRetry(db, () => {
     const mergedState = mergeAndStorePuzzleState(db, playerId, payload);
     const derivedStats = deriveStatsFromProgress(payload, mergedState);
     mergeAndStoreStatsRecord(db, playerId, derivedStats);
-  })();
+  });
 
   return c.json({ status: 'synced' });
 });

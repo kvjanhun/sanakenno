@@ -16,6 +16,7 @@ import {
 } from '@cucumber/cucumber';
 import assert from 'node:assert/strict';
 import { createHash, randomBytes } from 'node:crypto';
+import type BetterSqlite3 from 'better-sqlite3';
 import app from '../../server/index';
 import { getDb, closeDb, setDb } from '../../server/db/connection';
 import { invalidateAll, setWordlist } from '../../server/puzzle-engine';
@@ -81,6 +82,47 @@ function makeStatsRecord(
     elapsed_ms: 60000,
     ...overrides,
   };
+}
+
+function makeSqliteBusyError(): Error & { code: string } {
+  const error = new Error('database is locked') as Error & { code: string };
+  error.code = 'SQLITE_BUSY';
+  return error;
+}
+
+function wrapWithTransientBusyWrite(
+  db: BetterSqlite3.Database,
+): BetterSqlite3.Database {
+  let shouldFail = true;
+
+  return new Proxy(db, {
+    get(target, prop, receiver) {
+      if (prop === 'exec') {
+        return (sql: string) => {
+          if (shouldFail && /^\s*BEGIN\s+IMMEDIATE\b/i.test(sql)) {
+            shouldFail = false;
+            throw makeSqliteBusyError();
+          }
+          return target.exec(sql);
+        };
+      }
+
+      if (prop === 'transaction') {
+        return <Args extends unknown[], Result>(
+          fn: (...args: Args) => Result,
+        ) => {
+          if (shouldFail) {
+            shouldFail = false;
+            throw makeSqliteBusyError();
+          }
+          return target.transaction(fn);
+        };
+      }
+
+      const value = Reflect.get(target, prop, receiver);
+      return typeof value === 'function' ? value.bind(target) : value;
+    },
+  }) as BetterSqlite3.Database;
 }
 
 // ---------------------------------------------------------------------------
@@ -232,6 +274,13 @@ Given(
       60000,
       count,
     );
+  },
+);
+
+Given(
+  'the next progress sync write hits a transient database lock',
+  function () {
+    setDb(wrapWithTransientBusyWrite(getDb()));
   },
 );
 
