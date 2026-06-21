@@ -1,5 +1,12 @@
 # @sanakenno/web
 
+## 1.16.6
+
+### Patch Changes
+
+- Fix puzzle rotation mapping to sequentially map days to active slots, avoiding duplicate puzzle days when a slot is soft-deleted.
+  - @sanakenno/shared@1.16.6
+
 ## 1.16.5
 
 ### Patch Changes
