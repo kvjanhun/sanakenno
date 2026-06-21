@@ -15,7 +15,9 @@ import {
   hashWord,
   setWordlist,
   invalidateAll,
+  getPuzzleForDate,
 } from '../server/puzzle-engine';
+import { getDb, closeDb, setDb } from '../server/db/connection';
 
 function setupTestWordlist(words: string[]): void {
   setWordlist(new Set(words));
@@ -226,39 +228,78 @@ describe('computePuzzle with empty wordlist', () => {
 });
 
 describe('date-to-slot rotation', () => {
-  it('computes correct slot from date offset and total puzzles', () => {
-    const START_INDEX = 1;
-    const totalPuzzles = 42;
+  beforeEach(() => {
+    closeDb();
+    setDb(null);
+    const db = getDb({ inMemory: true });
 
-    const epochDaysDiff = 0;
-    const slot0 =
-      (((START_INDEX + epochDaysDiff) % totalPuzzles) + totalPuzzles) %
-      totalPuzzles;
-    expect(slot0).toBe(1);
+    // Seed 4 puzzles (slots 0, 1, 2, 3)
+    db.prepare(
+      "INSERT INTO puzzles (slot, letters, center, is_active) VALUES (0, 'a,b,c,d,e,f,g', 'a', 1)",
+    ).run();
+    db.prepare(
+      "INSERT INTO puzzles (slot, letters, center, is_active) VALUES (1, 'a,b,c,d,e,f,g', 'b', 1)",
+    ).run();
+    db.prepare(
+      "INSERT INTO puzzles (slot, letters, center, is_active) VALUES (2, 'a,b,c,d,e,f,g', 'c', 1)",
+    ).run();
+    db.prepare(
+      "INSERT INTO puzzles (slot, letters, center, is_active) VALUES (3, 'a,b,c,d,e,f,g', 'd', 1)",
+    ).run();
 
-    const slot1 =
-      (((START_INDEX + 1) % totalPuzzles) + totalPuzzles) % totalPuzzles;
-    expect(slot1).toBe(2);
+    db.prepare(
+      "INSERT INTO config (key, value) VALUES ('rotation_epoch', '2026-03-01')",
+    ).run();
+    invalidateAll();
+  });
 
-    const slot41 =
-      (((START_INDEX + 41) % totalPuzzles) + totalPuzzles) % totalPuzzles;
-    expect(slot41).toBe(0);
+  afterEach(() => {
+    closeDb();
+    setDb(null);
+    invalidateAll();
+  });
 
-    const slot42 =
-      (((START_INDEX + 42) % totalPuzzles) + totalPuzzles) % totalPuzzles;
-    expect(slot42).toBe(1);
+  it('maps dates to slots sequentially starting at START_INDEX', () => {
+    // 2026-03-01: daysDiff = 0, slot = 1
+    expect(getPuzzleForDate(new Date('2026-03-01T12:00:00Z'))).toBe(1);
+
+    // 2026-03-02: daysDiff = 1, slot = 2
+    expect(getPuzzleForDate(new Date('2026-03-02T12:00:00Z'))).toBe(2);
+
+    // 2026-03-03: daysDiff = 2, slot = 3
+    expect(getPuzzleForDate(new Date('2026-03-03T12:00:00Z'))).toBe(3);
+
+    // 2026-03-04: daysDiff = 3, slot = 0
+    expect(getPuzzleForDate(new Date('2026-03-04T12:00:00Z'))).toBe(0);
+
+    // 2026-03-05: daysDiff = 4, slot = 1
+    expect(getPuzzleForDate(new Date('2026-03-05T12:00:00Z'))).toBe(1);
+  });
+
+  it('skips soft-deleted puzzles sequentially without duplicate days', () => {
+    const db = getDb();
+    // Soft delete slot 2
+    db.prepare('UPDATE puzzles SET is_active = 0 WHERE slot = 2').run();
+    invalidateAll();
+
+    // 2026-03-01: daysDiff = 0, should serve slot 1
+    expect(getPuzzleForDate(new Date('2026-03-01T12:00:00Z'))).toBe(1);
+
+    // 2026-03-02: daysDiff = 1, should skip slot 2 and serve slot 3
+    expect(getPuzzleForDate(new Date('2026-03-02T12:00:00Z'))).toBe(3);
+
+    // 2026-03-03: daysDiff = 2, should serve slot 0 (next active slot after 3)
+    expect(getPuzzleForDate(new Date('2026-03-03T12:00:00Z'))).toBe(0);
+
+    // 2026-03-04: daysDiff = 3, should serve slot 1
+    expect(getPuzzleForDate(new Date('2026-03-04T12:00:00Z'))).toBe(1);
   });
 
   it('handles negative day offsets (dates before epoch)', () => {
-    const START_INDEX = 1;
-    const totalPuzzles = 42;
+    // 2026-02-28: daysDiff = -1, slot = 0
+    expect(getPuzzleForDate(new Date('2026-02-28T12:00:00Z'))).toBe(0);
 
-    const slotNeg1 =
-      (((START_INDEX + -1) % totalPuzzles) + totalPuzzles) % totalPuzzles;
-    expect(slotNeg1).toBe(0);
-
-    const slotNeg2 =
-      (((START_INDEX + -2) % totalPuzzles) + totalPuzzles) % totalPuzzles;
-    expect(slotNeg2).toBe(41);
+    // 2026-02-27: daysDiff = -2, slot = 3
+    expect(getPuzzleForDate(new Date('2026-02-27T12:00:00Z'))).toBe(3);
   });
 });
