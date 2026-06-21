@@ -645,8 +645,8 @@ Given(
   "slot {int} is today's live puzzle",
   function (this: AdminWorld, slot: number) {
     // Adjust the rotation epoch so that today maps to the requested slot.
-    // getPuzzleForDate uses: slot = (START_INDEX + daysDiff) % total
-    // where START_INDEX = 1, daysDiff = days since epoch.
+    // getPuzzleForDate maps dates sequentially to active slots.
+    // When all seeded puzzles are active, this matches slot = (START_INDEX + daysDiff) % total.
     const db = getDb();
     const total = totalPuzzles();
     const daysDiff = (((slot - 1) % total) + total) % total;

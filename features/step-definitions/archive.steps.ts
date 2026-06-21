@@ -182,8 +182,8 @@ Given(
     );
     helsinki.setHours(0, 0, 0, 0);
 
-    // getPuzzleForDate uses START_INDEX=1, so this epoch makes today resolve
-    // to the requested slot while keeping the seeded puzzle count intact.
+    // getPuzzleForDate maps dates sequentially to active slots, starting at START_INDEX=1.
+    // This epoch makes today resolve to the requested slot.
     const daysBack = ((puzzleNumber - 1) % total) + total;
     const epoch = new Date(helsinki);
     epoch.setDate(epoch.getDate() - daysBack);
