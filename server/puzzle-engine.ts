@@ -409,8 +409,6 @@ export function getRotationEpoch(): Date {
 export function getPuzzleForDate(date: Date): number {
   const epoch = getRotationEpoch();
   const START_INDEX = 1;
-  const total = totalSlots();
-  if (total === 0) return 0;
 
   const dateOnly = new Date(
     date.getFullYear(),
@@ -426,18 +424,21 @@ export function getPuzzleForDate(date: Date): number {
     (dateOnly.getTime() - epochOnly.getTime()) / (1000 * 60 * 60 * 24),
   );
 
-  const rawSlot = (((START_INDEX + daysDiff) % total) + total) % total;
-
   const activeSlots = getActiveSlots();
   if (activeSlots.length === 0) return 0;
 
-  // Find the first active slot that is >= rawSlot
-  const nextActive = activeSlots.find((s) => s >= rawSlot);
-  if (nextActive !== undefined) {
-    return nextActive;
+  // Find the index in activeSlots corresponding to START_INDEX
+  let startSlot = activeSlots.find((s) => s >= START_INDEX);
+  if (startSlot === undefined) {
+    startSlot = activeSlots[0];
   }
-  // If none is >= rawSlot, wrap around to the first active slot
-  return activeSlots[0];
+  const startIndex = activeSlots.indexOf(startSlot);
+
+  const totalActive = activeSlots.length;
+  const activeIndex =
+    (((startIndex + daysDiff) % totalActive) + totalActive) % totalActive;
+
+  return activeSlots[activeIndex];
 }
 
 /**
