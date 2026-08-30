@@ -216,13 +216,17 @@ test.describe('Rules modal', () => {
   });
 
   test('midnight countdown displays and updates', async ({ page }) => {
-    // Set time to 23:59:00 Helsinki (UTC+2) -> 21:59:00 UTC
+    // Install the fake clock a minute early, then pause exactly at
+    // 23:59:00 Helsinki (UTC+2) -> 21:59:00 UTC. An installed clock still
+    // flows with real time, so asserting an exact value without pausing
+    // races the wall clock and flakes under CI load.
     await page.clock.install({
-      time: new Date('2026-03-27T21:59:00Z').getTime(),
+      time: new Date('2026-03-27T21:58:00Z').getTime(),
     });
     await loadGame(page);
 
     await page.getByLabel('Asetukset').click();
+    await page.clock.pauseAt(new Date('2026-03-27T21:59:00Z').getTime());
 
     const countdown = page.locator('text=Seuraava kenno:').locator('span');
     await expect(countdown).toHaveText('00:01:00');
@@ -235,13 +239,15 @@ test.describe('Rules modal', () => {
   test('countdown turns accent color when < 30 min remain', async ({
     page,
   }) => {
-    // Set time to 23:30:05 Helsinki -> 21:30:05 UTC (29m 55s remaining)
+    // Pause at 23:30:05 Helsinki -> 21:30:05 UTC (29m 55s remaining);
+    // see the midnight countdown test for why pausing is required.
     await page.clock.install({
-      time: new Date('2026-03-27T21:30:05Z').getTime(),
+      time: new Date('2026-03-27T21:29:00Z').getTime(),
     });
     await loadGame(page);
 
     await page.getByLabel('Asetukset').click();
+    await page.clock.pauseAt(new Date('2026-03-27T21:30:05Z').getTime());
 
     const countdown = page.locator('text=Seuraava kenno:').locator('span');
     await expect(countdown).toHaveText('00:29:55');
