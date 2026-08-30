@@ -12,11 +12,12 @@ on:
       - 'packages/mobile/**'
       - 'patches/**'
 
-# Superseded PR runs are cancelled; pushes to main queue instead, so deploys
-# never overlap and every pushed commit either deploys or is superseded by a
-# newer one — never half-raced on the server.
+# Superseded PR runs are cancelled. Pushes to main get a unique group so
+# their checks run immediately and in parallel; only the deploy job
+# serialises (see its concurrency group below), so a slow or failing deploy
+# never delays the next run's checks.
 concurrency:
-  group: ci-web-${{ github.ref }}
+  group: ${{ github.event_name == 'pull_request' && format('ci-web-{0}', github.ref) || format('ci-web-run-{0}', github.run_id) }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
@@ -89,6 +90,12 @@ jobs:
     needs: [check]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     timeout-minutes: 15
+    # Deploys must not interleave: one runs at a time, and when several queue
+    # up GitHub keeps only the newest pending one. The server-side flock in
+    # deploy-sanakenno.sh is the second line of defence.
+    concurrency:
+      group: deploy-sanakenno
+      cancel-in-progress: false
     steps:
       # Token travels as a header, not a query parameter, so it never lands
       # in access logs. Note the webhook listener answers 200 even when the
