@@ -42,3 +42,19 @@ server/
 ## Environment
 - Port: `process.env.PORT` (default `3001`).
 - Secrets (session key, admin credentials) come from environment variables — never hardcoded.
+
+## Deploy webhook (server-side, not in this repo)
+- CI calls `https://erez.ac/hooks/deploy-sanakenno` — an adnanh/webhook
+  listener on the server (port 9000 behind nginx) that runs
+  `server/deploy-sanakenno.sh`. CI authenticates with the `X-Deploy-Token`
+  header (`DEPLOY_TOKEN` repo secret).
+- The hooks config is **rendered, not hand-edited**: the systemd unit
+  (`/etc/systemd/system/webhook.service`) has an `ExecStartPre` that runs
+  `envsubst < ~/webhooks/hooks.template.json > ~/webhooks/hooks.json` on
+  every service start, substituting `${DEPLOY_TOKEN}` from the unit's
+  `Environment=` line. Editing `hooks.json` directly is silently undone by
+  the next restart — **edit `hooks.template.json`, then
+  `sudo systemctl restart webhook`**.
+- Rotating the token means updating: the unit's `Environment=` line
+  (`daemon-reload` + restart), this repo's `DEPLOY_TOKEN` secret, and
+  web_kontissa's deploy trigger — both hooks on the server share the token.
