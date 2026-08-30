@@ -12,7 +12,10 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // CI runners have 4 vCPUs; tests mock all API routes and get isolated
+  // browser contexts, so they parallelise safely. retries above absorbs
+  // any load-induced stragglers.
+  workers: process.env.CI ? 4 : undefined,
   reporter: isVerbose ? (process.env.CI ? 'list' : 'html') : 'dot',
   use: {
     baseURL: 'http://localhost:5173',
