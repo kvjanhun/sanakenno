@@ -8,16 +8,24 @@ cd "$PROJECT_DIR" || exit 1
 source "$HOME/.config/site-alerts.env"
 
 send_telegram() {
+  # --data-urlencode: a plain -d would let & or = inside the message split the
+  # form body, making Telegram silently reject the message (unclosed HTML tag).
   curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
     -d "chat_id=${TELEGRAM_CHAT_ID}" \
-    -d "text=$1" \
+    --data-urlencode "text=$1" \
     -d "parse_mode=HTML" > /dev/null 2>&1
+}
+
+# Escape dynamic content (commit subjects) interpolated into parse_mode=HTML
+# messages, so a subject containing & or < cannot break the whole alert.
+html_escape() {
+  sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g' <<< "$1"
 }
 
 fail() {
   send_telegram "❌ <b>Sanakenno deploy failed</b>
 Stage: <code>$1</code>
-Commit: <code>$(git log -1 --pretty=%h 2>/dev/null || echo unknown)</code> $(git log -1 --pretty=%s 2>/dev/null)
+Commit: <code>$(git log -1 --pretty=%h 2>/dev/null || echo unknown)</code> $(html_escape "$(git log -1 --pretty=%s 2>/dev/null)")
 Time: $(date "+%Y-%m-%d %H:%M")"
   exit 1
 }
@@ -97,7 +105,7 @@ if [ "$LIVE_COMMIT" != "$GIT_COMMIT" ]; then
   fail "commit verify"
 fi
 
-COMMIT_MSG=$(git log -1 --pretty=%s)
+COMMIT_MSG=$(html_escape "$(git log -1 --pretty=%s)")
 COMMIT_HASH=$(git log -1 --pretty=%h)
 send_telegram "🟢 <b>Sanakenno deployed &amp; verified</b>
 <code>${COMMIT_HASH}</code> ${COMMIT_MSG}

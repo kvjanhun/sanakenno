@@ -53,8 +53,27 @@ jobs:
       - name: BDD tests
         run: pnpm run test:bdd
 
+      # Cache the browser binaries keyed on the Playwright version, so the
+      # ~1-minute download only happens when Playwright is bumped. On a cache
+      # hit only the system dependencies are (re)installed, which is fast.
+      - name: Get Playwright version
+        id: playwright-version
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+
       - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: pnpm exec playwright install --with-deps chromium
+
+      - name: Install Playwright system dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps chromium
 
       - name: E2E tests
         run: pnpm exec playwright test
