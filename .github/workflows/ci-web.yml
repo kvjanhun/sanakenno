@@ -90,10 +90,14 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     timeout-minutes: 15
     steps:
+      # Token travels as a header, not a query parameter, so it never lands
+      # in access logs. Note the webhook listener answers 200 even when the
+      # trigger rules do not match — the verify step below is the real test.
       - name: Trigger deploy webhook
         run: |
           curl -s -o /dev/null -w "%{http_code}" \
-            "https://erez.ac/hooks/deploy-sanakenno?token=${{ secrets.DEPLOY_TOKEN }}" \
+            -H "X-Deploy-Token: ${{ secrets.DEPLOY_TOKEN }}" \
+            "https://erez.ac/hooks/deploy-sanakenno" \
             | grep -q "^200$"
 
       # The webhook returns 200 for "accepted", not "deployed" — the deploy
