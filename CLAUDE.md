@@ -107,8 +107,16 @@ Two GitHub Actions workflows handle web/server and mobile independently.
 
 | Workflow | File | Triggers on | What it does |
 | --- | --- | --- | --- |
-| Web and server | `ci-web.yml` | Any push or PR except `packages/mobile/**` and `patches/**` | typecheck except mobile, lint, unit, BDD, E2E, build, deploy |
+| Web and server | `ci-web.yml` | Any push or PR except `packages/mobile/**` and `patches/**` | typecheck except mobile, lint, unit, BDD, E2E, build, deploy, verify |
 | Mobile iOS | `ci-mobile.yml` | Pushes or PRs touching `packages/mobile/**`, `patches/**`, or `pnpm-lock.yaml` | typecheck mobile and shared, lint |
+
+The deploy job fires the server webhook (which only means "accepted"), then
+polls `https://sanakenno.fi/commit.txt` — the source commit stamped into the
+image at build time and extracted with the frontend — until it matches the
+pushed commit. A green deploy job therefore means the deploy verifiably
+landed; a red one means it failed or stalled server-side (see the Telegram
+alert). Deploys on `main` are serialised by a workflow concurrency group and
+a server-side lock in `server/deploy-sanakenno.sh`.
 
 Typecheck uses Turborepo for workspace packages in dependency order
 (`shared` before `web` or `mobile`). The root package is the server and is not a

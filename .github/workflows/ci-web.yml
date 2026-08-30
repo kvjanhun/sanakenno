@@ -12,6 +12,13 @@ on:
       - 'packages/mobile/**'
       - 'patches/**'
 
+# Superseded PR runs are cancelled; pushes to main queue instead, so deploys
+# never overlap and every pushed commit either deploys or is superseded by a
+# newer one — never half-raced on the server.
+concurrency:
+  group: ci-web-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -62,9 +69,31 @@ jobs:
     runs-on: ubuntu-latest
     needs: [check]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    timeout-minutes: 15
     steps:
       - name: Trigger deploy webhook
         run: |
           curl -s -o /dev/null -w "%{http_code}" \
             "https://erez.ac/hooks/deploy-sanakenno?token=${{ secrets.DEPLOY_TOKEN }}" \
             | grep -q "^200$"
+
+      # The webhook returns 200 for "accepted", not "deployed" — the deploy
+      # runs asynchronously on the server. Poll until the live site serves
+      # this exact commit (stamped into dist/commit.txt at image build) so
+      # this job is only green when the deploy verifiably landed. Compare
+      # content, not status: the SPA fallback answers 200 for missing files.
+      - name: Verify deploy landed
+        run: |
+          echo "Waiting for sanakenno.fi to serve commit ${GITHUB_SHA}..."
+          for i in $(seq 1 120); do
+            live=$(curl -fsS --max-time 10 https://sanakenno.fi/commit.txt 2>/dev/null || true)
+            if [ "$live" = "$GITHUB_SHA" ]; then
+              echo "Live commit matches after ~$((i * 5))s."
+              curl -fsS --max-time 10 https://sanakenno.fi/api/health
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Timed out: live commit is '${live:-<none>}', expected '${GITHUB_SHA}'."
+          echo "The server-side deploy failed or is stalled — check the Telegram alert."
+          exit 1

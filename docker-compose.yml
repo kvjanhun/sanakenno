@@ -1,6 +1,9 @@
 services:
   sanakenno-a:
-    build: .
+    build:
+      context: .
+      args:
+        GIT_COMMIT: ${GIT_COMMIT:-unknown}
     container_name: sanakenno-a
     restart: unless-stopped
     ports:
@@ -28,7 +31,10 @@ services:
         loki-external-labels: 'compose_service=sanakenno-a'
 
   sanakenno-b:
-    build: .
+    build:
+      context: .
+      args:
+        GIT_COMMIT: ${GIT_COMMIT:-unknown}
     container_name: sanakenno-b
     restart: unless-stopped
     ports:

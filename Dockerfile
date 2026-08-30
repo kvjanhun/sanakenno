@@ -38,6 +38,12 @@ RUN pnpm install --frozen-lockfile && apk del python3 make g++
 # Copy built frontend
 COPY --from=build /app/packages/web/dist ./dist
 
+# Stamp the source commit into the frontend so the deploy script and CI can
+# verify end-to-end that the live site serves this exact build. Declared this
+# late so a changing value cannot bust the layer cache of the steps above.
+ARG GIT_COMMIT=unknown
+RUN echo "$GIT_COMMIT" > ./dist/commit.txt
+
 # Copy shared package source (needed at runtime for server imports)
 COPY packages/shared ./packages/shared
 
