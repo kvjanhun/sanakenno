@@ -47,6 +47,7 @@ export function createMockPuzzle() {
     },
     max_score: 43,
     puzzle_number: 0,
+    display_number: 1,
     total_puzzles: 1,
   };
 }
@@ -158,6 +159,8 @@ export function createMockArchive() {
     return {
       date: dateStr,
       puzzle_number: i, // 0 = today, 1 = yesterday, etc.
+      // No soft-deleted puzzles in the fixture, so display numbers are slot + 1.
+      display_number: i + 1,
       letters: ['a', 'e', 'k', 'l', 'n', 's', 't'],
       center: 'a',
       is_today: i === 0,
@@ -200,6 +203,7 @@ export async function mockArchiveApi(page: Page) {
       const num = parseInt(match[1], 10);
       const puzzle = createMockPuzzle();
       puzzle.puzzle_number = num;
+      puzzle.display_number = num + 1;
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

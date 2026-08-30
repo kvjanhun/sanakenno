@@ -17,6 +17,10 @@ import { VariationsGrid } from './VariationsGrid';
 
 interface PuzzleSlotControlsProps {
   currentSlot: number;
+  /** 1-based position among active puzzles; null while soft-deleted. */
+  currentDisplayNumber: number | null;
+  canGoPrev: boolean;
+  canGoNext: boolean;
   totalPuzzles: number;
   selectedCombo: string | null;
   displayVariations: VariationData[];
@@ -53,6 +57,9 @@ interface PuzzleSlotControlsProps {
 
 export function PuzzleSlotControls({
   currentSlot,
+  currentDisplayNumber,
+  canGoPrev,
+  canGoNext,
   totalPuzzles,
   selectedCombo,
   displayVariations,
@@ -138,7 +145,9 @@ export function PuzzleSlotControls({
             >
               {selectedCombo
                 ? 'Esikatseltava peli'
-                : `Peli ${currentSlot + 1} / ${totalPuzzles}`}
+                : currentDisplayNumber !== null
+                  ? `Peli ${currentDisplayNumber} / ${totalPuzzles}`
+                  : `Poistettu peli (slot ${currentSlot})`}
               {!selectedCombo && !isActive && (
                 <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-red-500/10 text-red-500">
                   Poistettu
@@ -173,7 +182,7 @@ export function PuzzleSlotControls({
               <button
                 type="button"
                 onClick={onPrev}
-                disabled={currentSlot <= 0 || puzzleLoading}
+                disabled={!canGoPrev || puzzleLoading}
                 title="Edellinen peli"
                 aria-label="Edellinen peli"
                 className="inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg hover:bg-[color-mix(in srgb,var(--color-text-primary)_5%,transparent)] transition-all cursor-pointer disabled:opacity-30 disabled:cursor-default shrink-0"
@@ -214,7 +223,7 @@ export function PuzzleSlotControls({
               <button
                 type="button"
                 onClick={onNext}
-                disabled={currentSlot >= totalPuzzles - 1 || puzzleLoading}
+                disabled={!canGoNext || puzzleLoading}
                 title="Seuraava peli"
                 aria-label="Seuraava peli"
                 className="inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg hover:bg-[color-mix(in srgb,var(--color-text-primary)_5%,transparent)] transition-all cursor-pointer disabled:opacity-30 disabled:cursor-default shrink-0"
@@ -420,7 +429,7 @@ export function PuzzleSlotControls({
                       style={dangerButtonStyle}
                     >
                       <Trash2 size={13} />
-                      Poista peli #{currentSlot + 1}
+                      Poista peli #{currentDisplayNumber}
                     </button>
                   ) : (
                     <button

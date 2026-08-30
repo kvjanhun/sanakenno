@@ -31,7 +31,10 @@ interface PersistedState {
 /** Shape of an archive entry from the API. */
 interface ArchiveEntry {
   date: string;
+  /** Storage slot; the stable key for saved progress and stats. */
   puzzle_number: number;
+  /** 1-based position in the rotation; the number shown to players. */
+  display_number: number;
   letters: string[];
   center: string;
   is_today: boolean;
@@ -174,7 +177,7 @@ function ArchiveActionSheet({
               >
                 {confirmReveal
                   ? 'Paljasta vastaukset?'
-                  : `Kenno #${activeEntry.puzzle_number + 1} · ${formatFinnishDate(activeEntry.date)}`}
+                  : `Kenno #${activeEntry.display_number} · ${formatFinnishDate(activeEntry.date)}`}
               </h3>
 
               {confirmReveal ? (
@@ -463,7 +466,7 @@ export function ArchiveModal({
                           className="text-xs"
                           style={{ color: 'var(--color-text-tertiary)' }}
                         >
-                          Kenno #{entry.puzzle_number + 1}
+                          Kenno #{entry.display_number}
                         </div>
                       </div>
 

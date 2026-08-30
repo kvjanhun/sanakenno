@@ -26,6 +26,7 @@ import type { SanakennoWorld } from './types';
 interface ArchiveEntry {
   date: string;
   puzzle_number: number;
+  display_number: number;
   letters: string[];
   center: string;
   is_today: boolean;
@@ -119,6 +120,18 @@ Then(
       assert.ok(
         typeof entry.max_score === 'number',
         'max_score should be a number',
+      );
+    }
+  },
+);
+
+Then(
+  'each entry should include a display_number',
+  function (this: SanakennoWorld) {
+    for (const entry of this.archiveEntries) {
+      assert.ok(
+        typeof (entry as ArchiveEntry).display_number === 'number',
+        'display_number should be a number',
       );
     }
   },

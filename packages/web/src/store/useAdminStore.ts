@@ -64,6 +64,13 @@ export interface WordFindEntry {
   find_count: number;
 }
 
+/**
+ * Outcome of a puzzle write. 'needs_force' means the server refused but would
+ * accept a repeat with force=true; the reason is left in `forcePrompt` so the
+ * caller can put it in front of the admin before retrying.
+ */
+export type ActionResult = 'ok' | 'needs_force' | 'error';
+
 interface AdminState {
   // Auth
   authenticated: boolean;
@@ -75,6 +82,15 @@ interface AdminState {
   // Puzzle editor
   totalPuzzles: number;
   currentSlot: number;
+  /** 1-based position among active puzzles; null while soft-deleted. */
+  currentDisplayNumber: number | null;
+  /** Adjacent stored slots, soft-deleted ones included so they stay reachable. */
+  prevSlot: number | null;
+  nextSlot: number | null;
+  /** Active slots in rotation order; index + 1 is the display number. */
+  activeSlots: number[];
+  /** Server explanation for the last action that asked for force confirmation. */
+  forcePrompt: string | null;
   savedLetters: string;
   savedCenter: string;
   activeLetters: string;
@@ -93,19 +109,18 @@ interface AdminState {
   logout: () => Promise<void>;
   checkSession: () => Promise<boolean>;
   loadSlot: (slot: number) => Promise<void>;
-  saveSlot: (force?: boolean) => Promise<void>;
-  changeCenter: (center: string, force?: boolean) => Promise<void>;
-  swapSlots: (
-    otherSlot: number,
-    force?: boolean,
-  ) => Promise<'ok' | 'needs_force' | 'error'>;
+  loadDisplayNumber: (displayNumber: number) => Promise<void>;
+  refreshSlots: () => Promise<void>;
+  saveSlot: (force?: boolean) => Promise<ActionResult>;
+  changeCenter: (center: string, force?: boolean) => Promise<ActionResult>;
+  swapSlots: (otherSlot: number, force?: boolean) => Promise<ActionResult>;
   deleteSlot: (force?: boolean) => Promise<void>;
   reactivateSlot: () => Promise<void>;
   createPuzzle: (
     letters: string[],
     center: string,
-    options?: { loadAfterCreate?: boolean },
-  ) => Promise<boolean>;
+    options?: { loadAfterCreate?: boolean; force?: boolean },
+  ) => Promise<ActionResult>;
   previewCombo: (letters: string[], center?: string) => Promise<void>;
   blockWord: (word: string) => Promise<void>;
   setActiveLetters: (letters: string) => void;
@@ -141,6 +156,73 @@ async function adminFetch(
   });
 }
 
+/**
+ * Load a puzzle into the editor by whichever key the caller has.
+ *
+ * The server answers with both the slot and its display number, so the editor
+ * can address puzzles by the number the admin sees while still writing back
+ * to the underlying slot. `optimisticSlot` is set immediately when known, so
+ * navigation feels instant while the request is in flight.
+ */
+async function loadPuzzleInto(
+  get: () => AdminState,
+  set: (partial: Partial<AdminState>) => void,
+  query: string,
+  optimisticSlot: number | null,
+): Promise<void> {
+  const { csrfToken } = get();
+  set({
+    puzzleLoading: true,
+    ...(optimisticSlot !== null ? { currentSlot: optimisticSlot } : {}),
+  });
+  try {
+    const res = await adminFetch(
+      `/api/admin/puzzle/variations?${query}`,
+      csrfToken,
+    );
+    if (!res.ok) {
+      const data = await res.json();
+      set({
+        puzzleLoading: false,
+        statusMessage: data.error || 'Lataus epäonnistui',
+        statusType: 'error',
+      });
+      return;
+    }
+    const data = await res.json();
+    const letters = data.letters.sort().join('');
+    const activeCenter =
+      data.variations.find((v: VariationData) => v.is_active)?.center ||
+      data.letters[0];
+
+    set({
+      currentSlot: data.slot,
+      currentDisplayNumber: data.display_number ?? null,
+      prevSlot: data.prev_slot ?? null,
+      nextSlot: data.next_slot ?? null,
+      savedLetters: letters,
+      savedCenter: activeCenter,
+      activeLetters: letters,
+      activeCenter: activeCenter,
+      variations: data.variations,
+      isActive: data.is_active ?? true,
+      puzzleLoading: false,
+      ...(typeof data.total_puzzles === 'number'
+        ? { totalPuzzles: data.total_puzzles }
+        : {}),
+    });
+
+    // Load words for active center
+    get().previewCombo(data.letters, activeCenter);
+  } catch {
+    set({
+      puzzleLoading: false,
+      statusMessage: 'Yhteysvirhe',
+      statusType: 'error',
+    });
+  }
+}
+
 export const useAdminStore = create<AdminState>((set, get) => ({
   // Initial state
   authenticated: false,
@@ -151,6 +233,11 @@ export const useAdminStore = create<AdminState>((set, get) => ({
 
   totalPuzzles: 0,
   currentSlot: 0,
+  currentDisplayNumber: null,
+  prevSlot: null,
+  nextSlot: null,
+  activeSlots: [],
+  forcePrompt: null,
   savedLetters: '',
   savedCenter: '',
   activeLetters: '',
@@ -235,47 +322,24 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   // --- Puzzle editor actions ---
 
   loadSlot: async (slot) => {
+    await loadPuzzleInto(get, set, `slot=${slot}`, slot);
+  },
+
+  loadDisplayNumber: async (displayNumber) => {
+    await loadPuzzleInto(get, set, `display_number=${displayNumber}`, null);
+  },
+
+  refreshSlots: async () => {
     const { csrfToken } = get();
-    set({ puzzleLoading: true, currentSlot: slot });
     try {
-      const res = await adminFetch(
-        `/api/admin/puzzle/variations?slot=${slot}`,
-        csrfToken,
-      );
-      if (!res.ok) {
-        const data = await res.json();
-        set({
-          puzzleLoading: false,
-          statusMessage: data.error || 'Lataus epäonnistui',
-          statusType: 'error',
-        });
-        return;
-      }
+      const res = await adminFetch('/api/admin/puzzle/slots', csrfToken);
+      if (!res.ok) return;
       const data = await res.json();
-      const letters = data.letters.sort().join('');
-      const activeCenter =
-        data.variations.find((v: VariationData) => v.is_active)?.center ||
-        data.letters[0];
-
-      set({
-        savedLetters: letters,
-        savedCenter: activeCenter,
-        activeLetters: letters,
-        activeCenter: activeCenter,
-        variations: data.variations,
-        isActive: data.is_active ?? true,
-        puzzleLoading: false,
-        totalPuzzles: get().totalPuzzles,
-      });
-
-      // Load words for active center
-      get().previewCombo(data.letters, activeCenter);
+      if (Array.isArray(data.slots)) {
+        set({ activeSlots: data.slots, totalPuzzles: data.total_puzzles });
+      }
     } catch {
-      set({
-        puzzleLoading: false,
-        statusMessage: 'Yhteysvirhe',
-        statusType: 'error',
-      });
+      // Leave the previous mapping in place on a transient failure.
     }
   },
 
@@ -296,22 +360,19 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       const data = await res.json();
       if (!res.ok) {
         if (res.status === 409 && data.requires_force) {
-          set({
-            saving: false,
-            statusMessage: data.error,
-            statusType: 'warning',
-          });
-          return;
+          set({ saving: false, forcePrompt: data.error });
+          return 'needs_force';
         }
         set({
           saving: false,
           statusMessage: data.error || 'Tallennus epäonnistui',
           statusType: 'error',
         });
-        return;
+        return 'error';
       }
       set({
         saving: false,
+        forcePrompt: null,
         savedLetters: activeLetters,
         savedCenter: activeCenter,
         totalPuzzles: data.total_puzzles,
@@ -320,8 +381,11 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       });
       // Reload variations
       get().loadSlot(currentSlot);
+      get().refreshSlots();
+      return 'ok';
     } catch {
       set({ saving: false, statusMessage: 'Yhteysvirhe', statusType: 'error' });
+      return 'error';
     }
   },
 
@@ -336,30 +400,29 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       const data = await res.json();
       if (!res.ok) {
         if (res.status === 409 && data.requires_force) {
-          set({
-            saving: false,
-            statusMessage: data.error,
-            statusType: 'warning',
-          });
-          return;
+          set({ saving: false, forcePrompt: data.error });
+          return 'needs_force';
         }
         set({
           saving: false,
           statusMessage: data.error || 'Muutos epäonnistui',
           statusType: 'error',
         });
-        return;
+        return 'error';
       }
       set({
         saving: false,
+        forcePrompt: null,
         savedCenter: center,
         activeCenter: center,
         statusMessage: 'Keskuskirjain vaihdettu',
         statusType: 'success',
       });
       get().loadSlot(currentSlot);
+      return 'ok';
     } catch {
       set({ saving: false, statusMessage: 'Yhteysvirhe', statusType: 'error' });
+      return 'error';
     }
   },
 
@@ -378,7 +441,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       const data = await res.json();
       if (!res.ok) {
         if (res.status === 409 && data.requires_force) {
-          set({ saving: false });
+          set({ saving: false, forcePrompt: data.error });
           return 'needs_force';
         }
         set({
@@ -390,7 +453,8 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       }
       set({
         saving: false,
-        statusMessage: `Slotit ${currentSlot + 1} ja ${otherSlot + 1} vaihdettu`,
+        forcePrompt: null,
+        statusMessage: 'Pelit vaihdettu',
         statusType: 'success',
       });
       get().loadSlot(currentSlot);
@@ -428,17 +492,16 @@ export const useAdminStore = create<AdminState>((set, get) => ({
         });
         return;
       }
-      const newTotal = data.total_puzzles;
-      const newSlot = Math.min(currentSlot, newTotal - 1);
       set({
         saving: false,
-        totalPuzzles: newTotal,
+        totalPuzzles: data.total_puzzles,
         statusMessage: 'Peli poistettu',
         statusType: 'success',
       });
-      if (newTotal > 0) {
-        get().loadSlot(Math.max(0, newSlot));
-      }
+      // Stay on the deleted slot so it can be restored; reloading refreshes
+      // its now-null display number and the shifted total.
+      get().loadSlot(currentSlot);
+      get().refreshSlots();
     } catch {
       set({ saving: false, statusMessage: 'Yhteysvirhe', statusType: 'error' });
     }
@@ -474,6 +537,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
         statusType: 'success',
       });
       get().loadSlot(currentSlot);
+      get().refreshSlots();
     } catch {
       set({ saving: false, statusMessage: 'Yhteysvirhe', statusType: 'error' });
     }
@@ -485,30 +549,36 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     try {
       const res = await adminFetch('/api/admin/puzzle', csrfToken, {
         method: 'POST',
-        body: JSON.stringify({ letters, center }),
+        body: JSON.stringify({ letters, center, force: options?.force }),
       });
       const data = await res.json();
       if (!res.ok) {
+        if (res.status === 409 && data.requires_force) {
+          set({ saving: false, forcePrompt: data.error });
+          return 'needs_force';
+        }
         set({
           saving: false,
           statusMessage: data.error || 'Luonti epäonnistui',
           statusType: 'error',
         });
-        return false;
+        return 'error';
       }
       set({
         saving: false,
+        forcePrompt: null,
         totalPuzzles: data.total_puzzles,
-        statusMessage: `Uusi peli #${data.slot + 1} luotu`,
+        statusMessage: `Uusi peli #${data.display_number ?? data.slot + 1} luotu`,
         statusType: 'success',
       });
+      get().refreshSlots();
       if (options?.loadAfterCreate !== false) {
         get().loadSlot(data.slot);
       }
-      return true;
+      return 'ok';
     } catch {
       set({ saving: false, statusMessage: 'Yhteysvirhe', statusType: 'error' });
-      return false;
+      return 'error';
     }
   },
 

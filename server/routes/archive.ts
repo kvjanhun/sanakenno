@@ -10,14 +10,15 @@
 
 import { Hono } from 'hono';
 import {
+  getActiveSlots,
   getPuzzleForDate,
   getPuzzleBySlot,
-  totalPuzzles,
 } from '../puzzle-engine';
 
 interface ArchiveEntry {
   date: string;
   puzzle_number: number;
+  display_number: number;
   letters: string[];
   center: string;
   is_today: boolean;
@@ -41,15 +42,17 @@ archive.get('/', (c) => {
 
     let days: number;
     if (allParam === 'true') {
-      // The slot sequence runs 1, 2, ..., N-1, 0, 1, 2, ...
-      // Today's slot number equals the number of days back to reach slot 0.
-      // When today IS slot 0, show one full cycle so all other slots appear.
+      // The rotation walks the active slots in order and wraps to the first.
+      // Today's *position* in that sequence — not its slot number — is how
+      // many days back the cycle started, since soft-deleted slots leave gaps
+      // that make slot numbers and cycle positions drift apart.
+      // When today already is the first slot, show one full cycle instead.
       const helsinkiNow = new Date(
         now.toLocaleString('en-US', { timeZone: 'Europe/Helsinki' }),
       );
-      const currentSlot = getPuzzleForDate(helsinkiNow);
-      const total = totalPuzzles();
-      days = currentSlot > 0 ? currentSlot + 1 : total;
+      const activeSlots = getActiveSlots();
+      const currentIndex = activeSlots.indexOf(getPuzzleForDate(helsinkiNow));
+      days = currentIndex > 0 ? currentIndex + 1 : activeSlots.length;
     } else {
       days = 7;
     }
@@ -76,6 +79,7 @@ archive.get('/', (c) => {
       entries.push({
         date: `${year}-${month}-${day}`,
         puzzle_number: slot,
+        display_number: puzzle.display_number,
         letters: [puzzle.center, ...puzzle.letters],
         center: puzzle.center,
         is_today: daysAgo === 0,

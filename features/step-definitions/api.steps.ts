@@ -20,7 +20,11 @@ import { getDb, closeDb, setDb } from '../../server/db/connection';
 import { resetRateLimit } from '../../server/routes/achievement';
 import { resetRateLimit as resetFailedGuessRateLimit } from '../../server/routes/failed-guess';
 import { resetRateLimit as resetWordFindRateLimit } from '../../server/routes/word-find';
-import { setWordlist, invalidateAll } from '../../server/puzzle-engine';
+import {
+  getActiveSlots,
+  setWordlist,
+  invalidateAll,
+} from '../../server/puzzle-engine';
 import type { SanakennoWorld } from './types';
 
 interface AchievementRow {
@@ -180,6 +184,95 @@ Given(
       puzzleNumber,
     );
     invalidateAll();
+  },
+);
+
+// --- Display numbering and rotation headroom ---
+
+Then(
+  'the response should include a display_number',
+  function (this: SanakennoWorld) {
+    assert.ok(
+      this.responseJson.display_number !== undefined,
+      'Missing display_number',
+    );
+  },
+);
+
+Then(
+  'total_puzzles should be {int}',
+  function (this: SanakennoWorld, expected: number) {
+    assert.equal(this.responseJson.total_puzzles, expected);
+  },
+);
+
+Then(
+  'the display_number should be {int}',
+  function (this: SanakennoWorld, expected: number) {
+    assert.equal(this.responseJson.display_number, expected);
+  },
+);
+
+/**
+ * Move the rotation epoch so today lands on a chosen position in the cycle.
+ * The rotation walks active slots in order starting from the first slot at or
+ * after START_INDEX (1), so the epoch offset is the distance from that start
+ * position to the target position.
+ */
+function setTodayToCyclePosition(targetIndex: number): void {
+  const db = getDb();
+  const activeSlots = getActiveSlots();
+  const startSlot = activeSlots.find((slot) => slot >= 1) ?? activeSlots[0];
+  const startIndex = activeSlots.indexOf(startSlot);
+  const total = activeSlots.length;
+  const daysDiff = (((targetIndex - startIndex) % total) + total) % total;
+
+  const today = new Date(
+    new Date().toLocaleString('en-US', { timeZone: 'Europe/Helsinki' }),
+  );
+  const epoch = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate() - daysDiff,
+  );
+  const epochStr = `${epoch.getFullYear()}-${String(
+    epoch.getMonth() + 1,
+  ).padStart(2, '0')}-${String(epoch.getDate()).padStart(2, '0')}`;
+
+  db.prepare(
+    "INSERT OR REPLACE INTO config (key, value) VALUES ('rotation_epoch', ?)",
+  ).run(epochStr);
+  invalidateAll();
+}
+
+Given(
+  'today is the last puzzle of the rotation cycle',
+  function (this: SanakennoWorld) {
+    setTodayToCyclePosition(getActiveSlots().length - 1);
+  },
+);
+
+Given(
+  'today is the first puzzle of the rotation cycle',
+  function (this: SanakennoWorld) {
+    setTodayToCyclePosition(0);
+  },
+);
+
+Then(
+  'the response should include days_remaining',
+  function (this: SanakennoWorld) {
+    assert.ok(
+      typeof this.responseJson.days_remaining === 'number',
+      'Missing days_remaining',
+    );
+  },
+);
+
+Then(
+  'days_remaining should be {int}',
+  function (this: SanakennoWorld, expected: number) {
+    assert.equal(this.responseJson.days_remaining, expected);
   },
 );
 

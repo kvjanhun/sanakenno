@@ -25,6 +25,10 @@ import { useAdminSuggestion } from './useAdminSuggestion';
 
 export function PuzzleEditor() {
   const currentSlot = useAdminStore((s) => s.currentSlot);
+  const currentDisplayNumber = useAdminStore((s) => s.currentDisplayNumber);
+  const prevSlot = useAdminStore((s) => s.prevSlot);
+  const nextSlot = useAdminStore((s) => s.nextSlot);
+  const activeSlots = useAdminStore((s) => s.activeSlots);
   const totalPuzzles = useAdminStore((s) => s.totalPuzzles);
   const savedLetters = useAdminStore((s) => s.savedLetters);
   const savedCenter = useAdminStore((s) => s.savedCenter);
@@ -41,6 +45,7 @@ export function PuzzleEditor() {
   const csrfToken = useAdminStore((s) => s.csrfToken);
 
   const loadSlot = useAdminStore((s) => s.loadSlot);
+  const loadDisplayNumber = useAdminStore((s) => s.loadDisplayNumber);
   const saveSlot = useAdminStore((s) => s.saveSlot);
   const swapSlots = useAdminStore((s) => s.swapSlots);
   const deleteSlot = useAdminStore((s) => s.deleteSlot);
@@ -100,8 +105,10 @@ export function PuzzleEditor() {
   }, [totalPuzzles, initialLoaded, currentSlot, loadSlot]);
 
   useEffect(() => {
-    setJumpTarget(totalPuzzles > 0 ? String(currentSlot + 1) : '');
-  }, [currentSlot, totalPuzzles]);
+    setJumpTarget(
+      currentDisplayNumber !== null ? String(currentDisplayNumber) : '',
+    );
+  }, [currentDisplayNumber]);
 
   // Clear status message after 3 seconds
   useEffect(() => {
@@ -132,19 +139,19 @@ export function PuzzleEditor() {
 
   // --- Slot navigation ---
 
+  // Navigation walks stored slots, not display numbers, so soft-deleted
+  // puzzles stay reachable for restoring.
   const handlePrev = useCallback(() => {
-    if (currentSlot > 0) {
-      clearSelection();
-      loadSlot(currentSlot - 1);
-    }
-  }, [clearSelection, currentSlot, loadSlot]);
+    if (prevSlot === null) return;
+    clearSelection();
+    loadSlot(prevSlot);
+  }, [clearSelection, prevSlot, loadSlot]);
 
   const handleNext = useCallback(() => {
-    if (currentSlot < totalPuzzles - 1) {
-      clearSelection();
-      loadSlot(currentSlot + 1);
-    }
-  }, [clearSelection, currentSlot, totalPuzzles, loadSlot]);
+    if (nextSlot === null) return;
+    clearSelection();
+    loadSlot(nextSlot);
+  }, [clearSelection, nextSlot, loadSlot]);
 
   const handleJump = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
@@ -160,59 +167,76 @@ export function PuzzleEditor() {
         return;
       }
 
-      const targetSlot = displayNumber - 1;
-      if (targetSlot === currentSlot) return;
+      if (displayNumber === currentDisplayNumber) return;
 
       clearSelection();
-      loadSlot(targetSlot);
+      loadDisplayNumber(displayNumber);
     },
     [
       clearSelection,
-      currentSlot,
+      currentDisplayNumber,
       jumpTarget,
-      loadSlot,
+      loadDisplayNumber,
       setStatusMessage,
       totalPuzzles,
     ],
   );
 
+  /** Confirm a refused write using the server's own explanation. */
+  const confirmForce = useCallback((fallback: string) => {
+    const prompt = useAdminStore.getState().forcePrompt;
+    return window.confirm(prompt ? `${prompt}` : fallback);
+  }, []);
+
   const handleSwap = useCallback(async () => {
-    const target = parseInt(swapTarget, 10) - 1;
+    const targetDisplay = parseInt(swapTarget, 10);
     if (
-      isNaN(target) ||
-      target < 0 ||
-      target >= totalPuzzles ||
-      target === currentSlot
+      isNaN(targetDisplay) ||
+      targetDisplay < 1 ||
+      targetDisplay > totalPuzzles ||
+      targetDisplay === currentDisplayNumber
     ) {
       return;
     }
-    const result = await swapSlots(target);
+    const targetSlot = activeSlots[targetDisplay - 1];
+    if (targetSlot === undefined || targetSlot === currentSlot) return;
+
+    const result = await swapSlots(targetSlot);
     if (result === 'needs_force') {
-      if (
-        window.confirm(
-          `Peli #${target + 1} tai #${currentSlot + 1} on tämän päivän julkaistu peli. Vaihdetaanko silti?`,
-        )
-      ) {
-        await swapSlots(target, true);
+      if (confirmForce('Vaihdetaanko silti?')) {
+        await swapSlots(targetSlot, true);
       }
     }
-  }, [swapTarget, totalPuzzles, currentSlot, swapSlots]);
+  }, [
+    activeSlots,
+    confirmForce,
+    swapTarget,
+    totalPuzzles,
+    currentDisplayNumber,
+    currentSlot,
+    swapSlots,
+  ]);
+
+  const handleSave = useCallback(async () => {
+    const result = await saveSlot();
+    if (result === 'needs_force') {
+      if (confirmForce('Tallennetaanko silti?')) {
+        await saveSlot(true);
+      }
+    }
+  }, [confirmForce, saveSlot]);
 
   const handleDelete = useCallback(() => {
-    if (window.confirm(`Poistetaanko peli #${currentSlot + 1}?`)) {
+    if (window.confirm(`Poistetaanko peli #${currentDisplayNumber}?`)) {
       deleteSlot();
     }
-  }, [currentSlot, deleteSlot]);
+  }, [currentDisplayNumber, deleteSlot]);
 
   const handleReactivate = useCallback(() => {
-    if (
-      window.confirm(
-        `Palautetaanko peli #${currentSlot + 1} takaisin kiertoon?`,
-      )
-    ) {
+    if (window.confirm('Palautetaanko peli takaisin kiertoon?')) {
       reactivateSlot();
     }
-  }, [currentSlot, reactivateSlot]);
+  }, [reactivateSlot]);
 
   const handleRestore = useCallback(() => {
     clearSelection();
@@ -242,11 +266,19 @@ export function PuzzleEditor() {
       .map((l) => l.trim())
       .filter(Boolean);
     const center = newCenter.toLowerCase().trim();
-    await createPuzzle(letters, center);
+
+    let result = await createPuzzle(letters, center);
+    // Same letters with a different center: creatable, but only after the
+    // admin has seen which puzzle already uses them and how recently.
+    if (result === 'needs_force' && confirmForce('Luodaanko silti?')) {
+      result = await createPuzzle(letters, center, { force: true });
+    }
+    if (result !== 'ok') return;
+
     setCreateMode(false);
     setNewLetters('');
     setNewCenter('');
-  }, [newLetters, newCenter, createPuzzle]);
+  }, [confirmForce, newLetters, newCenter, createPuzzle]);
 
   /**
    * Create a new puzzle from the currently-selected combination and center.
@@ -255,10 +287,17 @@ export function PuzzleEditor() {
   const handleCreateFromCombo = useCallback(async () => {
     if (!selectedCombo || !activeCenter) return;
     const letters = activeLetters.split('');
-    await createPuzzle(letters, activeCenter);
+
+    let result = await createPuzzle(letters, activeCenter);
+    if (result === 'needs_force' && confirmForce('Luodaanko silti?')) {
+      result = await createPuzzle(letters, activeCenter, { force: true });
+    }
+    if (result !== 'ok') return;
+
     clearSelection();
   }, [
     clearSelection,
+    confirmForce,
     selectedCombo,
     activeLetters,
     activeCenter,
@@ -273,6 +312,9 @@ export function PuzzleEditor() {
         <div className="lg:col-span-7 space-y-6 flex flex-col justify-start">
           <PuzzleSlotControls
             currentSlot={currentSlot}
+            currentDisplayNumber={currentDisplayNumber}
+            canGoPrev={prevSlot !== null}
+            canGoNext={nextSlot !== null}
             totalPuzzles={totalPuzzles}
             selectedCombo={selectedCombo}
             displayVariations={displayVariations}
@@ -295,7 +337,7 @@ export function PuzzleEditor() {
             onJump={handleJump}
             onClearSelection={clearSelection}
             onCenterSelect={handleCenterSelect}
-            onSave={saveSlot}
+            onSave={handleSave}
             onRestore={handleRestore}
             onSwap={handleSwap}
             onDelete={handleDelete}

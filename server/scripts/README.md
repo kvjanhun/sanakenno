@@ -6,7 +6,7 @@ Monitoring and deployment scripts for Sanakenno infrastructure.
 
 | Script | Purpose | Schedule |
 |--------|---------|----------|
-| `puzzle-rotation-alert.sh` | Warns when puzzle rotation is about to restart | `0 9 * * *` |
+| `puzzle-rotation-alert.sh` | Warns when fresh puzzles are running out (7 days, 1 day, and on restart) | `0 9 * * *` |
 | `error-spike-alert.sh` | Alerts on error rate spikes in Docker logs | `*/5 * * * *` |
 
 > **Container health monitoring lives in `web_kontissa`.** The combined

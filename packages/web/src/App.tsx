@@ -303,7 +303,7 @@ function App() {
                     }}
                   >
                     {' '}
-                    — #{puzzle.puzzle_number + 1}
+                    — #{puzzle.display_number}
                   </span>
                 )}
               </span>
@@ -319,7 +319,7 @@ function App() {
                     }}
                   >
                     {' '}
-                    #{puzzle.puzzle_number + 1}
+                    #{puzzle.display_number}
                   </span>
                 )}
               </>

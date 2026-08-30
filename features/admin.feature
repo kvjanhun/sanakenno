@@ -10,7 +10,7 @@ Feature: Admin tool
   # --- Puzzle CRUD ---
 
   Scenario: Create a new puzzle
-    When the admin submits a new puzzle with letters "a,e,k,l,n,s,ö" and center "k"
+    When the admin submits a new puzzle with letters "b,i,k,o,r,t,u" and center "k"
     Then a new puzzle slot should be created
     And the response should include the slot number and next play date
 
@@ -21,8 +21,8 @@ Feature: Admin tool
     And the total puzzles count should be 42
 
   Scenario: Create puzzle from a previewed combination
-    When the admin previews letters "a,e,k,l,n,s,ö" with center "k"
-    And the admin submits a new puzzle with letters "a,e,k,l,n,s,ö" and center "k"
+    When the admin previews letters "b,i,k,o,r,t,u" with center "k"
+    And the admin submits a new puzzle with letters "b,i,k,o,r,t,u" and center "k"
     Then a new puzzle slot should be created
 
   Scenario: Puzzle requires exactly 7 distinct letters
@@ -61,6 +61,84 @@ Feature: Admin tool
   Scenario: Cannot swap a slot with itself
     When the admin attempts to swap slot 3 with slot 3
     Then the server should respond with 400
+
+  # --- Duplicate detection ---
+  # Letters are stored sorted, so letter order never distinguishes two puzzles:
+  # "a,b,c,d,e,f,g" and "b,c,d,e,f,g,a" are the same puzzle.
+
+  Scenario: Creating the same letters and center twice is rejected
+    Given puzzle slot 5 exists with letters "b,i,k,o,r,t,u" and center "k"
+    When the admin submits a new puzzle with letters "b,i,k,o,r,t,u" and center "k"
+    Then the server should respond with 409
+    And the duplicate response should not offer a force override
+    And the duplicate response should name puzzle slot 5
+
+  Scenario: Letter order does not make a distinct puzzle
+    Given puzzle slot 5 exists with letters "b,i,k,o,r,t,u" and center "k"
+    When the admin submits a new puzzle with letters "u,t,r,o,k,i,b" and center "k"
+    Then the server should respond with 409
+    And the duplicate response should not offer a force override
+
+  Scenario: Same letters with a different center warns but can be forced
+    Given puzzle slot 5 exists with letters "b,i,k,o,r,t,u" and center "k"
+    When the admin submits a new puzzle with letters "b,i,k,o,r,t,u" and center "b"
+    Then the server should respond with 409
+    And the duplicate response should offer a force override
+    And the duplicate response should say when the existing puzzle last ran
+    When the admin resubmits the same puzzle with force=true
+    Then a new puzzle slot should be created
+
+  Scenario: Soft-deleted puzzles do not block reusing their letters
+    Given puzzle slot 5 exists with letters "b,i,k,o,r,t,u" and center "k"
+    And puzzle 5 is soft-deleted
+    When the admin submits a new puzzle with letters "b,i,k,o,r,t,u" and center "k"
+    Then a new puzzle slot should be created
+
+  Scenario: Changing a center onto an existing puzzle is rejected
+    Given puzzle slot 5 exists with letters "b,i,k,o,r,t,u" and center "k"
+    And puzzle slot 6 exists with letters "b,i,k,o,r,t,u" and center "b"
+    When the admin changes the center of slot 6 to "k"
+    Then the server should respond with 409
+    And the duplicate response should not offer a force override
+
+  Scenario: Updating a puzzle onto another puzzle's letters and center is rejected
+    Given puzzle slot 5 exists with letters "b,i,k,o,r,t,u" and center "k"
+    When the admin updates slot 6 to letters "b,i,k,o,r,t,u" and center "k" with force=true
+    Then the server should respond with 409
+    And the duplicate response should not offer a force override
+
+  Scenario: Saving a puzzle over itself is not a duplicate
+    Given puzzle slot 5 exists with letters "b,i,k,o,r,t,u" and center "k"
+    When the admin updates slot 5 to letters "b,i,k,o,r,t,u" and center "k" with force=true
+    Then the update should succeed
+
+  # --- Numbering with soft deletes ---
+  # Slots are permanent storage keys; display numbers are the 1-based position
+  # among active puzzles, so deleting one closes the gap for every later puzzle.
+
+  Scenario: Soft-deleted puzzles are excluded from the total count
+    Given there are 10 puzzles in rotation
+    When the admin deletes slot 3
+    Then the total puzzles count should be 9
+
+  Scenario: Display numbers close the gap left by a deleted puzzle
+    Given there are 10 puzzles in rotation
+    When the admin deletes slot 3
+    Then slot 2 should have display number 3
+    And slot 4 should have display number 4
+    And slot 9 should have display number 9
+
+  Scenario: A soft-deleted puzzle has no display number
+    Given there are 10 puzzles in rotation
+    When the admin deletes slot 3
+    Then slot 3 should have no display number
+
+  Scenario: New puzzles are appended after the highest slot even with gaps
+    Given there are 10 puzzles in rotation
+    And puzzle 3 is soft-deleted
+    When the admin creates a new puzzle with letters "a,d,e,h,l,r,s" and center "a"
+    Then the new puzzle slot number should be 10
+    And the total puzzles count should be 10
 
   # --- Today's puzzle protection ---
 
@@ -315,6 +393,13 @@ Feature: Admin tool
   Scenario: Display numbers are 1-indexed
     Given the schedule includes slot 0
     Then its display_number should be 1
+
+  Scenario: Schedule display numbers skip soft-deleted puzzles
+    Given there are 10 puzzles in rotation
+    And puzzle 3 is soft-deleted
+    When the admin requests the schedule for the next 14 days
+    Then no schedule entry should be for slot 3
+    And no schedule entry should have a display number above 9
 
   Scenario: Schedule respects puzzle rotation
     Given there are 41 puzzles in rotation

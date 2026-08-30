@@ -358,11 +358,11 @@ Given(
     this: SanakennoWorld,
     score: number,
     maxScore: number,
-    puzzleNumber: number,
+    displayNumber: number,
   ) {
     this.currentScore = score;
     this.maxScore = maxScore;
-    this.puzzleNumber = puzzleNumber;
+    this.shareDisplayNumber = displayNumber;
   },
 );
 
@@ -384,7 +384,7 @@ Given(
 
 When('the share text is generated', function (this: SanakennoWorld) {
   this.generatedShareText = buildShareText({
-    puzzleNumber: this.puzzleNumber,
+    displayNumber: this.shareDisplayNumber,
     score: this.currentScore,
     maxScore: this.maxScore,
     hintsUnlocked: this.hintsUnlocked,

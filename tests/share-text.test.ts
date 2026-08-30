@@ -4,7 +4,7 @@ import { buildShareText } from '@sanakenno/shared';
 describe('buildShareText', () => {
   it('includes no-hint achievement progress instead of unlocked hint icons', () => {
     const text = buildShareText({
-      puzzleNumber: 107,
+      displayNumber: 108,
       score: 136,
       maxScore: 188,
       hintsUnlocked: new Set(['summary', 'pairs']),
@@ -21,7 +21,7 @@ sanakenno.fi`);
 
   it('uses 0% no-hint progress for hinted saves without a recorded pre-hint score', () => {
     const text = buildShareText({
-      puzzleNumber: 107,
+      displayNumber: 108,
       score: 136,
       maxScore: 188,
       hintsUnlocked: ['summary'],
@@ -33,14 +33,14 @@ sanakenno.fi`);
 
   it('shows a celebration mark only when every no-hint star is reached', () => {
     const partial = buildShareText({
-      puzzleNumber: 107,
+      displayNumber: 108,
       score: 136,
       maxScore: 188,
       hintsUnlocked: ['summary'],
       scoreBeforeHints: 102,
     });
     const allStars = buildShareText({
-      puzzleNumber: 107,
+      displayNumber: 108,
       score: 188,
       maxScore: 188,
       hintsUnlocked: ['summary'],
@@ -53,7 +53,7 @@ sanakenno.fi`);
 
   it('lets no-hint percentage reach 100% while keeping three stars', () => {
     const text = buildShareText({
-      puzzleNumber: 107,
+      displayNumber: 108,
       score: 188,
       maxScore: 188,
       hintsUnlocked: [],

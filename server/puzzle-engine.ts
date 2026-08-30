@@ -40,6 +40,8 @@ export interface FullPuzzleData extends PuzzleData {
   letters: string[];
   all_letters: string;
   slot: number;
+  /** 1-based position among active puzzles; what players and admin see. */
+  display_number: number;
   total_puzzles: number;
 }
 
@@ -357,9 +359,14 @@ export function getActiveSlots(): number[] {
 }
 
 /**
- * Get the maximum slot number in the DB + 1 (total slots size).
+ * Get the next free slot number (highest slot in the DB + 1).
+ *
+ * Slots are permanent storage keys: soft-deleted rows keep their slot so that
+ * player stats, saved progress, and word-find analytics stay addressable. New
+ * puzzles must therefore append past the highest slot ever used, not past the
+ * count of active ones.
  */
-export function totalSlots(): number {
+export function nextFreeSlot(): number {
   const db = getDb();
   const row = db.prepare('SELECT MAX(slot) AS max_slot FROM puzzles').get() as
     | MaxSlotRow
@@ -370,10 +377,54 @@ export function totalSlots(): number {
 // --- Database helpers ---
 
 /**
- * Get the total number of puzzle slots in the DB.
+ * Get the number of puzzles in the active rotation.
+ *
+ * Soft-deleted puzzles are excluded: they no longer play, so they must not
+ * inflate the count shown to players or the admin.
  */
 export function totalPuzzles(): number {
-  return totalSlots();
+  const db = getDb();
+  const row = db
+    .prepare('SELECT COUNT(*) AS count FROM puzzles WHERE is_active = 1')
+    .get() as { count: number };
+  return row.count;
+}
+
+/**
+ * Get the 1-based display number of a slot: its position among active
+ * puzzles. Deleting a puzzle closes the gap, so every later puzzle moves
+ * down one. Returns null for slots that are unknown or soft-deleted.
+ */
+export function getDisplayNumber(slot: number): number | null {
+  const index = getActiveSlots().indexOf(slot);
+  return index === -1 ? null : index + 1;
+}
+
+/**
+ * Resolve a 1-based display number back to its storage slot.
+ * Returns null when the number falls outside the active rotation.
+ */
+export function getSlotByDisplayNumber(displayNumber: number): number | null {
+  const activeSlots = getActiveSlots();
+  if (displayNumber < 1 || displayNumber > activeSlots.length) return null;
+  return activeSlots[displayNumber - 1];
+}
+
+/**
+ * Count the fresh puzzle days left in the current cycle, today included.
+ *
+ * The rotation walks the active slots in order and wraps back to the first
+ * one, so the answer is how many steps remain before that wrap. The last
+ * fresh day returns 1; the wrap day itself returns a full cycle. Callers use
+ * this for rotation alerting instead of re-deriving the maths from slot
+ * numbers, which breaks as soon as the rotation has soft-deleted gaps.
+ */
+export function getDaysRemainingInCycle(date: Date): number {
+  const activeSlots = getActiveSlots();
+  if (activeSlots.length === 0) return 0;
+  const index = activeSlots.indexOf(getPuzzleForDate(date));
+  if (index === -1) return 0;
+  return activeSlots.length - index;
 }
 
 /**
@@ -472,6 +523,7 @@ export function getPuzzleBySlot(slot: number): FullPuzzleData | null {
       .filter((l) => l !== puzzle.center),
     all_letters: puzzle.letters,
     slot: puzzle.slot,
+    display_number: getDisplayNumber(puzzle.slot) ?? puzzle.slot + 1,
     total_puzzles: totalPuzzles(),
     ...result,
   };

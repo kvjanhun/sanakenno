@@ -13,6 +13,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getDb } from './db/connection';
 import {
+  getActiveSlots,
   getBlockedWords,
   getPuzzleBySlot,
   isPangram,
@@ -642,8 +643,13 @@ export function suggestPuzzle(
 
   if (eligible.length === 0) return null;
 
-  const previousSlot = total > 0 ? total - 1 : null;
-  const nextSlot = total > 0 ? 0 : null;
+  // A newly appended puzzle sits between the last active slot and the first
+  // one the rotation wraps back to. Deriving these from the count would point
+  // at soft-deleted or non-existent slots once the rotation has gaps.
+  const activeSlots = getActiveSlots();
+  const previousSlot =
+    activeSlots.length > 0 ? activeSlots[activeSlots.length - 1] : null;
+  const nextSlot = activeSlots.length > 0 ? activeSlots[0] : null;
   const previousPuzzle =
     previousSlot !== null ? getPuzzleBySlot(previousSlot) : null;
   const nextPuzzle = nextSlot !== null ? getPuzzleBySlot(nextSlot) : null;

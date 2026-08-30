@@ -3,7 +3,8 @@ import { noHintAchievementStates, rankForScore } from './scoring';
 type HintCollection = ReadonlySet<string> | readonly string[] | null;
 
 export interface ShareTextInput {
-  puzzleNumber: number;
+  /** The puzzle number as players see it: its position in the rotation. */
+  displayNumber: number;
   score: number;
   maxScore: number;
   hintsUnlocked: HintCollection;
@@ -59,7 +60,7 @@ export function buildShareText(input: ShareTextInput): string {
       : '';
 
   return [
-    `Sanakenno \u2014 Kenno #${input.puzzleNumber + 1}`,
+    `Sanakenno \u2014 Kenno #${input.displayNumber}`,
     `${rankPrefix}${rank} \u00B7 ${input.score}/${input.maxScore} p.`,
     progressBar(input.score, input.maxScore),
     noHintAchievementLine(input),

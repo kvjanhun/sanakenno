@@ -28,6 +28,8 @@ export interface SanakennoWorld {
   puzzleSlot2: number;
   totalPuzzles: number;
   puzzleNumber: number;
+  /** Player-facing puzzle number used in share text. */
+  shareDisplayNumber: number;
   maxScore: number;
   currentScore: number;
   currentRank: string;
@@ -61,6 +63,7 @@ export interface SanakennoWorld {
   archiveEntries: Array<{
     date: string;
     puzzle_number: number;
+    display_number: number;
     letters: string[];
     center: string;
     is_today: boolean;

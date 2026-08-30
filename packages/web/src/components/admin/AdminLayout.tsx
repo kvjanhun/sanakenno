@@ -164,6 +164,9 @@ export function AdminLayout() {
   useEffect(() => {
     if (authenticated) {
       fetchTotal();
+      // Display numbers are positions among active puzzles, so the editor
+      // needs the slot mapping before it can translate what the admin types.
+      useAdminStore.getState().refreshSlots();
     }
   }, [authenticated, fetchTotal]);
 

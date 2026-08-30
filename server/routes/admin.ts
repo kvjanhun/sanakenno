@@ -7,10 +7,11 @@
  *
  * Endpoints:
  *   POST   /api/admin/puzzle             - Create or update a puzzle
- *   DELETE /api/admin/puzzle/:slot        - Delete a puzzle and renumber slots
+ *   DELETE /api/admin/puzzle/:slot        - Soft-delete a puzzle (drops it from the rotation)
  *   POST   /api/admin/puzzle/swap         - Swap two puzzle slots
  *   POST   /api/admin/puzzle/center       - Change center letter for a puzzle
- *   GET    /api/admin/puzzle/variations   - Get 7 center variations for a slot
+ *   GET    /api/admin/puzzle/slots        - Ordered active slots (display number to slot map)
+ *   GET    /api/admin/puzzle/variations   - Center variations plus editor navigation context
  *   POST   /api/admin/preview             - Preview word list without saving
  *   POST   /api/admin/block               - Block a word permanently
  *   DELETE /api/admin/block/:id           - Unblock a word
@@ -36,10 +37,14 @@ import type { SessionData } from '../auth/session';
 import {
   computePuzzle,
   computeVariations,
+  getActiveSlots,
   getBlockedWords,
+  getDisplayNumber,
   getPuzzleBySlot,
   getPuzzleForDate,
+  getSlotByDisplayNumber,
   bumpPuzzleCacheGeneration,
+  nextFreeSlot,
   totalPuzzles,
   FINNISH_LETTERS,
 } from '../puzzle-engine';
@@ -224,26 +229,169 @@ function checkTodayProtection(
 }
 
 /**
+ * Today's Helsinki calendar date, as a Date at local midnight.
+ */
+function helsinkiToday(): Date {
+  const now = new Date();
+  const today = new Date(
+    now.toLocaleString('en-US', { timeZone: 'Europe/Helsinki' }),
+  );
+  today.setHours(0, 0, 0, 0);
+  return today;
+}
+
+/**
+ * Format a Date as YYYY-MM-DD from its local fields.
+ * toISOString() would re-interpret the local midnight in UTC and slide the
+ * date back a day whenever the host runs on a positive UTC offset.
+ */
+function formatLocalDate(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+    2,
+    '0',
+  )}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+/**
  * Compute the next date a slot will be active.
  */
 function nextDateForSlot(slot: number): string {
   const total = totalPuzzles();
   if (total === 0) return 'unknown';
 
-  const now = new Date();
-  const today = new Date(
-    now.toLocaleString('en-US', { timeZone: 'Europe/Helsinki' }),
-  );
-  today.setHours(0, 0, 0, 0);
+  const today = helsinkiToday();
 
   // Search up to total days + 1 to find next occurrence
   for (let d = 0; d <= total; d++) {
     const candidate = new Date(today.getTime() + d * 86400000);
     if (getPuzzleForDate(candidate) === slot) {
-      return candidate.toISOString().slice(0, 10);
+      return formatLocalDate(candidate);
     }
   }
   return 'unknown';
+}
+
+/**
+ * Compute the most recent date a slot was the daily puzzle, today included.
+ * Returns null when the slot never played in the current cycle.
+ */
+function lastDateForSlot(
+  slot: number,
+): { date: string; days_ago: number } | null {
+  const total = totalPuzzles();
+  if (total === 0) return null;
+
+  const today = helsinkiToday();
+
+  for (let d = 0; d <= total; d++) {
+    const candidate = new Date(today.getTime() - d * 86400000);
+    if (getPuzzleForDate(candidate) === slot) {
+      return { date: formatLocalDate(candidate), days_ago: d };
+    }
+  }
+  return null;
+}
+
+// --- Duplicate protection ---
+
+interface DuplicatePuzzle {
+  slot: number;
+  display_number: number | null;
+  center: string;
+  last_played: string | null;
+  days_ago: number | null;
+}
+
+/**
+ * Find active puzzles already using a letter set.
+ *
+ * Letters are compared as a sorted key, so letter order never distinguishes
+ * two puzzles: "a,b,c,d,e,f,g" and "b,c,d,e,f,g,a" resolve to the same key
+ * and therefore the same puzzle. Soft-deleted rows are ignored — they no
+ * longer play, so their letters are free to reuse.
+ */
+function findLetterConflicts(
+  lettersKey: string,
+  excludeSlot?: number,
+): PuzzleRow[] {
+  const db = getDb();
+  const rows = db
+    .prepare('SELECT slot, letters, center FROM puzzles WHERE is_active = 1')
+    .all() as PuzzleRow[];
+  return rows.filter(
+    (row) =>
+      row.slot !== excludeSlot &&
+      normalizeLettersKey(row.letters) === lettersKey,
+  );
+}
+
+/** Describe a conflicting puzzle for the admin-facing warning. */
+function describeDuplicate(row: PuzzleRow): DuplicatePuzzle {
+  const last = lastDateForSlot(row.slot);
+  return {
+    slot: row.slot,
+    display_number: getDisplayNumber(row.slot),
+    center: row.center,
+    last_played: last?.date ?? null,
+    days_ago: last?.days_ago ?? null,
+  };
+}
+
+/** Human label for a duplicate's puzzle number. */
+function duplicateLabel(duplicate: DuplicatePuzzle): string {
+  return `#${duplicate.display_number ?? duplicate.slot + 1}`;
+}
+
+/** Finnish phrasing for how recently a conflicting puzzle ran. */
+function describeRecency(duplicate: DuplicatePuzzle): string {
+  if (duplicate.days_ago === null) return '';
+  if (duplicate.days_ago === 0) return ', kierrossa tänään';
+  if (duplicate.days_ago === 1) return ', kierrossa eilen';
+  return `, kierrossa ${duplicate.days_ago} päivää sitten`;
+}
+
+/**
+ * Duplicate protection for puzzle writes.
+ *
+ * An identical puzzle — same letters and same center — can never exist twice:
+ * it plays out exactly the same and would split its word-find analytics across
+ * two puzzle numbers, so force cannot override it. The same letters with a
+ * different center genuinely produce a different word list, so that is allowed
+ * behind a confirmation that reports how recently those letters ran.
+ */
+function checkDuplicateProtection(
+  c: Context,
+  lettersKey: string,
+  center: string,
+  excludeSlot: number | undefined,
+  force?: boolean,
+): Response | null {
+  const conflicts = findLetterConflicts(lettersKey, excludeSlot);
+  if (conflicts.length === 0) return null;
+
+  const exact = conflicts.find((row) => row.center === center);
+  if (exact) {
+    const duplicate = describeDuplicate(exact);
+    return c.json(
+      {
+        error: `Sama peli on jo kierrossa: ${duplicateLabel(duplicate)} samoilla kirjaimilla ja keskuksella "${center}"${describeRecency(duplicate)}.`,
+        duplicate,
+      },
+      409,
+    );
+  }
+
+  if (force) return null;
+
+  const duplicate = describeDuplicate(conflicts[0]);
+  return c.json(
+    {
+      error: `Samat kirjaimet ovat jo pelissä ${duplicateLabel(duplicate)} (keskus "${duplicate.center}"${describeRecency(duplicate)}). Eri keskuskirjain antaa eri sanat — luodaanko silti?`,
+      requires_force: true,
+      duplicate,
+    },
+    409,
+  );
 }
 
 // --- Rate limiting for preview ---
@@ -313,16 +461,37 @@ admin.post('/puzzle', async (c) => {
   }
 
   const db = getDb();
-  const total = totalPuzzles();
-  const slot = body.slot !== undefined ? body.slot : total;
-  const isNew = slot >= total;
+  // Append past the highest slot ever used, not past the active count:
+  // soft-deleted slots keep their number so player data stays addressable.
+  const appendSlot = nextFreeSlot();
+  const slot = body.slot !== undefined ? body.slot : appendSlot;
+
+  // Reject slots that would leave a hole in the sequence.
+  if (body.slot !== undefined && (slot < 0 || slot > appendSlot)) {
+    return c.json({ error: `Slot-numeron on oltava 0-${appendSlot}` }, 400);
+  }
+
+  const existing = db
+    .prepare('SELECT slot FROM puzzles WHERE slot = ?')
+    .get(slot);
+  const isNew = !existing;
 
   if (!isNew) {
     const blocked = checkTodayProtection(c, slot, force);
     if (blocked) return blocked;
   }
 
-  const lettersStr = letters.sort().join(',');
+  const sortedLetters = [...letters].sort();
+  const lettersStr = sortedLetters.join(',');
+
+  const duplicate = checkDuplicateProtection(
+    c,
+    normalizeLettersKey(sortedLetters),
+    center,
+    isNew ? undefined : slot,
+    force,
+  );
+  if (duplicate) return duplicate;
 
   if (isNew) {
     db.prepare(
@@ -345,7 +514,8 @@ admin.post('/puzzle', async (c) => {
 
   return c.json({
     slot,
-    letters: letters.sort(),
+    display_number: getDisplayNumber(slot),
+    letters: sortedLetters,
     center,
     is_new: isNew,
     next_date: nextDateForSlot(slot),
@@ -502,6 +672,16 @@ admin.post('/puzzle/center', async (c) => {
   const blocked = checkTodayProtection(c, slot, force);
   if (blocked) return blocked;
 
+  // A center change can collide with another puzzle on the same letters.
+  const duplicate = checkDuplicateProtection(
+    c,
+    normalizeLettersKey(puzzle.letters),
+    center,
+    slot,
+    force,
+  );
+  if (duplicate) return duplicate;
+
   db.prepare(
     "UPDATE puzzles SET center = ?, updated_at = datetime('now') WHERE slot = ?",
   ).run(center, slot);
@@ -514,18 +694,47 @@ admin.post('/puzzle/center', async (c) => {
 });
 
 /**
+ * GET /puzzle/slots
+ * Ordered active slot numbers. A slot's index here is its display number
+ * minus one, which lets the editor translate between the number the admin
+ * types and the storage key it writes to without a round trip per lookup.
+ */
+admin.get('/puzzle/slots', (c) => {
+  return c.json({ slots: getActiveSlots(), total_puzzles: totalPuzzles() });
+});
+
+/**
  * GET /puzzle/variations
- * Get all 7 center letter variations for a puzzle slot.
+ * Get all 7 center letter variations for a puzzle slot, plus the editor's
+ * navigation context.
+ *
+ * Accepts either slot=N (storage key) or display_number=N (the 1-based
+ * position among active puzzles that the admin actually sees). Neighbour
+ * slots span every stored puzzle, active or not, so a soft-deleted puzzle
+ * stays reachable for restoring.
  */
 admin.get('/puzzle/variations', (c) => {
   const slotStr = c.req.query('slot');
-  if (!slotStr) {
-    return c.json({ error: 'slot query parameter required' }, 400);
-  }
+  const displayStr = c.req.query('display_number');
 
-  const slot = parseInt(slotStr, 10);
-  if (isNaN(slot) || slot < 0) {
-    return c.json({ error: 'Invalid slot number' }, 400);
+  let slot: number;
+  if (displayStr) {
+    const displayNumber = parseInt(displayStr, 10);
+    if (isNaN(displayNumber) || displayNumber < 1) {
+      return c.json({ error: 'Invalid display number' }, 400);
+    }
+    const resolved = getSlotByDisplayNumber(displayNumber);
+    if (resolved === null) {
+      return c.json({ error: 'Puzzle not found' }, 404);
+    }
+    slot = resolved;
+  } else if (slotStr) {
+    slot = parseInt(slotStr, 10);
+    if (isNaN(slot) || slot < 0) {
+      return c.json({ error: 'Invalid slot number' }, 400);
+    }
+  } else {
+    return c.json({ error: 'slot query parameter required' }, 400);
   }
 
   const db = getDb();
@@ -546,8 +755,23 @@ admin.get('/puzzle/variations', (c) => {
     is_active: v.center === puzzle.center,
   }));
 
+  const neighbours = db
+    .prepare(
+      `SELECT
+         (SELECT MAX(slot) FROM puzzles WHERE slot < ?) AS prev_slot,
+         (SELECT MIN(slot) FROM puzzles WHERE slot > ?) AS next_slot`,
+    )
+    .get(slot, slot) as {
+    prev_slot: number | null;
+    next_slot: number | null;
+  };
+
   return c.json({
     slot,
+    display_number: getDisplayNumber(slot),
+    total_puzzles: totalPuzzles(),
+    prev_slot: neighbours.prev_slot,
+    next_slot: neighbours.next_slot,
     letters,
     variations,
     is_active: puzzle.is_active === 1,
@@ -967,11 +1191,7 @@ admin.get('/schedule', (c) => {
     Math.max(1, Number.isFinite(requestedDays) ? requestedDays : 14),
   );
 
-  const now = new Date();
-  const today = new Date(
-    now.toLocaleString('en-US', { timeZone: 'Europe/Helsinki' }),
-  );
-  today.setHours(0, 0, 0, 0);
+  const today = helsinkiToday();
 
   const startParam = c.req.query('start');
   let startDate = new Date(today);
@@ -995,11 +1215,7 @@ admin.get('/schedule', (c) => {
     }
   }
 
-  const formatDate = (date: Date) =>
-    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
-      date.getDate(),
-    ).padStart(2, '0')}`;
-  const todayKey = formatDate(today);
+  const todayKey = formatLocalDate(today);
   const db = getDb();
   const schedule: Array<{
     date: string;
@@ -1012,7 +1228,7 @@ admin.get('/schedule', (c) => {
 
   for (let d = 0; d < days; d++) {
     const date = new Date(startDate.getTime() + d * 86400000);
-    const dateKey = formatDate(date);
+    const dateKey = formatLocalDate(date);
     const slot = getPuzzleForDate(date);
     const puzzle = db
       .prepare('SELECT letters, center FROM puzzles WHERE slot = ?')
@@ -1021,7 +1237,7 @@ admin.get('/schedule', (c) => {
     schedule.push({
       date: dateKey,
       slot,
-      display_number: slot + 1,
+      display_number: getDisplayNumber(slot) ?? slot + 1,
       letters: puzzle ? puzzle.letters.split(',').map((l) => l.trim()) : null,
       center: puzzle?.center ?? null,
       is_today: dateKey === todayKey,
@@ -1029,7 +1245,7 @@ admin.get('/schedule', (c) => {
   }
 
   return c.json({
-    start: formatDate(startDate),
+    start: formatLocalDate(startDate),
     days,
     schedule,
     total_puzzles: totalPuzzles(),
@@ -1265,11 +1481,26 @@ admin.get('/failed-guesses', (c) => {
  */
 admin.get('/word-finds', (c) => {
   const rawPuzzleNumber = c.req.query('puzzle_number');
-  if (!rawPuzzleNumber || !/^\d+$/.test(rawPuzzleNumber)) {
+  const rawDisplayNumber = c.req.query('display_number');
+
+  let puzzleNumber: number;
+  if (rawDisplayNumber) {
+    if (!/^\d+$/.test(rawDisplayNumber)) {
+      return c.json({ error: 'Invalid display_number' }, 400);
+    }
+    const resolved = getSlotByDisplayNumber(
+      Number.parseInt(rawDisplayNumber, 10),
+    );
+    if (resolved === null) {
+      return c.json({ error: 'Puzzle not found' }, 404);
+    }
+    puzzleNumber = resolved;
+  } else if (rawPuzzleNumber && /^\d+$/.test(rawPuzzleNumber)) {
+    puzzleNumber = Number.parseInt(rawPuzzleNumber, 10);
+  } else {
     return c.json({ error: 'Invalid puzzle_number' }, 400);
   }
 
-  const puzzleNumber = Number.parseInt(rawPuzzleNumber, 10);
   const puzzle = getPuzzleBySlot(puzzleNumber);
   if (!puzzle) {
     return c.json({ error: 'Puzzle not found' }, 404);
@@ -1302,7 +1533,7 @@ admin.get('/word-finds', (c) => {
 
   return c.json({
     puzzle_number: puzzleNumber,
-    display_number: puzzleNumber + 1,
+    display_number: puzzle.display_number,
     center: puzzle.center,
     letters: puzzle.letters,
     total_words: words.length,

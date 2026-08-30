@@ -1,5 +1,29 @@
 # @sanakenno/web
 
+## 1.17.0
+
+### Minor Changes
+
+- Fix puzzle numbering, duplicate detection, and rotation alerting
+  - Puzzle numbers shown to players and admins are now the position among active
+    puzzles, so soft-deleting a puzzle closes the gap and every later puzzle moves
+    down one. Storage slots are unchanged, so saved progress and stats survive.
+  - `total_puzzles` counts only puzzles still in rotation instead of every slot
+    ever created.
+  - Creating a puzzle whose letters and centre already exist is refused; the same
+    letters with a different centre now warn, naming the existing puzzle and how
+    recently it ran. Letter order never distinguishes two puzzles.
+  - `GET /api/health` reports `days_remaining`, and the rotation alert reads it
+    instead of re-deriving cycle maths, so the "last puzzle" warning arrives the
+    day before the rotation restarts rather than after it.
+  - `GET /api/archive?all=true` walks the cycle by position, so it no longer
+    returns stale entries from the previous cycle once the rotation has gaps.
+
+### Patch Changes
+
+- Updated dependencies
+  - @sanakenno/shared@1.17.0
+
 ## 1.16.6
 
 ### Patch Changes

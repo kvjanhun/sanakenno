@@ -98,7 +98,7 @@ Feature: Hint panels
   # --- Share integration ---
 
   Scenario: Share text reports no-hint achievement progress after hints are used
-    Given the share result has score 136 of max 188 on puzzle 107
+    Given the share result has score 136 of max 188 on puzzle 108
     And the share score before hints is 102
     When the share text is generated
     Then the generated share text should match this format:
@@ -111,7 +111,7 @@ Feature: Hint panels
       """
 
   Scenario: Share text reports zero no-hint progress for old hinted saves
-    Given the share result has score 136 of max 188 on puzzle 107
+    Given the share result has score 136 of max 188 on puzzle 108
     And the share result has unlocked hints but no recorded score before hints
     When the share text is generated
     Then the generated share text should match this format:
@@ -124,7 +124,7 @@ Feature: Hint panels
       """
 
   Scenario: Share text celebrates all no-hint achievement stars
-    Given the share result has score 188 of max 188 on puzzle 107
+    Given the share result has score 188 of max 188 on puzzle 108
     And the share score before hints is 136
     When the share text is generated
     Then the generated share text should match this format:

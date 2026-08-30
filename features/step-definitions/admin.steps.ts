@@ -25,6 +25,7 @@ import { SESSION_COOKIE } from '../../server/auth/middleware';
 import {
   invalidateAll,
   setWordlist,
+  getDisplayNumber,
   getPuzzleBySlot,
   getPuzzleForDate,
   hashWord,
@@ -55,6 +56,7 @@ interface AdminWorld extends SanakennoWorld {
   firstSuggestionPangramCount?: number;
   rejectedSuggestionId?: number;
   rejectedSuggestionKey?: string;
+  lastSubmittedPuzzle?: { letters: string[]; center: string };
 }
 
 const TEST_USERNAME = 'admin';
@@ -332,12 +334,130 @@ When(
   'the admin submits a new puzzle with letters {string} and center {string}',
   async function (this: AdminWorld, lettersStr: string, center: string) {
     const letters = lettersStr.split(',').map((l) => l.trim());
+    // Remembered so a follow-up step can resubmit the same puzzle with force.
+    this.lastSubmittedPuzzle = { letters, center };
     this.response = await app.request('/api/admin/puzzle', {
       method: 'POST',
       headers: adminHeaders(this.sessionCookie, this.csrfToken),
       body: JSON.stringify({ letters, center }),
     });
     this.responseJson = (await this.response.json()) as Record<string, unknown>;
+  },
+);
+
+When(
+  'the admin resubmits the same puzzle with force=true',
+  async function (this: AdminWorld) {
+    assert.ok(
+      this.lastSubmittedPuzzle,
+      'A puzzle must have been submitted first',
+    );
+    this.response = await app.request('/api/admin/puzzle', {
+      method: 'POST',
+      headers: adminHeaders(this.sessionCookie, this.csrfToken),
+      body: JSON.stringify({ ...this.lastSubmittedPuzzle, force: true }),
+    });
+    this.responseJson = (await this.response.json()) as Record<string, unknown>;
+  },
+);
+
+When(
+  'the admin updates slot {int} to letters {string} and center {string} with force=true',
+  async function (
+    this: AdminWorld,
+    slot: number,
+    lettersStr: string,
+    center: string,
+  ) {
+    const letters = lettersStr.split(',').map((l) => l.trim());
+    this.response = await app.request('/api/admin/puzzle', {
+      method: 'POST',
+      headers: adminHeaders(this.sessionCookie, this.csrfToken),
+      body: JSON.stringify({ slot, letters, center, force: true }),
+    });
+    this.responseJson = (await this.response.json()) as Record<string, unknown>;
+  },
+);
+
+When(
+  'the admin changes the center of slot {int} to {string}',
+  async function (this: AdminWorld, slot: number, center: string) {
+    this.response = await app.request('/api/admin/puzzle/center', {
+      method: 'POST',
+      headers: adminHeaders(this.sessionCookie, this.csrfToken),
+      body: JSON.stringify({ slot, center }),
+    });
+    this.responseJson = (await this.response.json()) as Record<string, unknown>;
+  },
+);
+
+// --- Duplicate detection ---
+
+Then(
+  'the duplicate response should offer a force override',
+  function (this: AdminWorld) {
+    assert.equal(
+      this.responseJson.requires_force,
+      true,
+      'Duplicate with a different center should be overridable',
+    );
+  },
+);
+
+Then(
+  'the duplicate response should not offer a force override',
+  function (this: AdminWorld) {
+    assert.notEqual(
+      this.responseJson.requires_force,
+      true,
+      'An identical puzzle must never be creatable',
+    );
+  },
+);
+
+Then(
+  'the duplicate response should name puzzle slot {int}',
+  function (this: AdminWorld, slot: number) {
+    const duplicate = this.responseJson.duplicate as
+      | { slot: number }
+      | undefined;
+    assert.ok(duplicate, 'Response should describe the conflicting puzzle');
+    assert.equal(duplicate!.slot, slot);
+  },
+);
+
+Then(
+  'the duplicate response should say when the existing puzzle last ran',
+  function (this: AdminWorld) {
+    const duplicate = this.responseJson.duplicate as
+      | { last_played: string | null; days_ago: number | null }
+      | undefined;
+    assert.ok(duplicate, 'Response should describe the conflicting puzzle');
+    assert.match(
+      duplicate!.last_played ?? '',
+      /^\d{4}-\d{2}-\d{2}$/,
+      'Should report the date the letters last ran',
+    );
+    assert.ok(
+      typeof duplicate!.days_ago === 'number',
+      'Should report how many days ago the letters last ran',
+    );
+  },
+);
+
+// --- Display numbering ---
+
+Then(
+  'slot {int} should have display number {int}',
+  function (this: AdminWorld, slot: number, expected: number) {
+    assert.equal(getDisplayNumber(slot), expected);
+  },
+);
+
+Then(
+  'slot {int} should have no display number',
+  function (this: AdminWorld, slot: number) {
+    assert.equal(getDisplayNumber(slot), null);
   },
 );
 
@@ -473,6 +593,27 @@ Given(
       words: [...cached!.words],
       word_hashes: [...cached!.word_hashes],
     };
+  },
+);
+
+Given(
+  'puzzle slot {int} exists with letters {string} and center {string}',
+  function (
+    this: AdminWorld,
+    slot: number,
+    lettersStr: string,
+    center: string,
+  ) {
+    const db = getDb();
+    const letters = lettersStr
+      .split(',')
+      .map((l) => l.trim())
+      .sort()
+      .join(',');
+    db.prepare(
+      'INSERT OR REPLACE INTO puzzles (slot, letters, center) VALUES (?, ?, ?)',
+    ).run(slot, letters, center);
+    invalidateAll();
   },
 );
 
@@ -2201,6 +2342,33 @@ Then('its display_number should be 1', async function (this: AdminWorld) {
   assert.ok(slot0, 'Slot 0 should appear in schedule');
   assert.equal(slot0!.display_number, 1);
 });
+
+Then(
+  'no schedule entry should be for slot {int}',
+  function (this: AdminWorld, slot: number) {
+    const schedule = this.responseJson.schedule as Array<{ slot: number }>;
+    assert.equal(
+      schedule.some((entry) => entry.slot === slot),
+      false,
+      `Slot ${slot} should not be scheduled`,
+    );
+  },
+);
+
+Then(
+  'no schedule entry should have a display number above {int}',
+  function (this: AdminWorld, max: number) {
+    const schedule = this.responseJson.schedule as Array<{
+      display_number: number;
+    }>;
+    for (const entry of schedule) {
+      assert.ok(
+        entry.display_number <= max,
+        `Display number ${entry.display_number} should not exceed ${max}`,
+      );
+    }
+  },
+);
 
 Given(
   'there are {int} puzzles in rotation',

@@ -8,7 +8,18 @@ Feature: Puzzle API
     When a GET request is made to /api/puzzle
     Then the response should include center, letters, word_hashes, hint_data, max_score
     And the response should include puzzle_number and total_puzzles
+    And the response should include a display_number
     And the response should not include plaintext words
+
+  Scenario: Total puzzles counts only puzzles still in rotation
+    Given puzzle number 5 is soft-deleted
+    When a GET request is made to /api/puzzle
+    Then total_puzzles should be 40
+
+  Scenario: Display number is the position among active puzzles
+    Given puzzle number 5 is soft-deleted
+    When a GET request is made to /api/puzzle/6
+    Then the display_number should be 6
 
   Scenario: Puzzle data is pre-computed
     When the API serves a puzzle
@@ -29,6 +40,32 @@ Feature: Puzzle API
     Given puzzle number 5 is soft-deleted
     When a GET request is made to /api/puzzle/5
     Then the server should respond with 404
+
+  # --- Rotation headroom ---
+  # days_remaining counts the fresh puzzle days left in this cycle, today
+  # included, so the last fresh day reports 1 and the rollover day reports a
+  # full cycle. Operational alerting reads this instead of re-deriving the
+  # rotation maths itself.
+
+  Scenario: Health reports the fresh puzzle days remaining
+    When a GET request is made to /api/health
+    Then the response should include days_remaining
+
+  Scenario: The last fresh day reports one day remaining
+    Given today is the last puzzle of the rotation cycle
+    When a GET request is made to /api/health
+    Then days_remaining should be 1
+
+  Scenario: The rollover day reports a full cycle again
+    Given today is the first puzzle of the rotation cycle
+    When a GET request is made to /api/health
+    Then days_remaining should be 41
+
+  Scenario: Remaining days ignore soft-deleted puzzles
+    Given puzzle number 5 is soft-deleted
+    And today is the last puzzle of the rotation cycle
+    When a GET request is made to /api/health
+    Then days_remaining should be 1
 
   # --- POST /api/achievement ---
 

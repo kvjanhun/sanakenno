@@ -23,7 +23,10 @@ interface PuzzleResponse {
   word_hashes: string[];
   hint_data: FullPuzzleData['hint_data'];
   max_score: number;
+  /** Storage slot; the stable key for saved progress and stats. */
   puzzle_number: number;
+  /** 1-based position among active puzzles; the number players see. */
+  display_number: number;
   total_puzzles: number;
 }
 
@@ -46,6 +49,7 @@ function buildPuzzleResponse(slot: number): PuzzleResponse | null {
     hint_data: data.hint_data,
     max_score: data.max_score,
     puzzle_number: data.slot,
+    display_number: data.display_number,
     total_puzzles: totalPuzzles,
   };
 }

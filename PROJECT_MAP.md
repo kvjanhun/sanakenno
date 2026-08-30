@@ -104,10 +104,10 @@ Current versions: see the package.json files for each deployable target.
 
 ### Backend (`server/`)
 
-- `index.ts`: API entry point — all routes and middleware mounted here; full endpoint list in header comment.
-- `puzzle-engine.ts`: **Core Logic** for puzzle rotation and word-list generation.
+- `index.ts`: API entry point — all routes and middleware mounted here; full endpoint list in header comment. `GET /api/health` also reports `total_puzzles` and `days_remaining` for rotation alerting.
+- `puzzle-engine.ts`: **Core Logic** for puzzle rotation and word-list generation. Owns the slot/display-number split (see below), `nextFreeSlot()` for appends, and `getDaysRemainingInCycle()`.
 - `routes/puzzle.ts`: `GET /api/puzzle`, `GET /api/puzzle/:number`, `GET /api/puzzle/:number/words`. Direct `:number` values are exact active slot IDs; out-of-range and soft-deleted slots return 404. Words are blocked for the current active puzzle slot.
-- `routes/archive.ts`: `GET /api/archive` — last 7 days; `?all=true` walks the current active-puzzle calendar cycle.
+- `routes/archive.ts`: `GET /api/archive` — last 7 days; `?all=true` walks the current active-puzzle calendar cycle by cycle _position_, not slot number.
 - `routes/player-sync.ts`: `GET /api/player/sync`, `POST /api/player/sync/stats`, `POST /api/player/sync/state`.
 - `routes/admin.ts`: Admin dashboard endpoints (requires session auth).
 - `routes/failed-guess.ts`: `POST /api/failed-guess`.
@@ -126,6 +126,28 @@ Current versions: see the package.json files for each deployable target.
 - `tests/e2e/`: Playwright specs for the full web user journey.
 
 ---
+
+## Puzzle Numbering
+
+Two numbers identify a puzzle, and they are not interchangeable:
+
+- **`slot`** (`puzzle_number` in API responses) — the permanent storage key.
+  Soft-deleted puzzles keep their slot forever, so saved progress
+  (`sanakenno_state_N`), `player_stats`, `word_finds`, and `revealed_N` flags
+  stay addressable. New puzzles append at `nextFreeSlot()`, never at the
+  active count.
+- **`display_number`** — the 1-based position among _active_ puzzles, and the
+  only number ever shown to a player or admin. Soft-deleting a puzzle closes
+  the gap, so every later puzzle's display number drops by one.
+
+`total_puzzles` counts active puzzles only. Anything deriving a cycle position
+must use the index within `getActiveSlots()`; slot arithmetic silently drifts
+once the rotation has gaps.
+
+Duplicate protection lives in `routes/admin.ts`: letters are compared as a
+sorted key, so letter order never distinguishes two puzzles. Same letters _and_
+centre is refused outright; same letters with a different centre is allowed
+behind a force confirmation that reports how recently those letters ran.
 
 ## Environment & Deployment
 

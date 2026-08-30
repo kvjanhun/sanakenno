@@ -7,7 +7,14 @@ function variationsForSlot(slot: number) {
       : ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
   const center = slot === 3 ? 'n' : 'a';
 
+  // No soft-deleted puzzles in this fixture, so display number is slot + 1.
   return {
+    slot,
+    display_number: slot + 1,
+    total_puzzles: TOTAL_PUZZLES,
+    prev_slot: slot > 0 ? slot - 1 : null,
+    next_slot: slot < TOTAL_PUZZLES - 1 ? slot + 1 : null,
+    is_active: true,
     letters,
     variations: letters.map((letter) => ({
       center: letter,
@@ -17,6 +24,16 @@ function variationsForSlot(slot: number) {
       is_active: letter === center,
     })),
   };
+}
+
+const TOTAL_PUZZLES = 10;
+
+/** The editor addresses puzzles by display number; the server resolves the slot. */
+function slotFromRequest(url: string): number {
+  const params = new URL(url).searchParams;
+  const display = params.get('display_number');
+  if (display !== null) return Number(display) - 1;
+  return Number(params.get('slot') ?? '0');
 }
 
 test('admin can select a puzzle by number with a form input', async ({
@@ -47,10 +64,19 @@ test('admin can select a puzzle by number with a form input', async ({
     });
   });
 
+  await page.route('**/api/admin/puzzle/slots', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        slots: Array.from({ length: TOTAL_PUZZLES }, (_, i) => i),
+        total_puzzles: TOTAL_PUZZLES,
+      }),
+    });
+  });
+
   await page.route('**/api/admin/puzzle/variations**', async (route) => {
-    const slot = Number(
-      new URL(route.request().url()).searchParams.get('slot'),
-    );
+    const slot = slotFromRequest(route.request().url());
     requestedSlots.push(slot);
     await route.fulfill({
       status: 200,

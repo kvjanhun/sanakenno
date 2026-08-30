@@ -23,6 +23,15 @@ server/
 - **Player** (`/api/player/*`): Bearer token via `requirePlayerAuth` from `player-auth/middleware.ts`.
 - **Public** (`/api/puzzle`, `/api/archive`, `/api/achievement`, `/api/failed-guess`, `/api/word-find`): no auth, rate-limited where needed.
 
+## Puzzle numbering
+- `slot` is the permanent storage key and must never be renumbered — player
+  stats, saved progress, and word-find analytics are keyed on it.
+- `display_number` is the 1-based position among active puzzles and is the only
+  number shown in any UI or share text. Soft deletes close the gap.
+- `totalPuzzles()` counts active puzzles; `nextFreeSlot()` is what appends use.
+- Never derive a cycle position from a slot number — use the index within
+  `getActiveSlots()`, or the gaps left by soft deletes will skew it.
+
 ## Database
 - All queries go through the `getDb()` helper — never open a raw connection elsewhere.
 - Use parameterised queries; never interpolate user input into SQL.

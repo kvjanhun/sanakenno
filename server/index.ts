@@ -5,7 +5,7 @@
  * CORS, JSON parsing, structured logging, and security headers.
  *
  * Endpoints:
- *   GET  /api/health              - Health check with DB reachability
+ *   GET  /api/health              - Health check with DB reachability and rotation headroom
  *   GET  /api/puzzle              - Today's puzzle
  *   GET  /api/puzzle/:number      - Specific puzzle by slot number
  *   GET  /api/archive             - Last 7 days of puzzle metadata
@@ -33,6 +33,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { getDb } from './db/connection';
+import { getDaysRemainingInCycle, totalPuzzles } from './puzzle-engine';
 import puzzleRoutes from './routes/puzzle';
 import archiveRoutes from './routes/archive';
 import achievementRoutes from './routes/achievement';
@@ -101,12 +102,27 @@ app.use('*', async (c, next) => {
 /**
  * GET /api/health
  * Returns 200 if the database is reachable, 503 otherwise.
+ *
+ * Also reports rotation headroom so operational alerting does not have to
+ * re-derive the cycle maths from slot numbers, which silently drifts once the
+ * rotation contains soft-deleted gaps.
  */
 app.get('/api/health', (c) => {
   try {
     const db = getDb();
     db.prepare('SELECT 1').get();
-    return c.json({ status: 'ok' });
+
+    const helsinki = new Date(
+      new Date().toLocaleString('en-US', { timeZone: 'Europe/Helsinki' }),
+    );
+
+    return c.json({
+      status: 'ok',
+      total_puzzles: totalPuzzles(),
+      // Fresh puzzle days left in this cycle, today included: 1 means today is
+      // the last fresh puzzle and the rotation restarts tomorrow.
+      days_remaining: getDaysRemainingInCycle(helsinki),
+    });
   } catch (err) {
     console.error(
       JSON.stringify({

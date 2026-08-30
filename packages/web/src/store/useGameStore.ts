@@ -41,7 +41,10 @@ export interface Puzzle {
   word_hashes: string[];
   hint_data: HintData;
   max_score: number;
+  /** Storage slot; the stable key for saved progress and stats. */
   puzzle_number: number;
+  /** 1-based position in the rotation; the number shown to players. */
+  display_number: number;
   total_puzzles: number;
 }
 
@@ -659,7 +662,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
     if (!puzzle) return;
 
     const text = buildShareText({
-      puzzleNumber: puzzle.puzzle_number,
+      displayNumber: puzzle.display_number,
       score,
       maxScore: puzzle.max_score,
       hintsUnlocked,

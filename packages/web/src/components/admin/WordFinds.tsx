@@ -32,26 +32,27 @@ interface WordFindsResponse {
  */
 export function WordFinds() {
   const csrfToken = useAdminStore((s) => s.csrfToken);
-  const currentSlot = useAdminStore((s) => s.currentSlot);
+  const currentDisplayNumber = useAdminStore((s) => s.currentDisplayNumber);
   const totalPuzzles = useAdminStore((s) => s.totalPuzzles);
   const setStatusMessage = useAdminStore((s) => s.setStatusMessage);
 
-  const [puzzleNumber, setPuzzleNumber] = useState(currentSlot);
+  // Addressed by display number so navigation steps over soft-deleted slots.
+  const [displayNumber, setDisplayNumber] = useState(currentDisplayNumber ?? 1);
   const [data, setData] = useState<WordFindsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sortMode, setSortMode] = useState<WordSortMode>('found');
 
   useEffect(() => {
-    setPuzzleNumber(currentSlot);
-  }, [currentSlot]);
+    if (currentDisplayNumber !== null) setDisplayNumber(currentDisplayNumber);
+  }, [currentDisplayNumber]);
 
   const fetchWordFinds = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const res = await fetch(
-        `${API_BASE}/api/admin/word-finds?puzzle_number=${puzzleNumber}`,
+        `${API_BASE}/api/admin/word-finds?display_number=${displayNumber}`,
         {
           credentials: 'same-origin',
           headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {},
@@ -74,7 +75,7 @@ export function WordFinds() {
     } finally {
       setLoading(false);
     }
-  }, [csrfToken, puzzleNumber, setStatusMessage]);
+  }, [csrfToken, displayNumber, setStatusMessage]);
 
   useEffect(() => {
     fetchWordFinds();
@@ -102,17 +103,15 @@ export function WordFinds() {
     });
   }, [data, sortMode]);
 
-  const displayNumber = puzzleNumber + 1;
-  const canGoPrevious = puzzleNumber > 0;
-  const canGoNext = totalPuzzles === 0 || puzzleNumber < totalPuzzles - 1;
+  const canGoPrevious = displayNumber > 1;
+  const canGoNext = totalPuzzles === 0 || displayNumber < totalPuzzles;
 
   const updateDisplayNumber = (value: string) => {
     const parsed = Number.parseInt(value, 10);
     if (!Number.isFinite(parsed)) return;
 
     const maxDisplayNumber = Math.max(1, totalPuzzles);
-    const clamped = Math.min(Math.max(parsed, 1), maxDisplayNumber);
-    setPuzzleNumber(clamped - 1);
+    setDisplayNumber(Math.min(Math.max(parsed, 1), maxDisplayNumber));
   };
 
   return (
@@ -125,7 +124,7 @@ export function WordFinds() {
         >
           <button
             type="button"
-            onClick={() => setPuzzleNumber((n) => Math.max(0, n - 1))}
+            onClick={() => setDisplayNumber((n) => Math.max(1, n - 1))}
             disabled={!canGoPrevious}
             className="inline-flex h-8 w-8 items-center justify-center rounded-lg transition-all cursor-pointer disabled:cursor-default disabled:opacity-30 hover:bg-[color-mix(in srgb,var(--color-accent)_6%,var(--color-bg-secondary))]"
             style={{ color: 'var(--color-text-primary)' }}
@@ -157,8 +156,8 @@ export function WordFinds() {
           <button
             type="button"
             onClick={() =>
-              setPuzzleNumber((n) =>
-                totalPuzzles > 0 ? Math.min(totalPuzzles - 1, n + 1) : n + 1,
+              setDisplayNumber((n) =>
+                totalPuzzles > 0 ? Math.min(totalPuzzles, n + 1) : n + 1,
               )
             }
             disabled={!canGoNext}

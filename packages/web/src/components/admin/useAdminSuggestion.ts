@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import type { ActionResult } from '../../store/useAdminStore';
 
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -38,8 +39,8 @@ export function useAdminSuggestion({
   createPuzzle: (
     letters: string[],
     center: string,
-    options?: { loadAfterCreate?: boolean },
-  ) => Promise<boolean>;
+    options?: { loadAfterCreate?: boolean; force?: boolean },
+  ) => Promise<ActionResult>;
   setStatusMessage: (
     message: string | null,
     type?: 'success' | 'error' | 'warning',
@@ -135,10 +136,12 @@ export function useAdminSuggestion({
 
   const handleAcceptSuggestion = useCallback(async () => {
     if (!suggestion) return;
+    // Suggestions never reuse a letter set already in rotation, so a refusal
+    // here is a real error rather than something to confirm past.
     const created = await createPuzzle(suggestion.letters, suggestion.center, {
       loadAfterCreate: false,
     });
-    if (!created) return;
+    if (created !== 'ok') return;
     setSuggestion(null);
     setDeclinedSuggestions([]);
     setPangramSpoilersVisible(false);
