@@ -136,4 +136,4 @@ behind a force confirmation that reports how recently those letters ran.
 - **Helsinki Time**: The game strictly follows `Europe/Helsinki` for puzzle rotation.
 - **Auth layers**: Admin — cookie session (`/api/admin/*`, `/api/auth/*`). Player — Bearer token (`/api/player/*`). Public — no auth.
 - **Revealed flag**: `revealed_N` in localStorage (local-only, not synced) marks a puzzle whose answers have been viewed; stats updates are frozen for that puzzle number.
-- **Backups**: The SQLite database is backed up off-box to Backblaze S3 by the shared backup service that runs alongside `erez.ac` (see `~/Projects/web_kontissa`). No backup logic lives in this repo.
+- **Backups**: `sanakenno.db` replicates continuously to Backblaze B2 via the shared Litestream sidecar defined in `~/Projects/web_kontissa`. No backup logic lives in this repo. Host configuration for the machine (nginx, firewall, webhook, cron) lives in `~/Projects/nuc` — its README maps what runs where.

@@ -9,12 +9,9 @@ Monitoring and deployment scripts for Sanakenno infrastructure.
 | `puzzle-rotation-alert.sh` | Warns when fresh puzzles are running out (7 days, 1 day, and on restart) | `0 9 * * *` |
 | `error-spike-alert.sh` | Alerts on error rate spikes in Docker logs | `*/5 * * * *` |
 
-> **Container health monitoring lives in `web_kontissa`.** The combined
-> health-alert script (covering both `sanakenno-a`/`sanakenno-b` and erez.ac)
-> and its test harness now live in the web_kontissa repo at
-> `server/health-alert.sh` / `server/health-alert-test.sh`, which owns the shared
-> host plumbing for both sites. It is deployed to `~/scripts/health-alert.sh`
-> from there.
+> **Container health monitoring lives in the `nuc` repo.** The combined
+> health monitor covers both sanakenno.fi and erez.ac, so it is host-level:
+> `~/Projects/nuc/scripts/health-alert.sh`, with its test harness alongside it.
 
 ## Setup
 
