@@ -7,7 +7,7 @@ server/
   routes/           puzzle, archive, achievement, failed-guess, word-find, admin, player-sync route files
   auth/             admin session middleware and routes (cookie-based)
   player-auth/      player identity middleware and routes (Bearer token-based)
-  db/               SQLite connection + schema
+  db/               SQLite connection, schema baseline, and ordered migrations
   email/            transactional email helpers (transfer link)
   puzzle-engine.ts  pure puzzle logic (no I/O)
 ```
@@ -35,9 +35,33 @@ server/
 ## Database
 - All queries go through the `getDb()` helper — never open a raw connection elsewhere.
 - Use parameterised queries; never interpolate user input into SQL.
-- Schema lives in `db/schema.sql` and is applied on startup via `applySchema`. Existing prod databases are already populated; if you add a column, apply it by hand to any live DB before shipping.
-- For manual production table additions, the convenient path is to run a one-off Node command through Docker Compose with the app image's existing `better-sqlite3` dependency. This runs as the container user against mounted `/data`, avoiding host-side readonly/ownership issues:
-  `docker compose stop && docker compose run --rm --no-deps --entrypoint node sanakenno-a -e "const Database=require('better-sqlite3'); const db=new Database('/data/sanakenno.db'); db.exec(\`...\`); db.close();" && docker compose up -d`
+
+### Schema changes
+Schema changes are automatic and versioned. Never hand-edit a production
+database, and never write a one-off migration script.
+
+Every schema change is **two edits in the same commit**:
+
+1. **`db/schema.sql`** — the baseline a brand-new database is created from.
+   Update it so a fresh database matches the new shape directly.
+2. **`db/migrations/NNNN-name.ts`** — brings existing databases (production,
+   and older developer copies) to that same shape. Append it to the ordered
+   array in `db/migrations/index.ts`.
+
+Both are needed: schema.sql alone would leave production behind, and a
+migration alone would leave fresh databases and the test suite behind.
+
+The runner (`runMigrations` in `db/connection.ts`) applies pending migrations
+at startup, each inside `BEGIN IMMEDIATE` with a re-check under the lock, so
+the two app instances starting together after a host reboot cannot both apply
+the same migration. A failing migration aborts startup deliberately — a
+half-migrated database serving traffic is worse than a container that will not
+come up. Watch the deploy's Telegram alert and container health after shipping
+one.
+
+Migrations are forward-only; there is no `down`. Rolling back a bad migration
+means restoring from the Litestream replica. Never edit or renumber a
+migration that has already run in production — append a new one.
 
 ## Environment
 - Port: `process.env.PORT` (default `3001`).

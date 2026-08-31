@@ -95,8 +95,9 @@ Current versions: see the package.json files for each deployable target.
 - `auth/`: Admin session middleware and routes (cookie-based, CSRF-protected).
 - `player-auth/`: Player identity middleware and routes (Bearer token-based).
 - `email/`: Transactional email helpers (e.g. `send-transfer-link.ts` for the device-pairing email).
-- `db/schema.sql`: Database structure (puzzles, player_stats, player_puzzle_states, achievements, failed_guesses, config).
-- `db/connection.ts`: `getDb()` helper — opens the SQLite file, enables WAL, and applies `schema.sql`.
+- `db/schema.sql`: Baseline structure a fresh database is created from (puzzles, player_stats, player_puzzle_states, achievements, failed_guesses, config).
+- `db/migrations/`: Ordered, versioned migrations that bring an existing database up to the baseline. Applied automatically at startup; tracked in `schema_migrations`. See `server/CLAUDE.md` for the two-edit rule.
+- `db/connection.ts`: `getDb()` helper — opens the SQLite file, enables WAL, applies `schema.sql`, then runs pending migrations.
 
 ### Testing (`tests/`)
 

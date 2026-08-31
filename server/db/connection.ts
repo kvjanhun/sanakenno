@@ -3,7 +3,8 @@
  *
  * Uses better-sqlite3 for synchronous SQLite access.
  * Reads DATA_DIR env var (default: ./server/data) for DB path.
- * Initializes schema from schema.sql if tables don't exist.
+ * Creates a fresh database from schema.sql, then brings any database up to
+ * date by applying pending migrations from db/migrations/.
  * Supports in-memory databases for testing.
  *
  * @module server/db/connection
@@ -14,6 +15,7 @@ import type BetterSqlite3 from 'better-sqlite3';
 import { readFileSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { migrations } from './migrations/index';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -46,34 +48,71 @@ function applySchema(db: BetterSqlite3.Database): void {
   const schema = readFileSync(schemaPath, 'utf-8');
   db.exec(schema);
 
-  // Idempotent column additions for pre-existing databases.
-  // SQLite has no ADD COLUMN IF NOT EXISTS, so introspect via PRAGMA.
-  ensureColumn(db, 'players', 'preferences', 'TEXT');
-  ensureColumn(db, 'puzzles', 'is_active', 'INTEGER NOT NULL DEFAULT 1');
-  ensureColumn(
-    db,
-    'player_stats',
-    'best_no_hint_score',
-    'INTEGER NOT NULL DEFAULT 0',
-  );
-
-  // The pairing model no longer uses per-transfer tokens — the stable
-  // player_key is the pairing code. Drop the old table from live DBs; rows
-  // (if any remain) are short-lived by construction.
-  db.exec('DROP TABLE IF EXISTS player_transfer_tokens');
+  runMigrations(db);
 }
 
-function ensureColumn(
-  db: BetterSqlite3.Database,
-  table: string,
-  column: string,
-  decl: string,
-): void {
-  const rows = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{
-    name: string;
-  }>;
-  if (rows.some((r) => r.name === column)) return;
-  db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${decl}`);
+/**
+ * Apply every migration this database has not seen yet, in order.
+ *
+ * Two app instances share the SQLite file and start at the same time after a
+ * host reboot, so each migration runs under `BEGIN IMMEDIATE` (reserving the
+ * single writer slot) and re-checks inside that lock whether the other
+ * instance already applied it. `busy_timeout` makes the loser wait rather than
+ * fail. A migration that throws aborts startup — a half-migrated database
+ * serving traffic is worse than a container that refuses to come up.
+ */
+export function runMigrations(db: BetterSqlite3.Database): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS schema_migrations (
+      version     TEXT PRIMARY KEY,
+      applied_at  TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
+  const isApplied = (version: string): boolean =>
+    db
+      .prepare('SELECT 1 FROM schema_migrations WHERE version = ?')
+      .get(version) !== undefined;
+
+  for (const migration of migrations) {
+    if (isApplied(migration.version)) continue;
+
+    db.exec('BEGIN IMMEDIATE');
+    try {
+      // Re-check under the write lock: the other instance may have applied
+      // this migration between our read above and acquiring the lock.
+      if (!isApplied(migration.version)) {
+        migration.up(db);
+        db.prepare('INSERT INTO schema_migrations (version) VALUES (?)').run(
+          migration.version,
+        );
+        console.log(
+          JSON.stringify({
+            level: 'info',
+            message: 'Applied schema migration',
+            version: migration.version,
+            description: migration.description,
+          }),
+        );
+      }
+      db.exec('COMMIT');
+    } catch (err) {
+      try {
+        db.exec('ROLLBACK');
+      } catch {
+        /* preserve the original migration error */
+      }
+      console.error(
+        JSON.stringify({
+          level: 'error',
+          message: 'Schema migration failed',
+          version: migration.version,
+          error: err instanceof Error ? err.message : String(err),
+        }),
+      );
+      throw err;
+    }
+  }
 }
 
 function isSqliteBusyError(error: unknown): boolean {

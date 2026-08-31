@@ -66,10 +66,19 @@ app.onError((err, c) => {
 app.use(
   '*',
   cors({
-    // Allow the production site, localhost dev, and React Native (no Origin header).
+    // Credentialed CORS: admin sessions ride on cookies and player sessions on
+    // Bearer tokens, so the allow-list must stay narrow. localhost is a dev-only
+    // origin — allowing it in production would let a page served from any
+    // process on an admin's own machine make credentialed calls to the live API.
     origin: (origin) => {
       if (origin === 'https://sanakenno.fi') return origin;
-      if (!origin || origin.startsWith('http://localhost')) return origin;
+      if (!origin) return origin;
+      if (
+        process.env.NODE_ENV !== 'production' &&
+        origin.startsWith('http://localhost')
+      ) {
+        return origin;
+      }
       return null;
     },
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
