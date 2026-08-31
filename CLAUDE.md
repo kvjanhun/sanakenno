@@ -132,8 +132,8 @@ the same workflow manually.
 
 ## Documentation Upkeep
 
-**Every fact lives in exactly one file. Link to it; never copy it.** Duplicated
-facts are how these documents drifted apart before — each file has one job:
+**Every fact lives in exactly one file. Link to it; never copy it.** A fact
+copied into two files drifts in both. Each file has one job:
 
 | File | Owns | Never contains |
 | --- | --- | --- |
@@ -154,3 +154,27 @@ fact:
 `AGENTS.md` and `GEMINI.md` are symlinks to `CLAUDE.md` — editing any name
 edits the same file. Keep `AGENTS.md` as the canonical cross-agent entry
 point.
+
+### Documentation is not a journal
+
+**Docs state what is true now.** They are not a changelog, a migration diary,
+or a record of what a previous version did. Git history is where change lives.
+
+Never write:
+
+- "used to", "no longer", "previously", "we moved", "this was renamed"
+- rationale that only parses if you watched the change happen
+- reassurances answering a question someone asked once ("note: this does not
+  need X") — just state the requirement
+- status narration ("now owns", "has since grown", "was left there on purpose")
+
+Always keep:
+
+- **rules with reasons**, when the reason constrains a future decision —
+  "secrets go in an EnvironmentFile because unit files are copied into the
+  backup" tells the next person what not to do
+- warnings about traps that are still there
+
+The test: **would this sentence make sense to someone who has never seen the
+previous version of this file?** If not, delete it. If the history genuinely
+matters, it belongs in the commit message that made the change.
