@@ -98,11 +98,12 @@ Current versions: see the package.json files for each deployable target.
 - `db/schema.sql`: Database structure (puzzles, player_stats, player_puzzle_states, achievements, failed_guesses, config).
 - `db/connection.ts`: `getDb()` helper — opens the SQLite file, enables WAL, and applies `schema.sql`.
 
-### Testing (`features/` & `tests/`)
+### Testing (`tests/`)
 
-- `features/*.feature`: **Acceptance Criteria** — source of truth for every feature.
-- `features/step-definitions/`: Integration step definitions (hit real in-memory SQLite).
 - `tests/`: Vitest unit tests for shared logic and API routes.
+- `tests/integration/`: Vitest integration tests — real Hono app with
+  in-memory SQLite, and the real web stores. Test names are the behaviour
+  catalog.
 - `tests/e2e/`: Playwright specs for the full web user journey.
 
 ---

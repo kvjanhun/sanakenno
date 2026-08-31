@@ -13,7 +13,7 @@ Finnish Spelling Bee word game — find words from 7 letters, every word must co
 | Shared Domain | `packages/shared` — pure game logic, types, platform interfaces |
 | Backend | Hono (Node.js via tsx) |
 | Storage | SQLite (better-sqlite3) |
-| Testing | Vitest, Cucumber.js (BDD), Playwright (E2E) |
+| Testing | Vitest (unit + integration), Playwright (E2E) |
 | PWA | vite-plugin-pwa |
 | Deployment | Docker, nginx |
 
@@ -24,9 +24,8 @@ pnpm install         # Install dependencies
 pnpm run dev         # Start dev server (Vite + Hono)
 pnpm run build       # Production build
 pnpm run typecheck   # TypeScript check
-pnpm run test:unit   # Vitest unit tests
+pnpm run test:unit   # Vitest unit + integration tests
 pnpm run test:coverage # Vitest coverage thresholds
-pnpm run test:bdd    # Cucumber.js BDD specs
 pnpm run test:e2e    # Playwright E2E tests (dev server required)
 pnpm run test:pwa:built # Production-preview PWA tests after build
 pnpm run lint        # ESLint + Prettier check
@@ -46,37 +45,17 @@ reproduction steps are documented in
 [`docs/pangram-review.md`](docs/pangram-review.md). Files under
 `tmp/pangram-review/` include spoiler pangram words and must stay local.
 
-## Feature specs
+## Testing
 
-All behaviour is defined in Gherkin specs under `features/`. The BDD suite runs against the real Hono server; E2E tests tagged `@e2e` run in Playwright with a mocked API.
+Behaviour is encoded directly as tests; descriptive test names are the
+behaviour catalog.
 
-| Feature | What it covers |
-|---|---|
-| [scoring](features/scoring.feature) | Point values, pangram bonus ("Pangrammi!"), score accumulation |
-| [word-validation](features/word-validation.feature) | Rejection rules, SHA-256 hash checking, input normalisation, failed-guess reporting |
-| [ranks](features/ranks.feature) | 7 rank thresholds, progress bar, celebrations |
-| [puzzle](features/puzzle.feature) | Daily rotation, puzzle structure, midnight rollover |
-| [hints](features/hints.feature) | 3 visible unlockable hint panels, persistence, collapse state |
-| [interaction](features/interaction.feature) | Keyboard/tap input, honeycomb, found words, share |
-| [timer](features/timer.feature) | Elapsed time tracking, pause on tab hidden/blur |
-| [persistence](features/persistence.feature) | localStorage per-puzzle, validation on reload |
-| [achievements](features/achievements.feature) | Server-side rank recording, session dedup |
-| [api](features/api.feature) | Hono endpoints, response shape, rate limiting, failed-guess and word-find recording |
-| [settings](features/settings.feature) | Theme preference, haptics intensity levels (mobile) |
-| [navigation](features/navigation.feature) | Stack navigator, archive/stats/rules/settings screens (mobile) |
-| [theme](features/theme.feature) | Light/dark mode toggle, system preference |
-| [error-handling](features/error-handling.feature) | Network errors, corrupt data, storage limits |
-| [accessibility](features/accessibility.feature) | Keyboard behaviour, touch quirks, safe areas |
-| [pwa](features/pwa.feature) | Installability, service worker strategies, iOS quirks |
-| [infrastructure](features/infrastructure.feature) | Docker, nginx, health checks |
-| [auth](features/auth.feature) | Admin authentication (cookie sessions, CSRF, CLI-provisioned account) |
-| [player-auth](features/player-auth.feature) | Silent player init, pairing-code device pairing, key rotation |
-| [admin](features/admin.feature) | Puzzle CRUD, blocked words, schedule, analytics |
-| [archive](features/archive.feature) | 7-day puzzle archive, score+rank per day, replay past puzzles |
-| [definitions](features/definitions.feature) | Word definitions via Kotus dictionary links |
-| [stats](features/stats.feature) | Player statistics, streaks, rank distribution |
-| [sync](features/sync.feature) | Cross-device stats and puzzle-state sync (offline-safe, fire-and-forget) |
-| [server-errors](features/server-errors.feature) | API error responses, structured error logging |
+- `tests/` — Vitest unit tests for shared logic and server modules.
+- `tests/integration/` — Vitest integration tests against the real Hono app
+  (in-memory SQLite) and the real web stores.
+- `tests/e2e/` — Playwright specs for browser behaviour.
+- `tests/pwa/` + `pnpm run test:pwa:built` — PWA behaviour against the
+  production build.
 
 ## Deployment
 

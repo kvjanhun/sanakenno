@@ -21,29 +21,30 @@ For scoped implementation rules, also read:
 | Shared domain | `packages/shared` - pure game logic, types, platform interfaces |
 | Backend | Hono on Node.js via `tsx` |
 | Storage | SQLite with `better-sqlite3` |
-| Testing | Vitest, Cucumber.js BDD, Playwright E2E |
+| Testing | Vitest (unit + integration), Playwright E2E |
 | PWA | `vite-plugin-pwa` |
 | Monorepo | pnpm workspace and Turborepo |
 
-## BDD-First Development
+## Testing Doctrine
 
-Feature files in `features/` are the source of truth for product behaviour.
+Behaviour is agreed in the task conversation and encoded directly as tests —
+there is no separate spec layer. Descriptive test names are the behaviour
+catalog.
 
-- New features: write or update the `.feature` file first, get it agreed, then
-  implement.
-- Behaviour changes: update the matching `.feature` file in the same commit as
-  the code change.
-- Do not ship code whose behaviour contradicts or is absent from the feature
-  files.
-- Step definitions test pure logic in a Vitest-compatible shape. Browser
-  behaviour belongs in E2E specs under `tests/e2e/`.
+- Pure logic: Vitest unit tests in `tests/`.
+- API and store behaviour: Vitest integration tests in `tests/integration/`
+  (real Hono app, in-memory SQLite, real web stores).
+- Browser behaviour: Playwright specs in `tests/e2e/`.
+- New features and behaviour changes ship in the same commit as the tests
+  that pin them down; when behaviour changes on purpose, change the tests in
+  that same commit.
 
 ## Git Discipline
 
 - Keep commits to one logical unit of work.
 - Use Conventional Commit subjects in the imperative mood.
 - Before committing to `main`, the relevant checks must pass in CI order:
-  typecheck, lint, unit, BDD, E2E, build.
+  typecheck, lint, unit, E2E, build.
 - Never commit broken or intentionally incomplete code to `main`; use a feature
   branch for incomplete work.
 
@@ -80,7 +81,7 @@ pnpm run version:bump
 ## CI Pipeline
 
 One GitHub Actions workflow, `ci-web.yml`, runs on every push and PR:
-typecheck, lint, unit, BDD, E2E, build, then (on `main` pushes) deploy and
+typecheck, lint, unit, E2E, build, then (on `main` pushes) deploy and
 verify.
 
 The deploy job fires the server webhook (which only means "accepted"), then
@@ -107,8 +108,7 @@ pnpm run typecheck                        # typecheck server/root package
 pnpm turbo run typecheck                  # typecheck all workspace packages
 pnpm turbo run typecheck --filter=<pkg>   # typecheck one package and its deps
 pnpm run lint                             # ESLint + Prettier check
-pnpm run test:unit                        # Vitest
-pnpm run test:bdd                         # Cucumber.js
+pnpm run test:unit                        # Vitest (unit + integration)
 pnpm run test:e2e                         # Playwright E2E; requires dev server
 pnpm run build                            # production build
 ```
@@ -124,12 +124,11 @@ the same workflow manually.
 
 | Workflow | When |
 | --- | --- |
-| `bdd-feature` | Behaviour changes: update feature specs first, then implementation and step definitions. |
 | `bump-version` | After implemented and tested changes: create the web/server/shared changeset. |
 | `pre-push` | Before push or PR: run the local CI gauntlet matching the changed surface. |
 | `verify-locally` | After checks pass: inspect the real local web/API surfaces. |
 | `commit` | For standalone commits: create an atomic local Conventional Commit with a co-author trailer; never push. |
-| `ship-feature` | For full feature work: chain BDD, implementation, checks, local verification, version bump, and commit. |
+| `ship-feature` | For full feature work: chain implementation with tests, checks, local verification, version bump, and commit. |
 
 ## Documentation Upkeep
 

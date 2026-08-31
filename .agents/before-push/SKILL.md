@@ -18,7 +18,6 @@ Use this as the default gate before `git push`.
    - Fix any lint errors with `prettier --write` or manually.
 4. Run tests:
    - `pnpm run test:unit`
-   - `pnpm run test:bdd`
    - `pnpm run test:e2e`
 5. Stop immediately on the first failing command.
 6. Push only after every command above passes.

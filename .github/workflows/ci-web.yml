@@ -45,9 +45,6 @@ jobs:
       - name: Unit tests
         run: pnpm run test:unit
 
-      - name: BDD tests
-        run: pnpm run test:bdd
-
       # Cache the browser binaries keyed on the Playwright version, so the
       # ~1-minute download only happens when Playwright is bumped. On a cache
       # hit only the system dependencies are (re)installed, which is fast.

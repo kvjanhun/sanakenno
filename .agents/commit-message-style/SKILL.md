@@ -24,7 +24,7 @@ Match the repo's existing typed subject format.
 ## Scope
 
 - Add a scope when the change is clearly limited to one area or platform.
-- Prefer existing scope names from repo history such as `mobile`, `web`, `auth`, `theme`, `docker`, `bdd`, `e2e`, and `changesets`.
+- Prefer existing scope names from repo history such as `web`, `server`, `auth`, `theme`, `docker`, `test`, `e2e`, and `changesets`.
 - For iOS app work, prefer `mobile` unless the user explicitly asks for `iOS`.
 
 ## Workflow
