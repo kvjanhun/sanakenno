@@ -60,8 +60,6 @@ export default tseslint.config(
       'reports/',
       'tmp/',
       '.claude/',
-      '.expo/',
-      'packages/mobile/metro.config.js',
     ],
   },
 );

@@ -47,7 +47,6 @@ export default defineConfig({
         'packages/web/src/utils/hash.ts',
         'packages/web/src/utils/palette.ts',
         'packages/web/src/main.tsx',
-        'packages/mobile/**',
         'scripts/**',
         'tests/**',
       ],

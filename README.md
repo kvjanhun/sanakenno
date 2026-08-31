@@ -10,7 +10,6 @@ Finnish Spelling Bee word game — find words from 7 letters, every word must co
 |---|---|
 | Language | TypeScript (strict) |
 | Web Frontend | React 19, Vite, Zustand, Tailwind CSS 4 |
-| Mobile App | Expo 55, React Native 0.83, Zustand, MMKV (paused) |
 | Shared Domain | `packages/shared` — pure game logic, types, platform interfaces |
 | Backend | Hono (Node.js via tsx) |
 | Storage | SQLite (better-sqlite3) |
@@ -37,8 +36,7 @@ pnpm run lint        # ESLint + Prettier check
 
 Shared project and agent instructions live in [AGENTS.md](AGENTS.md). Scoped
 implementation rules live near the relevant code in
-`packages/web/src/CLAUDE.md`, `packages/mobile/CLAUDE.md`, and
-`server/CLAUDE.md`.
+`packages/web/src/CLAUDE.md` and `server/CLAUDE.md`.
 
 ### Pangram Review Pipeline
 

@@ -1,16 +1,10 @@
-name: CI — Web & Server
+name: CI
 
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - 'packages/mobile/**'
-      - 'patches/**'
   pull_request:
     branches: [main]
-    paths-ignore:
-      - 'packages/mobile/**'
-      - 'patches/**'
 
 # Superseded PR runs are cancelled. Pushes to main get a unique group so
 # their checks run immediately and in parallel; only the deploy job
@@ -43,7 +37,7 @@ jobs:
         run: pnpm run typecheck
 
       - name: Typecheck packages
-        run: pnpm turbo run typecheck --filter=!@sanakenno/mobile
+        run: pnpm turbo run typecheck
 
       - name: Lint
         run: pnpm run lint

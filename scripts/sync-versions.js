@@ -3,8 +3,6 @@
  * Sync the version from packages/web/package.json (set by changesets)
  * to root package.json and packages/shared/package.json.
  *
- * Mobile has its own independent version — see packages/mobile/package.json.
- *
  * Run automatically as part of `pnpm run version:bump`.
  */
 import { readFileSync, writeFileSync } from 'fs';
@@ -27,6 +25,4 @@ writeFileSync(
   JSON.stringify(sharedPkg, null, 2) + '\n',
 );
 
-console.log(
-  `Synced version ${version} to root and shared package.json (mobile is independent)`,
-);
+console.log(`Synced version ${version} to root and shared package.json`);

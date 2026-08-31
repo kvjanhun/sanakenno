@@ -2,16 +2,15 @@
 
 ## What This Is
 
-Sanakenno is a Finnish word-puzzle game with a web app and a Hono backend
-using SQLite. The production site is live at **sanakenno.fi**.
+Sanakenno is a Finnish word-puzzle game with a web app (PWA) and a Hono
+backend using SQLite. The production site is live at **sanakenno.fi**.
 
-Native app code remains in the repo as a reference surface, but mobile
-development and publishing are paused.
+The web app is the only product surface. The former native iOS app was
+archived at the `mobile-archive` git tag; do not plan native work.
 
 For scoped implementation rules, also read:
 
 - [packages/web/src/CLAUDE.md](packages/web/src/CLAUDE.md) for web frontend rules.
-- [packages/mobile/CLAUDE.md](packages/mobile/CLAUDE.md) for mobile rules.
 - [server/CLAUDE.md](server/CLAUDE.md) for backend rules.
 
 ## Tech Stack
@@ -19,7 +18,6 @@ For scoped implementation rules, also read:
 | Layer | Tech |
 | --- | --- |
 | Web frontend | React 19, Vite, Zustand, Tailwind CSS 4 |
-| Mobile app | Expo 55, React Native 0.83, Zustand, MMKV (paused reference surface) |
 | Shared domain | `packages/shared` - pure game logic, types, platform interfaces |
 | Backend | Hono on Node.js via `tsx` |
 | Storage | SQLite with `better-sqlite3` |
@@ -59,41 +57,19 @@ Prefer existing package boundaries:
 - UI and browser state in `packages/web`.
 - Pure game rules and shared types in `packages/shared`.
 - API routes, auth, persistence, and operational scripts in `server`.
-- Mobile code only when explicitly working on the paused native surface.
 
 ## Versioning
 
-Each deployable target has its own independent version. Do not bump one target
-when only another target changed.
-
-| Package | Version source | Notes |
-| --- | --- | --- |
-| Web and server | `package.json` and `packages/web/package.json` | Synced by `scripts/sync-versions.js` |
-| Shared | `packages/shared/package.json` | Synced with web automatically |
-| Mobile iOS | `packages/mobile/package.json` | Independent; also reflected in `app.json` through `app.config.js` |
-
-### Web, Server, and Shared
-
-Use the changesets workflow:
+Web, server, and shared move together as one version. Use the changesets
+workflow:
 
 ```sh
 pnpm run version:changeset
 pnpm run version:bump
 ```
 
-### Mobile
-
-Bump `packages/mobile/package.json` directly only when mobile changes are in
-scope:
-
-```sh
-cd packages/mobile
-npm version patch
-npm version minor
-npm version major
-```
-
-The mobile runtime version is reflected into `app.json` by `app.config.js`.
+`scripts/sync-versions.js` copies the version set by changesets in
+`packages/web/package.json` into the root and shared package.json files.
 
 ### Semver Guide
 
@@ -101,14 +77,11 @@ The mobile runtime version is reflected into `app.json` by `app.config.js`.
 - Minor: new features, new screens, notable UX changes.
 - Major: breaking changes, major redesigns, first stable release.
 
-## CI Pipelines
+## CI Pipeline
 
-Two GitHub Actions workflows handle web/server and mobile independently.
-
-| Workflow | File | Triggers on | What it does |
-| --- | --- | --- | --- |
-| Web and server | `ci-web.yml` | Any push or PR except `packages/mobile/**` and `patches/**` | typecheck except mobile, lint, unit, BDD, E2E, build, deploy, verify |
-| Mobile iOS | `ci-mobile.yml` | Pushes or PRs touching `packages/mobile/**`, `patches/**`, or `pnpm-lock.yaml` | typecheck mobile and shared, lint |
+One GitHub Actions workflow, `ci-web.yml`, runs on every push and PR:
+typecheck, lint, unit, BDD, E2E, build, then (on `main` pushes) deploy and
+verify.
 
 The deploy job fires the server webhook (which only means "accepted"), then
 polls `https://sanakenno.fi/commit.txt` — the source commit stamped into the
@@ -119,15 +92,11 @@ alert). Deploys on `main` are serialised by a workflow concurrency group and
 a server-side lock in `server/deploy-sanakenno.sh`.
 
 Typecheck uses Turborepo for workspace packages in dependency order
-(`shared` before `web` or `mobile`). The root package is the server and is not a
-Turbo workspace package, so it is checked separately.
+(`shared` before `web`). The root package is the server and is not a Turbo
+workspace package, so it is checked separately.
 
 - `pnpm run typecheck` checks the server/root package.
-- `pnpm turbo run typecheck --filter=!@sanakenno/mobile` checks shared and web.
-- `pnpm turbo run typecheck --filter=@sanakenno/mobile` checks shared and mobile.
-
-When native development resumes and Android becomes active, add a matching
-Android CI workflow.
+- `pnpm turbo run typecheck` checks shared and web.
 
 ## Commands
 
@@ -156,9 +125,9 @@ the same workflow manually.
 | Workflow | When |
 | --- | --- |
 | `bdd-feature` | Behaviour changes: update feature specs first, then implementation and step definitions. |
-| `bump-version` | After implemented and tested changes: create the correct web/server/shared changeset or mobile version bump. |
+| `bump-version` | After implemented and tested changes: create the web/server/shared changeset. |
 | `pre-push` | Before push or PR: run the local CI gauntlet matching the changed surface. |
-| `verify-locally` | After checks pass: inspect the real local web/API surfaces or produce manual mobile verification steps. |
+| `verify-locally` | After checks pass: inspect the real local web/API surfaces. |
 | `commit` | For standalone commits: create an atomic local Conventional Commit with a co-author trailer; never push. |
 | `ship-feature` | For full feature work: chain BDD, implementation, checks, local verification, version bump, and commit. |
 
