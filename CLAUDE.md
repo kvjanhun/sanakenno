@@ -132,8 +132,25 @@ the same workflow manually.
 
 ## Documentation Upkeep
 
-- Keep `README.md`, `AGENTS.md`/`CLAUDE.md`, and scoped package guides in sync
-  when stack, CI, commands, or workflow rules change.
-- Use `AGENTS.md` as the canonical cross-agent project guide. It is tracked as
-  the standard entry point for non-Claude agents.
-- Keep scoped implementation rules near the code they govern.
+**Every fact lives in exactly one file. Link to it; never copy it.** Duplicated
+facts are how these documents drifted apart before — each file has one job:
+
+| File | Owns | Never contains |
+| --- | --- | --- |
+| `CLAUDE.md` (= `AGENTS.md`) | How to work here: rules, commands, gates, conventions, versioning, CI | Architecture description, product/roadmap detail |
+| `PROJECT_MAP.md` | What exists and where: structure, data flows, endpoints, numbering | Commands, workflow rules |
+| `README.md` | The human-facing intro: what it is, where it runs, how to start it | Anything the two files above own, restated |
+| `PLAN.md` | Only what does not exist yet, with a "last reviewed" date | Status claims about shipped work |
+| `server/CLAUDE.md`, `packages/web/src/CLAUDE.md` | Implementation rules scoped to that code | Anything true of the whole repo |
+
+Before finishing a change, update the **one** file that owns each changed
+fact:
+
+- Commands, CI steps, gates, or workflow rules → `CLAUDE.md`.
+- Structure, data flow, or endpoints → `PROJECT_MAP.md`.
+- Stack or the public-facing story → `README.md`.
+- Backend or frontend implementation rules → the scoped `CLAUDE.md`.
+
+`AGENTS.md` and `GEMINI.md` are symlinks to `CLAUDE.md` — editing any name
+edits the same file. Keep `AGENTS.md` as the canonical cross-agent entry
+point.
