@@ -1,4 +1,3 @@
-.claude/
 node_modules/
 dist/
 .output/
@@ -19,6 +18,10 @@ package-lock.json
 .turbo/
 *.tsbuildinfo
 tmp/
+# Agent config. Skills are tracked; session state and machine-local settings are
+# not. Shared skill bodies live in the nuc repo — the symlinks here resolve to
+# ../../../nuc/skills, so the three repos must stay siblings under ~/Projects.
+.claude/*
+!.claude/skills/
 .agent
-.agents/skills
 
