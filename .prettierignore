@@ -4,3 +4,8 @@ PLAN.md
 README.md
 pnpm-lock.yaml
 tmp/
+# Agent skills, matching the `.claude/` entry in eslint.config.js. Half the
+# skills here are symlinks into ~/Projects/nuc, which Prettier does not descend
+# into — formatting only the repo-local ones would leave two markdown styles in
+# one directory and reformat any skill promoted from local to shared.
+.claude/
