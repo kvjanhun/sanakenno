@@ -1,11 +1,17 @@
 ---
-name: pre-push
+name: pre-push-sanakenno
 description: >-
   Run the full local CI gauntlet that mirrors GitHub Actions before any push to
   main or PR open. Use before every commit/push since the strict CI does not let
   lint or typecheck errors through and there is no staging. Halts on first
   failure. Args: --skip-e2e, --skip-build, --docs-only.
 tools: Bash, Read, Grep, Glob
+paths:
+  - packages/**
+  - server/**
+  - tests/**
+  - scripts/**
+  - package.json
 ---
 
 # Pre-Push Gauntlet

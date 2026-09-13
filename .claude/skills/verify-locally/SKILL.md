@@ -1,7 +1,10 @@
 ---
 name: verify-locally
-description: Walk through the changed feature in a real browser before declaring it shipped. Use after pre-push has passed but before pushing. Pings the always-running dev servers (localhost:5173 web and localhost:3001 api) and produces a concrete checklist for the browser walk-through. Refuses to claim success for anything that wasn't actually exercised.
+description: Walk through the changed feature in a real browser before declaring it shipped. Use after `pre-push-sanakenno` has passed but before pushing. Pings the always-running dev servers (localhost:5173 web and localhost:3001 api) and produces a concrete checklist for the browser walk-through. Refuses to claim success for anything that wasn't actually exercised.
 tools: Bash, Read, Grep, Glob
+paths:
+  - packages/**
+  - server/**
 ---
 
 # Verify Locally

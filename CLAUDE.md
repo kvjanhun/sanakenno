@@ -126,9 +126,9 @@ the same workflow manually.
 | --- | --- |
 | `plan-feature` | Before implementation: write the design to `plans/` and stop for sign-off. |
 | `add-route` | Adding a Hono endpoint: auth layer, route conventions, integration test. |
-| `schema-change` | Changing the shape of the database: the two-edit rule and its tests. |
+| `schema-change-sanakenno` | Changing the shape of the database: the two-edit rule and its tests. |
 | `bump-version` | After implemented and tested changes: create the web/server/shared changeset. |
-| `pre-push` | Before push or PR: run the local CI gauntlet matching the changed surface. |
+| `pre-push-sanakenno` | Before push or PR: run the local CI gauntlet matching the changed surface. |
 | `verify-locally` | After checks pass: inspect the real local web/API surfaces. |
 | `commit` | For standalone commits: create an atomic local Conventional Commit with a co-author trailer; never push. |
 | `ship-feature` | For full feature work: chain implementation with tests, checks, local verification, version bump, and commit. |

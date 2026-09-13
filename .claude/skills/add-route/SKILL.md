@@ -50,7 +50,7 @@ All queries go through `getDb()`. Never open a raw connection. Parameterised
 queries only; never interpolate input into SQL.
 
 If the route needs a column that does not exist, that is a **schema change** —
-run `schema-change`, do not reach for the database directly.
+run `schema-change-sanakenno`, do not reach for the database directly.
 
 ## 5. Puzzle numbering, if the route touches puzzles
 

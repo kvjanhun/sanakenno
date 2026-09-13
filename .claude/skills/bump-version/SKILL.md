@@ -1,7 +1,11 @@
 ---
 name: bump-version
-description: Bump the semver version for the current change set after a feature/fix is implemented and tested. Use after implementation + tests pass and before pre-push, or when the user invokes /bump-version. Web + shared + root are versioned together via Changesets. Defaults to patch; suggests minor when the change introduces new user-visible behaviour (new behaviour tests, new screen, new route). Major bumps are rare and always confirmed.
+description: Bump the semver version for the current change set after a feature/fix is implemented and tested. Use after implementation + tests pass and before `pre-push-sanakenno`, or when the user invokes /bump-version. Web + shared + root are versioned together via Changesets. Defaults to patch; suggests minor when the change introduces new user-visible behaviour (new behaviour tests, new screen, new route). Major bumps are rare and always confirmed.
 tools: Bash, Read, Write, Edit, Glob, Grep
+paths:
+  - .changeset/**
+  - packages/**
+  - package.json
 ---
 
 # Bump Version
@@ -30,7 +34,7 @@ Default to patch. Suggest minor when the diff adds user-visible behaviour.
 3. Run `pnpm run version:bump` (applies the changeset and syncs the version to
    root and shared via `scripts/sync-versions.js`).
 4. Show the resulting version delta and the changelog entry.
-5. Do not commit — `pre-push` and `commit` run next in the ship flow.
+5. Do not commit — `pre-push-sanakenno` and `commit` run next in the ship flow.
 
 ## Guardrails
 

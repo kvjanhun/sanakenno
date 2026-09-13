@@ -1,5 +1,5 @@
 ---
-name: schema-change
+name: schema-change-sanakenno
 description: Change the database schema for a feature — add or alter a column, table, or index. Use whenever a feature needs the shape of sanakenno.db to change. Enforces the two-edit rule (schema.sql baseline plus an ordered migration file), the tests that go with it, and the forward-only constraint.
 paths:
   - server/db/**
