@@ -284,6 +284,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
         currentWord: '',
         foundWords: new Set<string>(),
         score: 0,
+        hintsUnlocked: new Set<string>(),
         scoreBeforeHints: null,
         message: '',
         fetchError: '',

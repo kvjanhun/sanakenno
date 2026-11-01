@@ -52,6 +52,81 @@ describe('hint unlock mechanics', () => {
     useGameStore.getState().unlockHint('unknown');
     expect(useGameStore.getState().hintsUnlocked.size).toBe(0);
   });
+
+  it('resets unlocked hints when fetching a different unplayed puzzle', async () => {
+    useGameStore.getState().unlockHint('summary');
+    expect(useGameStore.getState().hintsUnlocked.size).toBe(1);
+
+    const mockPuzzle = {
+      center: 'o',
+      letters: ['k', 'l', 'm', 'o', 'r', 's', 'u'],
+      word_hashes: [],
+      hint_data: {},
+      max_score: 80,
+      puzzle_number: 2,
+      display_number: 2,
+      total_puzzles: 2,
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve(
+          new Response(JSON.stringify(mockPuzzle), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        ),
+      ),
+    );
+
+    await useGameStore.getState().fetchPuzzle(2);
+
+    expect(useGameStore.getState().hintsUnlocked.size).toBe(0);
+    expect(useGameStore.getState().scoreBeforeHints).toBeNull();
+  });
+
+  it('loads saved hints when fetching a previously played puzzle', async () => {
+    localStorage.setItem(
+      'sanakenno_state_3',
+      JSON.stringify({
+        foundWords: [],
+        score: 10,
+        hintsUnlocked: ['summary', 'pairs'],
+        scoreBeforeHints: 10,
+        startedAt: Date.now(),
+        totalPausedMs: 0,
+      }),
+    );
+
+    const mockPuzzle = {
+      center: 'ä',
+      letters: ['h', 'k', 'l', 'm', 'n', 'o', 'ä'],
+      word_hashes: [],
+      hint_data: {},
+      max_score: 90,
+      puzzle_number: 3,
+      display_number: 3,
+      total_puzzles: 3,
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve(
+          new Response(JSON.stringify(mockPuzzle), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        ),
+      ),
+    );
+
+    await useGameStore.getState().fetchPuzzle(3);
+
+    expect(useGameStore.getState().hintsUnlocked.size).toBe(2);
+    expect(useGameStore.getState().hintsUnlocked.has('summary')).toBe(true);
+    expect(useGameStore.getState().hintsUnlocked.has('pairs')).toBe(true);
+    expect(useGameStore.getState().scoreBeforeHints).toBe(10);
+  });
 });
 
 describe('pre-hint score tracking', () => {

@@ -109,6 +109,7 @@ describe('GET /api/archive', () => {
 
 describe('GET /api/archive?all=true', () => {
   it('returns more entries than the default 7', async () => {
+    setTodayToSlot(15);
     const { res, entries } = await getArchive('?all=true');
     expect(res.status).toBe(200);
     expect(entries.length).toBeGreaterThan(7);

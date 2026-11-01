@@ -1,5 +1,12 @@
 # @sanakenno/web
 
+## 1.17.1
+
+### Patch Changes
+
+- Reset unlocked hints when fetching a puzzle to prevent hints from leaking into unplayed archive games
+  - @sanakenno/shared@1.17.1
+
 ## 1.17.0
 
 ### Minor Changes
